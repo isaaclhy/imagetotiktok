@@ -277,6 +277,15 @@ export default function Home() {
       const result = await response.json();
 
       if (!response.ok) {
+        // If it's a scope/auth error, clear user info and redirect to auth
+        if (result.requiresReauth || response.status === 403) {
+          setUserInfo(null);
+          // Clear cookies by calling logout
+          await fetch('/api/tiktok/logout', { method: 'POST' });
+          alert(result.error || 'Missing required permissions. Please reconnect your TikTok account.');
+          window.location.href = '/api/tiktok/auth';
+          return;
+        }
         throw new Error(result.error || 'Failed to post to TikTok');
       }
 

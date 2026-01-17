@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
   authUrl.searchParams.set('client_key', clientKey);
   authUrl.searchParams.set('response_type', 'code');
-  authUrl.searchParams.set('scope', 'user.info.basic');
+  authUrl.searchParams.set('scope', 'user.info.basic,video.upload');
   authUrl.searchParams.set('redirect_uri', redirectUri);
   authUrl.searchParams.set('state', state);
   authUrl.searchParams.set('code_challenge', codeChallenge);

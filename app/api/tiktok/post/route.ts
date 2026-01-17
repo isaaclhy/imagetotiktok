@@ -58,6 +58,24 @@ export async function POST(request: NextRequest) {
 
     if (!initResponse.ok) {
       console.error('Init upload error:', initData);
+      
+      // Check if it's a scope error - if so, clear tokens and return specific error
+      if (initResponse.status === 403 || initData.error?.message?.includes('scope') || initData.error?.message?.includes('authorize')) {
+        // Clear tokens so user can re-authenticate with new scopes
+        const errorResponse = NextResponse.json(
+          { 
+            error: 'Missing required permissions. Please reconnect your TikTok account to grant video upload permissions.',
+            requiresReauth: true 
+          },
+          { status: 403 }
+        );
+        
+        errorResponse.cookies.delete('tiktok_access_token');
+        errorResponse.cookies.delete('tiktok_refresh_token');
+        
+        return errorResponse;
+      }
+      
       return NextResponse.json(
         { error: initData.error?.message || 'Failed to initialize upload' },
         { status: initResponse.status }
