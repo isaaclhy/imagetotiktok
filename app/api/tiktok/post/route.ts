@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const imageFile = formData.get('image') as File;
     const caption = formData.get('caption') as string;
+    const privacyLevel = (formData.get('privacy_level') as string) || 'SELF_ONLY'; // Default to private
 
     if (!imageFile) {
       return NextResponse.json(
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         post_info: {
           title: caption || 'Created with TikTok Image Generator',
-          privacy_level: 'PUBLIC_TO_EVERYONE',
+          privacy_level: privacyLevel,
           disable_duet: false,
           disable_comment: false,
           disable_stitch: false,

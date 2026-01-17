@@ -24,6 +24,8 @@ export default function Home() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
   const [userInfo, setUserInfo] = useState<{ display_name?: string; avatar_url?: string } | null>(null);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [toast, setToast] = useState<{ message: string; show: boolean }>({ message: '', show: false });
 
   // Get current canvas
   const currentCanvas = canvases.find(c => c.id === currentCanvasId) || canvases[0];
@@ -204,6 +206,9 @@ export default function Home() {
       if (authData.user) {
         setUserInfo(authData.user);
       }
+      
+      // Hide dropdown if open
+      setShowUserDropdown(false);
 
       // Generate the image first (reuse handleGenerate logic but get blob)
       const canvas = document.createElement('canvas');
@@ -262,6 +267,7 @@ export default function Home() {
       const formData = new FormData();
       formData.append('image', blob, 'tiktok-image.png');
       formData.append('caption', text);
+      formData.append('privacy_level', 'SELF_ONLY'); // Post as private
 
       const response = await fetch('/api/tiktok/post', {
         method: 'POST',
@@ -274,10 +280,21 @@ export default function Home() {
         throw new Error(result.error || 'Failed to post to TikTok');
       }
 
-      alert('Successfully posted to TikTok!');
+      // Show success toast
+      setToast({ message: 'Post posted successfully!', show: true });
+      
+      // Auto-hide toast after 3 seconds
+      setTimeout(() => {
+        setToast({ message: '', show: false });
+      }, 3000);
     } catch (error: any) {
       console.error('Error posting to TikTok:', error);
-      alert(error.message || 'Failed to post to TikTok. Please try again.');
+      setToast({ message: error.message || 'Failed to post to TikTok. Please try again.', show: true });
+      
+      // Auto-hide error toast after 4 seconds
+      setTimeout(() => {
+        setToast({ message: '', show: false });
+      }, 4000);
     } finally {
       setIsPosting(false);
     }
@@ -313,13 +330,16 @@ export default function Home() {
             <div className="flex-shrink-0 flex items-start justify-between gap-4">
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-black dark:text-zinc-50 mb-1">
-                  Build in public
+                  Bleamies
                 </h1>
 
               </div>
               {userInfo ? (
-                <div className="flex-shrink-0 flex items-center gap-3">
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800">
+                <div className="flex-shrink-0 relative">
+                  <button
+                    onClick={() => setShowUserDropdown(!showUserDropdown)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+                  >
                     {userInfo.avatar_url && (
                       <img
                         src={userInfo.avatar_url}
@@ -330,43 +350,62 @@ export default function Home() {
                     <span className="text-sm font-medium text-black dark:text-zinc-50">
                       {userInfo.display_name || 'User'}
                     </span>
-                  </div>
-                  <button
-                    onClick={handlePostToTikTok}
-                    disabled={isPosting || !text.trim()}
-                    className="flex-shrink-0 h-10 px-4 rounded-lg bg-black hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    title="Post to TikTok"
-                  >
-                    {isPosting ? (
-                      <svg
-                        className="animate-spin h-4 w-4"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                    ) : (
-                      <>
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
-                        </svg>
-                        <span>Post</span>
-                      </>
-                    )}
+                    <svg
+                      className={`w-4 h-4 text-black dark:text-zinc-50 transition-transform ${
+                        showUserDropdown ? 'rotate-180' : ''
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
                   </button>
+
+                  {/* Dropdown Menu */}
+                  {showUserDropdown && (
+                    <>
+                      {/* Backdrop to close dropdown */}
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setShowUserDropdown(false)}
+                      ></div>
+                      <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-700 z-50 overflow-hidden">
+                        <button
+                          onClick={async () => {
+                            try {
+                              await fetch('/api/tiktok/logout', { method: 'POST' });
+                              setUserInfo(null);
+                              setShowUserDropdown(false);
+                            } catch (error) {
+                              console.error('Logout error:', error);
+                            }
+                          }}
+                          className="w-full px-4 py-3 text-left text-sm text-red-600 dark:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                            />
+                          </svg>
+                          Sign out
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : (
                 <button
@@ -496,12 +535,12 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Generate Button */}
-            <div className="mt-auto flex-shrink-0">
+            {/* Download and Post Buttons */}
+            <div className="mt-auto flex-shrink-0 flex gap-3">
               <button
                 onClick={handleGenerate}
                 disabled={isGenerating || !text.trim()}
-                className="w-full h-12 rounded-lg bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 h-12 rounded-lg bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isGenerating ? (
                   <>
@@ -528,7 +567,60 @@ export default function Home() {
                     Generating...
                   </>
                 ) : (
-                  'Post to my private'
+                  <>
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      />
+                    </svg>
+                    Download
+                  </>
+                )}
+              </button>
+              <button
+                onClick={handlePostToTikTok}
+                disabled={isPosting || !text.trim() || !userInfo}
+                className="flex-1 h-12 rounded-lg bg-black hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white font-semibold text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isPosting ? (
+                  <>
+                    <svg
+                      className="animate-spin h-4 w-4"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Posting...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+                    </svg>
+                    Post
+                  </>
                 )}
               </button>
             </div>
@@ -812,6 +904,41 @@ export default function Home() {
             </div>
           </div>
         </footer>
+      </div>
+
+      {/* Toast Notification */}
+      <div
+        className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 px-6 py-4 rounded-lg shadow-lg text-white font-medium text-sm flex items-center gap-3 transition-all duration-300 ${
+          toast.show
+            ? 'translate-y-0 opacity-100'
+            : 'translate-y-full opacity-0 pointer-events-none'
+        } ${
+          toast.message.includes('Failed') ? 'bg-red-500' : 'bg-green-500'
+        }`}
+      >
+          <svg
+            className="w-5 h-5 flex-shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            {toast.message.includes('Failed') ? (
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            ) : (
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            )}
+          </svg>
+        <span>{toast.message}</span>
       </div>
     </div>
   );
