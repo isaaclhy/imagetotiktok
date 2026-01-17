@@ -25,7 +25,7 @@ export default function Home() {
   const [isPosting, setIsPosting] = useState(false);
   const [userInfo, setUserInfo] = useState<{ display_name?: string; avatar_url?: string } | null>(null);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [toast, setToast] = useState<{ message: string; show: boolean }>({ message: '', show: false });
+  const [showToast, setShowToast] = useState(false);
 
   // Get current canvas
   const currentCanvas = canvases.find(c => c.id === currentCanvasId) || canvases[0];
@@ -281,20 +281,15 @@ export default function Home() {
       }
 
       // Show success toast
-      setToast({ message: 'Post posted successfully!', show: true });
+      setShowToast(true);
       
       // Auto-hide toast after 3 seconds
       setTimeout(() => {
-        setToast({ message: '', show: false });
+        setShowToast(false);
       }, 3000);
     } catch (error: any) {
       console.error('Error posting to TikTok:', error);
-      setToast({ message: error.message || 'Failed to post to TikTok. Please try again.', show: true });
-      
-      // Auto-hide error toast after 4 seconds
-      setTimeout(() => {
-        setToast({ message: '', show: false });
-      }, 4000);
+      alert(error.message || 'Failed to post to TikTok. Please try again.');
     } finally {
       setIsPosting(false);
     }
@@ -907,39 +902,24 @@ export default function Home() {
       </div>
 
       {/* Toast Notification */}
-      <div
-        className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 px-6 py-4 rounded-lg shadow-lg text-white font-medium text-sm flex items-center gap-3 transition-all duration-300 ${
-          toast.show
-            ? 'translate-y-0 opacity-100'
-            : 'translate-y-full opacity-0 pointer-events-none'
-        } ${
-          toast.message.includes('Failed') ? 'bg-red-500' : 'bg-green-500'
-        }`}
-      >
+      {showToast && (
+        <div className="fixed bottom-6 left-1/2 z-50 px-6 py-4 rounded-lg shadow-lg bg-zinc-800 dark:bg-zinc-700 text-white font-medium text-sm flex items-center gap-3 animate-slide-up">
           <svg
             className="w-5 h-5 flex-shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            {toast.message.includes('Failed') ? (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            ) : (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            )}
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M5 13l4 4L19 7"
+            />
           </svg>
-        <span>{toast.message}</span>
-      </div>
+          <span>Posted successfully</span>
+        </div>
+      )}
     </div>
   );
 }
