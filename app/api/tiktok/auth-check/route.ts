@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ authenticated: false });
   }
 
-  // Optionally verify token is still valid by making a test API call
+  // Verify token and get user info
   try {
     const verifyResponse = await fetch('https://open.tiktokapis.com/v2/user/info/?fields=open_id,union_id,avatar_url,display_name', {
       headers: {
@@ -18,7 +18,11 @@ export async function GET(request: NextRequest) {
     });
 
     if (verifyResponse.ok) {
-      return NextResponse.json({ authenticated: true });
+      const userData = await verifyResponse.json();
+      return NextResponse.json({ 
+        authenticated: true,
+        user: userData.data?.user || null
+      });
     } else {
       // Token might be expired, clear it
       const response = NextResponse.json({ authenticated: false });
