@@ -270,9 +270,9 @@ export default function Home() {
   };
 
   return (
-    <div className="h-screen bg-zinc-50 font-sans dark:bg-black p-3 flex flex-col overflow-hidden">
-      <div className="max-w-7xl mx-auto w-full h-full flex flex-col">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full min-h-0">
+    <div className="min-h-screen bg-zinc-50 font-sans dark:bg-black flex flex-col">
+      <div className="max-w-7xl mx-auto w-full flex flex-col p-3 flex-1 min-h-0">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0 mb-6">
           {/* Left Side - Inputs */}
           <div className="flex flex-col gap-4 p-4 bg-white dark:bg-zinc-900 rounded-2xl shadow-lg min-h-0">
             {/* Header */}
@@ -281,9 +281,7 @@ export default function Home() {
                 <h1 className="text-2xl md:text-3xl font-bold text-black dark:text-zinc-50 mb-1">
                   Build in public
                 </h1>
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                  Create TikTok-style images with custom text and background color
-                </p>
+
               </div>
               <button
                 onClick={handlePostToTikTok}
@@ -313,9 +311,12 @@ export default function Home() {
                     ></path>
                   </svg>
                 ) : (
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
-                  </svg>
+                  <>
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+                    </svg>
+                    <span>TikTok</span>
+                  </>
                 )}
               </button>
             </div>
@@ -466,7 +467,7 @@ export default function Home() {
                     Generating...
                   </>
                 ) : (
-                  'Generate & Download Image'
+                  'Post to my private'
                 )}
               </button>
             </div>
@@ -577,6 +578,179 @@ export default function Home() {
             </div>
           </div>
         </div>
+        
+        {/* Footer */}
+        <footer className="flex-shrink-0 border-t border-zinc-200 dark:border-zinc-800 mt-6 pt-8 pb-6">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+              {/* Company Section */}
+              <div className="flex flex-col gap-3">
+                <h3 className="text-sm font-semibold text-black dark:text-zinc-50 mb-2">
+                  Company
+                </h3>
+                <a
+                  href="/about"
+                  className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#3B82F6] dark:hover:text-[#3B82F6] transition-colors"
+                >
+                  About
+                </a>
+                <a
+                  href="/blog"
+                  className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#3B82F6] dark:hover:text-[#3B82F6] transition-colors"
+                >
+                  Blog
+                </a>
+                <a
+                  href="/careers"
+                  className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#3B82F6] dark:hover:text-[#3B82F6] transition-colors"
+                >
+                  Careers
+                </a>
+                <a
+                  href="/contact"
+                  className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#3B82F6] dark:hover:text-[#3B82F6] transition-colors"
+                >
+                  Contact
+                </a>
+              </div>
+
+              {/* Product Section */}
+              <div className="flex flex-col gap-3">
+                <h3 className="text-sm font-semibold text-black dark:text-zinc-50 mb-2">
+                  Product
+                </h3>
+                <a
+                  href="/features"
+                  className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#3B82F6] dark:hover:text-[#3B82F6] transition-colors"
+                >
+                  Features
+                </a>
+                <a
+                  href="/pricing"
+                  className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#3B82F6] dark:hover:text-[#3B82F6] transition-colors"
+                >
+                  Pricing
+                </a>
+                <a
+                  href="/documentation"
+                  className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#3B82F6] dark:hover:text-[#3B82F6] transition-colors"
+                >
+                  Documentation
+                </a>
+                <a
+                  href="/api"
+                  className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#3B82F6] dark:hover:text-[#3B82F6] transition-colors"
+                >
+                  API
+                </a>
+              </div>
+
+              {/* Resources Section */}
+              <div className="flex flex-col gap-3">
+                <h3 className="text-sm font-semibold text-black dark:text-zinc-50 mb-2">
+                  Resources
+                </h3>
+                <a
+                  href="/help"
+                  className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#3B82F6] dark:hover:text-[#3B82F6] transition-colors"
+                >
+                  Help Center
+                </a>
+                <a
+                  href="/community"
+                  className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#3B82F6] dark:hover:text-[#3B82F6] transition-colors"
+                >
+                  Community
+                </a>
+                <a
+                  href="/tutorials"
+                  className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#3B82F6] dark:hover:text-[#3B82F6] transition-colors"
+                >
+                  Tutorials
+                </a>
+                <a
+                  href="/guides"
+                  className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#3B82F6] dark:hover:text-[#3B82F6] transition-colors"
+                >
+                  Guides
+                </a>
+              </div>
+
+              {/* Legal Section */}
+              <div className="flex flex-col gap-3">
+                <h3 className="text-sm font-semibold text-black dark:text-zinc-50 mb-2">
+                  Legal
+                </h3>
+                <a
+                  href="/privacy"
+                  className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#3B82F6] dark:hover:text-[#3B82F6] transition-colors"
+                >
+                  Privacy Policy
+                </a>
+                <a
+                  href="/terms"
+                  className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#3B82F6] dark:hover:text-[#3B82F6] transition-colors"
+                >
+                  Terms of Service
+                </a>
+                <a
+                  href="/cookie-policy"
+                  className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#3B82F6] dark:hover:text-[#3B82F6] transition-colors"
+                >
+                  Cookie Policy
+                </a>
+                <a
+                  href="/dmca"
+                  className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-[#3B82F6] dark:hover:text-[#3B82F6] transition-colors"
+                >
+                  DMCA
+                </a>
+              </div>
+            </div>
+
+            {/* Bottom Section */}
+            <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
+              <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                © {new Date().getFullYear()} TikTok Style Image Generator. All rights reserved.
+              </div>
+              <div className="flex gap-6">
+                <a
+                  href="https://twitter.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-zinc-600 dark:text-zinc-400 hover:text-[#3B82F6] dark:hover:text-[#3B82F6] transition-colors"
+                  aria-label="Twitter"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                  </svg>
+                </a>
+                <a
+                  href="https://github.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-zinc-600 dark:text-zinc-400 hover:text-[#3B82F6] dark:hover:text-[#3B82F6] transition-colors"
+                  aria-label="GitHub"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
+                  </svg>
+                </a>
+                <a
+                  href="https://linkedin.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-zinc-600 dark:text-zinc-400 hover:text-[#3B82F6] dark:hover:text-[#3B82F6] transition-colors"
+                  aria-label="LinkedIn"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </div>
+        </footer>
       </div>
     </div>
   );
