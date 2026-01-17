@@ -12,9 +12,14 @@ function generateCodeChallenge(verifier: string): string {
 
 export async function GET(request: NextRequest) {
   const clientKey = process.env.TIKTOK_CLIENT_KEY;
-  const redirectUri =
+  let redirectUri =
     process.env.TIKTOK_REDIRECT_URI ??
     `${request.nextUrl.origin}/api/tiktok/callback`;
+  
+  // Ensure redirect URI ends with trailing slash if it's a path (per TikTok docs)
+  if (redirectUri && !redirectUri.includes('?') && !redirectUri.includes('#') && !redirectUri.endsWith('/')) {
+    redirectUri = redirectUri + '/';
+  }
 
   if (!clientKey) {
     return NextResponse.json(
@@ -31,11 +36,8 @@ export async function GET(request: NextRequest) {
 
   authUrl.searchParams.set('client_key', clientKey);
   authUrl.searchParams.set('response_type', 'code');
-  authUrl.searchParams.set('scope', 'user.info.basic'); // KEEP SIMPLE
-  authUrl.searchParams.set(
-    'redirect_uri',
-    encodeURIComponent(redirectUri)
-  );
+  authUrl.searchParams.set('scope', 'user.info.basic');
+  authUrl.searchParams.set('redirect_uri', redirectUri);
   authUrl.searchParams.set('state', state);
   authUrl.searchParams.set('code_challenge', codeChallenge);
   authUrl.searchParams.set('code_challenge_method', 'S256');

@@ -38,9 +38,14 @@ export async function GET(request: NextRequest) {
 
   const clientKey = process.env.TIKTOK_CLIENT_KEY;
   const clientSecret = process.env.TIKTOK_CLIENT_SECRET;
-  const redirectUri =
+  let redirectUri =
     process.env.TIKTOK_REDIRECT_URI ??
     `${request.nextUrl.origin}/api/tiktok/callback`;
+  
+  // Ensure redirect URI ends with trailing slash if it's a path (per TikTok docs)
+  if (redirectUri && !redirectUri.includes('?') && !redirectUri.includes('#') && !redirectUri.endsWith('/')) {
+    redirectUri = redirectUri + '/';
+  }
 
   if (!clientKey || !clientSecret) {
     return NextResponse.redirect(
