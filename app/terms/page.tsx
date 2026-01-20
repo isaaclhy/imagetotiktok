@@ -16,7 +16,7 @@ export default function TermsPage() {
                 1. Acceptance of Terms
               </h2>
               <p className="mb-4 leading-relaxed">
-                By accessing and using TikTok Style Image Generator ("the Service"), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to these Terms of Service, please do not use our Service.
+                By accessing and using Bleameis ("the Service"), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to these Terms of Service, please do not use our Service.
               </p>
               <p className="leading-relaxed">
                 We reserve the right to modify these terms at any time. Your continued use of the Service after any such modifications constitutes your acceptance of the new Terms of Service.
@@ -28,7 +28,7 @@ export default function TermsPage() {
                 2. Description of Service
               </h2>
               <p className="mb-4 leading-relaxed">
-                TikTok Style Image Generator is a web-based application that allows users to create custom images with text overlays, backgrounds, and styling options. The Service enables users to generate images in various formats and dimensions, with the option to download or share them through third-party platforms.
+                Bleameis is a web-based application that allows users to create custom images with text overlays, backgrounds, and styling options. The Service enables users to generate images in various formats and dimensions, with the option to download or share them through third-party platforms.
               </p>
               <p className="leading-relaxed">
                 We reserve the right to modify, suspend, or discontinue any aspect of the Service at any time, with or without notice.

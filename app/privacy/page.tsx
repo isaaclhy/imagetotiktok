@@ -16,7 +16,7 @@ export default function PrivacyPage() {
                 1. Introduction
               </h2>
               <p className="mb-4 leading-relaxed">
-                Welcome to TikTok Style Image Generator ("we," "our," or "us"). We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our service.
+                Welcome to Bleameis ("we," "our," or "us"). We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our service.
               </p>
               <p className="leading-relaxed">
                 Please read this Privacy Policy carefully. If you do not agree with the terms of this Privacy Policy, please do not access or use our service.
