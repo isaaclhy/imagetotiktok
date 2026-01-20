@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
+import JSZip from 'jszip';
 
 interface CanvasData {
   id: string;
@@ -15,7 +16,8 @@ export default function Home() {
   const [canvases, setCanvases] = useState<CanvasData[]>([
     { id: '1', text: '', backgroundColor: '#cfa9f5', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' },
     { id: '2', text: '', backgroundColor: '#cfa9f5', textColor: '#876e9f', textSize: '200', imageSize: '1080x1920' },
-    { id: '3', text: '', backgroundColor: '#cfa9f5', textColor: '#876e9f', textSize: '200', imageSize: '1080x1920' }
+    { id: '3', text: '', backgroundColor: '#cfa9f5', textColor: '#876e9f', textSize: '200', imageSize: '1080x1920' },
+    { id: 'end', text: '', backgroundColor: '#cfa9f5', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' }
   ]);
   const [currentCanvasId, setCurrentCanvasId] = useState<string>('1');
   const [text, setText] = useState('');
@@ -40,6 +42,8 @@ export default function Home() {
 
   // Use ref to track if we're updating from user input to prevent infinite loops
   const isUpdatingFromUserInput = useRef(false);
+  // Use ref to track if we're syncing from canvas to state (when switching cards)
+  const isSyncingFromCanvas = useRef(false);
 
   // Get current canvas
   const currentCanvas = canvases.find(c => c.id === currentCanvasId) || canvases[0];
@@ -72,6 +76,9 @@ export default function Home() {
     const canvas = canvases.find(c => c.id === currentCanvasId) || canvases[0];
     if (!canvas) return;
     
+    // Set flag to indicate we're syncing from canvas to state
+    isSyncingFromCanvas.current = true;
+    
     // Only update if values actually changed to prevent infinite loops
     if (canvas.backgroundColor !== backgroundColor) {
       setBackgroundColor(canvas.backgroundColor);
@@ -87,6 +94,12 @@ export default function Home() {
     if (canvas.imageSize !== imageSize) {
       setImageSize(canvas.imageSize);
     }
+    
+    // Reset flag after state updates are scheduled
+    // Use setTimeout to ensure this runs after state updates
+    setTimeout(() => {
+      isSyncingFromCanvas.current = false;
+    }, 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentCanvasId, canvases]);
 
@@ -107,6 +120,11 @@ export default function Home() {
 
   // Save other inputs to current canvas when they change
   useEffect(() => {
+    // Skip if we're currently syncing from canvas to state (when switching cards)
+    if (isSyncingFromCanvas.current) {
+      return;
+    }
+    
     setCanvases(prev => {
       const currentCanvasInPrev = prev.find(c => c.id === currentCanvasId);
       if (!currentCanvasInPrev) return prev;
@@ -174,7 +192,15 @@ export default function Home() {
       textSize: textSize || '200',
       imageSize: imageSize || '1080x1920'
     };
-    setCanvases([...canvases, newCanvas]);
+    // Insert new canvas before the ending card if it exists
+    const endingCardIndex = canvases.findIndex(c => c.id === 'end');
+    if (endingCardIndex >= 0) {
+      const newCanvases = [...canvases];
+      newCanvases.splice(endingCardIndex, 0, newCanvas);
+      setCanvases(newCanvases);
+    } else {
+      setCanvases([...canvases, newCanvas]);
+    }
     setCurrentCanvasId(newId);
   };
 
@@ -184,8 +210,8 @@ export default function Home() {
 
   const handleDeleteCanvas = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    // Don't delete card 1, card 2, or if it would leave less than 3 cards total
-    if (id === '1' || id === '2' || canvases.length <= 3) return;
+    // Don't delete card 1, card 2, ending card, or if it would leave less than 3 cards total
+    if (id === '1' || id === '2' || id === 'end' || canvases.length <= 3) return;
     
     const newCanvases = canvases.filter(c => c.id !== id);
     setCanvases(newCanvases);
@@ -195,14 +221,14 @@ export default function Home() {
     }
   };
 
-  const generateCardImage = (canvasData: CanvasData, index: number): Promise<void> => {
-    return new Promise((resolve) => {
+  const generateCardImage = (canvasData: CanvasData, index: number): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
       // Create canvas
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       
       if (!ctx) {
-        resolve();
+        reject(new Error('Could not get canvas context'));
         return;
       }
 
@@ -233,9 +259,9 @@ export default function Home() {
       const cardX = (width - finalCardWidth) / 2;
       const cardY = (height - finalCardHeight) / 2;
 
-      // Draw white card for cards 2+
-      if (canvasData.id !== '1') {
-        const radius = 16;
+      // Draw white card for cards 2+ (but not for ending card, which is like card 1)
+      if (canvasData.id !== '1' && canvasData.id !== 'end') {
+        const radius = 64; // Doubled again from 32 to make corners even more rounded
         ctx.fillStyle = '#FFFFFF';
         ctx.beginPath();
         ctx.moveTo(cardX + radius, cardY);
@@ -252,7 +278,7 @@ export default function Home() {
         
         // Draw border
         ctx.strokeStyle = '#d1d5db';
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 8; // Increased from 4 to make border thicker
         ctx.stroke();
       }
 
@@ -263,8 +289,8 @@ export default function Home() {
           ? card2Texts.filter(t => t.text.trim()).map(t => t.text).join('\n')
           : canvasData.text || '');
       
-      if (canvasData.id === '1') {
-        // Card 1: Text directly on background, centered
+      if (canvasData.id === '1' || canvasData.id === 'end') {
+        // Card 1 and Ending Card: Text directly on background, centered
         ctx.fillStyle = canvasData.textColor || '#FFFFFF';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -285,6 +311,57 @@ export default function Home() {
         const lines = wrapText(ctx, canvasText, maxTextWidth);
         const lineHeight = fontSize * 1.4;
         const totalHeight = lines.length * lineHeight;
+        
+        // If ending card, draw sharing icon above text
+        let iconSize = 0;
+        let iconY = 0;
+        if (canvasData.id === 'end') {
+          iconSize = fontSize * 1.5;
+          const textStartY = (height - totalHeight) / 2 + lineHeight / 2;
+          iconY = textStartY - iconSize - fontSize * 0.5; // Position icon above text with gap
+          
+          // Draw sharing icon (network/share icon with three circles and connecting lines)
+          ctx.save();
+          ctx.strokeStyle = canvasData.textColor || '#FFFFFF';
+          ctx.fillStyle = canvasData.textColor || '#FFFFFF';
+          ctx.lineWidth = fontSize * 0.1;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          
+          const iconX = width / 2;
+          const circleRadius = iconSize * 0.12;
+          const spacing = iconSize * 0.4;
+          
+          // Calculate positions for three circles in a triangle/network pattern
+          const topCircleX = iconX;
+          const topCircleY = iconY - spacing * 0.6;
+          const leftCircleX = iconX - spacing;
+          const leftCircleY = iconY + spacing * 0.4;
+          const rightCircleX = iconX + spacing;
+          const rightCircleY = iconY + spacing * 0.4;
+          
+          // Draw connecting lines
+          ctx.beginPath();
+          ctx.moveTo(topCircleX, topCircleY);
+          ctx.lineTo(leftCircleX, leftCircleY);
+          ctx.moveTo(topCircleX, topCircleY);
+          ctx.lineTo(rightCircleX, rightCircleY);
+          ctx.stroke();
+          
+          // Draw three circles
+          ctx.beginPath();
+          ctx.arc(topCircleX, topCircleY, circleRadius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(leftCircleX, leftCircleY, circleRadius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(rightCircleX, rightCircleY, circleRadius, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.restore();
+        }
+        
         const startY = (height - totalHeight) / 2 + lineHeight / 2;
 
         lines.forEach((line, idx) => {
@@ -292,13 +369,17 @@ export default function Home() {
         });
       } else if (canvasData.id === '2') {
         // Card 2: Instructions with numbered items
-        // Calculate padding: 1rem = 16px, scale with canvas size
-        // For 1080px canvas, 1rem = 16px, so scale factor = width / 1080
-        const remSize = 16 * (width / 1080);
-        const padding = remSize; // 1rem
+        // Calculate padding: Scale 16px (1rem) proportionally with canvas width
+        // For 1080px canvas width, use 16px as base
+        const baseRemSize = 16; // 1rem = 16px at 1080px canvas
+        const remSize = baseRemSize * (width / 1080); // Scale with canvas width
+        const padding = remSize * 4; // 1rem padding
         const paddingBottom = remSize * 1.25; // 1.25rem
-        const textStartY = cardY + finalCardHeight * 0.35;
+        const textStartY = cardY + finalCardHeight * 0.25; // Start higher (25% instead of 35%)
         const textAreaWidth = finalCardWidth - (padding * 2);
+        
+        // Debug: Log padding values to verify
+        console.log('Card 2 - Canvas:', width, 'x', height, 'Card:', finalCardWidth, 'x', finalCardHeight, 'Padding:', padding);
         
         // Scale font size based on canvas width and card size
         // Cards 2+ are inside a white card that's 75% of canvas width
@@ -314,25 +395,31 @@ export default function Home() {
         ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
         const instructionsText = 'Instructions';
         const textMetrics = ctx.measureText(instructionsText);
-        // Position text: top padding + font ascent to match preview (top: 1rem)
+        // Position text: add more top spacing to match preview (preview has paddingTop + absolute top: 1rem)
         // Using 'top' baseline means Y position is at the top of the text
         ctx.textBaseline = 'top';
-        const instructionsY = cardY + padding; // Match paddingTop: '1rem'
+        // Use padding (1rem) plus a bit more for better visual spacing from top
+        const instructionsY = cardY + padding + (remSize * 2); // 1rem + 0.5rem for better spacing
         const instructionsX = cardX + finalCardWidth / 2;
+        // Constrain text width to respect horizontal padding (like preview: calc(100% - 2rem))
+        const maxInstructionsWidth = finalCardWidth - (padding * 2);
         ctx.fillText(instructionsText, instructionsX, instructionsY);
         
-        // Draw underline - position relative to text
+        // Draw underline - position relative to text, constrained by horizontal padding
         ctx.strokeStyle = canvasData.textColor || '#876e9f';
-        // Scale line width with canvas size (2px for 1080px canvas)
-        const lineWidth = 2 * (width / 1080);
+        // Scale line width with canvas size (4px for 1080px canvas, increased from 2px for thicker underline)
+        const lineWidth = 4 * (width / 1080);
         ctx.lineWidth = lineWidth;
         // Underline should be below the text with some offset (textUnderlineOffset: 0.25rem)
         // Since we're using 'top' baseline, add font height for underline position
         const underlineOffset = remSize * 0.25; // 0.25rem offset
         const underlineY = instructionsY + fontSize + underlineOffset;
+        // Constrain underline width to respect horizontal padding
+        const underlineLeft = Math.max(cardX + padding, instructionsX - textMetrics.width / 2);
+        const underlineRight = Math.min(cardX + finalCardWidth - padding, instructionsX + textMetrics.width / 2);
         ctx.beginPath();
-        ctx.moveTo(instructionsX - textMetrics.width / 2, underlineY);
-        ctx.lineTo(instructionsX + textMetrics.width / 2, underlineY);
+        ctx.moveTo(underlineLeft, underlineY);
+        ctx.lineTo(underlineRight, underlineY);
         ctx.stroke();
         
         // Draw instruction lines
@@ -341,17 +428,46 @@ export default function Home() {
         ctx.textBaseline = 'top'; // Use top baseline for consistent positioning
         ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
         
+        const circleRadius = fontSize * 0.4;
+        const circleX = cardX + padding;
+        const textX = circleX + circleRadius + fontSize * 0.5;
+        const rightBoundary = cardX + finalCardWidth - padding;
+        const maxTextWidth = Math.max(0, rightBoundary - textX);
+        const lineHeight = fontSize * 1.4;
+        const itemSpacing = fontSize * 0.4; // Space between items (reduced from 0.5)
+        
+        // First pass: calculate all Y positions based on actual text heights
+        let currentY = textStartY;
+        const itemPositions: Array<{ y: number; textLines: string[] }> = [];
+        
         instructionTexts.forEach((textItem, idx) => {
-          // textStartY is positioned at 35% from top of card
-          const y = textStartY + (idx * fontSize * 1.6);
-          const circleRadius = fontSize * 0.4;
-          const circleX = cardX + padding;
+          const textLines = wrapText(ctx, textItem.text, maxTextWidth);
+          itemPositions.push({ y: currentY, textLines });
+          
+          // Calculate actual height of this item based on number of lines
+          // For single line: use lineHeight. For multiple lines: use lineHeight * line count
+          const itemHeight = textLines.length * lineHeight;
+          
+          // Move Y down by the height of this item
+          currentY += itemHeight;
+          
+          // Add spacing after this item (but not after the last one)
+          if (idx < instructionTexts.length - 1) {
+            currentY += itemSpacing;
+          }
+        });
+        
+        // Second pass: draw all items at calculated positions
+        itemPositions.forEach((itemPos, idx) => {
+          const y = itemPos.y;
+          const textLines = itemPos.textLines;
+          
           // Circle Y should align with text - since we're using 'top' baseline,
           // add half the font size to center the circle vertically with the text
           const circleY = y + (fontSize * 0.5); // Center circle with text
           
           // Draw circle
-          ctx.fillStyle = textItem.color || '#876e9f';
+          ctx.fillStyle = instructionTexts[idx].color || '#876e9f';
           ctx.beginPath();
           ctx.arc(circleX, circleY, circleRadius, 0, Math.PI * 2);
           ctx.fill();
@@ -364,56 +480,55 @@ export default function Home() {
           ctx.fillText(String(idx + 1), circleX, circleY);
           
           // Draw text
-          ctx.fillStyle = textItem.color || '#876e9f';
+          ctx.fillStyle = instructionTexts[idx].color || '#876e9f';
           ctx.textAlign = 'left';
           ctx.textBaseline = 'top'; // Use top baseline for consistent positioning
           ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
-          const textX = circleX + circleRadius + fontSize * 0.5;
-          const textLines = wrapText(ctx, textItem.text, textAreaWidth - (circleRadius * 2 + fontSize * 0.5));
+          
           textLines.forEach((line, lineIdx) => {
-            ctx.fillText(line, textX, y + (lineIdx * fontSize * 1.4));
+            ctx.fillText(line, textX, y + (lineIdx * lineHeight));
           });
         });
       } else {
         // Content cards: Text inside white card, left-aligned, starting above middle
-        // Calculate padding: 0.5rem = 8px, scale with canvas size
-        const remSize = 16 * (width / 1080);
-        const padding = remSize * 0.5; // 0.5rem
+        // Calculate padding: Use same padding as instructions card (1rem = 16px * 4 for visibility)
+        // For 1080px canvas width, use 16px as base
+        const baseRemSize = 16; // Base for rem calculations
+        const remSize = baseRemSize * (width / 1080); // Scale with canvas width
+        const padding = remSize * 4; // Same padding as instructions card
         const textStartY = cardY + finalCardHeight * 0.35;
-        const textAreaWidth = finalCardWidth - (padding * 2);
+        // Calculate max text width: from left padding to right edge minus padding
+        const textX = cardX + padding;
+        const maxTextWidth = (cardX + finalCardWidth - padding) - textX;
+        
+        // Debug: Log padding values to verify
+        console.log('Content Card - Canvas:', width, 'x', height, 'Card:', finalCardWidth, 'x', finalCardHeight, 'Padding:', padding, 'TextX:', textX);
         
         // Scale font size based on canvas width and card size (same as card 2)
         // Cards 3+ are inside a white card that's 75% of canvas width
         const canvasWidthScale = width / 1080;
         const baseFontSize = parseInt(canvasData.textSize || '200') || 200;
-        // Scale font for card size (75% of canvas) and canvas dimensions
-        const fontSize = baseFontSize * canvasWidthScale * 0.75;
+        // Scale font for card size (75% of canvas) and canvas dimensions, then make 3x smaller
+        const fontSize = (baseFontSize * canvasWidthScale * 0.75) / 3;
         
         ctx.fillStyle = canvasData.textColor || '#876e9f';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
         ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
         
-        const lines = wrapText(ctx, canvasText, textAreaWidth);
+        const lines = wrapText(ctx, canvasText, maxTextWidth);
         lines.forEach((line, idx) => {
-          ctx.fillText(line, cardX + padding, textStartY + (idx * fontSize * 1.4));
+          ctx.fillText(line, textX, textStartY + (idx * fontSize * 1.4));
         });
       }
 
-      // Convert to blob and download
+      // Convert to blob and return it
       canvas.toBlob((blob) => {
         if (blob) {
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          const cardNumber = index + 1;
-          a.download = `tiktok-image-card-${cardNumber}.png`;
-          document.body.appendChild(a);
-          a.click();
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(a);
+          resolve(blob);
+        } else {
+          reject(new Error('Failed to create blob'));
         }
-        resolve();
       }, 'image/png');
     });
   };
@@ -421,17 +536,44 @@ export default function Home() {
   const handleGenerate = async () => {
     setIsGenerating(true);
     
-    // Generate and download all cards sequentially
-    for (let i = 0; i < canvases.length; i++) {
-      const canvasData = canvases[i];
-      await generateCardImage(canvasData, i);
-      // Small delay between downloads to avoid browser blocking multiple downloads
-      if (i < canvases.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 300));
+    try {
+      // Generate all card images and collect blobs
+      const imageBlobs: Array<{ blob: Blob; filename: string }> = [];
+      
+      for (let i = 0; i < canvases.length; i++) {
+        const canvasData = canvases[i];
+        const blob = await generateCardImage(canvasData, i);
+        const cardNumber = i + 1;
+        imageBlobs.push({
+          blob,
+          filename: `tiktok-image-card-${cardNumber}.png`
+        });
       }
+      
+      // Create zip file
+      const zip = new JSZip();
+      
+      // Add all images to zip
+      imageBlobs.forEach(({ blob, filename }) => {
+        zip.file(filename, blob);
+      });
+      
+      // Generate zip file and download
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'bleameis-cards.zip';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error generating images:', error);
+      alert('Failed to generate images. Please try again.');
+    } finally {
+      setIsGenerating(false);
     }
-    
-    setIsGenerating(false);
   };
 
   const handlePostToTikTok = async () => {
@@ -493,9 +635,9 @@ export default function Home() {
       <div className="max-w-7xl mx-auto w-full flex flex-col h-screen max-h-screen">
         <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-4 h-full max-h-screen p-3 overflow-hidden">
           {/* Left Side - Inputs */}
-          <div className="flex flex-col gap-4 p-4 bg-white dark:bg-zinc-900 rounded-2xl shadow-lg h-full max-h-screen overflow-y-auto">
-            {/* Header */}
-            <div className="flex-shrink-0 flex items-start justify-between gap-4">
+          <div className="flex flex-col h-full max-h-screen bg-white dark:bg-zinc-900 rounded-2xl shadow-lg overflow-hidden">
+            {/* Header - Fixed at top */}
+            <div className="flex-shrink-0 flex items-start justify-between gap-4 p-4 pb-3">
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-black dark:text-zinc-50 mb-1">
                   Bleamies
@@ -589,6 +731,9 @@ export default function Home() {
               )}
             </div>
 
+            {/* Scrollable Content Area */}
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 hide-scrollbar">
+              <div className="flex flex-col gap-4 py-3">
             {/* Color Picker */}
             <div className="flex-shrink-0">
               <label
@@ -729,7 +874,7 @@ export default function Home() {
               </label>
               <div className="space-y-3">
                 {canvases
-                  .filter(c => c.id !== '1' && c.id !== '2')
+                  .filter(c => c.id !== '1' && c.id !== '2' && c.id !== 'end')
                   .map((canvas, index) => {
                     // Calculate card number (starting from 3, since card 1 is title and card 2 is separate)
                     const cardNumber = index + 3;
@@ -763,7 +908,7 @@ export default function Home() {
                           className="w-16 h-10 rounded-lg border border-zinc-300 dark:border-zinc-700 cursor-pointer flex-shrink-0"
                           title={`Card ${cardNumber} text color`}
                         />
-                        {canvases.length > 3 && (
+                        {canvases.filter(c => c.id !== '1' && c.id !== '2' && c.id !== 'end').length > 1 && canvas.id !== 'end' && (
                           <button
                             onClick={(e) => handleDeleteCanvas(canvas.id, e)}
                             className="w-10 h-10 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-red-600 dark:text-red-400 flex items-center justify-center transition-colors flex-shrink-0"
@@ -783,6 +928,45 @@ export default function Home() {
                 </button>
               </div>
             </div>
+
+            {/* Ending Card Input */}
+            {canvases.find(c => c.id === 'end') && (
+              <div className="flex-shrink-0">
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                  Ending Card <span className="text-xs text-zinc-500 dark:text-zinc-400">(Last card)</span>
+                </label>
+                <div className="flex gap-3 items-center">
+                  <input
+                    type="text"
+                    value={canvases.find(c => c.id === 'end')?.text || ''}
+                    onChange={(e) => {
+                      const newText = e.target.value;
+                      setCanvases(prev => prev.map(c => 
+                        c.id === 'end' 
+                          ? { ...c, text: newText }
+                          : c
+                      ));
+                    }}
+                    placeholder="Enter ending card text..."
+                    className="flex-1 px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent text-sm"
+                  />
+                  <input
+                    type="color"
+                    value={canvases.find(c => c.id === 'end')?.textColor || '#FFFFFF'}
+                    onChange={(e) => {
+                      const newColor = e.target.value;
+                      setCanvases(prev => prev.map(c => 
+                        c.id === 'end' 
+                          ? { ...c, textColor: newColor }
+                          : c
+                      ));
+                    }}
+                    className="w-16 h-10 rounded-lg border border-zinc-300 dark:border-zinc-700 cursor-pointer flex-shrink-0"
+                    title="Ending card text color"
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Text Size */}
             <div className="flex-shrink-0">
@@ -827,9 +1011,11 @@ export default function Home() {
                 Format: width x height (e.g., 1080x1920)
               </p>
             </div>
+              </div>
+            </div>
 
-            {/* Download and Post Buttons */}
-            <div className="mt-auto flex-shrink-0 flex gap-3">
+            {/* Download and Post Buttons - Fixed at bottom */}
+            <div className="flex-shrink-0 flex gap-3 p-4 pt-3 border-t border-zinc-200 dark:border-zinc-700">
               <button
                 onClick={handleGenerate}
                 disabled={isGenerating || !currentCanvas.text.trim()}
@@ -937,6 +1123,7 @@ export default function Home() {
                 
                 const aspectRatio = width / height;
                 const isFirstCanvas = currentCanvasId === '1';
+                const isEndingCard = currentCanvasId === 'end';
                 
                 return (
                   <div
@@ -952,26 +1139,51 @@ export default function Home() {
                       willChange: 'contents'
                     }}
                   >
-                    {isFirstCanvas ? (
-                      // First canvas - no white card, text directly on background
-                      <p
-                        className="font-bold text-center break-words px-2 overflow-hidden"
-                        style={{
-                          color: firstCard.textColor,
-                          width: '100%',
-                          maxWidth: '95%',
-                          wordWrap: 'break-word',
-                          overflowWrap: 'break-word',
-                          fontSize: `${previewFontSize}px`,
-                          lineHeight: '1.4',
-                          minHeight: '1em',
-                          maxHeight: '100%',
-                          contain: 'layout style paint',
-                          willChange: 'auto'
-                        }}
-                      >
-                        {currentCanvas.text || 'Your text will appear here'}
-                      </p>
+                    {(isFirstCanvas || isEndingCard) ? (
+                      // First canvas and ending card - no white card, text directly on background
+                      <div className={isEndingCard ? "flex flex-col items-center justify-center" : ""} style={isEndingCard ? { width: '100%', height: '100%' } : {}}>
+                        {isEndingCard && (
+                          <svg
+                            className="flex-shrink-0"
+                            style={{
+                              width: `${previewFontSize * 1.5}px`,
+                              height: `${previewFontSize * 1.5}px`,
+                              color: currentCanvas.textColor,
+                              marginBottom: `${previewFontSize * 0.8}px`,
+                            }}
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle cx="18" cy="5" r="3"></circle>
+                            <circle cx="6" cy="12" r="3"></circle>
+                            <circle cx="18" cy="19" r="3"></circle>
+                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                          </svg>
+                        )}
+                        <p
+                          className="font-bold text-center break-words px-2 overflow-hidden"
+                          style={{
+                            color: isFirstCanvas ? firstCard.textColor : currentCanvas.textColor,
+                            width: '100%',
+                            maxWidth: '95%',
+                            wordWrap: 'break-word',
+                            overflowWrap: 'break-word',
+                            fontSize: `${previewFontSize}px`,
+                            lineHeight: '1.4',
+                            minHeight: '1em',
+                            maxHeight: '100%',
+                            contain: 'layout style paint',
+                            willChange: 'auto'
+                          }}
+                        >
+                          {currentCanvas.text || 'Your text will appear here'}
+                        </p>
+                      </div>
                     ) : (
                       // Subsequent canvases - white card in the middle
                       <div 
@@ -1085,7 +1297,7 @@ export default function Home() {
                     )}
                   </div>
                 );
-              }, [backgroundColor, imageSize, currentCanvas.textSize, textSize, currentCanvasId, firstCard.textColor, currentCanvas.textColor, currentCanvas.text])}
+              }, [backgroundColor, imageSize, currentCanvas.textSize, textSize, currentCanvasId, firstCard.textColor, currentCanvas.textColor, currentCanvas.text, card2Texts])}
             </div>
             
             {/* Carousel */}
@@ -1101,8 +1313,8 @@ export default function Home() {
                   
                   return (
                     <div key={canvas.id} className="contents">
-                      {/* Render card 1 */}
-                      {canvas.id === '1' && (
+                      {/* Render card 1 and ending card (no white card, just text) */}
+                      {(canvas.id === '1' || canvas.id === 'end') && (
                         <div
                           onClick={(e) => {
                             e.stopPropagation();
@@ -1115,8 +1327,30 @@ export default function Home() {
                           }`}
                           style={{ backgroundColor: canvas.backgroundColor }}
                         >
-                          {/* First canvas - no white card, text directly on background */}
-                          <div className="absolute inset-0 flex items-center justify-center p-1">
+                          {/* First and ending canvas - no white card, text directly on background */}
+                          <div className={`absolute inset-0 flex items-center justify-center p-1 ${canvas.id === 'end' ? 'flex-col gap-1' : ''}`}>
+                            {canvas.id === 'end' && (
+                              <svg
+                                className="flex-shrink-0"
+                                style={{
+                                  width: '12px',
+                                  height: '12px',
+                                  color: canvas.textColor,
+                                }}
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                viewBox="0 0 24 24"
+                              >
+                                <circle cx="18" cy="5" r="3"></circle>
+                                <circle cx="6" cy="12" r="3"></circle>
+                                <circle cx="18" cy="19" r="3"></circle>
+                                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                              </svg>
+                            )}
                             <p
                               className="font-bold text-center text-xs leading-tight"
                               style={{
@@ -1126,20 +1360,11 @@ export default function Home() {
                               {canvas.text || '•'}
                             </p>
                           </div>
-                          {canvases.length > 3 && canvas.id !== '1' && canvas.id !== '2' && (
-                            <button
-                              onClick={(e) => handleDeleteCanvas(canvas.id, e)}
-                              className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold transition-colors z-10"
-                              title="Delete canvas"
-                            >
-                              ×
-                            </button>
-                          )}
                         </div>
                       )}
                       
-                      {/* Render other cards (card 2+) */}
-                      {canvas.id !== '1' && (
+                      {/* Render other cards (card 2+ but not ending card) */}
+                      {canvas.id !== '1' && canvas.id !== 'end' && (
                         <div
                           onClick={(e) => {
                             e.stopPropagation();
@@ -1168,7 +1393,7 @@ export default function Home() {
                             >
                             </div>
                           </div>
-                          {canvases.length > 3 && canvas.id !== '1' && canvas.id !== '2' && (
+                          {canvases.length > 3 && canvas.id !== '1' && canvas.id !== '2' && canvas.id !== 'end' && (
                             <button
                               onClick={(e) => handleDeleteCanvas(canvas.id, e)}
                               className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold transition-colors z-10"
