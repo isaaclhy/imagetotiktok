@@ -39,6 +39,7 @@ export default function Home() {
   const [card2Texts, setCard2Texts] = useState<Array<{ text: string; color: string }>>([
     { text: '', color: '#876e9f' }
   ]);
+  const [levelName, setLevelName] = useState<string>('');
 
   // Use ref to track if we're updating from user input to prevent infinite loops
   const isUpdatingFromUserInput = useRef(false);
@@ -221,7 +222,7 @@ export default function Home() {
     }
   };
 
-  const generateCardImage = (canvasData: CanvasData, index: number): Promise<Blob> => {
+  const generateCardImage = (canvasData: CanvasData, index: number, levelNameForBadge?: string): Promise<Blob> => {
     return new Promise((resolve, reject) => {
       // Create canvas
       const canvas = document.createElement('canvas');
@@ -278,7 +279,7 @@ export default function Home() {
         
         // Draw border
         ctx.strokeStyle = '#d1d5db';
-        ctx.lineWidth = 8; // Increased from 4 to make border thicker
+        ctx.lineWidth = 16; // Doubled from 8 to make border thicker
         ctx.stroke();
       }
 
@@ -311,6 +312,50 @@ export default function Home() {
         const lines = wrapText(ctx, canvasText, maxTextWidth);
         const lineHeight = fontSize * 1.4;
         const totalHeight = lines.length * lineHeight;
+        
+        // If card 1, draw badge above text
+        let badgeY = 0;
+        let badgeHeight = 0;
+        if (canvasData.id === '1' && levelNameForBadge) {
+          const badgeText = `${levelNameForBadge} Edition`;
+          const badgeFontSize = fontSize * 0.4;
+          ctx.font = `bold ${badgeFontSize}px system-ui, sans-serif`;
+          const badgeMetrics = ctx.measureText(badgeText);
+          const badgePadding = badgeFontSize * 0.8;
+          const badgeWidth = badgeMetrics.width + (badgePadding * 2);
+          badgeHeight = badgeFontSize * 1.8;
+          badgeY = (height - totalHeight) / 2 - badgeHeight - fontSize * 0.8;
+          
+          // Draw white background with border
+          const badgeX = (width - badgeWidth) / 2;
+          ctx.fillStyle = '#FFFFFF';
+          ctx.strokeStyle = canvasData.backgroundColor || '#cfa9f5';
+          ctx.lineWidth = 2 * (width / 1080);
+          
+          // Draw rounded rectangle
+          const badgeRadius = badgeFontSize * 0.3;
+          ctx.beginPath();
+          ctx.moveTo(badgeX + badgeRadius, badgeY);
+          ctx.lineTo(badgeX + badgeWidth - badgeRadius, badgeY);
+          ctx.quadraticCurveTo(badgeX + badgeWidth, badgeY, badgeX + badgeWidth, badgeY + badgeRadius);
+          ctx.lineTo(badgeX + badgeWidth, badgeY + badgeHeight - badgeRadius);
+          ctx.quadraticCurveTo(badgeX + badgeWidth, badgeY + badgeHeight, badgeX + badgeWidth - badgeRadius, badgeY + badgeHeight);
+          ctx.lineTo(badgeX + badgeRadius, badgeY + badgeHeight);
+          ctx.quadraticCurveTo(badgeX, badgeY + badgeHeight, badgeX, badgeY + badgeHeight - badgeRadius);
+          ctx.lineTo(badgeX, badgeY + badgeRadius);
+          ctx.quadraticCurveTo(badgeX, badgeY, badgeX + badgeRadius, badgeY);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          
+          // Draw badge text
+          ctx.fillStyle = canvasData.backgroundColor || '#cfa9f5';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(badgeText, width / 2, badgeY + badgeHeight / 2);
+          
+          // Reset font for main text
+          ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
+        }
         
         // If ending card, draw sharing icon above text
         let iconSize = 0;
@@ -362,7 +407,16 @@ export default function Home() {
           ctx.restore();
         }
         
-        const startY = (height - totalHeight) / 2 + lineHeight / 2;
+        // Adjust startY if badge is present (card 1 with badge)
+        // When badge exists, position text below it; otherwise center it
+        let startY = (height - totalHeight) / 2 + lineHeight / 2;
+        if (canvasData.id === '1' && levelNameForBadge && badgeY > 0 && badgeHeight > 0) {
+          // Position text below badge with spacing
+          const badgeBottom = badgeY + badgeHeight;
+          const availableSpace = height - badgeBottom;
+          // Center text in the remaining space below the badge
+          startY = badgeBottom + fontSize * 0.8 + (availableSpace - totalHeight) / 2 + lineHeight / 2;
+        }
 
         lines.forEach((line, idx) => {
           ctx.fillText(line, width / 2, startY + idx * lineHeight);
@@ -434,7 +488,7 @@ export default function Home() {
         const rightBoundary = cardX + finalCardWidth - padding;
         const maxTextWidth = Math.max(0, rightBoundary - textX);
         const lineHeight = fontSize * 1.4;
-        const itemSpacing = fontSize * 0.4; // Space between items (reduced from 0.5)
+        const itemSpacing = fontSize * 0.7; // Space between items (increased from 0.4 for more spacing)
         
         // First pass: calculate all Y positions based on actual text heights
         let currentY = textStartY;
@@ -533,6 +587,82 @@ export default function Home() {
     });
   };
 
+  const handleAutoGenerate = async () => {
+    try {
+      // Fetch random level data from API
+      const response = await fetch('/api/levels/random');
+      if (!response.ok) {
+        throw new Error('Failed to fetch random level');
+      }
+      
+      const result = await response.json();
+      if (!result.success || !result.data) {
+        throw new Error('Invalid response from API');
+      }
+      
+      const { levelName, categoryName, instructions, questions } = result.data;
+      
+      // Store the level name for the badge
+      setLevelName(levelName || '');
+      
+      // Update the text state for card 1 (title)
+      setText(categoryName);
+      
+      // Update card 2 with instructions (convert instructions array to card2Texts format)
+      const instructionsForCard2 = instructions && instructions.length > 0
+        ? instructions.map((inst: string) => ({ text: inst, color: '#876e9f' }))
+        : [{ text: '', color: '#876e9f' }];
+      
+      setCard2Texts(instructionsForCard2);
+      
+      // Create content cards for each question (one question per card)
+      const questionCards: CanvasData[] = questions.map((question: string) => ({
+        id: String(Date.now() + Math.random()),
+        text: question,
+        backgroundColor: backgroundColor || '#cfa9f5',
+        textColor: '#876e9f',
+        textSize: textSize || '200',
+        imageSize: imageSize || '1080x1920'
+      }));
+      
+      // Get existing cards and ending card
+      const existingCard1 = canvases.find(c => c.id === '1') || canvases[0];
+      const existingCard2 = canvases.find(c => c.id === '2') || canvases[1];
+      const endingCard = canvases.find(c => c.id === 'end');
+      
+      // Set ending card text based on level name
+      let endingCardText = '';
+      if (levelName && levelName.toLowerCase() === 'friends') {
+        endingCardText = 'Share it with your friends and see what they say';
+      } else if (levelName && levelName.toLowerCase() === 'couples') {
+        endingCardText = 'Share it with your boo and see what they say';
+      }
+      
+      // Rebuild canvases: card 1 with categoryName, card 2 with instructions, question cards, ending card
+      const newCanvases: CanvasData[] = [
+        { ...existingCard1, text: categoryName },
+        { ...existingCard2, text: instructionsForCard2.map(t => t.text).join('\n') },
+        ...questionCards,
+        endingCard || { id: 'end', text: endingCardText, backgroundColor: '#cfa9f5', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' }
+      ];
+      
+      // Set ending card text
+      const endingCardIndex = newCanvases.findIndex(c => c.id === 'end');
+      if (endingCardIndex >= 0) {
+        newCanvases[endingCardIndex].text = endingCardText;
+      }
+      
+      setCanvases(newCanvases);
+      
+      // Switch to card 1 to show the generated category name
+      setCurrentCanvasId('1');
+      
+    } catch (error) {
+      console.error('Error auto-generating cards:', error);
+      alert('Failed to generate cards. Please try again.');
+    }
+  };
+
   const handleGenerate = async () => {
     setIsGenerating(true);
     
@@ -542,7 +672,7 @@ export default function Home() {
       
       for (let i = 0; i < canvases.length; i++) {
         const canvasData = canvases[i];
-        const blob = await generateCardImage(canvasData, i);
+        const blob = await generateCardImage(canvasData, i, canvasData.id === '1' ? levelName : undefined);
         const cardNumber = i + 1;
         imageBlobs.push({
           blob,
@@ -645,11 +775,20 @@ export default function Home() {
 
               </div>
               {userInfo ? (
-                <div className="flex-shrink-0 relative">
+                <div className="flex-shrink-0 flex items-center gap-2">
                   <button
-                    onClick={() => setShowUserDropdown(!showUserDropdown)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+                    className="w-10 h-10 rounded-lg bg-black hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white transition-colors flex items-center justify-center"
+                    title="Generate"
                   >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowUserDropdown(!showUserDropdown)}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+                    >
                     {userInfo.avatar_url && (
                       <img
                         src={userInfo.avatar_url}
@@ -716,18 +855,30 @@ export default function Home() {
                       </div>
                     </>
                   )}
+                  </div>
                 </div>
               ) : (
-                <button
-                  onClick={() => window.location.href = '/api/tiktok/auth'}
-                  className="flex-shrink-0 h-10 px-4 rounded-lg bg-black hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2"
-                  title="Connect TikTok"
-                >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
-                  </svg>
-                  <span>TikTok</span>
-                </button>
+                <div className="flex-shrink-0 flex items-center gap-2">
+                  <button
+                    onClick={() => window.location.href = '/api/tiktok/auth'}
+                    className="h-10 px-4 rounded-lg bg-black hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+                    title="Connect TikTok"
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+                    </svg>
+                    <span>TikTok</span>
+                  </button>
+                  <button
+                    onClick={handleAutoGenerate}
+                    className="w-10 h-10 rounded-lg bg-black hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white transition-colors flex items-center justify-center"
+                    title="Generate"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </button>
+                </div>
               )}
             </div>
 
@@ -1141,7 +1292,19 @@ export default function Home() {
                   >
                     {(isFirstCanvas || isEndingCard) ? (
                       // First canvas and ending card - no white card, text directly on background
-                      <div className={isEndingCard ? "flex flex-col items-center justify-center" : ""} style={isEndingCard ? { width: '100%', height: '100%' } : {}}>
+                      <div className={isEndingCard ? "flex flex-col items-center justify-center" : "flex flex-col items-center justify-center relative w-full h-full"} style={isEndingCard ? { width: '100%', height: '100%' } : { width: '100%', height: '100%' }}>
+                        {isFirstCanvas && levelName && (
+                          <div
+                            className="px-3 py-1 rounded-lg font-semibold text-sm mb-3"
+                            style={{
+                              backgroundColor: '#FFFFFF',
+                              border: `2px solid ${backgroundColor}`,
+                              color: backgroundColor,
+                            }}
+                          >
+                            {levelName} Edition
+                          </div>
+                        )}
                         {isEndingCard && (
                           <svg
                             className="flex-shrink-0"
@@ -1297,7 +1460,7 @@ export default function Home() {
                     )}
                   </div>
                 );
-              }, [backgroundColor, imageSize, currentCanvas.textSize, textSize, currentCanvasId, firstCard.textColor, currentCanvas.textColor, currentCanvas.text, card2Texts])}
+              }, [backgroundColor, imageSize, currentCanvas.textSize, textSize, currentCanvasId, firstCard.textColor, currentCanvas.textColor, currentCanvas.text, card2Texts, levelName])}
             </div>
             
             {/* Carousel */}
@@ -1328,7 +1491,19 @@ export default function Home() {
                           style={{ backgroundColor: canvas.backgroundColor }}
                         >
                           {/* First and ending canvas - no white card, text directly on background */}
-                          <div className={`absolute inset-0 flex items-center justify-center p-1 ${canvas.id === 'end' ? 'flex-col gap-1' : ''}`}>
+                          <div className={`absolute inset-0 flex items-center justify-center p-1 ${canvas.id === 'end' ? 'flex-col gap-1' : 'flex-col gap-1'}`}>
+                            {canvas.id === '1' && levelName && (
+                              <div
+                                className="px-1.5 py-0.5 rounded text-[8px] font-semibold whitespace-nowrap"
+                                style={{
+                                  backgroundColor: '#FFFFFF',
+                                  border: `1px solid ${canvas.backgroundColor}`,
+                                  color: canvas.backgroundColor,
+                                }}
+                              >
+                                {levelName} Edition
+                              </div>
+                            )}
                             {canvas.id === 'end' && (
                               <svg
                                 className="flex-shrink-0"
