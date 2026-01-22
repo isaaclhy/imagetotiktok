@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Step 2: Randomly select a category from the selected level
-    const selectedCategory = getRandomElement(selectedLevel.categories);
+    const selectedCategory = getRandomElement(selectedLevel.categories) as any;
     
     if (!selectedCategory) {
       return NextResponse.json(
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
     // - category.questions.text (if questions are objects)
     let questions: string[] = [];
     
-    if (Array.isArray(selectedCategory.questions)) {
+    if (Array.isArray(selectedCategory?.questions)) {
       questions = selectedCategory.questions.map((q: any) => {
         // If question is an object with a text/question field, extract it
         if (typeof q === 'object' && q !== null) {
@@ -105,9 +105,9 @@ export async function GET(request: NextRequest) {
     const selectedQuestions = getRandomElements(questions, 4);
 
     // Extract category name (could be name, category, or title field)
-    const categoryName = selectedCategory.name || 
-                         selectedCategory.category || 
-                         selectedCategory.title || 
+    const categoryName = selectedCategory?.name || 
+                         selectedCategory?.category || 
+                         selectedCategory?.title || 
                          'Unknown Category';
 
     // Extract level name
@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
     let instructions: string[] = [];
     
     // Check if instructions exist in the category
-    if (selectedCategory.instructions) {
+    if (selectedCategory?.instructions) {
       if (Array.isArray(selectedCategory.instructions)) {
         instructions = selectedCategory.instructions.map((inst: any) => {
           if (typeof inst === 'object' && inst !== null) {
