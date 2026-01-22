@@ -641,7 +641,7 @@ export default function Home() {
       // Rebuild canvases: card 1 with categoryName, card 2 with instructions, question cards, ending card
       const newCanvases: CanvasData[] = [
         { ...existingCard1, text: categoryName },
-        { ...existingCard2, text: instructionsForCard2.map(t => t.text).join('\n') },
+        { ...existingCard2, text: instructionsForCard2.map((t: { text: string; color: string }) => t.text).join('\n') },
         ...questionCards,
         endingCard || { id: 'end', text: endingCardText, backgroundColor: '#cfa9f5', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' }
       ];
