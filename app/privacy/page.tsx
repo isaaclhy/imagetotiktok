@@ -16,10 +16,10 @@ export default function PrivacyPage() {
                 1. Introduction
               </h2>
               <p className="mb-4 leading-relaxed">
-                Welcome to Bleameis ("Bleameis," "we," "our," or "us"). Bleameis is committed to protecting your personal information and your right to privacy. This Privacy Policy explains how Bleameis collects, uses, discloses, and safeguards your information when you use the Bleameis service.
+                Welcome to Bleamies ("Bleamies," "we," "our," or "us"). Bleamies is committed to protecting your personal information and your right to privacy. This Privacy Policy explains how Bleamies collects, uses, discloses, and safeguards your information when you use the Bleamies service.
               </p>
               <p className="leading-relaxed">
-                Please read this Privacy Policy carefully. If you do not agree with the terms of this Privacy Policy, please do not access or use the Bleameis service.
+                Please read this Privacy Policy carefully. If you do not agree with the terms of this Privacy Policy, please do not access or use the Bleamies service.
               </p>
             </section>
 
@@ -31,7 +31,7 @@ export default function PrivacyPage() {
                 2.1 Information You Provide
               </h3>
               <p className="mb-4 leading-relaxed">
-                Bleameis collects information that you voluntarily provide to us when you use the Bleameis service, including:
+                Bleamies collects information that you voluntarily provide to us when you use the Bleamies service, including:
               </p>
               <ul className="list-disc list-inside space-y-2 mb-4 ml-4">
                 <li>Text content and images you create using our service</li>
@@ -44,7 +44,7 @@ export default function PrivacyPage() {
                 2.2 Automatically Collected Information
               </h3>
               <p className="mb-4 leading-relaxed">
-                When you access the Bleameis service, Bleameis may automatically collect certain information, including:
+                When you access the Bleamies service, Bleamies may automatically collect certain information, including:
               </p>
               <ul className="list-disc list-inside space-y-2 mb-4 ml-4">
                 <li>Device information (browser type, operating system)</li>
@@ -59,7 +59,7 @@ export default function PrivacyPage() {
                 3. How We Use Your Information
               </h2>
               <p className="mb-4 leading-relaxed">
-                Bleameis uses the information we collect for various purposes, including:
+                Bleamies uses the information we collect for various purposes, including:
               </p>
               <ul className="list-disc list-inside space-y-2 mb-4 ml-4">
                 <li>To provide, maintain, and improve our service</li>
@@ -77,7 +77,7 @@ export default function PrivacyPage() {
                 4. Information Sharing and Disclosure
               </h2>
               <p className="mb-4 leading-relaxed">
-                Bleameis does not sell, trade, or rent your personal information to third parties. Bleameis may share your information in the following circumstances:
+                Bleamies does not sell, trade, or rent your personal information to third parties. Bleamies may share your information in the following circumstances:
               </p>
               <ul className="list-disc list-inside space-y-2 mb-4 ml-4">
                 <li><strong>Service Providers:</strong> We may share information with third-party service providers who perform services on our behalf, such as hosting, analytics, and customer support.</li>
@@ -92,7 +92,7 @@ export default function PrivacyPage() {
                 5. Third-Party Services
               </h2>
               <p className="mb-4 leading-relaxed">
-                The Bleameis service may integrate with third-party services, including TikTok, for posting content. When you connect these services, they may collect and process your information according to their own privacy policies. Bleameis encourages you to review the privacy policies of any third-party services you use.
+                The Bleamies service may integrate with third-party services, including TikTok, for posting content. When you connect these services, they may collect and process your information according to their own privacy policies. Bleamies encourages you to review the privacy policies of any third-party services you use.
               </p>
             </section>
 
@@ -101,7 +101,7 @@ export default function PrivacyPage() {
                 6. Data Security
               </h2>
               <p className="mb-4 leading-relaxed">
-                Bleameis implements appropriate technical and organizational security measures to protect your information against unauthorized access, alteration, disclosure, or destruction. However, no method of transmission over the internet or electronic storage is 100% secure, and Bleameis cannot guarantee absolute security.
+                Bleamies implements appropriate technical and organizational security measures to protect your information against unauthorized access, alteration, disclosure, or destruction. However, no method of transmission over the internet or electronic storage is 100% secure, and Bleamies cannot guarantee absolute security.
               </p>
             </section>
 
@@ -121,7 +121,7 @@ export default function PrivacyPage() {
                 <li>The right to withdraw consent</li>
               </ul>
               <p className="leading-relaxed">
-                To exercise these rights, please contact Bleameis using the information provided in the "Contact Us" section below.
+                To exercise these rights, please contact Bleamies using the information provided in the "Contact Us" section below.
               </p>
             </section>
 
@@ -130,7 +130,7 @@ export default function PrivacyPage() {
                 8. Data Retention
               </h2>
               <p className="mb-4 leading-relaxed">
-                Bleameis retains your personal information only for as long as necessary to fulfill the purposes outlined in this Privacy Policy, unless a longer retention period is required or permitted by law.
+                Bleamies retains your personal information only for as long as necessary to fulfill the purposes outlined in this Privacy Policy, unless a longer retention period is required or permitted by law.
               </p>
             </section>
 
@@ -139,7 +139,7 @@ export default function PrivacyPage() {
                 9. Children's Privacy
               </h2>
               <p className="mb-4 leading-relaxed">
-                The Bleameis service is not intended for children under the age of 13. Bleameis does not knowingly collect personal information from children under 13. If you become aware that a child has provided Bleameis with personal information, please contact us, and Bleameis will take steps to delete such information.
+                The Bleamies service is not intended for children under the age of 13. Bleamies does not knowingly collect personal information from children under 13. If you become aware that a child has provided Bleamies with personal information, please contact us, and Bleamies will take steps to delete such information.
               </p>
             </section>
 
@@ -148,10 +148,10 @@ export default function PrivacyPage() {
                 10. Changes to This Privacy Policy
               </h2>
               <p className="mb-4 leading-relaxed">
-                Bleameis may update this Privacy Policy from time to time. Bleameis will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last updated" date. You are advised to review this Privacy Policy periodically for any changes.
+                Bleamies may update this Privacy Policy from time to time. Bleamies will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last updated" date. You are advised to review this Privacy Policy periodically for any changes.
               </p>
               <p className="leading-relaxed">
-                <strong>Contact Information:</strong> If you have any questions about this Privacy Policy, please contact Bleameis.
+                <strong>Contact Information:</strong> If you have any questions about this Privacy Policy, please contact Bleamies.
               </p>
             </section>
           </div>

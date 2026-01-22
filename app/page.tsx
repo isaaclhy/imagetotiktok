@@ -1739,7 +1739,7 @@ export default function Home() {
             {/* Bottom Section */}
             <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
               <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                © {new Date().getFullYear()} TikTok Style Image Generator. All rights reserved.
+                © {new Date().getFullYear()} Bleamies. All rights reserved.
               </div>
               <div className="flex gap-6">
                 <a
