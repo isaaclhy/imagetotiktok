@@ -102,9 +102,11 @@ export async function POST(request: NextRequest) {
     if (!initResponse.ok) {
       const errMsg =
         initData.error?.message ?? initData.error?.code ?? 'Unknown error';
+      const errStr = String(errMsg);
+      const scopeRelated =
+        /scope|permission|authorize|access denied|did not authorize/i.test(errStr);
       const isScopeError =
-        initResponse.status === 403 &&
-        /scope|permission|authorize|access denied/i.test(String(errMsg));
+        (initResponse.status === 401 || initResponse.status === 403) && scopeRelated;
 
       if (isScopeError) {
         const res = NextResponse.json(
