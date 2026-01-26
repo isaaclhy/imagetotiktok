@@ -1633,7 +1633,7 @@ export default function Home() {
                           } z-10`}
                           style={{ backgroundColor: canvas.backgroundColor }}
                         >
-                          {/* Subsequent canvases - white card in the middle */}
+                          {/* Subsequdedent canvases - white card in the middle */}
                           <div className="absolute inset-0 flex items-center justify-center p-2 pointer-events-none">
                             <div
                               className="bg-white rounded-lg border-4 border-gray-300 shadow-lg flex flex-col items-start justify-start pointer-events-none relative overflow-hidden"
