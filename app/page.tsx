@@ -27,6 +27,7 @@ export default function Home() {
   const [imageSize, setImageSize] = useState('1080x1920');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
+  const [isAutoGenerating, setIsAutoGenerating] = useState(false);
   const [userInfo, setUserInfo] = useState<{ display_name?: string; avatar_url?: string } | null>(null);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -614,6 +615,7 @@ export default function Home() {
   };
 
   const handleAutoGenerate = async () => {
+    setIsAutoGenerating(true);
     try {
       // Fetch random level data from API
       const response = await fetch('/api/levels/random');
@@ -686,6 +688,8 @@ export default function Home() {
     } catch (error) {
       console.error('Error auto-generating cards:', error);
       alert('Failed to generate cards. Please try again.');
+    } finally {
+      setIsAutoGenerating(false);
     }
   };
 
@@ -836,14 +840,6 @@ export default function Home() {
               </div>
               {userInfo ? (
                 <div className="flex-shrink-0 flex items-center gap-2">
-                  <button
-                    className="w-10 h-10 rounded-lg bg-black hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white transition-colors flex items-center justify-center"
-                    title="Generate"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                  </button>
                   <div className="relative">
                     <button
                       onClick={() => setShowUserDropdown(!showUserDropdown)}
@@ -916,6 +912,23 @@ export default function Home() {
                     </>
                   )}
                   </div>
+                  <button
+                    onClick={handleAutoGenerate}
+                    disabled={isAutoGenerating}
+                    className="w-10 h-10 rounded-lg bg-black hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Generate"
+                  >
+                    {isAutoGenerating ? (
+                      <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    )}
+                  </button>
                 </div>
               ) : (
                 <div className="flex-shrink-0 flex items-center gap-2">
@@ -931,12 +944,20 @@ export default function Home() {
                   </button>
                   <button
                     onClick={handleAutoGenerate}
-                    className="w-10 h-10 rounded-lg bg-black hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white transition-colors flex items-center justify-center"
+                    disabled={isAutoGenerating}
+                    className="w-10 h-10 rounded-lg bg-black hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Generate"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
+                    {isAutoGenerating ? (
+                      <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    )}
                   </button>
                 </div>
               )}
