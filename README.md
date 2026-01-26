@@ -59,10 +59,22 @@ To enable posting to TikTok, you need to:
    
    For production, update the redirect URI to your production domain.
 
-4. **How It Works**
-   - Click "Post to TikTok" button
-   - You'll be redirected to TikTok to authorize the app
-   - After authorization, you'll be redirected back
-   - The image will be converted to a video and posted to your TikTok account
+4. **Photo Post API (optional)**
+   We use TikTok’s **Photo Post API** (`/v2/post/publish/content/init/`) so you can post **images** (e.g. card graphics) as photos instead of video.
 
-**Note:** TikTok's API requires video files (MP4 format), not static images. The current implementation includes the structure, but you may need to add image-to-video conversion using a library like `ffmpeg` or similar for full functionality.
+   **Requirements:**
+   - **Vercel Blob** – Images are uploaded to a Blob store to get public URLs. TikTok pulls from these URLs (`PULL_FROM_URL`).
+   - **URL verification** – The Blob store domain must be verified in the TikTok Developer Portal.
+
+   **Setup:**
+   - Create a [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) store and add `BLOB_READ_WRITE_TOKEN` to your env (local and Vercel).
+   - In [TikTok for Developers](https://developers.tiktok.com/) → your app → **Manage URL properties**, add and verify the Blob store domain (e.g. `https://<your-store>.public.blob.vercel-storage.com` or the base URL shown in your Blob dashboard).
+
+   **Flow:**
+   - "Post to TikTok" sends the generated card image to `/api/tiktok/post-photo`.
+   - The route uploads the image to Vercel Blob, gets a public URL, then calls TikTok’s content init with `media_type: PHOTO`, `post_mode: DIRECT_POST`, and `source: PULL_FROM_URL` + `photo_images: [url]`.
+   - Posts use `privacy_level: SELF_ONLY` (private) by default.
+
+5. **How It Works**
+   - Click "Post to TikTok" and authorize the app when redirected to TikTok.
+   - The current card image is posted as a **photo** to your TikTok account (private by default).

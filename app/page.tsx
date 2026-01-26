@@ -770,8 +770,8 @@ export default function Home() {
       formData.append('caption', canvasText);
       formData.append('privacy_level', 'SELF_ONLY'); // Keep it private
 
-      // Call the TikTok post API
-      const response = await fetch('/api/tiktok/post', {
+      // Call the TikTok Photo Post API (MEDIA_UPLOAD = draft; user posts from app)
+      const response = await fetch('/api/tiktok/post-photo', {
         method: 'POST',
         body: formData,
       });
@@ -781,7 +781,7 @@ export default function Home() {
       if (!response.ok) {
         // Check if re-authentication is required
         if (data.requiresReauth) {
-          alert('Please reconnect your TikTok account to grant video upload permissions.');
+          alert('Please reconnect your TikTok account to grant photo upload permissions.');
           // Optionally redirect to auth
           window.location.href = '/api/tiktok/auth';
           return;
