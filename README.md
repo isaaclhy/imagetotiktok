@@ -60,20 +60,20 @@ To enable posting to TikTok, you need to:
    For production, update the redirect URI to your production domain.
 
 4. **Photo Post API (optional)**
-   We use TikTok’s **Photo Post API** (`/v2/post/publish/content/init/`) so you can post **images** (e.g. card graphics) as photos instead of video.
+   We use TikTok’s **Photo Post API** (`/v2/post/publish/content/init/`) so you can post **images** (e.g. card graphics) as photos.
 
-   **Requirements:**
-   - **Vercel Blob** – Images are uploaded to a Blob store to get public URLs. TikTok pulls from these URLs (`PULL_FROM_URL`).
-   - **URL verification** – The Blob store domain must be verified in the TikTok Developer Portal.
+   **Option A – Host on your own domain (e.g. www.bleamies.com)**
+   - Create a [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) store and add `BLOB_READ_WRITE_TOKEN`.
+   - Set `APP_URL=https://www.bleamies.com` (or your production URL) in env. Images are served from `https://www.bleamies.com/api/tiktok/serve?token=...`.
+   - In [TikTok for Developers](https://developers.tiktok.com/) → your app → **Manage URL properties**, add and verify `https://www.bleamies.com`. You do **not** need to verify the Blob domain.
 
-   **Setup:**
-   - Create a [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) store and add `BLOB_READ_WRITE_TOKEN` to your env (local and Vercel).
-   - In [TikTok for Developers](https://developers.tiktok.com/) → your app → **Manage URL properties**, add and verify the Blob store domain (e.g. `https://<your-store>.public.blob.vercel-storage.com` or the base URL shown in your Blob dashboard).
+   **Option B – Use Blob domain only**
+   - Add `BLOB_READ_WRITE_TOKEN` and create a Blob store.
+   - In TikTok → **Manage URL properties**, verify the Blob store domain (e.g. `https://<store>.public.blob.vercel-storage.com`).
 
    **Flow:**
-   - "Post to TikTok" sends the generated card image to `/api/tiktok/post-photo`.
-   - The route uploads the image to Vercel Blob, gets a public URL, then calls TikTok’s content init with `media_type: PHOTO`, `post_mode: DIRECT_POST`, and `source: PULL_FROM_URL` + `photo_images: [url]`.
-   - Posts use `privacy_level: SELF_ONLY` (private) by default.
+   - "Post to TikTok" sends the card image to `/api/tiktok/post-photo`. The route uploads to Blob, then (if `APP_URL` is set) builds a serve URL on your domain and sends that to TikTok. Otherwise it sends the Blob URL.
+   - Uses `media_type: PHOTO`, `post_mode: MEDIA_UPLOAD` (draft), `source: PULL_FROM_URL`, and `privacy_level: SELF_ONLY`.
 
 5. **How It Works**
    - Click "Post to TikTok" and authorize the app when redirected to TikTok.

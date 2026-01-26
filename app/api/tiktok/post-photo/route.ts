@@ -1,16 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { put } from '@vercel/blob';
+import { createServeToken } from '@/lib/tiktok-serve-token';
 
 /**
  * TikTok Photo Post API
  * Uses /v2/post/publish/content/init/ with PULL_FROM_URL.
  * Images must be public URLs from a verified domain (see TikTok Developer Portal).
  *
- * Setup:
- * 1. Add Vercel Blob store → BLOB_READ_WRITE_TOKEN in env.
- * 2. In TikTok Developer Portal → your app → Manage URL properties: verify the
- *    Blob store domain (e.g. *.public.blob.vercel-storage.com or your store URL).
+ * Setup (choose one):
+ * A) Own domain (e.g. www.bleamies.com):
+ *    - APP_URL=https://www.bleamies.com (or your deployment URL)
+ *    - BLOB_READ_WRITE_TOKEN + Vercel Blob store
+ *    - Verify https://www.bleamies.com in TikTok → Manage URL properties
+ * B) Blob domain only:
+ *    - BLOB_READ_WRITE_TOKEN + Blob store
+ *    - Verify Blob store domain in TikTok → Manage URL properties
+ * C) You host images: send photo_url (public URL on your verified domain) instead of image file.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -39,7 +45,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             error:
-              'Photo Post requires image hosting. Add a Vercel Blob store, set BLOB_READ_WRITE_TOKEN, and verify the Blob domain in TikTok Developer Portal → Manage URL properties.',
+              'Photo Post requires image hosting. Use a Vercel Blob store (BLOB_READ_WRITE_TOKEN) and verify your domain in TikTok Developer Portal → Manage URL properties. Or host images on your domain and send photo_url.',
           },
           { status: 500 }
         );
@@ -47,7 +53,18 @@ export async function POST(request: NextRequest) {
       const blob = await put(`tiktok-photo-${Date.now()}.png`, imageFile, {
         access: 'public',
       });
-      imageUrl = blob.url;
+      const blobUrl = blob.url;
+      const baseUrl =
+        process.env.APP_URL ||
+        process.env.NEXT_PUBLIC_APP_URL ||
+        request.nextUrl.origin;
+      const base = baseUrl.replace(/\/$/, '');
+      try {
+        const token = createServeToken(blobUrl);
+        imageUrl = `${base}/api/tiktok/serve?token=${encodeURIComponent(token)}`;
+      } catch {
+        imageUrl = blobUrl;
+      }
     } else {
       return NextResponse.json(
         { error: 'Provide either an "image" file or a "photo_url" (public URL).' },
