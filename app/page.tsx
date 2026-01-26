@@ -245,11 +245,11 @@ export default function Home() {
       ctx.fillRect(0, 0, width, height);
 
       const aspectRatio = width / height;
-      // Match CSS behavior: width: 75%, aspectRatio, maxHeight: 65%
+      // Match CSS behavior: width: 75%, aspectRatio, maxHeight: 60% (slightly shorter)
       // First try width = 75%, then constrain by maxHeight if needed
       let finalCardWidth = width * 0.75;
       let finalCardHeight = finalCardWidth / aspectRatio;
-      const cardMaxHeight = height * 0.65;
+      const cardMaxHeight = height * 0.60;
       
       // If height exceeds maxHeight, constrain by height and recalculate width
       if (finalCardHeight > cardMaxHeight) {
@@ -258,7 +258,8 @@ export default function Home() {
       }
       
       const cardX = (width - finalCardWidth) / 2;
-      const cardY = (height - finalCardHeight) / 2;
+      // Position white card slightly higher (move up by 3% of height)
+      const cardY = (height - finalCardHeight) / 2 - (height * 0.03);
 
       // Draw white card for cards 2+ (but not for ending card, which is like card 1)
       if (canvasData.id !== '1' && canvasData.id !== 'end') {
@@ -296,16 +297,21 @@ export default function Home() {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
-        const maxTextWidth = width * 0.9;
+        // More horizontal padding for ending card (smaller maxTextWidth = more padding)
+        const maxTextWidth = canvasData.id === 'end' ? width * 0.85 : width * 0.9;
         // Scale font size based on canvas width
         const canvasWidthScale = width / 1080;
         const baseFontSize = parseInt(canvasData.textSize || '200') || 200;
-        let fontSize = (baseFontSize * canvasWidthScale) / 3;
+        // Smaller font size for ending card, smaller size for card 1
+        const fontSizeDivisor = canvasData.id === 'end' ? 2.8 : (canvasData.id === '1' ? 2.5 : 3);
+        let fontSize = (baseFontSize * canvasWidthScale) / fontSizeDivisor;
         ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
         
         const textMetrics = ctx.measureText(canvasText);
-        if (textMetrics.width > maxTextWidth) {
-          fontSize = (maxTextWidth / textMetrics.width) * fontSize * 0.9;
+        // Skip width constraint for ending card to allow larger text size
+        if (textMetrics.width > maxTextWidth && canvasData.id !== 'end') {
+          const scaleFactor = 0.9;
+          fontSize = (maxTextWidth / textMetrics.width) * fontSize * scaleFactor;
           ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
         }
 
@@ -313,18 +319,84 @@ export default function Home() {
         const lineHeight = fontSize * 1.4;
         const totalHeight = lines.length * lineHeight;
         
-        // If card 1, draw badge above text
+        // Calculate text position first (centered, but moved up for card 1)
+        let startY = (height - totalHeight) / 2 + lineHeight / 2;
+        // Move card 1 title and badge up by 8% of height
+        if (canvasData.id === '1') {
+          startY = startY - (height * 0.08);
+        }
+        
+        // If ending card, draw white share icon above text
+        let iconSize = 0;
+        let iconY = 0;
+        if (canvasData.id === 'end') {
+          iconSize = fontSize * 1.5;
+          const spacing = fontSize * 0.5; // Spacing between icon and text
+          const totalContentHeight = iconSize + spacing + totalHeight;
+          
+          // Center both icon and text together, but move up by 8% of height
+          const contentStartY = (height - totalContentHeight) / 2 - (height * 0.08);
+          iconY = contentStartY;
+          startY = contentStartY + iconSize + spacing + lineHeight / 2;
+          
+          // Draw sharing icon (network/share icon with three circles and connecting lines) in white
+          ctx.save();
+          ctx.strokeStyle = '#FFFFFF'; // White color
+          ctx.fillStyle = '#FFFFFF'; // White color
+          ctx.lineWidth = fontSize * 0.1;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          
+          const iconX = width / 2;
+          const circleRadius = iconSize * 0.12;
+          const iconSpacing = iconSize * 0.4;
+          
+          // Calculate positions for three circles in a triangle/network pattern
+          const topCircleX = iconX;
+          const topCircleY = iconY + iconSize * 0.2;
+          const leftCircleX = iconX - iconSpacing;
+          const leftCircleY = iconY + iconSize * 0.8;
+          const rightCircleX = iconX + iconSpacing;
+          const rightCircleY = iconY + iconSize * 0.8;
+          
+          // Draw connecting lines
+          ctx.beginPath();
+          ctx.moveTo(topCircleX, topCircleY);
+          ctx.lineTo(leftCircleX, leftCircleY);
+          ctx.moveTo(topCircleX, topCircleY);
+          ctx.lineTo(rightCircleX, rightCircleY);
+          ctx.stroke();
+          
+          // Draw three circles
+          ctx.beginPath();
+          ctx.arc(topCircleX, topCircleY, circleRadius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(leftCircleX, leftCircleY, circleRadius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(rightCircleX, rightCircleY, circleRadius, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.restore();
+        }
+        
+        // If card 1, draw badge right under the title text
         let badgeY = 0;
         let badgeHeight = 0;
         if (canvasData.id === '1' && levelNameForBadge) {
           const badgeText = `${levelNameForBadge} Edition`;
-          const badgeFontSize = fontSize * 0.4;
+          // Badge size relative to text
+          const badgeFontSize = fontSize * 0.6;
           ctx.font = `bold ${badgeFontSize}px system-ui, sans-serif`;
           const badgeMetrics = ctx.measureText(badgeText);
           const badgePadding = badgeFontSize * 0.8;
           const badgeWidth = badgeMetrics.width + (badgePadding * 2);
           badgeHeight = badgeFontSize * 1.8;
-          badgeY = (height - totalHeight) / 2 - badgeHeight - fontSize * 0.8;
+          // Position badge right under the title text
+          const textBottom = startY + totalHeight - lineHeight / 2;
+          const spacing = fontSize * 0.6; // Spacing between text and badge
+          badgeY = textBottom + spacing;
           
           // Draw white background with border
           const badgeX = (width - badgeWidth) / 2;
@@ -353,71 +425,25 @@ export default function Home() {
           ctx.textBaseline = 'middle';
           ctx.fillText(badgeText, width / 2, badgeY + badgeHeight / 2);
           
-          // Reset font for main text
+          // Reset font and fillStyle for main text
           ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
-        }
-        
-        // If ending card, draw sharing icon above text
-        let iconSize = 0;
-        let iconY = 0;
-        if (canvasData.id === 'end') {
-          iconSize = fontSize * 1.5;
-          const textStartY = (height - totalHeight) / 2 + lineHeight / 2;
-          iconY = textStartY - iconSize - fontSize * 0.5; // Position icon above text with gap
-          
-          // Draw sharing icon (network/share icon with three circles and connecting lines)
-          ctx.save();
-          ctx.strokeStyle = canvasData.textColor || '#FFFFFF';
           ctx.fillStyle = canvasData.textColor || '#FFFFFF';
-          ctx.lineWidth = fontSize * 0.1;
-          ctx.lineCap = 'round';
-          ctx.lineJoin = 'round';
-          
-          const iconX = width / 2;
-          const circleRadius = iconSize * 0.12;
-          const spacing = iconSize * 0.4;
-          
-          // Calculate positions for three circles in a triangle/network pattern
-          const topCircleX = iconX;
-          const topCircleY = iconY - spacing * 0.6;
-          const leftCircleX = iconX - spacing;
-          const leftCircleY = iconY + spacing * 0.4;
-          const rightCircleX = iconX + spacing;
-          const rightCircleY = iconY + spacing * 0.4;
-          
-          // Draw connecting lines
-          ctx.beginPath();
-          ctx.moveTo(topCircleX, topCircleY);
-          ctx.lineTo(leftCircleX, leftCircleY);
-          ctx.moveTo(topCircleX, topCircleY);
-          ctx.lineTo(rightCircleX, rightCircleY);
-          ctx.stroke();
-          
-          // Draw three circles
-          ctx.beginPath();
-          ctx.arc(topCircleX, topCircleY, circleRadius, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.beginPath();
-          ctx.arc(leftCircleX, leftCircleY, circleRadius, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.beginPath();
-          ctx.arc(rightCircleX, rightCircleY, circleRadius, 0, Math.PI * 2);
-          ctx.fill();
-          
-          ctx.restore();
         }
         
         // Adjust startY if badge is present (card 1 with badge)
-        // When badge exists, position text below it; otherwise center it
-        let startY = (height - totalHeight) / 2 + lineHeight / 2;
+        // When badge exists, center text and badge together vertically, but move up
         if (canvasData.id === '1' && levelNameForBadge && badgeY > 0 && badgeHeight > 0) {
-          // Position text below badge with spacing
-          const badgeBottom = badgeY + badgeHeight;
-          const availableSpace = height - badgeBottom;
-          // Center text in the remaining space below the badge
-          startY = badgeBottom + fontSize * 0.8 + (availableSpace - totalHeight) / 2 + lineHeight / 2;
+          // Center both text and badge together in the card, but move up by 8% of height
+          const totalContentHeight = totalHeight + badgeHeight + (fontSize * 0.6); // text + badge + spacing
+          startY = (height - totalContentHeight) / 2 + lineHeight / 2 - (height * 0.08);
+          // Recalculate badge position based on new text position
+          const textBottom = startY + totalHeight - lineHeight / 2;
+          const spacing = fontSize * 0.6;
+          badgeY = textBottom + spacing;
         }
 
+        // Ensure fillStyle is set to text color before drawing text
+        ctx.fillStyle = canvasData.textColor || '#FFFFFF';
         lines.forEach((line, idx) => {
           ctx.fillText(line, width / 2, startY + idx * lineHeight);
         });
@@ -440,8 +466,8 @@ export default function Home() {
         // Scale font proportionally: (canvasWidth / 1080) * 0.75, then divide by 3
         const canvasWidthScale = width / 1080;
         const baseFontSize = parseInt(canvasData.textSize || '200') || 200;
-        // Scale font for card size (75% of canvas) and canvas dimensions, then make 3x smaller
-        const fontSize = (baseFontSize * canvasWidthScale * 0.75) / 3;
+        // Scale font for card size (75% of canvas) and canvas dimensions, keep original size
+        const fontSize = (baseFontSize * canvasWidthScale * 0.75) / 3.2;
         
         // Draw "Instructions" text at top
         ctx.fillStyle = canvasData.textColor || '#876e9f';
@@ -488,7 +514,7 @@ export default function Home() {
         const rightBoundary = cardX + finalCardWidth - padding;
         const maxTextWidth = Math.max(0, rightBoundary - textX);
         const lineHeight = fontSize * 1.4;
-        const itemSpacing = fontSize * 0.7; // Space between items (increased from 0.4 for more spacing)
+        const itemSpacing = fontSize * 1.2; // Space between items (increased for more spacing)
         
         // First pass: calculate all Y positions based on actual text heights
         let currentY = textStartY;
@@ -562,8 +588,8 @@ export default function Home() {
         // Cards 3+ are inside a white card that's 75% of canvas width
         const canvasWidthScale = width / 1080;
         const baseFontSize = parseInt(canvasData.textSize || '200') || 200;
-        // Scale font for card size (75% of canvas) and canvas dimensions, then make 3x smaller
-        const fontSize = (baseFontSize * canvasWidthScale * 0.75) / 3;
+        // Scale font for card size (75% of canvas) and canvas dimensions, slightly larger
+        const fontSize = (baseFontSize * canvasWidthScale * 0.75) / 3.0;
         
         ctx.fillStyle = canvasData.textColor || '#876e9f';
         ctx.textAlign = 'left';
@@ -715,15 +741,49 @@ export default function Home() {
       return;
     }
 
+    if (!userInfo) {
+      alert('Please connect your TikTok account first');
+      return;
+    }
+
     setIsPosting(true);
     
     try {
       // Hide dropdown if open
       setShowUserDropdown(false);
 
-      // Dummy version - just show toast without actually posting
-      // Simulate a small delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Generate the card image
+      const currentIndex = canvases.findIndex(c => c.id === currentCanvasId);
+      const imageBlob = await generateCardImage(
+        currentCanvas,
+        currentIndex >= 0 ? currentIndex : 0,
+        currentCanvas.id === '1' ? levelName : undefined
+      );
+
+      // Create FormData to send to API
+      const formData = new FormData();
+      formData.append('image', imageBlob, 'card.png');
+      formData.append('caption', canvasText);
+      formData.append('privacy_level', 'SELF_ONLY'); // Keep it private
+
+      // Call the TikTok post API
+      const response = await fetch('/api/tiktok/post', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Check if re-authentication is required
+        if (data.requiresReauth) {
+          alert('Please reconnect your TikTok account to grant video upload permissions.');
+          // Optionally redirect to auth
+          window.location.href = '/api/tiktok/auth';
+          return;
+        }
+        throw new Error(data.error || 'Failed to post to TikTok');
+      }
 
       // Show success toast
       setShowToast(true);
@@ -1293,18 +1353,6 @@ export default function Home() {
                     {(isFirstCanvas || isEndingCard) ? (
                       // First canvas and ending card - no white card, text directly on background
                       <div className={isEndingCard ? "flex flex-col items-center justify-center" : "flex flex-col items-center justify-center relative w-full h-full"} style={isEndingCard ? { width: '100%', height: '100%' } : { width: '100%', height: '100%' }}>
-                        {isFirstCanvas && levelName && (
-                          <div
-                            className="px-3 py-1 rounded-lg font-semibold text-sm mb-3"
-                            style={{
-                              backgroundColor: '#FFFFFF',
-                              border: `2px solid ${backgroundColor}`,
-                              color: backgroundColor,
-                            }}
-                          >
-                            {levelName} Edition
-                          </div>
-                        )}
                         {isEndingCard && (
                           <svg
                             className="flex-shrink-0"
@@ -1344,8 +1392,20 @@ export default function Home() {
                             willChange: 'auto'
                           }}
                         >
-                          {currentCanvas.text || 'Your text will appear here'}
+                          {isFirstCanvas ? firstCard.text : currentCanvas.text}
                         </p>
+                        {isFirstCanvas && levelName && (
+                          <div
+                            className="px-3 py-1 rounded-lg font-semibold text-sm mt-3"
+                            style={{
+                              backgroundColor: '#FFFFFF',
+                              border: `2px solid ${backgroundColor}`,
+                              color: backgroundColor,
+                            }}
+                          >
+                            {levelName} Edition
+                          </div>
+                        )}
                       </div>
                     ) : (
                       // Subsequent canvases - white card in the middle
@@ -1492,18 +1552,6 @@ export default function Home() {
                         >
                           {/* First and ending canvas - no white card, text directly on background */}
                           <div className={`absolute inset-0 flex items-center justify-center p-1 ${canvas.id === 'end' ? 'flex-col gap-1' : 'flex-col gap-1'}`}>
-                            {canvas.id === '1' && levelName && (
-                              <div
-                                className="px-1.5 py-0.5 rounded text-[8px] font-semibold whitespace-nowrap"
-                                style={{
-                                  backgroundColor: '#FFFFFF',
-                                  border: `1px solid ${canvas.backgroundColor}`,
-                                  color: canvas.backgroundColor,
-                                }}
-                              >
-                                {levelName} Edition
-                              </div>
-                            )}
                             {canvas.id === 'end' && (
                               <svg
                                 className="flex-shrink-0"
@@ -1534,6 +1582,18 @@ export default function Home() {
                             >
                               {canvas.text || '•'}
                             </p>
+                            {canvas.id === '1' && levelName && (
+                              <div
+                                className="px-1.5 py-0.5 rounded text-[8px] font-semibold whitespace-nowrap mt-1"
+                                style={{
+                                  backgroundColor: '#FFFFFF',
+                                  border: `1px solid ${canvas.backgroundColor}`,
+                                  color: canvas.backgroundColor,
+                                }}
+                              >
+                                {levelName} Edition
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
