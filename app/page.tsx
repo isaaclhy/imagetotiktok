@@ -467,8 +467,8 @@ export default function Home() {
         // Scale font proportionally: (canvasWidth / 1080) * 0.75, then divide by 3
         const canvasWidthScale = width / 1080;
         const baseFontSize = parseInt(canvasData.textSize || '200') || 200;
-        // Scale font for card size (75% of canvas) and canvas dimensions, keep original size
-        const fontSize = (baseFontSize * canvasWidthScale * 0.75) / 3.2;
+        // Scale font for card size (75% of canvas) and canvas dimensions, smaller for instructions
+        const fontSize = (baseFontSize * canvasWidthScale * 0.75) / 3.7;
         
         // Draw "Instructions" text at top
         ctx.fillStyle = canvasData.textColor || '#876e9f';
