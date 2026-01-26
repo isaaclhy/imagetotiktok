@@ -62,26 +62,32 @@ export async function POST(request: NextRequest) {
 
     if (!initResponse.ok) {
       console.error('Init upload error:', initData);
-      
-      // Check if it's a scope error - if so, clear tokens and return specific error
-      if (initResponse.status === 403 || initData.error?.message?.includes('scope') || initData.error?.message?.includes('authorize')) {
-        // Clear tokens so user can re-authenticate with new scopes
+      const errMsg = initData.error?.message ?? initData.error?.code ?? 'Unknown error';
+
+      // Only treat as scope/permission error when the message clearly indicates it
+      const isScopeError =
+        initResponse.status === 403 &&
+        (errMsg.toLowerCase().includes('scope') ||
+          errMsg.toLowerCase().includes('permission') ||
+          errMsg.toLowerCase().includes('authorize') ||
+          errMsg.toLowerCase().includes('access denied'));
+
+      if (isScopeError) {
         const errorResponse = NextResponse.json(
-          { 
-            error: 'Missing required permissions. Please reconnect your TikTok account to grant video upload permissions.',
-            requiresReauth: true 
+          {
+            error: 'Missing video upload permission. Please reconnect your TikTok account and accept all requested permissions.',
+            requiresReauth: true,
           },
           { status: 403 }
         );
-        
         errorResponse.cookies.delete('tiktok_access_token');
         errorResponse.cookies.delete('tiktok_refresh_token');
-        
         return errorResponse;
       }
-      
+
+      // Return the actual TikTok error so we can debug (e.g. format, app approval)
       return NextResponse.json(
-        { error: initData.error?.message || 'Failed to initialize upload' },
+        { error: errMsg || 'Failed to initialize upload' },
         { status: initResponse.status }
       );
     }
