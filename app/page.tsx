@@ -831,32 +831,32 @@ export default function Home() {
           {/* Left Side - Inputs */}
           <div className="flex flex-col h-full max-h-screen bg-white dark:bg-zinc-900 rounded-2xl shadow-lg overflow-hidden">
             {/* Header - Fixed at top */}
-            <div className="flex-shrink-0 flex items-start justify-between gap-4 p-4 pb-3">
-              <div>
+            <div className="flex-shrink-0 flex items-start justify-between gap-3 p-4 pb-3 min-w-0">
+              <div className="flex-shrink-0">
                 <h1 className="text-2xl md:text-3xl font-bold text-black dark:text-zinc-50 mb-1">
                   Bleamies
                 </h1>
 
               </div>
               {userInfo ? (
-                <div className="flex-shrink-0 flex items-center gap-2">
-                  <div className="relative">
+                <div className="flex items-center gap-2 min-w-0 flex-shrink">
+                  <div className="relative min-w-0 flex-shrink">
                     <button
                       onClick={() => setShowUserDropdown(!showUserDropdown)}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer max-w-[140px] min-w-0"
                     >
                     {userInfo.avatar_url && (
                       <img
                         src={userInfo.avatar_url}
                         alt={userInfo.display_name || 'User'}
-                        className="w-6 h-6 rounded-full"
+                        className="w-6 h-6 rounded-full flex-shrink-0"
                       />
                     )}
-                    <span className="text-sm font-medium text-black dark:text-zinc-50">
+                    <span className="text-sm font-medium text-black dark:text-zinc-50 truncate min-w-0">
                       {userInfo.display_name || 'User'}
                     </span>
                     <svg
-                      className={`w-4 h-4 text-black dark:text-zinc-50 transition-transform ${
+                      className={`w-4 h-4 flex-shrink-0 text-black dark:text-zinc-50 transition-transform ${
                         showUserDropdown ? 'rotate-180' : ''
                       }`}
                       fill="none"
@@ -915,7 +915,7 @@ export default function Home() {
                   <button
                     onClick={handleAutoGenerate}
                     disabled={isAutoGenerating}
-                    className="w-10 h-10 rounded-lg bg-black hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-10 h-10 flex-shrink-0 rounded-lg bg-black hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Generate"
                   >
                     {isAutoGenerating ? (
