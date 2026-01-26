@@ -335,8 +335,8 @@ export default function Home() {
           const spacing = fontSize * 0.5; // Spacing between icon and text
           const totalContentHeight = iconSize + spacing + totalHeight;
           
-          // Center both icon and text together, but move up by 8% of height
-          const contentStartY = (height - totalContentHeight) / 2 - (height * 0.08);
+          // Center both icon and text together, but move up by 14% of height
+          const contentStartY = (height - totalContentHeight) / 2 - (height * 0.14);
           iconY = contentStartY;
           startY = contentStartY + iconSize + spacing + lineHeight / 2;
           

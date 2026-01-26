@@ -25,10 +25,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Convert image to base64 or use TikTok's upload API
-    // TikTok requires video format, so we'll need to convert image to video
-    // For now, we'll use the TikTok Video Upload API
-    
+    const videoSize = imageFile.size;
+    // TikTok: chunk_size must be 5MB–64MB per chunk, EXCEPT for files < 5MB
+    // where chunk_size must equal the entire file size.
+    const FIVE_MB = 5 * 1024 * 1024;
+    const CHUNK_SIZE_LARGE = 10 * 1024 * 1024; // 10MB
+    const chunkSize = videoSize < FIVE_MB ? videoSize : CHUNK_SIZE_LARGE;
+    const totalChunkCount = Math.ceil(videoSize / chunkSize);
+
     // Step 1: Initialize upload
     const initResponse = await fetch('https://open.tiktokapis.com/v2/post/publish/video/init/', {
       method: 'POST',
@@ -47,9 +51,9 @@ export async function POST(request: NextRequest) {
         },
         source_info: {
           source: 'FILE_UPLOAD',
-          video_size: imageFile.size,
-          chunk_size: 10000000, // 10MB chunks
-          total_chunk_count: 1,
+          video_size: videoSize,
+          chunk_size: chunkSize,
+          total_chunk_count: totalChunkCount,
         },
       }),
     });
