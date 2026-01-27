@@ -48,31 +48,37 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Step 1: Randomly select a level (Friends or Couples)
-    const selectedLevel = getRandomElement(levels);
-    
-    if (!selectedLevel || !selectedLevel.categories || selectedLevel.categories.length === 0) {
+    // Allowed category names (case-insensitive): only "Spicy" and "After Dark"
+    const ALLOWED = ['spicy', 'after dark'];
+
+    function isAllowedCategory(cat: any): boolean {
+      const name = (cat?.name ?? cat?.category ?? cat?.title ?? '').toString().toLowerCase();
+      return ALLOWED.some((a) => name.includes(a));
+    }
+
+    // Build { level, category } pairs from Friends/Couples, filter to Spicy / After Dark only
+    const eligible: { level: any; category: any }[] = [];
+    for (const level of levels) {
+      if (!level.categories?.length) continue;
+      for (const cat of level.categories) {
+        if (isAllowedCategory(cat)) eligible.push({ level, category: cat });
+      }
+    }
+
+    if (eligible.length === 0) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Selected level has no categories',
+          error: 'No Spicy or After Dark categories found in Friends/Couples levels',
         },
         { status: 404 }
       );
     }
 
-    // Step 2: Randomly select a category from the selected level
-    const selectedCategory = getRandomElement(selectedLevel.categories) as any;
-    
-    if (!selectedCategory) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No category found in selected level',
-        },
-        { status: 404 }
-      );
-    }
+    // Randomly select one Spicy or After Dark category
+    const picked = getRandomElement(eligible)!;
+    const selectedLevel = picked.level;
+    const selectedCategory = picked.category;
 
     // Step 3: Extract questions from the category
     // Handle different possible structures:
