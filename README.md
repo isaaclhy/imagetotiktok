@@ -75,6 +75,15 @@ To enable posting to TikTok, you need to:
    - "Post to TikTok" sends the card image to `/api/tiktok/post-photo`. The route uploads to Blob, then (if `APP_URL` is set) builds a serve URL on your domain and sends that to TikTok. Otherwise it sends the Blob URL.
    - Uses `media_type: PHOTO`, `post_mode: MEDIA_UPLOAD` (draft), `source: PULL_FROM_URL`, and `privacy_level: SELF_ONLY`.
 
-5. **How It Works**
+5. **Mode: Plain vs Video (optional)**
+   The **Mode** dropdown (Plain / Video) controls the first card background. When **Video** is selected:
+   - The app calls the [Pexels Photos API](https://www.pexels.com/api/documentation/#photos-search) (`/v1/search?query=...&orientation=portrait&per_page=1`) to fetch a portrait image.
+   - The **preview** and **download** use that image as the first-card background. **Change Image** fetches another image for the same theme.
+   - Add `PIXELS_API_KEY` to your env (get a free key at [Pexels API](https://www.pexels.com/api/)).
+
+6. **Auto-Generate title (optional)**
+   When you click **Generate**, the app fetches a random level/category and questions, then calls the [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses/create) with a stored prompt (`variables.context` = level + category + questions, no instructions). The model output is used as the **first-card title** instead of the category name. Add `OPENAI_API_KEY` to your env. If the title API fails, the category name is used as fallback.
+
+7. **How It Works**
    - Click "Post to TikTok" and authorize the app when redirected to TikTok.
    - The current card image is posted as a **photo** to your TikTok account (private by default).

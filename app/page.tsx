@@ -3,6 +3,42 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import JSZip from 'jszip';
 
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+    img.src = src;
+  });
+}
+
+/** Dreamy, romantic filter for Pexels image (Image mode) – preview, carousel, and export */
+const ROMANTIC_IMAGE_FILTER = 'brightness(0.82) contrast(0.88) saturate(0.72) sepia(0.18) hue-rotate(-8deg)';
+
+/** Font for first-card title (TikTok-style clean sans-serif). */
+const TITLE_FONT = 'Inter, sans-serif';
+
+/** Wrap title text into lines using canvas measure (matches export). Use in preview/carousel. */
+function wrapTextToLines(text: string, maxWidth: number, fontSizePx: number): string[] {
+  if (typeof document === 'undefined') return [text || ''].filter(Boolean);
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return [text || ''].filter(Boolean);
+  ctx.font = `bold ${fontSizePx}px ${TITLE_FONT}`;
+  const words = (text || '').trim().split(/\s+/);
+  if (words.length === 0) return [];
+  const lines: string[] = [];
+  let current = words[0]!;
+  for (let i = 1; i < words.length; i++) {
+    const candidate = current + ' ' + (words[i] ?? '');
+    if (ctx.measureText(candidate).width <= maxWidth) current = candidate;
+    else { lines.push(current); current = words[i] ?? ''; }
+  }
+  lines.push(current);
+  return lines;
+}
+
 interface CanvasData {
   id: string;
   text: string;
@@ -14,14 +50,14 @@ interface CanvasData {
 
 export default function Home() {
   const [canvases, setCanvases] = useState<CanvasData[]>([
-    { id: '1', text: '', backgroundColor: '#cfa9f5', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' },
-    { id: '2', text: '', backgroundColor: '#cfa9f5', textColor: '#876e9f', textSize: '200', imageSize: '1080x1920' },
-    { id: '3', text: '', backgroundColor: '#cfa9f5', textColor: '#876e9f', textSize: '200', imageSize: '1080x1920' },
-    { id: 'end', text: '', backgroundColor: '#cfa9f5', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' }
+    { id: '1', text: '', backgroundColor: '#000000', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' },
+    { id: '2', text: '', backgroundColor: '#000000', textColor: '#876e9f', textSize: '200', imageSize: '1080x1920' },
+    { id: '3', text: '', backgroundColor: '#000000', textColor: '#876e9f', textSize: '200', imageSize: '1080x1920' },
+    { id: 'end', text: '', backgroundColor: '#000000', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' }
   ]);
   const [currentCanvasId, setCurrentCanvasId] = useState<string>('1');
   const [text, setText] = useState('');
-  const [backgroundColor, setBackgroundColor] = useState('#cfa9f5');
+  const [backgroundColor, setBackgroundColor] = useState('#000000');
   const [textColor, setTextColor] = useState('#FFFFFF');
   const [textSize, setTextSize] = useState('200');
   const [imageSize, setImageSize] = useState('1080x1920');
@@ -41,6 +77,84 @@ export default function Home() {
     { text: '', color: '#876e9f' }
   ]);
   const [levelName, setLevelName] = useState<string>('');
+  const [theme, setTheme] = useState<string>('couple in nature');
+  const [mode, setMode] = useState<'plain' | 'video'>('plain');
+  const [videoBackgroundUrl, setVideoBackgroundUrl] = useState<string | null>(null);
+  const [videoThumbnailUrl, setVideoThumbnailUrl] = useState<string | null>(null);
+  const [videoLoading, setVideoLoading] = useState(false);
+  const [videoError, setVideoError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Fetch Pexels image when mode is "video" (Image)
+  useEffect(() => {
+    if (mode !== 'video') {
+      setVideoBackgroundUrl(null);
+      setVideoThumbnailUrl(null);
+      setVideoError(null);
+      return;
+    }
+    let cancelled = false;
+    setVideoLoading(true);
+    setVideoError(null);
+    const page = 1 + Math.floor(Math.random() * 20);
+    fetch(`/api/pexels/video?query=${encodeURIComponent(theme || 'couple in nature')}&page=${page}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (data.error) {
+          setVideoError(data.error);
+          setVideoBackgroundUrl(null);
+          setVideoThumbnailUrl(null);
+          return;
+        }
+        setVideoBackgroundUrl(data.videoUrl ?? null);
+        setVideoThumbnailUrl(data.thumbnailUrl ?? null);
+        setVideoError(null);
+      })
+      .catch((e) => {
+        if (!cancelled) {
+          setVideoError(e?.message ?? 'Failed to load image');
+          setVideoBackgroundUrl(null);
+          setVideoThumbnailUrl(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setVideoLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [mode, theme]);
+
+  const handleChangeVideo = async () => {
+    if (mode !== 'video') return;
+    const page = 1 + Math.floor(Math.random() * 20);
+    setVideoLoading(true);
+    setVideoError(null);
+    try {
+      const r = await fetch(
+        `/api/pexels/video?query=${encodeURIComponent(theme || 'couple in nature')}&page=${page}`
+      );
+      const data = await r.json();
+      if (data.error) {
+        setVideoError(data.error);
+        setVideoBackgroundUrl(null);
+        setVideoThumbnailUrl(null);
+        return;
+      }
+      setVideoBackgroundUrl(data.videoUrl ?? null);
+      setVideoThumbnailUrl(data.thumbnailUrl ?? null);
+      setVideoError(null);
+    } catch (e) {
+      setVideoError(e instanceof Error ? e.message : 'Failed to load image');
+      setVideoBackgroundUrl(null);
+      setVideoThumbnailUrl(null);
+    } finally {
+      setVideoLoading(false);
+    }
+  };
 
   // Use ref to track if we're updating from user input to prevent infinite loops
   const isUpdatingFromUserInput = useRef(false);
@@ -189,7 +303,7 @@ export default function Home() {
     const newCanvas: CanvasData = {
       id: newId,
       text: text || '',
-      backgroundColor: backgroundColor || '#cfa9f5',
+      backgroundColor: backgroundColor || '#000000',
       textColor: textColor || '#876e9f',
       textSize: textSize || '200',
       imageSize: imageSize || '1080x1920'
@@ -223,27 +337,36 @@ export default function Home() {
     }
   };
 
-  const generateCardImage = (canvasData: CanvasData, index: number, levelNameForBadge?: string): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-      // Create canvas
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      
-      if (!ctx) {
-        reject(new Error('Could not get canvas context'));
-        return;
-      }
+  const generateCardImage = async (canvasData: CanvasData, index: number): Promise<Blob> => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Could not get canvas context');
 
-      // Parse image size
-      const [widthStr, heightStr] = (canvasData.imageSize || '1080x1920').split('x').map(s => s.trim());
-      const width = parseInt(widthStr) || 1080;
-      const height = parseInt(heightStr) || 1920;
-      canvas.width = width;
-      canvas.height = height;
+    if (typeof document !== 'undefined' && document.fonts?.ready) await document.fonts.ready;
 
-      // Fill background
-      ctx.fillStyle = canvasData.backgroundColor || '#cfa9f5';
+    const [widthStr, heightStr] = (canvasData.imageSize || '1080x1920').split('x').map(s => s.trim());
+    const width = parseInt(widthStr) || 1080;
+    const height = parseInt(heightStr) || 1920;
+    canvas.width = width;
+    canvas.height = height;
+
+    if (canvasData.id === '1' && mode === 'video' && videoThumbnailUrl) {
+      const img = await loadImage(videoThumbnailUrl);
+      ctx.filter = ROMANTIC_IMAGE_FILTER;
+      // Draw with cover: preserve aspect ratio, scale to fill canvas, center and clip overflow
+      const iw = img.naturalWidth || img.width;
+      const ih = img.naturalHeight || img.height;
+      const scale = Math.max(width / iw, height / ih);
+      const sw = iw * scale;
+      const sh = ih * scale;
+      const dx = (width - sw) / 2;
+      const dy = (height - sh) / 2;
+      ctx.drawImage(img, 0, 0, iw, ih, dx, dy, sw, sh);
+      ctx.filter = 'none';
+    } else {
+      ctx.fillStyle = canvasData.backgroundColor || '#000000';
       ctx.fillRect(0, 0, width, height);
+    }
 
       const aspectRatio = width / height;
       // Match CSS behavior: width: 75%, aspectRatio, maxHeight: 60% (slightly shorter)
@@ -280,7 +403,7 @@ export default function Home() {
         ctx.fill();
         
         // Draw border
-        ctx.strokeStyle = '#d1d5db';
+        ctx.strokeStyle = '#e1c2ff';
         ctx.lineWidth = 16; // Doubled from 8 to make border thicker
         ctx.stroke();
       }
@@ -299,32 +422,45 @@ export default function Home() {
         ctx.textBaseline = 'middle';
         
         // More horizontal padding for ending card (smaller maxTextWidth = more padding)
-        const maxTextWidth = canvasData.id === 'end' ? width * 0.85 : width * 0.9;
-        // Scale font size based on canvas width
+        const maxTextWidth = canvasData.id === 'end' ? width * 0.85 : (canvasData.id === '1' ? width * 0.7 : width * 0.9);        // Scale font size based on canvas width
         const canvasWidthScale = width / 1080;
         const baseFontSize = parseInt(canvasData.textSize || '200') || 200;
-        // Smaller font size for ending card, smaller size for card 1
-        const fontSizeDivisor = canvasData.id === 'end' ? 2.8 : (canvasData.id === '1' ? 2.5 : 3);
+        // Smaller font size for ending card; card 1 uses doubled size (divisor 1.0 = 2× of 2.0)
+        const fontSizeDivisor = canvasData.id === 'end' ? 2.8 : (canvasData.id === '1' ? 3.25 : 3);
         let fontSize = (baseFontSize * canvasWidthScale) / fontSizeDivisor;
-        ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
+        ctx.font = `bold ${fontSize}px ${TITLE_FONT}`;
         
         const textMetrics = ctx.measureText(canvasText);
-        // Skip width constraint for ending card to allow larger text size
-        if (textMetrics.width > maxTextWidth && canvasData.id !== 'end') {
+        // Skip width constraint for ending card and card 1 (both use wrapping; no need to shrink font)
+        if (textMetrics.width > maxTextWidth && canvasData.id !== 'end' && canvasData.id !== '1') {
           const scaleFactor = 0.9;
           fontSize = (maxTextWidth / textMetrics.width) * fontSize * scaleFactor;
-          ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
+          ctx.font = `bold ${fontSize}px ${TITLE_FONT}`;
         }
 
         const lines = wrapText(ctx, canvasText, maxTextWidth);
         const lineHeight = fontSize * 1.4;
         const totalHeight = lines.length * lineHeight;
         
-        // Calculate text position first (centered, but moved up for card 1)
-        let startY = (height - totalHeight) / 2 + lineHeight / 2;
-        // Move card 1 title and badge up by 8% of height
+        // Card 1: per-line spacing (box + gap between lines). Else: simple block.
+        const vPad = canvasData.id === '1' ? fontSize * 0.08 : fontSize * 0.2;
+        const gapBetweenLines = 0;
+        const boxHeight = lineHeight + 2 * vPad;
+        const lineSpacing = boxHeight + gapBetweenLines;
+        const totalBlockHeight = lines.length > 0
+          ? (lines.length - 1) * lineSpacing + boxHeight
+          : 0;
+        
+        let startY: number;
         if (canvasData.id === '1') {
-          startY = startY - (height * 0.08);
+          const topPad = height * 0.12;
+          const bottomPad = height * 0.12;
+          const minStartY = topPad + boxHeight / 2;
+          const maxStartY = height - bottomPad - totalBlockHeight + boxHeight / 2;
+          const range = Math.max(0, maxStartY - minStartY);
+          startY = minStartY + Math.random() * range;
+        } else {
+          startY = (height - totalHeight) / 2 + lineHeight / 2;
         }
         
         // If ending card, draw white share icon above text
@@ -382,71 +518,39 @@ export default function Home() {
           ctx.restore();
         }
         
-        // If card 1, draw badge right under the title text
-        let badgeY = 0;
-        let badgeHeight = 0;
-        if (canvasData.id === '1' && levelNameForBadge) {
-          const badgeText = `${levelNameForBadge} Edition`;
-          // Badge size relative to text
-          const badgeFontSize = fontSize * 0.6;
-          ctx.font = `bold ${badgeFontSize}px system-ui, sans-serif`;
-          const badgeMetrics = ctx.measureText(badgeText);
-          const badgePadding = badgeFontSize * 0.8;
-          const badgeWidth = badgeMetrics.width + (badgePadding * 2);
-          badgeHeight = badgeFontSize * 1.8;
-          // Position badge right under the title text
-          const textBottom = startY + totalHeight - lineHeight / 2;
-          const spacing = fontSize * 0.6; // Spacing between text and badge
-          badgeY = textBottom + spacing;
-          
-          // Draw white background with border
-          const badgeX = (width - badgeWidth) / 2;
+        // Card 1 only: TikTok-style per-line white background (each line gets its own rounded box)
+        const pad = canvasData.id === '1' ? fontSize * 0.5 : fontSize * 0.45;
+        const radius = fontSize * 0.25;
+        if (canvasData.id === '1' && lines.length > 0) {
           ctx.fillStyle = '#FFFFFF';
-          ctx.strokeStyle = canvasData.backgroundColor || '#cfa9f5';
-          ctx.lineWidth = 2 * (width / 1080);
-          
-          // Draw rounded rectangle
-          const badgeRadius = badgeFontSize * 0.3;
-          ctx.beginPath();
-          ctx.moveTo(badgeX + badgeRadius, badgeY);
-          ctx.lineTo(badgeX + badgeWidth - badgeRadius, badgeY);
-          ctx.quadraticCurveTo(badgeX + badgeWidth, badgeY, badgeX + badgeWidth, badgeY + badgeRadius);
-          ctx.lineTo(badgeX + badgeWidth, badgeY + badgeHeight - badgeRadius);
-          ctx.quadraticCurveTo(badgeX + badgeWidth, badgeY + badgeHeight, badgeX + badgeWidth - badgeRadius, badgeY + badgeHeight);
-          ctx.lineTo(badgeX + badgeRadius, badgeY + badgeHeight);
-          ctx.quadraticCurveTo(badgeX, badgeY + badgeHeight, badgeX, badgeY + badgeHeight - badgeRadius);
-          ctx.lineTo(badgeX, badgeY + badgeRadius);
-          ctx.quadraticCurveTo(badgeX, badgeY, badgeX + badgeRadius, badgeY);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-          
-          // Draw badge text
-          ctx.fillStyle = canvasData.backgroundColor || '#cfa9f5';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(badgeText, width / 2, badgeY + badgeHeight / 2);
-          
-          // Reset font and fillStyle for main text
-          ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
-          ctx.fillStyle = canvasData.textColor || '#FFFFFF';
-        }
-        
-        // Adjust startY if badge is present (card 1 with badge)
-        // When badge exists, center text and badge together vertically, but move up
-        if (canvasData.id === '1' && levelNameForBadge && badgeY > 0 && badgeHeight > 0) {
-          // Center both text and badge together in the card, but move up by 8% of height
-          const totalContentHeight = totalHeight + badgeHeight + (fontSize * 0.6); // text + badge + spacing
-          startY = (height - totalContentHeight) / 2 + lineHeight / 2 - (height * 0.08);
-          // Recalculate badge position based on new text position
-          const textBottom = startY + totalHeight - lineHeight / 2;
-          const spacing = fontSize * 0.6;
-          badgeY = textBottom + spacing;
+          lines.forEach((line, idx) => {
+            const lineW = ctx.measureText(line).width;
+            const boxW = lineW + pad * 2;
+            const boxH = boxHeight;
+            const boxX = (width - boxW) / 2;
+            const centerY = startY + idx * lineSpacing;
+            const boxY = centerY - boxH / 2;
+            ctx.beginPath();
+            ctx.moveTo(boxX + radius, boxY);
+            ctx.lineTo(boxX + boxW - radius, boxY);
+            ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + radius);
+            ctx.lineTo(boxX + boxW, boxY + boxH - radius);
+            ctx.quadraticCurveTo(boxX + boxW, boxY + boxH, boxX + boxW - radius, boxY + boxH);
+            ctx.lineTo(boxX + radius, boxY + boxH);
+            ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - radius);
+            ctx.lineTo(boxX, boxY + radius);
+            ctx.quadraticCurveTo(boxX, boxY, boxX + radius, boxY);
+            ctx.closePath();
+            ctx.fill();
+          });
         }
 
-        // Ensure fillStyle is set to text color before drawing text
-        ctx.fillStyle = canvasData.textColor || '#FFFFFF';
+        // Draw title text (black on white bg for card 1, else use text color)
+        const titleColor = canvasData.id === '1' && lines.length > 0 ? '#000000' : (canvasData.textColor || '#FFFFFF');
+        ctx.fillStyle = titleColor;
         lines.forEach((line, idx) => {
-          ctx.fillText(line, width / 2, startY + idx * lineHeight);
+          const y = canvasData.id === '1' ? startY + idx * lineSpacing : startY + idx * lineHeight;
+          ctx.fillText(line, width / 2, y);
         });
       } else if (canvasData.id === '2') {
         // Card 2: Instructions with numbered items
@@ -603,13 +707,10 @@ export default function Home() {
         });
       }
 
-      // Convert to blob and return it
+    return new Promise<Blob>((resolve, reject) => {
       canvas.toBlob((blob) => {
-        if (blob) {
-          resolve(blob);
-        } else {
-          reject(new Error('Failed to create blob'));
-        }
+        if (blob) resolve(blob);
+        else reject(new Error('Failed to create blob'));
       }, 'image/png');
     });
   };
@@ -630,11 +731,58 @@ export default function Home() {
       
       const { levelName, categoryName, instructions, questions } = result.data;
       
+      // Get theme from OpenAI first (category + first 3 questions), then switch to Image mode.
+      // This ensures Pexels is called only after we have the theme (no flash of wrong image).
+      const themeContextParts: string[] = [];
+      if (categoryName) themeContextParts.push(`Category: ${categoryName}`);
+      const first3 = Array.isArray(questions) ? questions.slice(0, 3) : [];
+      if (first3.length) {
+        themeContextParts.push('Questions:');
+        first3.forEach((q: string) => themeContextParts.push(`- ${q}`));
+      }
+      const themeContext = themeContextParts.join('\n\n');
+      let themeText = 'couple in nature';
+      try {
+        const themeRes = await fetch('/api/openai/theme', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ context: themeContext }),
+        });
+        const themeData = await themeRes.json();
+        if (themeRes.ok && themeData?.theme?.trim()) themeText = themeData.theme.trim();
+      } catch {
+        // Keep fallback
+      }
+      setTheme(themeText);
+      setMode('video');
+      
       // Store the level name for the badge
       setLevelName(levelName || '');
       
+      // Build context: level + category + questions (no instructions). Call OpenAI for title.
+      const contextParts: string[] = [];
+      if (levelName) contextParts.push(`Level: ${levelName}`);
+      if (categoryName) contextParts.push(`Category: ${categoryName}`);
+      if (Array.isArray(questions) && questions.length) {
+        contextParts.push('Questions:');
+        questions.forEach((q: string) => contextParts.push(`- ${q}`));
+      }
+      const context = contextParts.join('\n\n');
+      let titleText = categoryName || '';
+      try {
+        const titleRes = await fetch('/api/openai/title', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ context }),
+        });
+        const titleData = await titleRes.json();
+        if (titleRes.ok && titleData?.title?.trim()) titleText = titleData.title.trim();
+      } catch {
+        // Keep categoryName as fallback
+      }
+      
       // Update the text state for card 1 (title)
-      setText(categoryName);
+      setText(titleText);
       
       // Update card 2 with instructions (convert instructions array to card2Texts format)
       const instructionsForCard2 = instructions && instructions.length > 0
@@ -647,7 +795,7 @@ export default function Home() {
       const questionCards: CanvasData[] = questions.map((question: string) => ({
         id: String(Date.now() + Math.random()),
         text: question,
-        backgroundColor: backgroundColor || '#cfa9f5',
+        backgroundColor: backgroundColor || '#000000',
         textColor: '#876e9f',
         textSize: textSize || '200',
         imageSize: imageSize || '1080x1920'
@@ -666,12 +814,12 @@ export default function Home() {
         endingCardText = 'Share it with your boo and see what they say';
       }
       
-      // Rebuild canvases: card 1 with categoryName, card 2 with instructions, question cards, ending card
+      // Rebuild canvases: card 1 with titleText, card 2 with instructions, question cards, ending card
       const newCanvases: CanvasData[] = [
-        { ...existingCard1, text: categoryName },
+        { ...existingCard1, text: titleText },
         { ...existingCard2, text: instructionsForCard2.map((t: { text: string; color: string }) => t.text).join('\n') },
         ...questionCards,
-        endingCard || { id: 'end', text: endingCardText, backgroundColor: '#cfa9f5', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' }
+        endingCard || { id: 'end', text: endingCardText, backgroundColor: '#000000', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' }
       ];
       
       // Set ending card text
@@ -682,7 +830,7 @@ export default function Home() {
       
       setCanvases(newCanvases);
       
-      // Switch to card 1 to show the generated category name
+      // Switch to card 1 to show the generated title
       setCurrentCanvasId('1');
       
     } catch (error) {
@@ -702,7 +850,7 @@ export default function Home() {
       
       for (let i = 0; i < canvases.length; i++) {
         const canvasData = canvases[i];
-        const blob = await generateCardImage(canvasData, i, canvasData.id === '1' ? levelName : undefined);
+        const blob = await generateCardImage(canvasData, i);
         const cardNumber = i + 1;
         imageBlobs.push({
           blob,
@@ -760,8 +908,7 @@ export default function Home() {
       const currentIndex = canvases.findIndex(c => c.id === currentCanvasId);
       const imageBlob = await generateCardImage(
         currentCanvas,
-        currentIndex >= 0 ? currentIndex : 0,
-        currentCanvas.id === '1' ? levelName : undefined
+        currentIndex >= 0 ? currentIndex : 0
       );
 
       // Create FormData to send to API
@@ -991,6 +1138,56 @@ export default function Home() {
                 />
               </div>
             </div>
+
+            {/* Theme input: Pexels search query when mode is video */}
+            <div className="flex-shrink-0">
+              <label
+                htmlFor="theme"
+                className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
+              >
+                Theme
+              </label>
+              <input
+                type="text"
+                id="theme"
+                value={theme}
+                onChange={(e) => setTheme(e.target.value)}
+                placeholder="e.g. cinematic, nature, city"
+                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent text-sm"
+              />
+            </div>
+
+            {/* Mode dropdown: plain / video */}
+            <div className="flex-shrink-0">
+              <label
+                htmlFor="mode"
+                className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
+              >
+                Mode
+              </label>
+              <select
+                id="mode"
+                value={mode}
+                onChange={(e) => setMode(e.target.value as 'plain' | 'video')}
+                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent text-sm"
+              >
+                <option value="plain">Plain</option>
+                <option value="video">Image</option>
+              </select>
+            </div>
+
+            {mode === 'video' && (
+              <div className="flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={handleChangeVideo}
+                  disabled={videoLoading}
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2 dark:focus:ring-offset-zinc-900"
+                >
+                  {videoLoading ? 'Loading…' : 'Change Image'}
+                </button>
+              </div>
+            )}
 
             {/* Title Input (only for first card) */}
             <div className="flex-shrink-0">
@@ -1352,16 +1549,26 @@ export default function Home() {
                 // Scale font size for preview - use a fixed scale factor so changes are visible
                 // This makes the preview roughly 8% of actual size, so 80px → ~6.4px, 800px → ~64px
                 const previewFontSize = fontSize * 0.08;
-                
                 const aspectRatio = width / height;
                 const isFirstCanvas = currentCanvasId === '1';
+                // Canvas-style fontSize and maxWidth for title wrap (card 1)
+                const canvasWidthScale = width / 1080;
+                const titleFontSize = (fontSize * canvasWidthScale) / 2.5;
+                const titleMaxWidth = width * 0.9;
+                // Only use canvas-based wrap after mount to avoid SSR/client hydration mismatch
+                const titleLines = mounted && isFirstCanvas
+                  ? wrapTextToLines(firstCard.text, titleMaxWidth, titleFontSize)
+                  : [];
                 const isEndingCard = currentCanvasId === 'end';
                 
+                const useVideoBg = isFirstCanvas && mode === 'video' && !!videoBackgroundUrl;
+                const showPlainBg = !useVideoBg;
+
                 return (
                   <div
                     className="rounded-lg border-2 border-zinc-300 dark:border-zinc-700 flex items-center justify-center p-3 relative overflow-hidden"
                     style={{ 
-                      backgroundColor,
+                      backgroundColor: showPlainBg ? backgroundColor : undefined,
                       aspectRatio: `${width} / ${height}`,
                       height: '100%',
                       width: 'auto',
@@ -1371,9 +1578,23 @@ export default function Home() {
                       willChange: 'contents'
                     }}
                   >
+                    {useVideoBg && videoBackgroundUrl && (
+                      <img
+                        src={videoBackgroundUrl}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-cover"
+                        style={{ pointerEvents: 'none', filter: ROMANTIC_IMAGE_FILTER }}
+                      />
+                    )}
                     {(isFirstCanvas || isEndingCard) ? (
-                      // First canvas and ending card - no white card, text directly on background
-                      <div className={isEndingCard ? "flex flex-col items-center justify-center" : "flex flex-col items-center justify-center relative w-full h-full"} style={isEndingCard ? { width: '100%', height: '100%' } : { width: '100%', height: '100%' }}>
+                      <div
+                        className={isEndingCard ? "flex flex-col items-center justify-center" : "flex flex-col items-center justify-center relative w-full h-full"}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          ...(useVideoBg ? { position: 'absolute', inset: 0 } : {}),
+                        }}
+                      >
                         {isEndingCard && (
                           <svg
                             className="flex-shrink-0"
@@ -1397,35 +1618,61 @@ export default function Home() {
                             <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
                           </svg>
                         )}
-                        <p
-                          className="font-bold text-center break-words px-2 overflow-hidden"
-                          style={{
-                            color: isFirstCanvas ? firstCard.textColor : currentCanvas.textColor,
-                            width: '100%',
-                            maxWidth: '95%',
-                            wordWrap: 'break-word',
-                            overflowWrap: 'break-word',
-                            fontSize: `${previewFontSize}px`,
-                            lineHeight: '1.4',
-                            minHeight: '1em',
-                            maxHeight: '100%',
-                            contain: 'layout style paint',
-                            willChange: 'auto'
-                          }}
-                        >
-                          {isFirstCanvas ? firstCard.text : currentCanvas.text}
-                        </p>
-                        {isFirstCanvas && levelName && (
-                          <div
-                            className="px-3 py-1 rounded-lg font-semibold text-sm mt-3"
+                        {isFirstCanvas ? (
+                          titleLines.length > 0 ? (
+                            <div className="flex flex-col items-center gap-0" style={{ maxWidth: '95%' }}>
+                              {titleLines.map((line, i) => (
+                                <span
+                                  key={i}
+                                  className="font-bold text-center px-[0.45em] py-[0.2em] rounded-[0.25em]"
+                                  style={{
+                                    color: '#000000',
+                                    backgroundColor: '#FFFFFF',
+                                    fontFamily: 'var(--font-inter), sans-serif',
+                                    fontSize: `${previewFontSize}px`,
+                                    lineHeight: 1.4,
+                                  }}
+                                >
+                                  {line}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <p
+                              className="font-bold text-center px-3 py-1.5 rounded-lg"
+                              style={{
+                                color: '#000000',
+                                backgroundColor: '#FFFFFF',
+                                fontFamily: 'Inter, sans-serif',
+                                width: '100%',
+                                maxWidth: '95%',
+                                fontSize: `${previewFontSize}px`,
+                                lineHeight: 1.4,
+                                minHeight: '1em',
+                              }}
+                            >
+                              {firstCard.text || 'Your title'}
+                            </p>
+                          )
+                        ) : (
+                          <p
+                            className="font-bold text-center break-words overflow-hidden px-2"
                             style={{
-                              backgroundColor: '#FFFFFF',
-                              border: `2px solid ${backgroundColor}`,
-                              color: backgroundColor,
+                              color: currentCanvas.textColor,
+                              width: '100%',
+                              maxWidth: '95%',
+                              wordWrap: 'break-word',
+                              overflowWrap: 'break-word',
+                              fontSize: `${previewFontSize}px`,
+                              lineHeight: 1.4,
+                              minHeight: '1em',
+                              maxHeight: '100%',
+                              contain: 'layout style paint',
+                              willChange: 'auto',
                             }}
                           >
-                            {levelName} Edition
-                          </div>
+                            {currentCanvas.text}
+                          </p>
                         )}
                       </div>
                     ) : (
@@ -1435,7 +1682,7 @@ export default function Home() {
                         style={{ pointerEvents: 'none', contain: 'layout style paint' }}
                       >
                         <div
-                          className="bg-white rounded-2xl border-4 border-gray-300 shadow-lg flex flex-col items-start justify-start overflow-hidden relative"
+                          className="bg-white rounded-2xl border-4 border-[#e1c2ff] shadow-lg flex flex-col items-start justify-start overflow-hidden relative"
                           style={{
                             width: '75%',
                             aspectRatio: aspectRatio,
@@ -1541,7 +1788,7 @@ export default function Home() {
                     )}
                   </div>
                 );
-              }, [backgroundColor, imageSize, currentCanvas.textSize, textSize, currentCanvasId, firstCard.textColor, currentCanvas.textColor, currentCanvas.text, card2Texts, levelName])}
+              }, [mounted, backgroundColor, imageSize, currentCanvas.textSize, textSize, currentCanvasId, firstCard.textColor, firstCard.text, currentCanvas.textColor, currentCanvas.text, card2Texts, levelName, mode, videoBackgroundUrl])}
             </div>
             
             {/* Carousel */}
@@ -1554,7 +1801,13 @@ export default function Home() {
                   const height = parseInt(heightStr) || 1920;
                   const aspectRatio = width / height;
                   const isFirstCanvas = canvas.id === '1';
-                  
+                  const useThumbBg = isFirstCanvas && mode === 'video' && !!videoThumbnailUrl;
+                  const canvasWidthScale = width / 1080;
+                  const baseFs = parseInt(canvas.textSize || '200') || 200;
+                  const titleFontSize = (baseFs * canvasWidthScale) / 2.5;
+                  const titleMaxWidth = width * 0.9;
+                  const thumbTitleLines = mounted && isFirstCanvas ? wrapTextToLines(canvas.text, titleMaxWidth, titleFontSize) : [];
+
                   return (
                     <div key={canvas.id} className="contents">
                       {/* Render card 1 and ending card (no white card, just text) */}
@@ -1571,6 +1824,14 @@ export default function Home() {
                           }`}
                           style={{ backgroundColor: canvas.backgroundColor }}
                         >
+                          {useThumbBg && videoThumbnailUrl && (
+                            <img
+                              src={videoThumbnailUrl}
+                              alt=""
+                              className="absolute inset-0 w-full h-full object-cover"
+                              style={{ filter: ROMANTIC_IMAGE_FILTER }}
+                            />
+                          )}
                           {/* First and ending canvas - no white card, text directly on background */}
                           <div className={`absolute inset-0 flex items-center justify-center p-1 ${canvas.id === 'end' ? 'flex-col gap-1' : 'flex-col gap-1'}`}>
                             {canvas.id === 'end' && (
@@ -1595,25 +1856,34 @@ export default function Home() {
                                 <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
                               </svg>
                             )}
-                            <p
-                              className="font-bold text-center text-xs leading-tight"
-                              style={{
-                                color: canvas.textColor,
-                              }}
-                            >
-                              {canvas.text || '•'}
-                            </p>
-                            {canvas.id === '1' && levelName && (
-                              <div
-                                className="px-1.5 py-0.5 rounded text-[8px] font-semibold whitespace-nowrap mt-1"
-                                style={{
-                                  backgroundColor: '#FFFFFF',
-                                  border: `1px solid ${canvas.backgroundColor}`,
-                                  color: canvas.backgroundColor,
-                                }}
+                            {canvas.id === '1' ? (
+                              thumbTitleLines.length > 0 ? (
+                                <div className="flex flex-col items-center gap-0">
+                                  {thumbTitleLines.map((line, i) => (
+                                    <span
+                                      key={i}
+                                      className="font-bold text-center text-xs leading-tight px-1 py-0.5 rounded"
+                                      style={{ fontFamily: 'var(--font-inter), sans-serif', color: '#000000', backgroundColor: '#FFFFFF' }}
+                                    >
+                                      {line}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span
+                                  className="font-bold text-center text-xs leading-tight px-1.5 py-0.5 rounded"
+                                  style={{ fontFamily: 'var(--font-inter), sans-serif', color: '#000000', backgroundColor: '#FFFFFF' }}
+                                >
+                                  {canvas.text || '•'}
+                                </span>
+                              )
+                            ) : (
+                              <p
+                                className="font-bold text-center text-xs leading-tight px-2"
+                                style={{ color: canvas.textColor }}
                               >
-                                {levelName} Edition
-                              </div>
+                                {canvas.text || '•'}
+                              </p>
                             )}
                           </div>
                         </div>
@@ -1636,7 +1906,7 @@ export default function Home() {
                           {/* Subsequdedent canvases - white card in the middle */}
                           <div className="absolute inset-0 flex items-center justify-center p-2 pointer-events-none">
                             <div
-                              className="bg-white rounded-lg border-4 border-gray-300 shadow-lg flex flex-col items-start justify-start pointer-events-none relative overflow-hidden"
+                              className="bg-white rounded-lg border-4 border-[#e1c2ff] shadow-lg flex flex-col items-start justify-start pointer-events-none relative overflow-hidden"
                               style={{
                                 width: '75%',
                                 aspectRatio: aspectRatio,
