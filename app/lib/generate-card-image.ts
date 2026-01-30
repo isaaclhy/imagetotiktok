@@ -1,5 +1,5 @@
 import type { CanvasData } from './types';
-import { loadImage, wrapText } from './canvas-utils';
+import { loadImage, wrapText, getComplementaryColor } from './canvas-utils';
 import { ROMANTIC_IMAGE_FILTER, TITLE_FONT } from './constants';
 
 interface GenerateCardImageParams {
@@ -57,6 +57,7 @@ export async function generateCardImage({
 
   if (canvasData.id !== '1' && canvasData.id !== 'end') {
     const radius = 64;
+    const borderColor = getComplementaryColor(canvasData.backgroundColor || '#000000');
     ctx.fillStyle = '#FFFFFF';
     ctx.beginPath();
     ctx.moveTo(cardX + radius, cardY);
@@ -70,7 +71,7 @@ export async function generateCardImage({
     ctx.quadraticCurveTo(cardX, cardY, cardX + radius, cardY);
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = '#e1c2ff';
+    ctx.strokeStyle = borderColor;
     ctx.lineWidth = 16;
     ctx.stroke();
   }
@@ -197,7 +198,8 @@ export async function generateCardImage({
     const canvasWidthScale = width / 1080;
     const baseFontSize = parseInt(canvasData.textSize || '200') || 200;
     const fontSize = (baseFontSize * canvasWidthScale * 0.75) / 3.7;
-    ctx.fillStyle = canvasData.textColor || '#876e9f';
+    const whiteCardTextColor = canvasData.textColor || '#000000';
+    ctx.fillStyle = whiteCardTextColor;
     ctx.textAlign = 'center';
     ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
     const instructionsText = 'Instructions';
@@ -206,7 +208,7 @@ export async function generateCardImage({
     const instructionsY = cardY + padding + remSize * 2;
     const instructionsX = cardX + finalCardWidth / 2;
     ctx.fillText(instructionsText, instructionsX, instructionsY);
-    ctx.strokeStyle = canvasData.textColor || '#876e9f';
+    ctx.strokeStyle = whiteCardTextColor;
     ctx.lineWidth = 4 * (width / 1080);
     const underlineOffset = remSize * 0.25;
     const underlineY = instructionsY + fontSize + underlineOffset;
@@ -239,7 +241,8 @@ export async function generateCardImage({
       const y = itemPos.y;
       const textLines = itemPos.textLines;
       const circleY = y + fontSize * 0.5;
-      ctx.fillStyle = instructionTexts[idx].color || '#876e9f';
+      const itemColor = instructionTexts[idx].color || '#000000';
+      ctx.fillStyle = itemColor;
       ctx.beginPath();
       ctx.arc(circleX, circleY, circleRadius, 0, Math.PI * 2);
       ctx.fill();
@@ -248,7 +251,7 @@ export async function generateCardImage({
       ctx.textBaseline = 'middle';
       ctx.font = `bold ${fontSize * 0.6}px system-ui, sans-serif`;
       ctx.fillText(String(idx + 1), circleX, circleY);
-      ctx.fillStyle = instructionTexts[idx].color || '#876e9f';
+      ctx.fillStyle = itemColor;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'top';
       ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
@@ -266,7 +269,7 @@ export async function generateCardImage({
     const canvasWidthScale = width / 1080;
     const baseFontSize = parseInt(canvasData.textSize || '200') || 200;
     const fontSize = (baseFontSize * canvasWidthScale * 0.75) / 3.0;
-    ctx.fillStyle = canvasData.textColor || '#876e9f';
+    ctx.fillStyle = canvasData.textColor || '#000000';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     ctx.font = `bold ${fontSize}px system-ui, sans-serif`;

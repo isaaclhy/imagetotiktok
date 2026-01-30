@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
 const PROMPT_ID = 'pmpt_697bd67b55d48190ba24de5df8a84f3c0e7de9c8192b5cdc';
-const PROMPT_VERSION = '2';
+const PROMPT_VERSION = '3';
 
 /**
  * POST /api/openai/theme

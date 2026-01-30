@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
         id: number;
         width: number;
         height: number;
+        avg_color?: string;
         src?: {
           original?: string;
           large?: string;
@@ -80,6 +81,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       videoUrl: imageUrl,
       thumbnailUrl: imageUrl,
+      avgColor: photo.avg_color || null,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Failed to fetch Pexels image';

@@ -9,12 +9,13 @@ import { ActionBar } from '@/app/components/ActionBar';
 import { InputsCard } from '@/app/components/InputsCard';
 import { PreviewPanel } from '@/app/components/PreviewPanel';
 import { DownloadModal } from '@/app/components/DownloadModal';
+import { AutomateModal } from '@/app/components/AutomateModal';
 import { Toast } from '@/app/components/Toast';
 
 const INITIAL_CANVASES: CanvasData[] = [
   { id: '1', text: '', backgroundColor: '#000000', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' },
-  { id: '2', text: '', backgroundColor: '#000000', textColor: '#876e9f', textSize: '200', imageSize: '1080x1920' },
-  { id: '3', text: '', backgroundColor: '#000000', textColor: '#876e9f', textSize: '200', imageSize: '1080x1920' },
+  { id: '2', text: '', backgroundColor: '#000000', textColor: '#000000', textSize: '200', imageSize: '1080x1920' },
+  { id: '3', text: '', backgroundColor: '#000000', textColor: '#000000', textSize: '200', imageSize: '1080x1920' },
   { id: 'end', text: '', backgroundColor: '#000000', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' },
 ];
 
@@ -33,6 +34,8 @@ export default function Home() {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [showAutomateModal, setShowAutomateModal] = useState(false);
+  const [automateCount, setAutomateCount] = useState('5');
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [postStatus, setPostStatus] = useState<'processing' | 'success' | 'failed' | null>(null);
@@ -51,10 +54,10 @@ export default function Home() {
   const [contentDisclosureEnabled, setContentDisclosureEnabled] = useState(false);
   const [isYourBrand, setIsYourBrand] = useState(false);
   const [isBrandedContent, setIsBrandedContent] = useState(false);
-  const [card2Texts, setCard2Texts] = useState<Array<{ text: string; color: string }>>([{ text: '', color: '#876e9f' }]);
+  const [card2Texts, setCard2Texts] = useState<Array<{ text: string; color: string }>>([{ text: '', color: '#000000' }]);
   const [levelName, setLevelName] = useState<string>('');
   const [theme, setTheme] = useState<string>('');
-  const [mode, setMode] = useState<'plain' | 'video'>('plain');
+  const [mode, setMode] = useState<'plain' | 'video'>('video');
   const [contentTab, setContentTab] = useState<'image' | 'video'>('image');
   const [videoBackgroundUrl, setVideoBackgroundUrl] = useState<string | null>(null);
   const [videoThumbnailUrl, setVideoThumbnailUrl] = useState<string | null>(null);
@@ -77,10 +80,16 @@ export default function Home() {
       setVideoThumbnailUrl(null);
       return;
     }
+    if (!theme.trim()) {
+      setVideoBackgroundUrl(null);
+      setVideoThumbnailUrl(null);
+      setVideoLoading(false);
+      return;
+    }
     let cancelled = false;
     setVideoLoading(true);
     const page = 1 + Math.floor(Math.random() * 20);
-    fetch(`/api/pexels/video?query=${encodeURIComponent(theme || 'couple in nature')}&page=${page}`)
+    fetch(`/api/pexels/video?query=${encodeURIComponent(theme)}&page=${page}`)
       .then((r) => r.json())
       .then((data) => {
         if (cancelled) return;
@@ -91,6 +100,10 @@ export default function Home() {
         }
         setVideoBackgroundUrl(data.videoUrl ?? null);
         setVideoThumbnailUrl(data.thumbnailUrl ?? null);
+        if (data.avgColor) {
+          setBackgroundColor(data.avgColor);
+          setCanvases((prev) => prev.map((c) => ({ ...c, backgroundColor: data.avgColor })));
+        }
       })
       .catch(() => {
         if (!cancelled) {
@@ -105,11 +118,11 @@ export default function Home() {
   }, [mode, theme]);
 
   const handleChangeVideo = async () => {
-    if (mode !== 'video') return;
+    if (mode !== 'video' || !theme.trim()) return;
     const page = 1 + Math.floor(Math.random() * 20);
     setVideoLoading(true);
     try {
-      const r = await fetch(`/api/pexels/video?query=${encodeURIComponent(theme || 'couple in nature')}&page=${page}`);
+      const r = await fetch(`/api/pexels/video?query=${encodeURIComponent(theme)}&page=${page}`);
       const data = await r.json();
       if (data.error) {
         setVideoBackgroundUrl(null);
@@ -118,6 +131,10 @@ export default function Home() {
       }
       setVideoBackgroundUrl(data.videoUrl ?? null);
       setVideoThumbnailUrl(data.thumbnailUrl ?? null);
+      if (data.avgColor) {
+        setBackgroundColor(data.avgColor);
+        setCanvases((prev) => prev.map((c) => ({ ...c, backgroundColor: data.avgColor })));
+      }
     } catch {
       setVideoBackgroundUrl(null);
       setVideoThumbnailUrl(null);
@@ -208,7 +225,7 @@ export default function Home() {
 
   const handleAddCanvas = () => {
     const newId = String(Date.now());
-    const newCanvas: CanvasData = { id: newId, text: text || '', backgroundColor: backgroundColor || '#000000', textColor: textColor || '#876e9f', textSize: textSize || '200', imageSize: imageSize || '1080x1920' };
+    const newCanvas: CanvasData = { id: newId, text: text || '', backgroundColor: backgroundColor || '#000000', textColor: textColor || '#000000', textSize: textSize || '200', imageSize: imageSize || '1080x1920' };
     const endingCardIndex = canvases.findIndex((c) => c.id === 'end');
     if (endingCardIndex >= 0) {
       const newCanvases = [...canvases];
@@ -234,71 +251,104 @@ export default function Home() {
     generateCardImageLib({ canvasData, mode, videoThumbnailUrl, card2Texts });
 
   const handleAutoGenerate = async () => {
+    const count = Math.min(20, Math.max(1, parseInt(automateCount, 10) || 5));
     setIsAutoGenerating(true);
     try {
-      const response = await fetch('/api/levels/random');
-      if (!response.ok) throw new Error('Failed to fetch random level');
-      const result = await response.json();
-      if (!result.success || !result.data) throw new Error('Invalid response from API');
-      const { levelName: ln, categoryName, instructions, questions } = result.data;
-      const themeContextParts: string[] = [];
-      if (categoryName) themeContextParts.push(`Category: ${categoryName}`);
-      const first3 = Array.isArray(questions) ? questions.slice(0, 3) : [];
-      if (first3.length) {
-        themeContextParts.push('Questions:');
-        first3.forEach((q: string) => themeContextParts.push(`- ${q}`));
+      const zip = new JSZip();
+
+      for (let setIndex = 0; setIndex < count; setIndex++) {
+        const response = await fetch('/api/levels/random');
+        if (!response.ok) throw new Error('Failed to fetch random level');
+        const result = await response.json();
+        if (!result.success || !result.data) throw new Error('Invalid response from API');
+        const { levelName: ln, categoryName, instructions, questions } = result.data;
+        const themeContextParts: string[] = [];
+        if (categoryName) themeContextParts.push(`Category: ${categoryName}`);
+        const first3 = Array.isArray(questions) ? questions.slice(0, 3) : [];
+        if (first3.length) {
+          themeContextParts.push('Questions:');
+          first3.forEach((q: string) => themeContextParts.push(`- ${q}`));
+        }
+        const themeContext = themeContextParts.join('\n\n');
+        let themeText = 'couple in nature';
+        try {
+          const themeRes = await fetch('/api/openai/theme', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ context: themeContext }) });
+          const themeData = await themeRes.json();
+          if (themeRes.ok && themeData?.theme?.trim()) themeText = themeData.theme.trim();
+        } catch {}
+        let thumbnailUrl: string | null = null;
+        let avgColor = backgroundColor || '#000000';
+        if (themeText.trim()) {
+          try {
+            const page = 1 + Math.floor(Math.random() * 20);
+            const pexelsRes = await fetch(`/api/pexels/video?query=${encodeURIComponent(themeText)}&page=${page}`);
+            const pexelsData = await pexelsRes.json();
+            if (pexelsRes.ok && pexelsData?.videoUrl) {
+              thumbnailUrl = pexelsData.thumbnailUrl || pexelsData.videoUrl;
+              if (pexelsData.avgColor) avgColor = pexelsData.avgColor;
+            }
+          } catch {}
+        }
+        const contextParts: string[] = [];
+        if (ln) contextParts.push(`Level: ${ln}`);
+        if (categoryName) contextParts.push(`Category: ${categoryName}`);
+        if (Array.isArray(questions) && questions.length) {
+          contextParts.push('Questions:');
+          questions.forEach((q: string) => contextParts.push(`- ${q}`));
+        }
+        const context = contextParts.join('\n\n');
+        let titleText = categoryName || '';
+        try {
+          const titleRes = await fetch('/api/openai/title', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ context }) });
+          const titleData = await titleRes.json();
+          if (titleRes.ok && titleData?.title?.trim()) titleText = titleData.title.trim();
+        } catch {}
+        const instructionsForCard2 = instructions && instructions.length > 0 ? instructions.map((inst: string) => ({ text: inst, color: '#000000' })) : [{ text: '', color: '#000000' }];
+        const questionCards: CanvasData[] = (questions || []).map((q: string) => ({
+          id: `set${setIndex}-q-${Date.now()}-${Math.random()}`,
+          text: q,
+          backgroundColor: avgColor,
+          textColor: '#000000',
+          textSize: textSize || '200',
+          imageSize: imageSize || '1080x1920',
+        }));
+        const existingCard1 = canvases.find((c) => c.id === '1') || canvases[0];
+        const existingCard2 = canvases.find((c) => c.id === '2') || canvases[1];
+        const endingCard = canvases.find((c) => c.id === 'end');
+        let endingCardText = '';
+        if (ln && ln.toLowerCase() === 'friends') endingCardText = 'Share it with your friends and see what they say';
+        else if (ln && ln.toLowerCase() === 'couples') endingCardText = 'Share it with your boo and see what they say';
+        const newCanvases: CanvasData[] = [
+          { ...existingCard1, id: `set${setIndex}-1`, text: titleText, backgroundColor: avgColor },
+          { ...existingCard2, id: `set${setIndex}-2`, text: instructionsForCard2.map((t: { text: string; color: string }) => t.text).join('\n'), backgroundColor: avgColor },
+          ...questionCards,
+          endingCard ? { ...endingCard, id: `set${setIndex}-end`, text: endingCardText, backgroundColor: avgColor } : { id: `set${setIndex}-end`, text: endingCardText, backgroundColor: avgColor, textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' },
+        ];
+        const endIdx = newCanvases.findIndex((c) => c.id === `set${setIndex}-end`);
+        if (endIdx >= 0) newCanvases[endIdx].text = endingCardText;
+
+        for (let i = 0; i < newCanvases.length; i++) {
+          const c = newCanvases[i];
+          const libId = i === 0 ? '1' : i === 1 ? '2' : i === newCanvases.length - 1 ? 'end' : '3';
+          const blob = await generateCardImageLib({
+            canvasData: { ...c, id: libId },
+            mode: 'video',
+            videoThumbnailUrl: i === 0 ? thumbnailUrl : null,
+            card2Texts: instructionsForCard2,
+          });
+          zip.file(`set-${setIndex + 1}-card-${i + 1}.png`, blob);
+        }
       }
-      const themeContext = themeContextParts.join('\n\n');
-      let themeText = 'couple in nature';
-      try {
-        const themeRes = await fetch('/api/openai/theme', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ context: themeContext }) });
-        const themeData = await themeRes.json();
-        if (themeRes.ok && themeData?.theme?.trim()) themeText = themeData.theme.trim();
-      } catch {}
-      setTheme(themeText);
-      setMode('video');
-      setLevelName(ln || '');
-      const contextParts: string[] = [];
-      if (ln) contextParts.push(`Level: ${ln}`);
-      if (categoryName) contextParts.push(`Category: ${categoryName}`);
-      if (Array.isArray(questions) && questions.length) {
-        contextParts.push('Questions:');
-        questions.forEach((q: string) => contextParts.push(`- ${q}`));
-      }
-      const context = contextParts.join('\n\n');
-      let titleText = categoryName || '';
-      try {
-        const titleRes = await fetch('/api/openai/title', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ context }) });
-        const titleData = await titleRes.json();
-        if (titleRes.ok && titleData?.title?.trim()) titleText = titleData.title.trim();
-      } catch {}
-      setText(titleText);
-      const instructionsForCard2 = instructions && instructions.length > 0 ? instructions.map((inst: string) => ({ text: inst, color: '#876e9f' })) : [{ text: '', color: '#876e9f' }];
-      setCard2Texts(instructionsForCard2);
-      const questionCards: CanvasData[] = (questions || []).map((q: string) => ({
-        id: String(Date.now() + Math.random()),
-        text: q,
-        backgroundColor: backgroundColor || '#000000',
-        textColor: '#876e9f',
-        textSize: textSize || '200',
-        imageSize: imageSize || '1080x1920',
-      }));
-      const existingCard1 = canvases.find((c) => c.id === '1') || canvases[0];
-      const existingCard2 = canvases.find((c) => c.id === '2') || canvases[1];
-      const endingCard = canvases.find((c) => c.id === 'end');
-      let endingCardText = '';
-      if (ln && ln.toLowerCase() === 'friends') endingCardText = 'Share it with your friends and see what they say';
-      else if (ln && ln.toLowerCase() === 'couples') endingCardText = 'Share it with your boo and see what they say';
-      const newCanvases: CanvasData[] = [
-        { ...existingCard1, text: titleText },
-        { ...existingCard2, text: instructionsForCard2.map((t: { text: string; color: string }) => t.text).join('\n') },
-        ...questionCards,
-        endingCard || { id: 'end', text: endingCardText, backgroundColor: '#000000', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' },
-      ];
-      const endIdx = newCanvases.findIndex((c) => c.id === 'end');
-      if (endIdx >= 0) newCanvases[endIdx].text = endingCardText;
-      setCanvases(newCanvases);
-      setCurrentCanvasId('1');
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bleamies-automate-${count}-sets.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     } catch (error) {
       console.error('Error auto-generating cards:', error);
       alert('Failed to generate cards. Please try again.');
@@ -471,7 +521,7 @@ export default function Home() {
       <div className="flex-1 flex flex-col min-w-0 h-screen ml-56 overflow-y-auto">
         <div className="max-w-7xl mx-auto w-full flex flex-col flex-1 min-h-0">
           <ActionBar
-            onAutoGenerate={handleAutoGenerate}
+            onAutoGenerate={() => setShowAutomateModal(true)}
             onDownload={() => setShowDownloadModal(true)}
             onPost={handlePostToTikTok}
             isAutoGenerating={isAutoGenerating}
@@ -504,8 +554,6 @@ export default function Home() {
               setCard2Texts={setCard2Texts}
               textSize={textSize}
               setTextSize={setTextSize}
-              imageSize={imageSize}
-              setImageSize={setImageSize}
               onAddCanvas={handleAddCanvas}
               onDeleteCanvas={handleDeleteCanvas}
               userInfo={userInfo}
@@ -545,6 +593,7 @@ export default function Home() {
           </div>
         </div>
       </div>
+      <AutomateModal isOpen={showAutomateModal} onClose={() => setShowAutomateModal(false)} onConfirm={handleAutoGenerate} isGenerating={isAutoGenerating} automateCount={automateCount} setAutomateCount={setAutomateCount} />
       <DownloadModal isOpen={showDownloadModal} onClose={() => setShowDownloadModal(false)} onConfirm={handleGenerate} isGenerating={isGenerating} />
       {showToast && <Toast message={toastMessage} status={postStatus} onClose={() => { setShowToast(false); setPostStatus(null); setPublishId(null); }} />}
     </div>

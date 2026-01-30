@@ -59,7 +59,7 @@ export function ActionBar({
       </button>
       <button
         onClick={onDownload}
-        disabled={isGenerating || !canDownload}
+        disabled={isGenerating || isAutoGenerating || !canDownload}
         className="h-10 px-4 rounded-lg bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {isGenerating ? (
