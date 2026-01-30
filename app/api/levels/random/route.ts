@@ -48,20 +48,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Allowed category names (case-insensitive): only "Spicy" and "After Dark"
-    const ALLOWED = ['spicy', 'after dark'];
-
-    function isAllowedCategory(cat: any): boolean {
-      const name = (cat?.name ?? cat?.category ?? cat?.title ?? '').toString().toLowerCase();
-      return ALLOWED.some((a) => name.includes(a));
-    }
-
-    // Build { level, category } pairs from Friends/Couples, filter to Spicy / After Dark only
+    // Build { level, category } pairs from Friends/Couples (any category)
     const eligible: { level: any; category: any }[] = [];
     for (const level of levels) {
       if (!level.categories?.length) continue;
       for (const cat of level.categories) {
-        if (isAllowedCategory(cat)) eligible.push({ level, category: cat });
+        eligible.push({ level, category: cat });
       }
     }
 
@@ -69,13 +61,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'No Spicy or After Dark categories found in Friends/Couples levels',
+          error: 'No categories found in Friends/Couples levels',
         },
         { status: 404 }
       );
     }
 
-    // Randomly select one Spicy or After Dark category
+    // Randomly select one category
     const picked = getRandomElement(eligible)!;
     const selectedLevel = picked.level;
     const selectedCategory = picked.category;
