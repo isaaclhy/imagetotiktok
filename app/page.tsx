@@ -1,60 +1,25 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import JSZip from 'jszip';
+import type { CanvasData } from '@/app/lib/types';
+import { generateCardImage as generateCardImageLib } from '@/app/lib/generate-card-image';
+import { Sidebar } from '@/app/components/Sidebar';
+import { ActionBar } from '@/app/components/ActionBar';
+import { InputsCard } from '@/app/components/InputsCard';
+import { PreviewPanel } from '@/app/components/PreviewPanel';
+import { DownloadModal } from '@/app/components/DownloadModal';
+import { Toast } from '@/app/components/Toast';
 
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-    img.src = src;
-  });
-}
-
-/** Dreamy, romantic filter for Pexels image (Image mode) – preview, carousel, and export */
-const ROMANTIC_IMAGE_FILTER = 'brightness(0.82) contrast(0.88) saturate(0.72) sepia(0.18) hue-rotate(-8deg)';
-
-/** Font for first-card title (TikTok-style clean sans-serif). */
-const TITLE_FONT = 'Inter, sans-serif';
-
-/** Wrap title text into lines using canvas measure (matches export). Use in preview/carousel. */
-function wrapTextToLines(text: string, maxWidth: number, fontSizePx: number): string[] {
-  if (typeof document === 'undefined') return [text || ''].filter(Boolean);
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return [text || ''].filter(Boolean);
-  ctx.font = `bold ${fontSizePx}px ${TITLE_FONT}`;
-  const words = (text || '').trim().split(/\s+/);
-  if (words.length === 0) return [];
-  const lines: string[] = [];
-  let current = words[0]!;
-  for (let i = 1; i < words.length; i++) {
-    const candidate = current + ' ' + (words[i] ?? '');
-    if (ctx.measureText(candidate).width <= maxWidth) current = candidate;
-    else { lines.push(current); current = words[i] ?? ''; }
-  }
-  lines.push(current);
-  return lines;
-}
-
-interface CanvasData {
-  id: string;
-  text: string;
-  backgroundColor: string;
-  textColor: string;
-  textSize: string;
-  imageSize: string;
-}
+const INITIAL_CANVASES: CanvasData[] = [
+  { id: '1', text: '', backgroundColor: '#000000', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' },
+  { id: '2', text: '', backgroundColor: '#000000', textColor: '#876e9f', textSize: '200', imageSize: '1080x1920' },
+  { id: '3', text: '', backgroundColor: '#000000', textColor: '#876e9f', textSize: '200', imageSize: '1080x1920' },
+  { id: 'end', text: '', backgroundColor: '#000000', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' },
+];
 
 export default function Home() {
-  const [canvases, setCanvases] = useState<CanvasData[]>([
-    { id: '1', text: '', backgroundColor: '#000000', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' },
-    { id: '2', text: '', backgroundColor: '#000000', textColor: '#876e9f', textSize: '200', imageSize: '1080x1920' },
-    { id: '3', text: '', backgroundColor: '#000000', textColor: '#876e9f', textSize: '200', imageSize: '1080x1920' },
-    { id: 'end', text: '', backgroundColor: '#000000', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' }
-  ]);
+  const [canvases, setCanvases] = useState<CanvasData[]>(INITIAL_CANVASES);
   const [currentCanvasId, setCurrentCanvasId] = useState<string>('1');
   const [text, setText] = useState('');
   const [backgroundColor, setBackgroundColor] = useState('#000000');
@@ -72,11 +37,9 @@ export default function Home() {
   const [toastMessage, setToastMessage] = useState('');
   const [postStatus, setPostStatus] = useState<'processing' | 'success' | 'failed' | null>(null);
   const [publishId, setPublishId] = useState<string | null>(null);
-  
-  // TikTok post metadata states
   const [postTitle, setPostTitle] = useState('');
-  const [postPrivacy, setPostPrivacy] = useState<string>(''); // Empty = no default (required by TikTok)
-  const [allowComment, setAllowComment] = useState(false); // Must be manually enabled (required by TikTok)
+  const [postPrivacy, setPostPrivacy] = useState<string>('');
+  const [allowComment, setAllowComment] = useState(false);
   const [creatorInfo, setCreatorInfo] = useState<{
     privacy_level_options?: string[];
     comment_disabled?: boolean;
@@ -84,22 +47,11 @@ export default function Home() {
     stitch_disabled?: boolean;
     max_video_post_duration_sec?: number;
   } | null>(null);
-  const [musicUsageConsent, setMusicUsageConsent] = useState(false); // Must agree before posting
-  
-  // Content Disclosure Settings (TikTok requirement)
+  const [musicUsageConsent, setMusicUsageConsent] = useState(false);
   const [contentDisclosureEnabled, setContentDisclosureEnabled] = useState(false);
-  const [isYourBrand, setIsYourBrand] = useState(false); // Promoting yourself/your business
-  const [isBrandedContent, setIsBrandedContent] = useState(false); // Promoting another brand/third party
-  
-  const [instructions, setInstructions] = useState<Array<{ text: string; color: string }>>([
-    { text: '', color: '#876e9f' }
-  ]);
-  const [card2Instructions, setCard2Instructions] = useState<Array<{ text: string; color: string }>>([
-    { text: '', color: '#876e9f' }
-  ]);
-  const [card2Texts, setCard2Texts] = useState<Array<{ text: string; color: string }>>([
-    { text: '', color: '#876e9f' }
-  ]);
+  const [isYourBrand, setIsYourBrand] = useState(false);
+  const [isBrandedContent, setIsBrandedContent] = useState(false);
+  const [card2Texts, setCard2Texts] = useState<Array<{ text: string; color: string }>>([{ text: '', color: '#876e9f' }]);
   const [levelName, setLevelName] = useState<string>('');
   const [theme, setTheme] = useState<string>('');
   const [mode, setMode] = useState<'plain' | 'video'>('plain');
@@ -107,42 +59,41 @@ export default function Home() {
   const [videoBackgroundUrl, setVideoBackgroundUrl] = useState<string | null>(null);
   const [videoThumbnailUrl, setVideoThumbnailUrl] = useState<string | null>(null);
   const [videoLoading, setVideoLoading] = useState(false);
-  const [videoError, setVideoError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const isUpdatingFromUserInput = useRef(false);
+  const isSyncingFromCanvas = useRef(false);
 
-  // Fetch Pexels image when mode is "video" (Image)
+  const currentCanvas = canvases.find((c) => c.id === currentCanvasId) || canvases[0];
+  const firstCard = canvases.find((c) => c.id === '1') || canvases[0];
+  const firstCardTextValue = canvases.find((c) => c.id === '1')?.text || '';
+  const prevFirstCardTextRef = useRef(firstCardTextValue);
+
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     if (mode !== 'video') {
       setVideoBackgroundUrl(null);
       setVideoThumbnailUrl(null);
-      setVideoError(null);
       return;
     }
     let cancelled = false;
     setVideoLoading(true);
-    setVideoError(null);
     const page = 1 + Math.floor(Math.random() * 20);
     fetch(`/api/pexels/video?query=${encodeURIComponent(theme || 'couple in nature')}&page=${page}`)
       .then((r) => r.json())
       .then((data) => {
         if (cancelled) return;
         if (data.error) {
-          setVideoError(data.error);
           setVideoBackgroundUrl(null);
           setVideoThumbnailUrl(null);
           return;
         }
         setVideoBackgroundUrl(data.videoUrl ?? null);
         setVideoThumbnailUrl(data.thumbnailUrl ?? null);
-        setVideoError(null);
       })
-      .catch((e) => {
+      .catch(() => {
         if (!cancelled) {
-          setVideoError(e?.message ?? 'Failed to load image');
           setVideoBackgroundUrl(null);
           setVideoThumbnailUrl(null);
         }
@@ -157,23 +108,17 @@ export default function Home() {
     if (mode !== 'video') return;
     const page = 1 + Math.floor(Math.random() * 20);
     setVideoLoading(true);
-    setVideoError(null);
     try {
-      const r = await fetch(
-        `/api/pexels/video?query=${encodeURIComponent(theme || 'couple in nature')}&page=${page}`
-      );
+      const r = await fetch(`/api/pexels/video?query=${encodeURIComponent(theme || 'couple in nature')}&page=${page}`);
       const data = await r.json();
       if (data.error) {
-        setVideoError(data.error);
         setVideoBackgroundUrl(null);
         setVideoThumbnailUrl(null);
         return;
       }
       setVideoBackgroundUrl(data.videoUrl ?? null);
       setVideoThumbnailUrl(data.thumbnailUrl ?? null);
-      setVideoError(null);
-    } catch (e) {
-      setVideoError(e instanceof Error ? e.message : 'Failed to load image');
+    } catch {
       setVideoBackgroundUrl(null);
       setVideoThumbnailUrl(null);
     } finally {
@@ -181,137 +126,67 @@ export default function Home() {
     }
   };
 
-  // Use ref to track if we're updating from user input to prevent infinite loops
-  const isUpdatingFromUserInput = useRef(false);
-  // Use ref to track if we're syncing from canvas to state (when switching cards)
-  const isSyncingFromCanvas = useRef(false);
-
-  // Get current canvas
-  const currentCanvas = canvases.find(c => c.id === currentCanvasId) || canvases[0];
-  
-  // Get first card
-  const firstCard = canvases.find(c => c.id === '1') || canvases[0];
-
-  // Update text input to always show first card's text (Title)
-  // Only sync when first card's text changes externally (not from user typing)
-  const firstCardTextValue = canvases.find(c => c.id === '1')?.text || '';
-  const prevFirstCardTextRef = useRef(firstCardTextValue);
-  
   useEffect(() => {
-    // Skip if we just updated from user input
     if (isUpdatingFromUserInput.current) {
       isUpdatingFromUserInput.current = false;
       prevFirstCardTextRef.current = firstCardTextValue;
       return;
     }
-    // Only sync if the canvas text actually changed (from external source)
     if (firstCardTextValue !== prevFirstCardTextRef.current && firstCardTextValue !== text) {
       setText(firstCardTextValue);
     }
     prevFirstCardTextRef.current = firstCardTextValue;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firstCardTextValue]);
 
-  // Update other inputs when canvas changes (except text, which always shows first card)
   useEffect(() => {
-    const canvas = canvases.find(c => c.id === currentCanvasId) || canvases[0];
+    const canvas = canvases.find((c) => c.id === currentCanvasId) || canvases[0];
     if (!canvas) return;
-    
-    // Set flag to indicate we're syncing from canvas to state
     isSyncingFromCanvas.current = true;
-    
-    // Only update if values actually changed to prevent infinite loops
-    if (canvas.backgroundColor !== backgroundColor) {
-      setBackgroundColor(canvas.backgroundColor);
-    }
-    // For card 1, sync textColor state with card 1's textColor (title color)
-    // For other cards, sync textColor state with current card's textColor
-    if (canvas.textColor !== textColor) {
-      setTextColor(canvas.textColor);
-    }
-    if (canvas.textSize !== textSize) {
-      setTextSize(canvas.textSize);
-    }
-    if (canvas.imageSize !== imageSize) {
-      setImageSize(canvas.imageSize);
-    }
-    
-    // Reset flag after state updates are scheduled
-    // Use setTimeout to ensure this runs after state updates
-    setTimeout(() => {
-      isSyncingFromCanvas.current = false;
-    }, 0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (canvas.backgroundColor !== backgroundColor) setBackgroundColor(canvas.backgroundColor);
+    if (canvas.textColor !== textColor) setTextColor(canvas.textColor);
+    if (canvas.textSize !== textSize) setTextSize(canvas.textSize);
+    if (canvas.imageSize !== imageSize) setImageSize(canvas.imageSize);
+    setTimeout(() => { isSyncingFromCanvas.current = false; }, 0);
   }, [currentCanvasId, canvases]);
 
-  // Save title to first card when text changes
   useEffect(() => {
-    const firstCardInCanvases = canvases.find(c => c.id === '1');
-    // Only update if text actually changed to prevent unnecessary updates
+    const firstCardInCanvases = canvases.find((c) => c.id === '1');
     if (firstCardInCanvases && firstCardInCanvases.text !== text) {
       isUpdatingFromUserInput.current = true;
-      setCanvases(prev => prev.map(c => 
-        c.id === '1' 
-          ? { ...c, text }
-          : c
-      ));
+      setCanvases((prev) => prev.map((c) => (c.id === '1' ? { ...c, text } : c)));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text]);
 
-  // Save other inputs to current canvas when they change
   useEffect(() => {
-    // Skip if we're currently syncing from canvas to state (when switching cards)
-    if (isSyncingFromCanvas.current) {
-      return;
-    }
-    
-    setCanvases(prev => {
-      const currentCanvasInPrev = prev.find(c => c.id === currentCanvasId);
+    if (isSyncingFromCanvas.current) return;
+    setCanvases((prev) => {
+      const currentCanvasInPrev = prev.find((c) => c.id === currentCanvasId);
       if (!currentCanvasInPrev) return prev;
-      
-      // Only update if values actually changed to prevent infinite loops
-      const hasChanges = 
+      const hasChanges =
         currentCanvasInPrev.backgroundColor !== backgroundColor ||
         currentCanvasInPrev.textSize !== textSize ||
         currentCanvasInPrev.imageSize !== imageSize ||
         (currentCanvasId === '1' && currentCanvasInPrev.textColor !== textColor);
-      
       if (!hasChanges) return prev;
-      
-      return prev.map(c => 
-        c.id === currentCanvasId 
-          ? { 
-              ...c, 
-              backgroundColor, 
-              textSize, 
-              imageSize,
-              // Only update textColor if it's the first card (managed by title color picker)
-              ...(currentCanvasId === '1' ? { textColor } : {})
-            }
+      return prev.map((c) =>
+        c.id === currentCanvasId
+          ? { ...c, backgroundColor, textSize, imageSize, ...(currentCanvasId === '1' ? { textColor } : {}) }
           : c
       );
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [backgroundColor, textColor, textSize, imageSize, currentCanvasId]);
 
-  // Check authentication status on mount and after auth
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const authCheck = await fetch('/api/tiktok/auth-check');
         const authData = await authCheck.json();
-        
         if (authData.authenticated && authData.user) {
           setUserInfo(authData.user);
-          
-          // Fetch creator_info for post settings (privacy options, interaction settings)
           try {
             const creatorInfoRes = await fetch('/api/tiktok/creator-info');
             const creatorInfoData = await creatorInfoRes.json();
-            if (creatorInfoRes.ok && creatorInfoData.creator_info) {
-              setCreatorInfo(creatorInfoData.creator_info);
-            }
+            if (creatorInfoRes.ok && creatorInfoData.creator_info) setCreatorInfo(creatorInfoData.creator_info);
           } catch (err) {
             console.error('Failed to fetch creator info:', err);
           }
@@ -323,30 +198,18 @@ export default function Home() {
         console.error('Auth check error:', error);
       }
     };
-
     checkAuth();
-
-    // Check URL params for auth success
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('tiktok_auth') === 'success') {
       checkAuth();
-      // Clean up URL
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
 
   const handleAddCanvas = () => {
     const newId = String(Date.now());
-    const newCanvas: CanvasData = {
-      id: newId,
-      text: text || '',
-      backgroundColor: backgroundColor || '#000000',
-      textColor: textColor || '#876e9f',
-      textSize: textSize || '200',
-      imageSize: imageSize || '1080x1920'
-    };
-    // Insert new canvas before the ending card if it exists
-    const endingCardIndex = canvases.findIndex(c => c.id === 'end');
+    const newCanvas: CanvasData = { id: newId, text: text || '', backgroundColor: backgroundColor || '#000000', textColor: textColor || '#876e9f', textSize: textSize || '200', imageSize: imageSize || '1080x1920' };
+    const endingCardIndex = canvases.findIndex((c) => c.id === 'end');
     if (endingCardIndex >= 0) {
       const newCanvases = [...canvases];
       newCanvases.splice(endingCardIndex, 0, newCanvas);
@@ -357,419 +220,27 @@ export default function Home() {
     setCurrentCanvasId(newId);
   };
 
-  const handleSelectCanvas = (id: string) => {
-    setCurrentCanvasId(id);
-  };
+  const handleSelectCanvas = (id: string) => setCurrentCanvasId(id);
 
   const handleDeleteCanvas = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    // Don't delete card 1, card 2, ending card, or if it would leave less than 3 cards total
     if (id === '1' || id === '2' || id === 'end' || canvases.length <= 3) return;
-    
-    const newCanvases = canvases.filter(c => c.id !== id);
+    const newCanvases = canvases.filter((c) => c.id !== id);
     setCanvases(newCanvases);
-    
-    if (id === currentCanvasId) {
-      setCurrentCanvasId(newCanvases[0].id);
-    }
+    if (id === currentCanvasId) setCurrentCanvasId(newCanvases[0].id);
   };
 
-  const generateCardImage = async (canvasData: CanvasData, index: number): Promise<Blob> => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Could not get canvas context');
-
-    if (typeof document !== 'undefined' && document.fonts?.ready) await document.fonts.ready;
-
-    const [widthStr, heightStr] = (canvasData.imageSize || '1080x1920').split('x').map(s => s.trim());
-    const width = parseInt(widthStr) || 1080;
-    const height = parseInt(heightStr) || 1920;
-    canvas.width = width;
-    canvas.height = height;
-
-    if (canvasData.id === '1' && mode === 'video' && videoThumbnailUrl) {
-      const img = await loadImage(videoThumbnailUrl);
-      ctx.filter = ROMANTIC_IMAGE_FILTER;
-      // Draw with cover: preserve aspect ratio, scale to fill canvas, center and clip overflow
-      const iw = img.naturalWidth || img.width;
-      const ih = img.naturalHeight || img.height;
-      const scale = Math.max(width / iw, height / ih);
-      const sw = iw * scale;
-      const sh = ih * scale;
-      const dx = (width - sw) / 2;
-      const dy = (height - sh) / 2;
-      ctx.drawImage(img, 0, 0, iw, ih, dx, dy, sw, sh);
-      ctx.filter = 'none';
-    } else {
-      ctx.fillStyle = canvasData.backgroundColor || '#000000';
-      ctx.fillRect(0, 0, width, height);
-    }
-
-      const aspectRatio = width / height;
-      // Match CSS behavior: width: 75%, aspectRatio, maxHeight: 60% (slightly shorter)
-      // First try width = 75%, then constrain by maxHeight if needed
-      let finalCardWidth = width * 0.75;
-      let finalCardHeight = finalCardWidth / aspectRatio;
-      const cardMaxHeight = height * 0.60;
-      
-      // If height exceeds maxHeight, constrain by height and recalculate width
-      if (finalCardHeight > cardMaxHeight) {
-        finalCardHeight = cardMaxHeight;
-        finalCardWidth = finalCardHeight * aspectRatio;
-      }
-      
-      const cardX = (width - finalCardWidth) / 2;
-      // Position white card slightly higher (move up by 3% of height)
-      const cardY = (height - finalCardHeight) / 2 - (height * 0.03);
-
-      // Draw white card for cards 2+ (but not for ending card, which is like card 1)
-      if (canvasData.id !== '1' && canvasData.id !== 'end') {
-        const radius = 64; // Doubled again from 32 to make corners even more rounded
-        ctx.fillStyle = '#FFFFFF';
-        ctx.beginPath();
-        ctx.moveTo(cardX + radius, cardY);
-        ctx.lineTo(cardX + finalCardWidth - radius, cardY);
-        ctx.quadraticCurveTo(cardX + finalCardWidth, cardY, cardX + finalCardWidth, cardY + radius);
-        ctx.lineTo(cardX + finalCardWidth, cardY + finalCardHeight - radius);
-        ctx.quadraticCurveTo(cardX + finalCardWidth, cardY + finalCardHeight, cardX + finalCardWidth - radius, cardY + finalCardHeight);
-        ctx.lineTo(cardX + radius, cardY + finalCardHeight);
-        ctx.quadraticCurveTo(cardX, cardY + finalCardHeight, cardX, cardY + finalCardHeight - radius);
-        ctx.lineTo(cardX, cardY + radius);
-        ctx.quadraticCurveTo(cardX, cardY, cardX + radius, cardY);
-        ctx.closePath();
-        ctx.fill();
-        
-        // Draw border
-        ctx.strokeStyle = '#e1c2ff';
-        ctx.lineWidth = 16; // Doubled from 8 to make border thicker
-        ctx.stroke();
-      }
-
-      // Configure text styling
-      const canvasText = canvasData.id === '1' 
-        ? canvasData.text || ''
-        : (canvasData.id === '2'
-          ? card2Texts.filter(t => t.text.trim()).map(t => t.text).join('\n')
-          : canvasData.text || '');
-      
-      if (canvasData.id === '1' || canvasData.id === 'end') {
-        // Card 1 and Ending Card: Text directly on background, centered
-        ctx.fillStyle = canvasData.textColor || '#FFFFFF';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        
-        // More horizontal padding for ending card (smaller maxTextWidth = more padding)
-        const maxTextWidth = canvasData.id === 'end' ? width * 0.85 : (canvasData.id === '1' ? width * 0.7 : width * 0.9);        // Scale font size based on canvas width
-        const canvasWidthScale = width / 1080;
-        const baseFontSize = parseInt(canvasData.textSize || '200') || 200;
-        // Smaller font size for ending card; card 1 uses doubled size (divisor 1.0 = 2× of 2.0)
-        const fontSizeDivisor = canvasData.id === 'end' ? 2.8 : (canvasData.id === '1' ? 3.25 : 3);
-        let fontSize = (baseFontSize * canvasWidthScale) / fontSizeDivisor;
-        ctx.font = `bold ${fontSize}px ${TITLE_FONT}`;
-        
-        const textMetrics = ctx.measureText(canvasText);
-        // Skip width constraint for ending card and card 1 (both use wrapping; no need to shrink font)
-        if (textMetrics.width > maxTextWidth && canvasData.id !== 'end' && canvasData.id !== '1') {
-          const scaleFactor = 0.9;
-          fontSize = (maxTextWidth / textMetrics.width) * fontSize * scaleFactor;
-          ctx.font = `bold ${fontSize}px ${TITLE_FONT}`;
-        }
-
-        const lines = wrapText(ctx, canvasText, maxTextWidth);
-        const lineHeight = fontSize * 1.4;
-        const totalHeight = lines.length * lineHeight;
-        
-        // Card 1: per-line spacing (box + gap between lines). Else: simple block.
-        const vPad = canvasData.id === '1' ? fontSize * 0.08 : fontSize * 0.2;
-        const gapBetweenLines = 0;
-        const boxHeight = lineHeight + 2 * vPad;
-        const lineSpacing = boxHeight + gapBetweenLines;
-        const totalBlockHeight = lines.length > 0
-          ? (lines.length - 1) * lineSpacing + boxHeight
-          : 0;
-        
-        let startY: number;
-        if (canvasData.id === '1') {
-          const topPad = height * 0.12;
-          const bottomPad = height * 0.12;
-          const minStartY = topPad + boxHeight / 2;
-          const maxStartY = height - bottomPad - totalBlockHeight + boxHeight / 2;
-          const range = Math.max(0, maxStartY - minStartY);
-          startY = minStartY + Math.random() * range;
-        } else {
-          startY = (height - totalHeight) / 2 + lineHeight / 2;
-        }
-        
-        // If ending card, draw white share icon above text
-        let iconSize = 0;
-        let iconY = 0;
-        if (canvasData.id === 'end') {
-          iconSize = fontSize * 1.5;
-          const spacing = fontSize * 0.5; // Spacing between icon and text
-          const totalContentHeight = iconSize + spacing + totalHeight;
-          
-          // Center both icon and text together, but move up by 14% of height
-          const contentStartY = (height - totalContentHeight) / 2 - (height * 0.14);
-          iconY = contentStartY;
-          startY = contentStartY + iconSize + spacing + lineHeight / 2;
-          
-          // Draw sharing icon (network/share icon with three circles and connecting lines) in white
-          ctx.save();
-          ctx.strokeStyle = '#FFFFFF'; // White color
-          ctx.fillStyle = '#FFFFFF'; // White color
-          ctx.lineWidth = fontSize * 0.1;
-          ctx.lineCap = 'round';
-          ctx.lineJoin = 'round';
-          
-          const iconX = width / 2;
-          const circleRadius = iconSize * 0.12;
-          const iconSpacing = iconSize * 0.4;
-          
-          // Calculate positions for three circles in a triangle/network pattern
-          const topCircleX = iconX;
-          const topCircleY = iconY + iconSize * 0.2;
-          const leftCircleX = iconX - iconSpacing;
-          const leftCircleY = iconY + iconSize * 0.8;
-          const rightCircleX = iconX + iconSpacing;
-          const rightCircleY = iconY + iconSize * 0.8;
-          
-          // Draw connecting lines
-          ctx.beginPath();
-          ctx.moveTo(topCircleX, topCircleY);
-          ctx.lineTo(leftCircleX, leftCircleY);
-          ctx.moveTo(topCircleX, topCircleY);
-          ctx.lineTo(rightCircleX, rightCircleY);
-          ctx.stroke();
-          
-          // Draw three circles
-          ctx.beginPath();
-          ctx.arc(topCircleX, topCircleY, circleRadius, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.beginPath();
-          ctx.arc(leftCircleX, leftCircleY, circleRadius, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.beginPath();
-          ctx.arc(rightCircleX, rightCircleY, circleRadius, 0, Math.PI * 2);
-          ctx.fill();
-          
-          ctx.restore();
-        }
-        
-        // Card 1 only: TikTok-style per-line white background (each line gets its own rounded box)
-        const pad = canvasData.id === '1' ? fontSize * 0.5 : fontSize * 0.45;
-        const radius = fontSize * 0.25;
-        if (canvasData.id === '1' && lines.length > 0) {
-          ctx.fillStyle = '#FFFFFF';
-          lines.forEach((line, idx) => {
-            const lineW = ctx.measureText(line).width;
-            const boxW = lineW + pad * 2;
-            const boxH = boxHeight;
-            const boxX = (width - boxW) / 2;
-            const centerY = startY + idx * lineSpacing;
-            const boxY = centerY - boxH / 2;
-            ctx.beginPath();
-            ctx.moveTo(boxX + radius, boxY);
-            ctx.lineTo(boxX + boxW - radius, boxY);
-            ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + radius);
-            ctx.lineTo(boxX + boxW, boxY + boxH - radius);
-            ctx.quadraticCurveTo(boxX + boxW, boxY + boxH, boxX + boxW - radius, boxY + boxH);
-            ctx.lineTo(boxX + radius, boxY + boxH);
-            ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - radius);
-            ctx.lineTo(boxX, boxY + radius);
-            ctx.quadraticCurveTo(boxX, boxY, boxX + radius, boxY);
-            ctx.closePath();
-            ctx.fill();
-          });
-        }
-
-        // Draw title text (black on white bg for card 1, else use text color)
-        const titleColor = canvasData.id === '1' && lines.length > 0 ? '#000000' : (canvasData.textColor || '#FFFFFF');
-        ctx.fillStyle = titleColor;
-        lines.forEach((line, idx) => {
-          const y = canvasData.id === '1' ? startY + idx * lineSpacing : startY + idx * lineHeight;
-          ctx.fillText(line, width / 2, y);
-        });
-      } else if (canvasData.id === '2') {
-        // Card 2: Instructions with numbered items
-        // Calculate padding: Scale 16px (1rem) proportionally with canvas width
-        // For 1080px canvas width, use 16px as base
-        const baseRemSize = 16; // 1rem = 16px at 1080px canvas
-        const remSize = baseRemSize * (width / 1080); // Scale with canvas width
-        const padding = remSize * 4; // 1rem padding
-        const paddingBottom = remSize * 1.25; // 1.25rem
-        const textStartY = cardY + finalCardHeight * 0.25; // Start higher (25% instead of 35%)
-        const textAreaWidth = finalCardWidth - (padding * 2);
-        
-        // Debug: Log padding values to verify
-        console.log('Card 2 - Canvas:', width, 'x', height, 'Card:', finalCardWidth, 'x', finalCardHeight, 'Padding:', padding);
-        
-        // Scale font size based on canvas width and card size
-        // Cards 2+ are inside a white card that's 75% of canvas width
-        // Scale font proportionally: (canvasWidth / 1080) * 0.75, then divide by 3
-        const canvasWidthScale = width / 1080;
-        const baseFontSize = parseInt(canvasData.textSize || '200') || 200;
-        // Scale font for card size (75% of canvas) and canvas dimensions, smaller for instructions
-        const fontSize = (baseFontSize * canvasWidthScale * 0.75) / 3.7;
-        
-        // Draw "Instructions" text at top
-        ctx.fillStyle = canvasData.textColor || '#876e9f';
-        ctx.textAlign = 'center';
-        ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
-        const instructionsText = 'Instructions';
-        const textMetrics = ctx.measureText(instructionsText);
-        // Position text: add more top spacing to match preview (preview has paddingTop + absolute top: 1rem)
-        // Using 'top' baseline means Y position is at the top of the text
-        ctx.textBaseline = 'top';
-        // Use padding (1rem) plus a bit more for better visual spacing from top
-        const instructionsY = cardY + padding + (remSize * 2); // 1rem + 0.5rem for better spacing
-        const instructionsX = cardX + finalCardWidth / 2;
-        // Constrain text width to respect horizontal padding (like preview: calc(100% - 2rem))
-        const maxInstructionsWidth = finalCardWidth - (padding * 2);
-        ctx.fillText(instructionsText, instructionsX, instructionsY);
-        
-        // Draw underline - position relative to text, constrained by horizontal padding
-        ctx.strokeStyle = canvasData.textColor || '#876e9f';
-        // Scale line width with canvas size (4px for 1080px canvas, increased from 2px for thicker underline)
-        const lineWidth = 4 * (width / 1080);
-        ctx.lineWidth = lineWidth;
-        // Underline should be below the text with some offset (textUnderlineOffset: 0.25rem)
-        // Since we're using 'top' baseline, add font height for underline position
-        const underlineOffset = remSize * 0.25; // 0.25rem offset
-        const underlineY = instructionsY + fontSize + underlineOffset;
-        // Constrain underline width to respect horizontal padding
-        const underlineLeft = Math.max(cardX + padding, instructionsX - textMetrics.width / 2);
-        const underlineRight = Math.min(cardX + finalCardWidth - padding, instructionsX + textMetrics.width / 2);
-        ctx.beginPath();
-        ctx.moveTo(underlineLeft, underlineY);
-        ctx.lineTo(underlineRight, underlineY);
-        ctx.stroke();
-        
-        // Draw instruction lines
-        const instructionTexts = card2Texts.filter(t => t.text.trim());
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top'; // Use top baseline for consistent positioning
-        ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
-        
-        const circleRadius = fontSize * 0.4;
-        const circleX = cardX + padding;
-        const textX = circleX + circleRadius + fontSize * 0.5;
-        const rightBoundary = cardX + finalCardWidth - padding;
-        const maxTextWidth = Math.max(0, rightBoundary - textX);
-        const lineHeight = fontSize * 1.4;
-        const itemSpacing = fontSize * 1.2; // Space between items (increased for more spacing)
-        
-        // First pass: calculate all Y positions based on actual text heights
-        let currentY = textStartY;
-        const itemPositions: Array<{ y: number; textLines: string[] }> = [];
-        
-        instructionTexts.forEach((textItem, idx) => {
-          const textLines = wrapText(ctx, textItem.text, maxTextWidth);
-          itemPositions.push({ y: currentY, textLines });
-          
-          // Calculate actual height of this item based on number of lines
-          // For single line: use lineHeight. For multiple lines: use lineHeight * line count
-          const itemHeight = textLines.length * lineHeight;
-          
-          // Move Y down by the height of this item
-          currentY += itemHeight;
-          
-          // Add spacing after this item (but not after the last one)
-          if (idx < instructionTexts.length - 1) {
-            currentY += itemSpacing;
-          }
-        });
-        
-        // Second pass: draw all items at calculated positions
-        itemPositions.forEach((itemPos, idx) => {
-          const y = itemPos.y;
-          const textLines = itemPos.textLines;
-          
-          // Circle Y should align with text - since we're using 'top' baseline,
-          // add half the font size to center the circle vertically with the text
-          const circleY = y + (fontSize * 0.5); // Center circle with text
-          
-          // Draw circle
-          ctx.fillStyle = instructionTexts[idx].color || '#876e9f';
-          ctx.beginPath();
-          ctx.arc(circleX, circleY, circleRadius, 0, Math.PI * 2);
-          ctx.fill();
-          
-          // Draw number
-          ctx.fillStyle = '#FFFFFF';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.font = `bold ${fontSize * 0.6}px system-ui, sans-serif`;
-          ctx.fillText(String(idx + 1), circleX, circleY);
-          
-          // Draw text
-          ctx.fillStyle = instructionTexts[idx].color || '#876e9f';
-          ctx.textAlign = 'left';
-          ctx.textBaseline = 'top'; // Use top baseline for consistent positioning
-          ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
-          
-          textLines.forEach((line, lineIdx) => {
-            ctx.fillText(line, textX, y + (lineIdx * lineHeight));
-          });
-        });
-      } else {
-        // Content cards: Text inside white card, left-aligned, starting above middle
-        // Calculate padding: Use same padding as instructions card (1rem = 16px * 4 for visibility)
-        // For 1080px canvas width, use 16px as base
-        const baseRemSize = 16; // Base for rem calculations
-        const remSize = baseRemSize * (width / 1080); // Scale with canvas width
-        const padding = remSize * 4; // Same padding as instructions card
-        const textStartY = cardY + finalCardHeight * 0.35;
-        // Calculate max text width: from left padding to right edge minus padding
-        const textX = cardX + padding;
-        const maxTextWidth = (cardX + finalCardWidth - padding) - textX;
-        
-        // Debug: Log padding values to verify
-        console.log('Content Card - Canvas:', width, 'x', height, 'Card:', finalCardWidth, 'x', finalCardHeight, 'Padding:', padding, 'TextX:', textX);
-        
-        // Scale font size based on canvas width and card size (same as card 2)
-        // Cards 3+ are inside a white card that's 75% of canvas width
-        const canvasWidthScale = width / 1080;
-        const baseFontSize = parseInt(canvasData.textSize || '200') || 200;
-        // Scale font for card size (75% of canvas) and canvas dimensions, slightly larger
-        const fontSize = (baseFontSize * canvasWidthScale * 0.75) / 3.0;
-        
-        ctx.fillStyle = canvasData.textColor || '#876e9f';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
-        
-        const lines = wrapText(ctx, canvasText, maxTextWidth);
-        lines.forEach((line, idx) => {
-          ctx.fillText(line, textX, textStartY + (idx * fontSize * 1.4));
-        });
-      }
-
-    return new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob((blob) => {
-        if (blob) resolve(blob);
-        else reject(new Error('Failed to create blob'));
-      }, 'image/png');
-    });
-  };
+  const generateCardImage = async (canvasData: CanvasData): Promise<Blob> =>
+    generateCardImageLib({ canvasData, mode, videoThumbnailUrl, card2Texts });
 
   const handleAutoGenerate = async () => {
     setIsAutoGenerating(true);
     try {
-      // Fetch random level data from API
       const response = await fetch('/api/levels/random');
-      if (!response.ok) {
-        throw new Error('Failed to fetch random level');
-      }
-      
+      if (!response.ok) throw new Error('Failed to fetch random level');
       const result = await response.json();
-      if (!result.success || !result.data) {
-        throw new Error('Invalid response from API');
-      }
-      
-      const { levelName, categoryName, instructions, questions } = result.data;
-      
-      // Get theme from OpenAI first (category + first 3 questions), then switch to Image mode.
-      // This ensures Pexels is called only after we have the theme (no flash of wrong image).
+      if (!result.success || !result.data) throw new Error('Invalid response from API');
+      const { levelName: ln, categoryName, instructions, questions } = result.data;
       const themeContextParts: string[] = [];
       if (categoryName) themeContextParts.push(`Category: ${categoryName}`);
       const first3 = Array.isArray(questions) ? questions.slice(0, 3) : [];
@@ -780,25 +251,15 @@ export default function Home() {
       const themeContext = themeContextParts.join('\n\n');
       let themeText = 'couple in nature';
       try {
-        const themeRes = await fetch('/api/openai/theme', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ context: themeContext }),
-        });
+        const themeRes = await fetch('/api/openai/theme', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ context: themeContext }) });
         const themeData = await themeRes.json();
         if (themeRes.ok && themeData?.theme?.trim()) themeText = themeData.theme.trim();
-      } catch {
-        // Keep fallback
-      }
+      } catch {}
       setTheme(themeText);
       setMode('video');
-      
-      // Store the level name for the badge
-      setLevelName(levelName || '');
-      
-      // Build context: level + category + questions (no instructions). Call OpenAI for title.
+      setLevelName(ln || '');
       const contextParts: string[] = [];
-      if (levelName) contextParts.push(`Level: ${levelName}`);
+      if (ln) contextParts.push(`Level: ${ln}`);
       if (categoryName) contextParts.push(`Category: ${categoryName}`);
       if (Array.isArray(questions) && questions.length) {
         contextParts.push('Questions:');
@@ -807,69 +268,37 @@ export default function Home() {
       const context = contextParts.join('\n\n');
       let titleText = categoryName || '';
       try {
-        const titleRes = await fetch('/api/openai/title', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ context }),
-        });
+        const titleRes = await fetch('/api/openai/title', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ context }) });
         const titleData = await titleRes.json();
         if (titleRes.ok && titleData?.title?.trim()) titleText = titleData.title.trim();
-      } catch {
-        // Keep categoryName as fallback
-      }
-      
-      // Update the text state for card 1 (title)
+      } catch {}
       setText(titleText);
-      
-      // Update card 2 with instructions (convert instructions array to card2Texts format)
-      const instructionsForCard2 = instructions && instructions.length > 0
-        ? instructions.map((inst: string) => ({ text: inst, color: '#876e9f' }))
-        : [{ text: '', color: '#876e9f' }];
-      
+      const instructionsForCard2 = instructions && instructions.length > 0 ? instructions.map((inst: string) => ({ text: inst, color: '#876e9f' })) : [{ text: '', color: '#876e9f' }];
       setCard2Texts(instructionsForCard2);
-      
-      // Create content cards for each question (one question per card)
-      const questionCards: CanvasData[] = questions.map((question: string) => ({
+      const questionCards: CanvasData[] = (questions || []).map((q: string) => ({
         id: String(Date.now() + Math.random()),
-        text: question,
+        text: q,
         backgroundColor: backgroundColor || '#000000',
         textColor: '#876e9f',
         textSize: textSize || '200',
-        imageSize: imageSize || '1080x1920'
+        imageSize: imageSize || '1080x1920',
       }));
-      
-      // Get existing cards and ending card
-      const existingCard1 = canvases.find(c => c.id === '1') || canvases[0];
-      const existingCard2 = canvases.find(c => c.id === '2') || canvases[1];
-      const endingCard = canvases.find(c => c.id === 'end');
-      
-      // Set ending card text based on level name
+      const existingCard1 = canvases.find((c) => c.id === '1') || canvases[0];
+      const existingCard2 = canvases.find((c) => c.id === '2') || canvases[1];
+      const endingCard = canvases.find((c) => c.id === 'end');
       let endingCardText = '';
-      if (levelName && levelName.toLowerCase() === 'friends') {
-        endingCardText = 'Share it with your friends and see what they say';
-      } else if (levelName && levelName.toLowerCase() === 'couples') {
-        endingCardText = 'Share it with your boo and see what they say';
-      }
-      
-      // Rebuild canvases: card 1 with titleText, card 2 with instructions, question cards, ending card
+      if (ln && ln.toLowerCase() === 'friends') endingCardText = 'Share it with your friends and see what they say';
+      else if (ln && ln.toLowerCase() === 'couples') endingCardText = 'Share it with your boo and see what they say';
       const newCanvases: CanvasData[] = [
         { ...existingCard1, text: titleText },
         { ...existingCard2, text: instructionsForCard2.map((t: { text: string; color: string }) => t.text).join('\n') },
         ...questionCards,
-        endingCard || { id: 'end', text: endingCardText, backgroundColor: '#000000', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' }
+        endingCard || { id: 'end', text: endingCardText, backgroundColor: '#000000', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' },
       ];
-      
-      // Set ending card text
-      const endingCardIndex = newCanvases.findIndex(c => c.id === 'end');
-      if (endingCardIndex >= 0) {
-        newCanvases[endingCardIndex].text = endingCardText;
-      }
-      
+      const endIdx = newCanvases.findIndex((c) => c.id === 'end');
+      if (endIdx >= 0) newCanvases[endIdx].text = endingCardText;
       setCanvases(newCanvases);
-      
-      // Switch to card 1 to show the generated title
       setCurrentCanvasId('1');
-      
     } catch (error) {
       console.error('Error auto-generating cards:', error);
       alert('Failed to generate cards. Please try again.');
@@ -880,30 +309,14 @@ export default function Home() {
 
   const handleGenerate = async () => {
     setIsGenerating(true);
-    
     try {
-      // Generate all card images and collect blobs
       const imageBlobs: Array<{ blob: Blob; filename: string }> = [];
-      
       for (let i = 0; i < canvases.length; i++) {
-        const canvasData = canvases[i];
-        const blob = await generateCardImage(canvasData, i);
-        const cardNumber = i + 1;
-        imageBlobs.push({
-          blob,
-          filename: `tiktok-image-card-${cardNumber}.png`
-        });
+        const blob = await generateCardImage(canvases[i]);
+        imageBlobs.push({ blob, filename: `tiktok-image-card-${i + 1}.png` });
       }
-      
-      // Create zip file
       const zip = new JSZip();
-      
-      // Add all images to zip
-      imageBlobs.forEach(({ blob, filename }) => {
-        zip.file(filename, blob);
-      });
-      
-      // Generate zip file and download
+      imageBlobs.forEach(({ blob, filename }) => zip.file(filename, blob));
       const zipBlob = await zip.generateAsync({ type: 'blob' });
       const url = window.URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
@@ -922,1576 +335,218 @@ export default function Home() {
   };
 
   const handlePostToTikTok = async () => {
-    // Use current canvas's text (not the title input, which only affects card 1)
     const canvasText = currentCanvas.text || text;
-    
-    if (!canvasText.trim()) {
-      alert('Please enter some text');
-      return;
-    }
-
-    if (!userInfo) {
-      alert('Please connect your TikTok account first');
-      return;
-    }
-
-    // Validate post metadata (required by TikTok Content Posting API)
-    if (!postTitle.trim()) {
-      alert('Please enter a title for your post');
-      return;
-    }
-
-    if (!postPrivacy) {
-      alert('Please select a privacy status for your post');
-      return;
-    }
-
+    if (!canvasText.trim()) { alert('Please enter some text'); return; }
+    if (!userInfo) { alert('Please connect your TikTok account first'); return; }
+    if (!postTitle.trim()) { alert('Please enter a title for your post'); return; }
+    if (!postPrivacy) { alert('Please select a privacy status for your post'); return; }
     if (!musicUsageConsent) {
-      const policyMessage = contentDisclosureEnabled && isBrandedContent
-        ? 'Please agree to TikTok\'s Branded Content Policy and Music Usage Confirmation before posting'
-        : 'Please agree to TikTok\'s Music Usage Confirmation before posting';
-      alert(policyMessage);
+      alert(contentDisclosureEnabled && isBrandedContent ? "Please agree to TikTok's Branded Content Policy and Music Usage Confirmation before posting" : "Please agree to TikTok's Music Usage Confirmation before posting");
       return;
     }
-
-    // Validate content disclosure if enabled
     if (contentDisclosureEnabled && !isYourBrand && !isBrandedContent) {
       alert('You need to indicate if your content promotes yourself, a third party, or both.');
       return;
     }
-
-    // Validate branded content privacy requirement
     if (contentDisclosureEnabled && isBrandedContent && postPrivacy === 'SELF_ONLY') {
       alert('Branded content visibility cannot be set to private. Please select public or friends visibility.');
       return;
     }
-
     setIsPosting(true);
-    
     try {
-      // Hide dropdown if open
       setShowUserDropdown(false);
-
-      // Generate the card image
-      const currentIndex = canvases.findIndex(c => c.id === currentCanvasId);
-      const imageBlob = await generateCardImage(
-        currentCanvas,
-        currentIndex >= 0 ? currentIndex : 0
-      );
-
-      // Create FormData to send to API
+      const currentIndex = canvases.findIndex((c) => c.id === currentCanvasId);
+      const imageBlob = await generateCardImage(currentCanvas);
       const formData = new FormData();
       formData.append('image', imageBlob, 'card.png');
-      formData.append('caption', postTitle); // Use user-entered title
-      formData.append('privacy_level', postPrivacy); // Use user-selected privacy
-      formData.append('disable_comment', (!allowComment).toString()); // Inverted: disable if NOT allowed
-      
-      // Content disclosure settings
+      formData.append('caption', postTitle);
+      formData.append('privacy_level', postPrivacy);
+      formData.append('disable_comment', (!allowComment).toString());
       if (contentDisclosureEnabled) {
-        formData.append('brand_organic_toggle', isYourBrand.toString()); // Your brand (promotional content)
-        formData.append('brand_content_toggle', isBrandedContent.toString()); // Branded content (paid partnership)
+        formData.append('brand_organic_toggle', isYourBrand.toString());
+        formData.append('brand_content_toggle', isBrandedContent.toString());
       }
-
-      // Call the TikTok Photo Post API (MEDIA_UPLOAD = draft; user posts from app)
-      const response = await fetch('/api/tiktok/post-photo', {
-        method: 'POST',
-        body: formData,
-      });
-
+      const response = await fetch('/api/tiktok/post-photo', { method: 'POST', body: formData });
       const data = await response.json();
-
       if (!response.ok) {
-        // Check if rate limited (cannot post more at this moment)
         if (data.rateLimited || response.status === 429) {
           alert(data.error || 'You cannot make more posts at this moment. Please try again later.');
           return;
         }
-        
-        // Check if re-authentication is required
         if (data.requiresReauth) {
           alert('Please reconnect your TikTok account to grant photo upload permissions.');
-          // Optionally redirect to auth
           window.location.href = '/api/tiktok/auth';
           return;
         }
         throw new Error(data.error || 'Failed to post to TikTok');
       }
-
-      // Store publish_id for status polling
       const currentPublishId = data.data?.publish_id;
-      if (currentPublishId) {
-        setPublishId(currentPublishId);
-      }
-
-      // Show processing toast with notification about processing time
+      if (currentPublishId) setPublishId(currentPublishId);
       setPostStatus('processing');
       setToastMessage('Your content is being processed. It may take a few minutes to appear on your profile.');
       setShowToast(true);
-
-      // Poll for status if we have a publish_id
-      if (currentPublishId) {
-        pollPostStatus(currentPublishId);
-      } else {
-        // No publish_id, just show success after a delay
-        setTimeout(() => {
-          setPostStatus('success');
-          setToastMessage('Posted successfully! It may take a few minutes to appear on your profile.');
-        }, 2000);
-        
-        // Auto-hide toast after 8 seconds
-        setTimeout(() => {
-          setShowToast(false);
-          setPostStatus(null);
-        }, 8000);
+      if (currentPublishId) pollPostStatus(currentPublishId);
+      else {
+        setTimeout(() => { setPostStatus('success'); setToastMessage('Posted successfully! It may take a few minutes to appear on your profile.'); }, 2000);
+        setTimeout(() => { setShowToast(false); setPostStatus(null); }, 8000);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error posting to TikTok:', error);
-      alert(error.message || 'Failed to post to TikTok. Please try again.');
+      alert(error instanceof Error ? error.message : 'Failed to post to TikTok. Please try again.');
     } finally {
       setIsPosting(false);
     }
   };
 
-  // Poll for post status
   const pollPostStatus = async (pubId: string) => {
     let attempts = 0;
-    const maxAttempts = 10; // Poll for up to ~30 seconds
-    const pollInterval = 3000; // 3 seconds between polls
-
+    const maxAttempts = 10;
+    const pollInterval = 3000;
     const checkStatus = async () => {
       try {
         const response = await fetch(`/api/tiktok/post-status?publish_id=${encodeURIComponent(pubId)}`);
         const statusData = await response.json();
-
         if (response.ok && statusData.status) {
-          const status = statusData.status;
-          
-          if (status === 'PUBLISH_COMPLETE') {
+          if (statusData.status === 'PUBLISH_COMPLETE') {
             setPostStatus('success');
             setToastMessage('Posted successfully! Your content is now visible on your profile.');
-            // Auto-hide after 5 seconds
-            setTimeout(() => {
-              setShowToast(false);
-              setPostStatus(null);
-              setPublishId(null);
-            }, 5000);
-            return; // Stop polling
-          } else if (status === 'FAILED') {
+            setTimeout(() => { setShowToast(false); setPostStatus(null); setPublishId(null); }, 5000);
+            return;
+          }
+          if (statusData.status === 'FAILED') {
             setPostStatus('failed');
             setToastMessage(statusData.fail_reason || 'Post failed. Please try again.');
-            // Auto-hide after 8 seconds
-            setTimeout(() => {
-              setShowToast(false);
-              setPostStatus(null);
-              setPublishId(null);
-            }, 8000);
-            return; // Stop polling
+            setTimeout(() => { setShowToast(false); setPostStatus(null); setPublishId(null); }, 8000);
+            return;
           }
-          // Status is still processing (PROCESSING_UPLOAD, PROCESSING_DOWNLOAD, etc.)
           setToastMessage(`Processing... ${statusData.status_msg || 'Your content is being processed.'}`);
         }
-
         attempts++;
-        if (attempts < maxAttempts) {
-          setTimeout(checkStatus, pollInterval);
-        } else {
-          // Max attempts reached, show generic success
+        if (attempts < maxAttempts) setTimeout(checkStatus, pollInterval);
+        else {
           setPostStatus('success');
           setToastMessage('Your content has been submitted. It may take a few minutes to appear on your profile.');
-          setTimeout(() => {
-            setShowToast(false);
-            setPostStatus(null);
-            setPublishId(null);
-          }, 5000);
+          setTimeout(() => { setShowToast(false); setPostStatus(null); setPublishId(null); }, 5000);
         }
-      } catch (error) {
-        console.error('Error polling post status:', error);
-        // Don't fail silently, show optimistic success
+      } catch {
         setPostStatus('success');
         setToastMessage('Your content has been submitted. It may take a few minutes to appear on your profile.');
-        setTimeout(() => {
-          setShowToast(false);
-          setPostStatus(null);
-          setPublishId(null);
-        }, 5000);
+        setTimeout(() => { setShowToast(false); setPostStatus(null); setPublishId(null); }, 5000);
       }
     };
-
-    // Start polling after initial delay
     setTimeout(checkStatus, pollInterval);
   };
 
-  // Helper function to wrap text
-  const wrapText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] => {
-    const words = text.split(' ');
-    const lines: string[] = [];
-    let currentLine = words[0];
-
-    for (let i = 1; i < words.length; i++) {
-      const word = words[i];
-      const width = ctx.measureText(currentLine + ' ' + word).width;
-      if (width < maxWidth) {
-        currentLine += ' ' + word;
-      } else {
-        lines.push(currentLine);
-        currentLine = word;
-      }
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/tiktok/logout', { method: 'POST' });
+      setUserInfo(null);
+      setShowUserDropdown(false);
+    } catch (e) {
+      console.error('Logout error:', e);
     }
-    lines.push(currentLine);
-    return lines;
   };
+
+  const canPost =
+    !!currentCanvas.text.trim() &&
+    !!userInfo &&
+    !!postTitle.trim() &&
+    !!postPrivacy &&
+    musicUsageConsent &&
+    !(contentDisclosureEnabled && !isYourBrand && !isBrandedContent) &&
+    !(contentDisclosureEnabled && isBrandedContent && postPrivacy === 'SELF_ONLY');
 
   return (
     <div className="h-screen overflow-hidden bg-zinc-50 font-sans dark:bg-black flex">
-      {/* SaaS-style Left Sidebar - fixed, does not scroll */}
-      <aside className="fixed left-0 top-0 h-screen w-56 flex-shrink-0 flex flex-col p-3 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 z-10">
-        {/* Bleamies - top */}
-        <h1 className="text-xl font-bold text-black dark:text-zinc-50 px-4 py-3 flex-shrink-0">
-          Bleamies
-        </h1>
-        <div className="flex flex-col gap-2 flex-shrink-0">
-          <button
-            onClick={() => setContentTab('image')}
-            className={`w-full py-3 px-4 flex items-center gap-3 rounded-lg transition-colors text-left ${
-              contentTab === 'image'
-                ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-zinc-50'
-                : 'text-zinc-500 dark:text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-700 dark:hover:text-zinc-300'
-            }`}
-          >
-            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span className="text-sm font-medium">Image</span>
-          </button>
-          <button
-            onClick={() => setContentTab('video')}
-            className={`w-full py-3 px-4 flex items-center gap-3 rounded-lg transition-colors text-left ${
-              contentTab === 'video'
-                ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-zinc-50'
-                : 'text-zinc-500 dark:text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-700 dark:hover:text-zinc-300'
-            }`}
-          >
-            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-            <span className="text-sm font-medium">Video</span>
-          </button>
-        </div>
-        <div className="flex-1 min-h-4" />
-        {/* TikTok login / Account + Settings - bottom */}
-        <div className="flex-shrink-0 pt-3 border-t border-zinc-200 dark:border-zinc-700 flex flex-col gap-2 relative">
-          {userInfo ? (
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="relative min-w-0 flex-1">
-                <button
-                  onClick={() => { setShowUserDropdown(!showUserDropdown); setShowSettingsMenu(false); }}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer min-w-0"
-                >
-                  {userInfo.avatar_url && (
-                    <img src={userInfo.avatar_url} alt={userInfo.display_name || 'User'} className="w-6 h-6 rounded-full flex-shrink-0" />
-                  )}
-                  <span className="text-sm font-medium text-black dark:text-zinc-50 truncate min-w-0 flex-1">{userInfo.display_name || 'User'}</span>
-                  <svg className={`w-4 h-4 flex-shrink-0 text-black dark:text-zinc-50 transition-transform ${showUserDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {showUserDropdown && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowUserDropdown(false)} />
-                    <div className="absolute bottom-full left-0 right-0 mb-2 w-full bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-700 z-50 overflow-hidden">
-                      <button onClick={async () => { try { await fetch('/api/tiktok/logout', { method: 'POST' }); setUserInfo(null); setShowUserDropdown(false); } catch (e) { console.error('Logout error:', e); } }} className="w-full px-4 py-3 text-left text-sm text-red-600 dark:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                        Sign out
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-              <button onClick={() => { setShowSettingsMenu(!showSettingsMenu); setShowUserDropdown(false); }} className={`flex-shrink-0 p-2.5 rounded-lg transition-colors ${showSettingsMenu ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-zinc-50' : 'text-zinc-500 dark:text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-300'}`} title="Settings">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button onClick={() => window.location.href = '/api/tiktok/auth'} className="flex-1 h-10 px-4 rounded-lg bg-black hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2" title="Connect TikTok">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
-                <span>TikTok</span>
-              </button>
-              <button onClick={() => { setShowSettingsMenu(!showSettingsMenu); setShowUserDropdown(false); }} className={`flex-shrink-0 p-2.5 rounded-lg transition-colors ${showSettingsMenu ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-zinc-50' : 'text-zinc-500 dark:text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-300'}`} title="Settings">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </button>
-            </div>
-          )}
-          {showSettingsMenu && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowSettingsMenu(false)} />
-              <div className="absolute left-0 right-0 bottom-full mb-2 w-full bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-700 z-50 overflow-hidden">
-                <a href="/terms" target="_blank" rel="noopener noreferrer" onClick={() => setShowSettingsMenu(false)} className="block w-full px-4 py-3 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors">Terms of Service</a>
-                <a href="/privacy" target="_blank" rel="noopener noreferrer" onClick={() => setShowSettingsMenu(false)} className="block w-full px-4 py-3 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors border-t border-zinc-200 dark:border-zinc-700">Privacy</a>
-              </div>
-            </>
-          )}
-        </div>
-      </aside>
-
-      {/* Main content area - scrollable, sidebar stays fixed */}
+      <Sidebar
+        contentTab={contentTab}
+        onContentTabChange={setContentTab}
+        userInfo={userInfo}
+        showUserDropdown={showUserDropdown}
+        setShowUserDropdown={setShowUserDropdown}
+        showSettingsMenu={showSettingsMenu}
+        setShowSettingsMenu={setShowSettingsMenu}
+        onLogout={handleLogout}
+      />
       <div className="flex-1 flex flex-col min-w-0 h-screen ml-56 overflow-y-auto">
         <div className="max-w-7xl mx-auto w-full flex flex-col flex-1 min-h-0">
-          <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-4 flex-1 min-h-screen p-3 overflow-hidden">
-            {/* Left Side - Inputs Card */}
-            <div className="flex flex-col h-full min-h-0 bg-white dark:bg-zinc-900 rounded-2xl shadow-lg overflow-hidden">
-            {/* Scrollable Content Area */}
-            <div className="flex-1 min-h-0 overflow-y-auto px-4 hide-scrollbar">
-              <div className="flex flex-col gap-4 py-3">
-
-            {/* Video Tab Content - Coming Soon */}
-            {contentTab === 'video' && (
-              <div className="flex-1 flex items-center justify-center py-12">
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  Video mode coming soon
-                </p>
-              </div>
-            )}
-
-            {/* Image Tab Content */}
-            {contentTab === 'image' && (
-              <>
-            {/* Color Picker */}
-            <div className="flex-shrink-0">
-              <label
-                htmlFor="color"
-                className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
-              >
-                Background Color
-              </label>
-              <div className="flex gap-3 items-center">
-                <input
-                  type="color"
-                  id="color"
-                  value={backgroundColor}
-                  onChange={(e) => setBackgroundColor(e.target.value)}
-                  className="w-16 h-10 rounded-lg border border-zinc-300 dark:border-zinc-700 cursor-pointer"
-                />
-                <input
-                  type="text"
-                  value={backgroundColor}
-                  onChange={(e) => setBackgroundColor(e.target.value)}
-                  placeholder="#3B82F6"
-                  className="flex-1 px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent font-mono text-sm"
-                />
-              </div>
-            </div>
-
-            {/* Theme input: Pexels search query when mode is video */}
-            <div className="flex-shrink-0">
-              <label
-                htmlFor="theme"
-                className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
-              >
-                Theme
-              </label>
-              <input
-                type="text"
-                id="theme"
-                value={theme}
-                onChange={(e) => setTheme(e.target.value)}
-                placeholder="e.g. cinematic, nature, city"
-                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent text-sm"
-              />
-            </div>
-
-            {/* Mode dropdown: plain / video */}
-            <div className="flex-shrink-0">
-              <label
-                htmlFor="mode"
-                className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
-              >
-                Mode
-              </label>
-              <select
-                id="mode"
-                value={mode}
-                onChange={(e) => setMode(e.target.value as 'plain' | 'video')}
-                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent text-sm"
-              >
-                <option value="plain">Plain</option>
-                <option value="video">Image</option>
-              </select>
-            </div>
-
-            {mode === 'video' && (
-              <div className="flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={handleChangeVideo}
-                  disabled={videoLoading}
-                  className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2 dark:focus:ring-offset-zinc-900"
-                >
-                  {videoLoading ? 'Loading…' : 'Change Image'}
-                </button>
-              </div>
-            )}
-
-            {/* Title Input (only for first card) */}
-            <div className="flex-shrink-0">
-              <label
-                htmlFor="title"
-                className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
-              >
-                Title <span className="text-xs text-zinc-500 dark:text-zinc-400">(First card only)</span>
-              </label>
-              <div className="flex gap-3 items-center">
-                <input
-                  type="text"
-                  id="title"
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  placeholder="Enter title for the first card..."
-                  className="flex-1 px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent text-sm"
-                />
-                <input
-                  type="color"
-                  id="titleTextColor"
-                  value={firstCard.textColor}
-                  onChange={(e) => {
-                    const newColor = e.target.value;
-                    setCanvases(prev => prev.map(c => 
-                      c.id === '1' 
-                        ? { ...c, textColor: newColor }
-                        : c
-                    ));
-                  }}
-                  className="w-16 h-10 rounded-lg border border-zinc-300 dark:border-zinc-700 cursor-pointer flex-shrink-0"
-                  title="Title text color"
-                />
-              </div>
-            </div>
-
-            {/* Second Card Input (Card 2) */}
-            {canvases.find(c => c.id === '2') && (
-              <div className="flex-shrink-0">
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">
-                  Second Card
-                </label>
-                <div className="space-y-3">
-                  {card2Texts.map((textItem, index) => (
-                    <div key={index} className="flex gap-3 items-center">
-                      <input
-                        type="text"
-                        value={textItem.text}
-                        onChange={(e) => {
-                          const newTexts = [...card2Texts];
-                          newTexts[index].text = e.target.value;
-                          setCard2Texts(newTexts);
-                          // Update card 2's text to be all texts joined
-                          const allTexts = newTexts.map(t => t.text).filter(t => t.trim()).join('\n');
-                          setCanvases(prev => prev.map(c => 
-                            c.id === '2' 
-                              ? { ...c, text: allTexts }
-                              : c
-                          ));
-                        }}
-                        placeholder={`Text line ${index + 1}...`}
-                        className="flex-1 px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent text-sm"
-                      />
-                      <input
-                        type="color"
-                        value={textItem.color}
-                        onChange={(e) => {
-                          const newTexts = [...card2Texts];
-                          newTexts[index].color = e.target.value;
-                          setCard2Texts(newTexts);
-                        }}
-                        className="w-16 h-10 rounded-lg border border-zinc-300 dark:border-zinc-700 cursor-pointer flex-shrink-0"
-                        title={`Text line ${index + 1} color`}
-                      />
-                      {card2Texts.length > 1 && (
-                        <button
-                          onClick={() => {
-                            const newTexts = card2Texts.filter((_, i) => i !== index);
-                            setCard2Texts(newTexts);
-                            // Update card 2's text to be all texts joined
-                            const allTexts = newTexts.map(t => t.text).filter(t => t.trim()).join('\n');
-                            setCanvases(prev => prev.map(c => 
-                              c.id === '2' 
-                                ? { ...c, text: allTexts }
-                                : c
-                            ));
-                          }}
-                          className="w-10 h-10 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-red-600 dark:text-red-400 flex items-center justify-center transition-colors flex-shrink-0"
-                          title="Remove text line"
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <button
-                    onClick={() => {
-                      const newTexts = [...card2Texts, { text: '', color: '#876e9f' }];
-                      setCard2Texts(newTexts);
-                    }}
-                    className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 border-dashed rounded-lg bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-400 text-sm transition-colors"
-                  >
-                    + Add Text Line
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Card Text Rows (for cards 3+) */}
-            <div className="flex-shrink-0">
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">
-                Card Content
-              </label>
-              <div className="space-y-3">
-                {canvases
-                  .filter(c => c.id !== '1' && c.id !== '2' && c.id !== 'end')
-                  .map((canvas, index) => {
-                    // Calculate card number (starting from 3, since card 1 is title and card 2 is separate)
-                    const cardNumber = index + 3;
-                    return (
-                      <div key={canvas.id} className="flex gap-3 items-center">
-                        <input
-                          type="text"
-                          value={canvas.text}
-                          onChange={(e) => {
-                            const newText = e.target.value;
-                            setCanvases(prev => prev.map(c => 
-                              c.id === canvas.id 
-                                ? { ...c, text: newText }
-                                : c
-                            ));
-                          }}
-                          placeholder={`Card ${cardNumber} text...`}
-                          className="flex-1 px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent text-sm"
-                        />
-                        <input
-                          type="color"
-                          value={canvas.textColor}
-                          onChange={(e) => {
-                            const newColor = e.target.value;
-                            setCanvases(prev => prev.map(c => 
-                              c.id === canvas.id 
-                                ? { ...c, textColor: newColor }
-                                : c
-                            ));
-                          }}
-                          className="w-16 h-10 rounded-lg border border-zinc-300 dark:border-zinc-700 cursor-pointer flex-shrink-0"
-                          title={`Card ${cardNumber} text color`}
-                        />
-                        {canvases.filter(c => c.id !== '1' && c.id !== '2' && c.id !== 'end').length > 1 && canvas.id !== 'end' && (
-                          <button
-                            onClick={(e) => handleDeleteCanvas(canvas.id, e)}
-                            className="w-10 h-10 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-red-600 dark:text-red-400 flex items-center justify-center transition-colors flex-shrink-0"
-                            title="Remove card"
-                          >
-                            ×
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                <button
-                  onClick={handleAddCanvas}
-                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 border-dashed rounded-lg bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-400 text-sm transition-colors"
-                >
-                  + Add Card
-                </button>
-              </div>
-            </div>
-
-            {/* Ending Card Input */}
-            {canvases.find(c => c.id === 'end') && (
-              <div className="flex-shrink-0">
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Ending Card <span className="text-xs text-zinc-500 dark:text-zinc-400">(Last card)</span>
-                </label>
-                <div className="flex gap-3 items-center">
-                  <input
-                    type="text"
-                    value={canvases.find(c => c.id === 'end')?.text || ''}
-                    onChange={(e) => {
-                      const newText = e.target.value;
-                      setCanvases(prev => prev.map(c => 
-                        c.id === 'end' 
-                          ? { ...c, text: newText }
-                          : c
-                      ));
-                    }}
-                    placeholder="Enter ending card text..."
-                    className="flex-1 px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent text-sm"
-                  />
-                  <input
-                    type="color"
-                    value={canvases.find(c => c.id === 'end')?.textColor || '#FFFFFF'}
-                    onChange={(e) => {
-                      const newColor = e.target.value;
-                      setCanvases(prev => prev.map(c => 
-                        c.id === 'end' 
-                          ? { ...c, textColor: newColor }
-                          : c
-                      ));
-                    }}
-                    className="w-16 h-10 rounded-lg border border-zinc-300 dark:border-zinc-700 cursor-pointer flex-shrink-0"
-                    title="Ending card text color"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Text Size */}
-            <div className="flex-shrink-0">
-              <label
-                htmlFor="textSize"
-                className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
-              >
-                Text Size
-              </label>
-              <input
-                type="number"
-                id="textSize"
-                value={textSize}
-                onChange={(e) => setTextSize(e.target.value)}
-                placeholder="200"
-                min="10"
-                max="500"
-                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent font-mono text-sm"
-              />
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                Font size in pixels (default: 200)
-              </p>
-            </div>
-
-            {/* Image Size */}
-            <div className="flex-shrink-0">
-              <label
-                htmlFor="imageSize"
-                className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
-              >
-                Image Size (Width x Height)
-              </label>
-              <input
-                type="text"
-                id="imageSize"
-                value={imageSize}
-                onChange={(e) => setImageSize(e.target.value)}
-                placeholder="1080x1920"
-                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent font-mono text-sm"
-              />
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                Format: width x height (e.g., 1080x1920)
-              </p>
-            </div>
-              </>
-            )}
-
-            {/* Post Settings - In scroll flow, only when logged in */}
-            {userInfo && (
-              <div className="space-y-3 pt-4 mt-4 border-t border-zinc-200 dark:border-zinc-700">
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Post Settings (Required for TikTok)
-                </label>
-                <div className="space-y-3">
-                    {/* Title Input */}
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
-                        Title <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={postTitle}
-                        onChange={(e) => setPostTitle(e.target.value)}
-                        placeholder="Enter post title"
-                        maxLength={90}
-                        className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] text-sm"
-                      />
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                        {postTitle.length}/90 characters
-                      </p>
-                    </div>
-
-                    {/* Privacy Level Dropdown */}
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
-                        Privacy Status <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        value={postPrivacy}
-                        onChange={(e) => setPostPrivacy(e.target.value)}
-                        className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] text-sm"
-                      >
-                        <option value="">Select privacy status</option>
-                        {(creatorInfo?.privacy_level_options || ['PUBLIC_TO_EVERYONE', 'MUTUAL_FOLLOW_FRIENDS', 'SELF_ONLY']).map((option) => {
-                          const isPrivate = option === 'SELF_ONLY';
-                          const isDisabled = isPrivate && contentDisclosureEnabled && isBrandedContent;
-                          // User-friendly labels
-                          const labelMap: Record<string, string> = {
-                            'PUBLIC_TO_EVERYONE': 'Public',
-                            'MUTUAL_FOLLOW_FRIENDS': 'Friends',
-                            'FOLLOWER_OF_CREATOR': 'Followers',
-                            'SELF_ONLY': 'Only Me (Private)',
-                          };
-                          const label = labelMap[option] || option.replace(/_/g, ' ');
-                          return (
-                            <option 
-                              key={option} 
-                              value={option}
-                              disabled={isDisabled}
-                            >
-                              {label}{isDisabled ? ' (not available for branded content)' : ''}
-                            </option>
-                          );
-                        })}
-                      </select>
-                      {/* Warning when branded content is selected with private visibility */}
-                      {contentDisclosureEnabled && isBrandedContent && postPrivacy === 'SELF_ONLY' && (
-                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                          Branded content visibility cannot be set to private. Please select a different privacy setting.
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Interaction Settings - Only Allow Comment for photo posts */}
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                        Interaction Settings
-                      </label>
-                      <div className="space-y-2">
-                        {/* Allow Comment */}
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={allowComment}
-                            onChange={(e) => setAllowComment(e.target.checked)}
-                            disabled={creatorInfo?.comment_disabled === true}
-                            className="w-4 h-4 rounded border-zinc-300 dark:border-zinc-700 text-[#3B82F6] focus:ring-[#3B82F6] disabled:opacity-50 disabled:cursor-not-allowed"
-                          />
-                          <span className={`text-sm ${creatorInfo?.comment_disabled === true ? 'text-zinc-400 dark:text-zinc-600' : 'text-zinc-700 dark:text-zinc-300'}`}>
-                            Allow Comment
-                            {creatorInfo?.comment_disabled === true && (
-                              <span className="ml-1 text-xs">(disabled in your TikTok settings)</span>
-                            )}
-                          </span>
-                        </label>
-
-                        {/* Note about Duet and Stitch not applicable to photos */}
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400 italic">
-                          Note: Duet and Stitch are not available for photo posts
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Content Disclosure Settings */}
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                          Content Disclosure
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setContentDisclosureEnabled(!contentDisclosureEnabled);
-                            if (contentDisclosureEnabled) {
-                              // Reset selections when disabling
-                              setIsYourBrand(false);
-                              setIsBrandedContent(false);
-                            }
-                          }}
-                          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                            contentDisclosureEnabled ? 'bg-[#3B82F6]' : 'bg-zinc-300 dark:bg-zinc-600'
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              contentDisclosureEnabled ? 'translate-x-4' : 'translate-x-0.5'
-                            }`}
-                          />
-                        </button>
-                      </div>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
-                        Indicate if this content promotes yourself, a brand, product or service
-                      </p>
-
-                      {contentDisclosureEnabled && (
-                        <div className="space-y-2 pl-1 border-l-2 border-zinc-200 dark:border-zinc-700 ml-1">
-                          {/* Your Brand */}
-                          <label className="flex items-start gap-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={isYourBrand}
-                              onChange={(e) => setIsYourBrand(e.target.checked)}
-                              className="w-4 h-4 mt-0.5 rounded border-zinc-300 dark:border-zinc-700 text-[#3B82F6] focus:ring-[#3B82F6]"
-                            />
-                            <div>
-                              <span className="text-sm text-zinc-700 dark:text-zinc-300">Your brand</span>
-                              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                                You are promoting yourself or your own business
-                              </p>
-                            </div>
-                          </label>
-
-                          {/* Branded Content */}
-                          <label className="flex items-start gap-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={isBrandedContent}
-                              onChange={(e) => {
-                                const isChecked = e.target.checked;
-                                setIsBrandedContent(isChecked);
-                                // If enabling branded content and current privacy is SELF_ONLY, clear it
-                                if (isChecked && postPrivacy === 'SELF_ONLY') {
-                                  setPostPrivacy('');
-                                }
-                              }}
-                              className="w-4 h-4 mt-0.5 rounded border-zinc-300 dark:border-zinc-700 text-[#3B82F6] focus:ring-[#3B82F6]"
-                            />
-                            <div>
-                              <span className="text-sm text-zinc-700 dark:text-zinc-300">Branded content</span>
-                              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                                You are promoting another brand or a third party
-                              </p>
-                              {isBrandedContent && (
-                                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 italic">
-                                  Note: Branded content can only be set to public or friends visibility
-                                </p>
-                              )}
-                            </div>
-                          </label>
-
-                          {/* Content label indicator */}
-                          {(isYourBrand || isBrandedContent) && (
-                            <div className="mt-2 p-2 bg-zinc-100 dark:bg-zinc-800 rounded-md">
-                              <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                                {isBrandedContent 
-                                  ? "Your photo/video will be labeled as 'Paid partnership'"
-                                  : "Your photo/video will be labeled as 'Promotional content'"
-                                }
-                              </p>
-                            </div>
-                          )}
-
-                          {/* Warning if disclosure enabled but nothing selected */}
-                          {!isYourBrand && !isBrandedContent && (
-                            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                              Please select at least one option to proceed with publishing
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                </div>
-              </div>
-            )}
-
-            {/* Posting as indicator and Music Usage Consent - In scroll flow */}
-            {userInfo && (
-              <div className="space-y-3 pt-4 mt-4 border-t border-zinc-200 dark:border-zinc-700">
-                <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                  <span>Posting to TikTok as:</span>
-                  <span className="font-semibold text-black dark:text-zinc-50">
-                    {userInfo.display_name || 'User'}
-                  </span>
-                </div>
-                
-                {/* Consent Declaration - Required by TikTok */}
-                <label className="flex items-start gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={musicUsageConsent}
-                    onChange={(e) => setMusicUsageConsent(e.target.checked)}
-                    className="w-4 h-4 mt-0.5 rounded border-zinc-300 dark:border-zinc-700 text-[#3B82F6] focus:ring-[#3B82F6]"
-                  />
-                  <span className="text-xs text-zinc-600 dark:text-zinc-400">
-                    {contentDisclosureEnabled && isBrandedContent ? (
-                      <>
-                        By posting, you agree to TikTok&apos;s{' '}
-                        <a
-                          href="https://www.tiktok.com/legal/branded-content-policy"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[#3B82F6] hover:underline"
-                        >
-                          Branded Content Policy
-                        </a>
-                        {' '}and{' '}
-                        <a
-                          href="https://www.tiktok.com/legal/music-usage-confirmation"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[#3B82F6] hover:underline"
-                        >
-                          Music Usage Confirmation
-                        </a>
-                      </>
-                    ) : (
-                      <>
-                        By posting, you agree to TikTok&apos;s{' '}
-                        <a
-                          href="https://www.tiktok.com/legal/music-usage-confirmation"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[#3B82F6] hover:underline"
-                        >
-                          Music Usage Confirmation
-                        </a>
-                      </>
-                    )}
-                  </span>
-                </label>
-              </div>
-            )}
-              </div>
-            </div>
-
-            {/* Auto-Generate, Download and Post Buttons - Fixed at bottom */}
-            <div className="flex-shrink-0 flex gap-3 p-4 pt-3 border-t border-zinc-200 dark:border-zinc-700">
-              <button
-                onClick={handleAutoGenerate}
-                disabled={isAutoGenerating}
-                className="w-12 h-12 flex-shrink-0 rounded-lg bg-black hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Auto Generate"
-              >
-                {isAutoGenerating ? (
-                  <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                )}
-              </button>
-              <button
-                onClick={() => setShowDownloadModal(true)}
-                disabled={isGenerating || !currentCanvas.text.trim()}
-                className="flex-1 h-12 rounded-lg bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isGenerating ? (
-                  <>
-                    <svg
-                      className="animate-spin h-4 w-4"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                      />
-                    </svg>
-                    Download
-                  </>
-                )}
-              </button>
-              <div className="flex-1 relative group">
-                <button
-                  onClick={handlePostToTikTok}
-                  disabled={isPosting || !currentCanvas.text.trim() || !userInfo || !postTitle.trim() || !postPrivacy || !musicUsageConsent || (contentDisclosureEnabled && !isYourBrand && !isBrandedContent) || (contentDisclosureEnabled && isBrandedContent && postPrivacy === 'SELF_ONLY')}
-                  className="w-full h-12 rounded-lg bg-black hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white font-semibold text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {isPosting ? (
-                    <>
-                      <svg
-                        className="animate-spin h-4 w-4"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Posting...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
-                      </svg>
-                      Post
-                    </>
-                  )}
-                </button>
-                {/* Tooltip for content disclosure requirement */}
-                {contentDisclosureEnabled && !isYourBrand && !isBrandedContent && (
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-zinc-800 dark:bg-zinc-700 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-                    You need to indicate if your content promotes yourself, a third party, or both.
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-zinc-800 dark:border-t-zinc-700"></div>
-                  </div>
-                )}
-                {/* Tooltip for branded content privacy conflict */}
-                {contentDisclosureEnabled && isBrandedContent && postPrivacy === 'SELF_ONLY' && (
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-zinc-800 dark:bg-zinc-700 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-                    Branded content visibility cannot be set to private.
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-zinc-800 dark:border-t-zinc-700"></div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Right Side - Preview */}
-          <div className="flex flex-col p-4 bg-white dark:bg-zinc-900 rounded-2xl shadow-lg h-full max-h-screen overflow-hidden">
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3 flex-shrink-0">
-              Preview
-            </label>
-            <div className="flex-1 flex items-center justify-center min-h-0 mb-3 p-2 w-full overflow-hidden" style={{ position: 'relative', contain: 'layout style paint' }}>
-              {useMemo(() => {
-                const [widthStr, heightStr] = (imageSize || '1080x1920').split('x').map(s => s.trim());
-                const width = parseInt(widthStr) || 1080;
-                const height = parseInt(heightStr) || 1920;
-                // Use current canvas's textSize, not the state variable
-                const fontSize = parseInt(currentCanvas.textSize || textSize) || 200;
-                // Scale font size for preview - use a fixed scale factor so changes are visible
-                // This makes the preview roughly 8% of actual size, so 80px → ~6.4px, 800px → ~64px
-                const previewFontSize = fontSize * 0.08;
-                const aspectRatio = width / height;
-                const isFirstCanvas = currentCanvasId === '1';
-                // Canvas-style fontSize and maxWidth for title wrap (card 1)
-                const canvasWidthScale = width / 1080;
-                const titleFontSize = (fontSize * canvasWidthScale) / 2.5;
-                const titleMaxWidth = width * 0.9;
-                // Only use canvas-based wrap after mount to avoid SSR/client hydration mismatch
-                const titleLines = mounted && isFirstCanvas
-                  ? wrapTextToLines(firstCard.text, titleMaxWidth, titleFontSize)
-                  : [];
-                const isEndingCard = currentCanvasId === 'end';
-                
-                const useVideoBg = isFirstCanvas && mode === 'video' && !!videoBackgroundUrl;
-                const showPlainBg = !useVideoBg;
-
-                return (
-                  <div
-                    className="rounded-lg border-2 border-zinc-300 dark:border-zinc-700 flex items-center justify-center p-3 relative overflow-hidden"
-                    style={{ 
-                      backgroundColor: showPlainBg ? backgroundColor : undefined,
-                      aspectRatio: `${width} / ${height}`,
-                      height: '100%',
-                      width: 'auto',
-                      maxWidth: '100%',
-                      maxHeight: '100%',
-                      contain: 'layout style paint',
-                      willChange: 'contents'
-                    }}
-                  >
-                    {useVideoBg && videoBackgroundUrl && (
-                      <img
-                        src={videoBackgroundUrl}
-                        alt=""
-                        className="absolute inset-0 w-full h-full object-cover"
-                        style={{ pointerEvents: 'none', filter: ROMANTIC_IMAGE_FILTER }}
-                      />
-                    )}
-                    {(isFirstCanvas || isEndingCard) ? (
-                      <div
-                        className={isEndingCard ? "flex flex-col items-center justify-center" : "flex flex-col items-center justify-center relative w-full h-full"}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          ...(useVideoBg ? { position: 'absolute', inset: 0 } : {}),
-                        }}
-                      >
-                        {isEndingCard && (
-                          <svg
-                            className="flex-shrink-0"
-                            style={{
-                              width: `${previewFontSize * 1.5}px`,
-                              height: `${previewFontSize * 1.5}px`,
-                              color: currentCanvas.textColor,
-                              marginBottom: `${previewFontSize * 0.8}px`,
-                            }}
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle cx="18" cy="5" r="3"></circle>
-                            <circle cx="6" cy="12" r="3"></circle>
-                            <circle cx="18" cy="19" r="3"></circle>
-                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-                          </svg>
-                        )}
-                        {isFirstCanvas ? (
-                          titleLines.length > 0 ? (
-                            <div className="flex flex-col items-center gap-0" style={{ maxWidth: '95%' }}>
-                              {titleLines.map((line, i) => (
-                                <span
-                                  key={i}
-                                  className="font-bold text-center px-[0.45em] py-[0.2em] rounded-[0.25em]"
-                                  style={{
-                                    color: '#000000',
-                                    backgroundColor: '#FFFFFF',
-                                    fontFamily: 'var(--font-inter), sans-serif',
-                                    fontSize: `${previewFontSize}px`,
-                                    lineHeight: 1.4,
-                                  }}
-                                >
-                                  {line}
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            <p
-                              className="font-bold text-center px-3 py-1.5 rounded-lg"
-                              style={{
-                                color: '#000000',
-                                backgroundColor: '#FFFFFF',
-                                fontFamily: 'Inter, sans-serif',
-                                width: '100%',
-                                maxWidth: '95%',
-                                fontSize: `${previewFontSize}px`,
-                                lineHeight: 1.4,
-                                minHeight: '1em',
-                              }}
-                            >
-                              {firstCard.text || 'Your title'}
-                            </p>
-                          )
-                        ) : (
-                          <p
-                            className="font-bold text-center break-words overflow-hidden px-2"
-                            style={{
-                              color: currentCanvas.textColor,
-                              width: '100%',
-                              maxWidth: '95%',
-                              wordWrap: 'break-word',
-                              overflowWrap: 'break-word',
-                              fontSize: `${previewFontSize}px`,
-                              lineHeight: 1.4,
-                              minHeight: '1em',
-                              maxHeight: '100%',
-                              contain: 'layout style paint',
-                              willChange: 'auto',
-                            }}
-                          >
-                            {currentCanvas.text}
-                          </p>
-                        )}
-                      </div>
-                    ) : (
-                      // Subsequent canvases - white card in the middle
-                      <div 
-                        className="absolute inset-0 flex items-center justify-center p-4"
-                        style={{ pointerEvents: 'none', contain: 'layout style paint' }}
-                      >
-                        <div
-                          className="bg-white rounded-2xl border-4 border-[#e1c2ff] shadow-lg flex flex-col items-start justify-start overflow-hidden relative"
-                          style={{
-                            width: '75%',
-                            aspectRatio: aspectRatio,
-                            maxHeight: '65%',
-                            pointerEvents: 'auto',
-                            contain: 'layout style paint',
-                            paddingTop: currentCanvasId === '2' ? '1rem' : '35%',
-                            paddingLeft: currentCanvasId === '2' ? '1rem' : '0.5rem',
-                            paddingRight: currentCanvasId === '2' ? '1rem' : '0.5rem',
-                            paddingBottom: currentCanvasId === '2' ? '1.25rem' : '1rem'
-                          }}
-                        >
-                          {currentCanvasId === '2' ? (
-                            <>
-                              <p
-                                className="font-bold text-center"
-                                style={{
-                                  color: currentCanvas.textColor || '#876e9f',
-                                  fontSize: `${previewFontSize}px`,
-                                  lineHeight: '1.4',
-                                  position: 'absolute',
-                                  top: '1rem',
-                                  left: '50%',
-                                  transform: 'translateX(-50%)',
-                                  width: 'calc(100% - 2rem)',
-                                  textAlign: 'center',
-                                  textDecoration: 'underline',
-                                  textDecorationThickness: '2px',
-                                  textUnderlineOffset: '0.25rem',
-                                }}
-                              >
-                                Instructions
-                              </p>
-                              {card2Texts.filter(t => t.text.trim()).length > 0 && (
-                                <div className="flex flex-col gap-2 w-full" style={{ marginTop: '35%' }}>
-                                  {card2Texts.filter(t => t.text.trim()).map((textItem, idx) => (
-                                    <div
-                                      key={idx}
-                                      className="flex items-center gap-2"
-                                      style={{
-                                        width: '100%',
-                                        maxWidth: '95%',
-                                      }}
-                                    >
-                                      <span
-                                        className="flex-shrink-0 flex items-center justify-center font-bold rounded-full"
-                                        style={{
-                                          backgroundColor: textItem.color || '#876e9f',
-                                          color: '#FFFFFF',
-                                          width: `${previewFontSize * 0.8}px`,
-                                          height: `${previewFontSize * 0.8}px`,
-                                          fontSize: `${previewFontSize * 0.6}px`,
-                                          minWidth: `${previewFontSize * 0.8}px`,
-                                          lineHeight: '1',
-                                        }}
-                                      >
-                                        {idx + 1}
-                                      </span>
-                                      <p
-                                        className="font-bold text-left break-words overflow-hidden flex-1"
-                                        style={{
-                                          color: textItem.color,
-                                          wordWrap: 'break-word',
-                                          overflowWrap: 'break-word',
-                                          fontSize: `${previewFontSize}px`,
-                                          lineHeight: '1.4',
-                                          minHeight: '1em',
-                                          contain: 'layout style paint',
-                                          willChange: 'auto',
-                                          margin: 0,
-                                          padding: 0,
-                                        }}
-                                      >
-                                        {textItem.text}
-                                      </p>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <p
-                              className="font-bold text-left break-words px-2 overflow-hidden"
-                              style={{
-                                color: currentCanvas.textColor,
-                                width: '100%',
-                                maxWidth: '95%',
-                                wordWrap: 'break-word',
-                                overflowWrap: 'break-word',
-                                fontSize: `${previewFontSize}px`,
-                                lineHeight: '1.4',
-                                minHeight: '1em',
-                                maxHeight: '100%',
-                                contain: 'layout style paint',
-                                willChange: 'auto'
-                              }}
-                            >
-                              {currentCanvas.text || 'Your text will appear here'}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              }, [mounted, backgroundColor, imageSize, currentCanvas.textSize, textSize, currentCanvasId, firstCard.textColor, firstCard.text, currentCanvas.textColor, currentCanvas.text, card2Texts, levelName, mode, videoBackgroundUrl])}
-            </div>
-            
-            {/* Carousel */}
-            <div className="flex-shrink-0">
-              <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'thin' }}>
-                {canvases.map((canvas, canvasIndex) => {
-                  // Parse image size to get aspect ratio
-                  const [widthStr, heightStr] = (canvas.imageSize || '1080x1920').split('x').map(s => s.trim());
-                  const width = parseInt(widthStr) || 1080;
-                  const height = parseInt(heightStr) || 1920;
-                  const aspectRatio = width / height;
-                  const isFirstCanvas = canvas.id === '1';
-                  const useThumbBg = isFirstCanvas && mode === 'video' && !!videoThumbnailUrl;
-                  const canvasWidthScale = width / 1080;
-                  const baseFs = parseInt(canvas.textSize || '200') || 200;
-                  const titleFontSize = (baseFs * canvasWidthScale) / 2.5;
-                  const titleMaxWidth = width * 0.9;
-                  const thumbTitleLines = mounted && isFirstCanvas ? wrapTextToLines(canvas.text, titleMaxWidth, titleFontSize) : [];
-
-                  return (
-                    <div key={canvas.id} className="contents">
-                      {/* Render card 1 and ending card (no white card, just text) */}
-                      {(canvas.id === '1' || canvas.id === 'end') && (
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelectCanvas(canvas.id);
-                          }}
-                          className={`relative flex-shrink-0 w-20 aspect-[9/16] rounded-lg border-2 cursor-pointer transition-all overflow-hidden ${
-                            canvas.id === currentCanvasId
-                              ? 'border-[#3B82F6] ring-2 ring-[#3B82F6] ring-opacity-50'
-                              : 'border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-600'
-                          }`}
-                          style={{ backgroundColor: canvas.backgroundColor }}
-                        >
-                          {useThumbBg && videoThumbnailUrl && (
-                            <img
-                              src={videoThumbnailUrl}
-                              alt=""
-                              className="absolute inset-0 w-full h-full object-cover"
-                              style={{ filter: ROMANTIC_IMAGE_FILTER }}
-                            />
-                          )}
-                          {/* First and ending canvas - no white card, text directly on background */}
-                          <div className={`absolute inset-0 flex items-center justify-center p-1 ${canvas.id === 'end' ? 'flex-col gap-1' : 'flex-col gap-1'}`}>
-                            {canvas.id === 'end' && (
-                              <svg
-                                className="flex-shrink-0"
-                                style={{
-                                  width: '12px',
-                                  height: '12px',
-                                  color: canvas.textColor,
-                                }}
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                viewBox="0 0 24 24"
-                              >
-                                <circle cx="18" cy="5" r="3"></circle>
-                                <circle cx="6" cy="12" r="3"></circle>
-                                <circle cx="18" cy="19" r="3"></circle>
-                                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-                                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-                              </svg>
-                            )}
-                            {canvas.id === '1' ? (
-                              thumbTitleLines.length > 0 ? (
-                                <div className="flex flex-col items-center gap-0">
-                                  {thumbTitleLines.map((line, i) => (
-                                    <span
-                                      key={i}
-                                      className="font-bold text-center text-xs leading-tight px-1 py-0.5 rounded"
-                                      style={{ fontFamily: 'var(--font-inter), sans-serif', color: '#000000', backgroundColor: '#FFFFFF' }}
-                                    >
-                                      {line}
-                                    </span>
-                                  ))}
-                                </div>
-                              ) : (
-                                <span
-                                  className="font-bold text-center text-xs leading-tight px-1.5 py-0.5 rounded"
-                                  style={{ fontFamily: 'var(--font-inter), sans-serif', color: '#000000', backgroundColor: '#FFFFFF' }}
-                                >
-                                  {canvas.text || '•'}
-                                </span>
-                              )
-                            ) : (
-                              <p
-                                className="font-bold text-center text-xs leading-tight px-2"
-                                style={{ color: canvas.textColor }}
-                              >
-                                {canvas.text || '•'}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Render other cards (card 2+ but not ending card) */}
-                      {canvas.id !== '1' && canvas.id !== 'end' && (
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelectCanvas(canvas.id);
-                          }}
-                          className={`relative flex-shrink-0 w-20 aspect-[9/16] rounded-lg border-2 cursor-pointer transition-all overflow-hidden ${
-                            canvas.id === currentCanvasId
-                              ? 'border-[#3B82F6] ring-2 ring-[#3B82F6] ring-opacity-50'
-                              : 'border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-600'
-                          } z-10`}
-                          style={{ backgroundColor: canvas.backgroundColor }}
-                        >
-                          {/* Subsequdedent canvases - white card in the middle */}
-                          <div className="absolute inset-0 flex items-center justify-center p-2 pointer-events-none">
-                            <div
-                              className="bg-white rounded-lg border-4 border-[#e1c2ff] shadow-lg flex flex-col items-start justify-start pointer-events-none relative overflow-hidden"
-                              style={{
-                                width: '75%',
-                                aspectRatio: aspectRatio,
-                                maxHeight: '65%',
-                                paddingTop: canvas.id === '2' ? '0.5rem' : '35%',
-                                paddingLeft: canvas.id === '2' ? '0.5rem' : '0.25rem',
-                                paddingRight: canvas.id === '2' ? '0.5rem' : '0.25rem',
-                                paddingBottom: canvas.id === '2' ? '0.75rem' : '0.5rem',
-                              }}
-                            >
-                            </div>
-                          </div>
-                          {canvases.length > 3 && canvas.id !== '1' && canvas.id !== '2' && canvas.id !== 'end' && (
-                            <button
-                              onClick={(e) => handleDeleteCanvas(canvas.id, e)}
-                              className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold transition-colors z-10"
-                              title="Delete canvas"
-                            >
-                              ×
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-                <button
-                  onClick={handleAddCanvas}
-                  className="flex-shrink-0 w-20 aspect-[9/16] rounded-lg border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-[#3B82F6] dark:hover:border-[#3B82F6] flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-[#3B82F6] transition-colors bg-zinc-50 dark:bg-zinc-800"
-                  title="Add new canvas"
-                >
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 4v16m8-8H4"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
+          <ActionBar
+            onAutoGenerate={handleAutoGenerate}
+            onDownload={() => setShowDownloadModal(true)}
+            onPost={handlePostToTikTok}
+            isAutoGenerating={isAutoGenerating}
+            isGenerating={isGenerating}
+            isPosting={isPosting}
+            canDownload={!!currentCanvas.text.trim()}
+            canPost={canPost}
+            contentDisclosureEnabled={contentDisclosureEnabled}
+            isYourBrand={isYourBrand}
+            isBrandedContent={isBrandedContent}
+            postPrivacy={postPrivacy}
+          />
+          <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-4 flex-1 min-h-0 px-3 pb-3 pt-0 overflow-hidden">
+            <InputsCard
+              contentTab={contentTab}
+              backgroundColor={backgroundColor}
+              setBackgroundColor={setBackgroundColor}
+              theme={theme}
+              setTheme={setTheme}
+              mode={mode}
+              setMode={setMode}
+              videoLoading={videoLoading}
+              onChangeVideo={handleChangeVideo}
+              text={text}
+              setText={setText}
+              firstCard={firstCard}
+              canvases={canvases}
+              setCanvases={setCanvases}
+              card2Texts={card2Texts}
+              setCard2Texts={setCard2Texts}
+              textSize={textSize}
+              setTextSize={setTextSize}
+              imageSize={imageSize}
+              setImageSize={setImageSize}
+              onAddCanvas={handleAddCanvas}
+              onDeleteCanvas={handleDeleteCanvas}
+              userInfo={userInfo}
+              postTitle={postTitle}
+              setPostTitle={setPostTitle}
+              postPrivacy={postPrivacy}
+              setPostPrivacy={setPostPrivacy}
+              creatorInfo={creatorInfo}
+              allowComment={allowComment}
+              setAllowComment={setAllowComment}
+              contentDisclosureEnabled={contentDisclosureEnabled}
+              setContentDisclosureEnabled={setContentDisclosureEnabled}
+              isYourBrand={isYourBrand}
+              setIsYourBrand={setIsYourBrand}
+              isBrandedContent={isBrandedContent}
+              setIsBrandedContent={setIsBrandedContent}
+              musicUsageConsent={musicUsageConsent}
+              setMusicUsageConsent={setMusicUsageConsent}
+            />
+            <PreviewPanel
+              canvases={canvases}
+              currentCanvasId={currentCanvasId}
+              currentCanvas={currentCanvas}
+              firstCard={firstCard}
+              onSelectCanvas={handleSelectCanvas}
+              onAddCanvas={handleAddCanvas}
+              onDeleteCanvas={handleDeleteCanvas}
+              backgroundColor={backgroundColor}
+              imageSize={imageSize}
+              textSize={textSize}
+              mode={mode}
+              videoBackgroundUrl={videoBackgroundUrl}
+              videoThumbnailUrl={videoThumbnailUrl}
+              card2Texts={card2Texts}
+              mounted={mounted}
+            />
           </div>
         </div>
       </div>
-      </div>
-
-      {/* Download Confirmation Modal */}
-      {showDownloadModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => !isGenerating && setShowDownloadModal(false)} />
-          <div className="relative bg-white dark:bg-zinc-900 rounded-xl shadow-xl p-6 max-w-sm w-full mx-4 border border-zinc-200 dark:border-zinc-700">
-            <h3 className="text-lg font-semibold text-black dark:text-zinc-50 mb-2">Confirm Download</h3>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">Download all card images as a ZIP file?</p>
-            <div className="flex gap-3 justify-end">
-              <button onClick={() => setShowDownloadModal(false)} disabled={isGenerating} className="px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50">Cancel</button>
-              <button onClick={async () => { setShowDownloadModal(false); await handleGenerate(); }} disabled={isGenerating} className="px-4 py-2 rounded-lg bg-[#3B82F6] hover:bg-[#2563EB] text-white font-medium transition-colors disabled:opacity-50 flex items-center gap-2">
-                {isGenerating ? (<><svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>Downloading...</>) : 'Download'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Toast Notification */}
-      {showToast && (
-        <div className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 px-6 py-4 rounded-lg shadow-lg text-white font-medium text-sm flex items-center gap-3 animate-slide-up max-w-md ${
-          postStatus === 'failed' 
-            ? 'bg-red-600 dark:bg-red-700' 
-            : postStatus === 'success' 
-              ? 'bg-green-600 dark:bg-green-700' 
-              : 'bg-zinc-800 dark:bg-zinc-700'
-        }`}>
-          {/* Icon based on status */}
-          {postStatus === 'processing' ? (
-            <svg
-              className="w-5 h-5 flex-shrink-0 animate-spin"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
-          ) : postStatus === 'failed' ? (
-            <svg
-              className="w-5 h-5 flex-shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          ) : (
-            <svg
-              className="w-5 h-5 flex-shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          )}
-          <span>{toastMessage || 'Posted successfully'}</span>
-          
-          {/* Close button */}
-          <button
-            onClick={() => {
-              setShowToast(false);
-              setPostStatus(null);
-              setPublishId(null);
-            }}
-            className="ml-2 p-1 hover:bg-white/20 rounded transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      )}
+      <DownloadModal isOpen={showDownloadModal} onClose={() => setShowDownloadModal(false)} onConfirm={handleGenerate} isGenerating={isGenerating} />
+      {showToast && <Toast message={toastMessage} status={postStatus} onClose={() => { setShowToast(false); setPostStatus(null); setPublishId(null); }} />}
     </div>
   );
 }
