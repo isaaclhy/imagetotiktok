@@ -34,7 +34,27 @@ export async function POST(request: NextRequest) {
     const imageFile = formData.get('image') as File | null;
     const photoUrl = formData.get('photo_url') as string | null;
     const caption = (formData.get('caption') as string) || '';
-    const privacyLevel = (formData.get('privacy_level') as string) || 'SELF_ONLY';
+    const privacyLevel = formData.get('privacy_level') as string;
+    const disableComment = formData.get('disable_comment') === 'true';
+    
+    // Content disclosure settings
+    const brandOrganicToggle = formData.get('brand_organic_toggle') === 'true'; // Your brand
+    const brandContentToggle = formData.get('brand_content_toggle') === 'true'; // Branded content
+
+    // Validate required fields
+    if (!caption.trim()) {
+      return NextResponse.json(
+        { error: 'Title is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!privacyLevel) {
+      return NextResponse.json(
+        { error: 'Privacy level is required' },
+        { status: 400 }
+      );
+    }
 
     let imageUrl: string;
 
@@ -84,9 +104,14 @@ export async function POST(request: NextRequest) {
           media_type: 'PHOTO',
           post_mode: 'MEDIA_UPLOAD', // Upload as draft; user edits & posts from TikTok app (no direct post)
           post_info: {
-            title: caption.slice(0, 90) || 'Bleamies',
+            title: caption.slice(0, 90),
             privacy_level: privacyLevel,
-            disable_comment: false,
+            disable_comment: disableComment,
+            // Content disclosure settings (only include if either is true)
+            ...(brandOrganicToggle || brandContentToggle ? {
+              brand_organic_toggle: brandOrganicToggle,
+              brand_content_toggle: brandContentToggle,
+            } : {}),
           },
           source_info: {
             source: 'PULL_FROM_URL',
@@ -126,6 +151,29 @@ export async function POST(request: NextRequest) {
         { error: errMsg || 'Failed to initialize photo post' },
         { status: initResponse.status }
       );
+    }
+
+    // Check creator_info for posting limits
+    const creatorInfo = initData.data?.creator_info;
+    if (creatorInfo) {
+      // If comment_disabled is true, creator cannot post right now
+      if (creatorInfo.comment_disabled === true) {
+        return NextResponse.json(
+          {
+            error: 'You cannot make more posts at this moment. Please try again later.',
+            rateLimited: true,
+          },
+          { status: 429 }
+        );
+      }
+      
+      // If max_post_count is reached
+      if (
+        typeof creatorInfo.max_post_count === 'number' &&
+        typeof creatorInfo.privacy_level_options === 'object'
+      ) {
+        // Additional checks can be added here if TikTok provides more specific fields
+      }
     }
 
     return NextResponse.json({

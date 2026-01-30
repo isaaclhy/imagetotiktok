@@ -15,6 +15,7 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const imageFile = formData.get('image') as File;
+    const videoDuration = formData.get('video_duration') as string; // Duration in seconds (optional)
     const caption = formData.get('caption') as string;
     const privacyLevel = (formData.get('privacy_level') as string) || 'SELF_ONLY'; // Default to private
 
@@ -90,6 +91,39 @@ export async function POST(request: NextRequest) {
         { error: errMsg || 'Failed to initialize upload' },
         { status: initResponse.status }
       );
+    }
+
+    // Check creator_info for posting limits
+    const creatorInfo = initData.data?.creator_info;
+    if (creatorInfo) {
+      // If comment_disabled is true, creator cannot post right now
+      if (creatorInfo.comment_disabled === true) {
+        return NextResponse.json(
+          {
+            error: 'You cannot make more posts at this moment. Please try again later.',
+            rateLimited: true,
+          },
+          { status: 429 }
+        );
+      }
+      
+      // Check if video duration exceeds max allowed duration
+      if (
+        typeof creatorInfo.max_video_post_duration_sec === 'number' &&
+        videoDuration
+      ) {
+        const durationSec = parseFloat(videoDuration);
+        if (!isNaN(durationSec) && durationSec > creatorInfo.max_video_post_duration_sec) {
+          return NextResponse.json(
+            {
+              error: `Video duration (${durationSec}s) exceeds maximum allowed duration (${creatorInfo.max_video_post_duration_sec}s). Please trim your video and try again.`,
+              durationExceeded: true,
+              maxDuration: creatorInfo.max_video_post_duration_sec,
+            },
+            { status: 400 }
+          );
+        }
+      }
     }
 
     const { publish_id, upload_url } = initData.data;

@@ -67,6 +67,29 @@ export default function Home() {
   const [userInfo, setUserInfo] = useState<{ display_name?: string; avatar_url?: string } | null>(null);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [postStatus, setPostStatus] = useState<'processing' | 'success' | 'failed' | null>(null);
+  const [publishId, setPublishId] = useState<string | null>(null);
+  
+  // TikTok post metadata states
+  const [postTitle, setPostTitle] = useState('');
+  const [postPrivacy, setPostPrivacy] = useState<string>(''); // Empty = no default (required by TikTok)
+  const [allowComment, setAllowComment] = useState(false); // Must be manually enabled (required by TikTok)
+  const [creatorInfo, setCreatorInfo] = useState<{
+    privacy_level_options?: string[];
+    comment_disabled?: boolean;
+    duet_disabled?: boolean;
+    stitch_disabled?: boolean;
+    max_video_post_duration_sec?: number;
+  } | null>(null);
+  const [showPostSettings, setShowPostSettings] = useState(true);
+  const [musicUsageConsent, setMusicUsageConsent] = useState(false); // Must agree before posting
+  
+  // Content Disclosure Settings (TikTok requirement)
+  const [contentDisclosureEnabled, setContentDisclosureEnabled] = useState(false);
+  const [isYourBrand, setIsYourBrand] = useState(false); // Promoting yourself/your business
+  const [isBrandedContent, setIsBrandedContent] = useState(false); // Promoting another brand/third party
+  
   const [instructions, setInstructions] = useState<Array<{ text: string; color: string }>>([
     { text: '', color: '#876e9f' }
   ]);
@@ -79,6 +102,7 @@ export default function Home() {
   const [levelName, setLevelName] = useState<string>('');
   const [theme, setTheme] = useState<string>('couple in nature');
   const [mode, setMode] = useState<'plain' | 'video'>('plain');
+  const [contentTab, setContentTab] = useState<'image' | 'video'>('image');
   const [videoBackgroundUrl, setVideoBackgroundUrl] = useState<string | null>(null);
   const [videoThumbnailUrl, setVideoThumbnailUrl] = useState<string | null>(null);
   const [videoLoading, setVideoLoading] = useState(false);
@@ -279,8 +303,20 @@ export default function Home() {
         
         if (authData.authenticated && authData.user) {
           setUserInfo(authData.user);
+          
+          // Fetch creator_info for post settings (privacy options, interaction settings)
+          try {
+            const creatorInfoRes = await fetch('/api/tiktok/creator-info');
+            const creatorInfoData = await creatorInfoRes.json();
+            if (creatorInfoRes.ok && creatorInfoData.creator_info) {
+              setCreatorInfo(creatorInfoData.creator_info);
+            }
+          } catch (err) {
+            console.error('Failed to fetch creator info:', err);
+          }
         } else {
           setUserInfo(null);
+          setCreatorInfo(null);
         }
       } catch (error) {
         console.error('Auth check error:', error);
@@ -898,6 +934,37 @@ export default function Home() {
       return;
     }
 
+    // Validate post metadata (required by TikTok Content Posting API)
+    if (!postTitle.trim()) {
+      alert('Please enter a title for your post');
+      return;
+    }
+
+    if (!postPrivacy) {
+      alert('Please select a privacy status for your post');
+      return;
+    }
+
+    if (!musicUsageConsent) {
+      const policyMessage = contentDisclosureEnabled && isBrandedContent
+        ? 'Please agree to TikTok\'s Branded Content Policy and Music Usage Confirmation before posting'
+        : 'Please agree to TikTok\'s Music Usage Confirmation before posting';
+      alert(policyMessage);
+      return;
+    }
+
+    // Validate content disclosure if enabled
+    if (contentDisclosureEnabled && !isYourBrand && !isBrandedContent) {
+      alert('You need to indicate if your content promotes yourself, a third party, or both.');
+      return;
+    }
+
+    // Validate branded content privacy requirement
+    if (contentDisclosureEnabled && isBrandedContent && postPrivacy === 'SELF_ONLY') {
+      alert('Branded content visibility cannot be set to private. Please select public or friends visibility.');
+      return;
+    }
+
     setIsPosting(true);
     
     try {
@@ -914,8 +981,15 @@ export default function Home() {
       // Create FormData to send to API
       const formData = new FormData();
       formData.append('image', imageBlob, 'card.png');
-      formData.append('caption', canvasText);
-      formData.append('privacy_level', 'SELF_ONLY'); // Keep it private
+      formData.append('caption', postTitle); // Use user-entered title
+      formData.append('privacy_level', postPrivacy); // Use user-selected privacy
+      formData.append('disable_comment', (!allowComment).toString()); // Inverted: disable if NOT allowed
+      
+      // Content disclosure settings
+      if (contentDisclosureEnabled) {
+        formData.append('brand_organic_toggle', isYourBrand.toString()); // Your brand (promotional content)
+        formData.append('brand_content_toggle', isBrandedContent.toString()); // Branded content (paid partnership)
+      }
 
       // Call the TikTok Photo Post API (MEDIA_UPLOAD = draft; user posts from app)
       const response = await fetch('/api/tiktok/post-photo', {
@@ -926,6 +1000,12 @@ export default function Home() {
       const data = await response.json();
 
       if (!response.ok) {
+        // Check if rate limited (cannot post more at this moment)
+        if (data.rateLimited || response.status === 429) {
+          alert(data.error || 'You cannot make more posts at this moment. Please try again later.');
+          return;
+        }
+        
         // Check if re-authentication is required
         if (data.requiresReauth) {
           alert('Please reconnect your TikTok account to grant photo upload permissions.');
@@ -936,19 +1016,108 @@ export default function Home() {
         throw new Error(data.error || 'Failed to post to TikTok');
       }
 
-      // Show success toast
+      // Store publish_id for status polling
+      const currentPublishId = data.data?.publish_id;
+      if (currentPublishId) {
+        setPublishId(currentPublishId);
+      }
+
+      // Show processing toast with notification about processing time
+      setPostStatus('processing');
+      setToastMessage('Your content is being processed. It may take a few minutes to appear on your profile.');
       setShowToast(true);
-      
-      // Auto-hide toast after 3 seconds
-      setTimeout(() => {
-        setShowToast(false);
-      }, 3000);
+
+      // Poll for status if we have a publish_id
+      if (currentPublishId) {
+        pollPostStatus(currentPublishId);
+      } else {
+        // No publish_id, just show success after a delay
+        setTimeout(() => {
+          setPostStatus('success');
+          setToastMessage('Posted successfully! It may take a few minutes to appear on your profile.');
+        }, 2000);
+        
+        // Auto-hide toast after 8 seconds
+        setTimeout(() => {
+          setShowToast(false);
+          setPostStatus(null);
+        }, 8000);
+      }
     } catch (error: any) {
       console.error('Error posting to TikTok:', error);
       alert(error.message || 'Failed to post to TikTok. Please try again.');
     } finally {
       setIsPosting(false);
     }
+  };
+
+  // Poll for post status
+  const pollPostStatus = async (pubId: string) => {
+    let attempts = 0;
+    const maxAttempts = 10; // Poll for up to ~30 seconds
+    const pollInterval = 3000; // 3 seconds between polls
+
+    const checkStatus = async () => {
+      try {
+        const response = await fetch(`/api/tiktok/post-status?publish_id=${encodeURIComponent(pubId)}`);
+        const statusData = await response.json();
+
+        if (response.ok && statusData.status) {
+          const status = statusData.status;
+          
+          if (status === 'PUBLISH_COMPLETE') {
+            setPostStatus('success');
+            setToastMessage('Posted successfully! Your content is now visible on your profile.');
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+              setShowToast(false);
+              setPostStatus(null);
+              setPublishId(null);
+            }, 5000);
+            return; // Stop polling
+          } else if (status === 'FAILED') {
+            setPostStatus('failed');
+            setToastMessage(statusData.fail_reason || 'Post failed. Please try again.');
+            // Auto-hide after 8 seconds
+            setTimeout(() => {
+              setShowToast(false);
+              setPostStatus(null);
+              setPublishId(null);
+            }, 8000);
+            return; // Stop polling
+          }
+          // Status is still processing (PROCESSING_UPLOAD, PROCESSING_DOWNLOAD, etc.)
+          setToastMessage(`Processing... ${statusData.status_msg || 'Your content is being processed.'}`);
+        }
+
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(checkStatus, pollInterval);
+        } else {
+          // Max attempts reached, show generic success
+          setPostStatus('success');
+          setToastMessage('Your content has been submitted. It may take a few minutes to appear on your profile.');
+          setTimeout(() => {
+            setShowToast(false);
+            setPostStatus(null);
+            setPublishId(null);
+          }, 5000);
+        }
+      } catch (error) {
+        console.error('Error polling post status:', error);
+        // Don't fail silently, show optimistic success
+        setPostStatus('success');
+        setToastMessage('Your content has been submitted. It may take a few minutes to appear on your profile.');
+        setTimeout(() => {
+          setShowToast(false);
+          setPostStatus(null);
+          setPublishId(null);
+        }, 5000);
+      }
+    };
+
+    // Start polling after initial delay
+    setTimeout(checkStatus, pollInterval);
   };
 
   // Helper function to wrap text
@@ -1113,6 +1282,45 @@ export default function Home() {
             {/* Scrollable Content Area */}
             <div className="flex-1 min-h-0 overflow-y-auto px-4 hide-scrollbar">
               <div className="flex flex-col gap-4 py-3">
+            
+            {/* Content Type Tabs */}
+            <div className="flex-shrink-0">
+              <div className="flex rounded-lg bg-zinc-100 dark:bg-zinc-800 p-1">
+                <button
+                  onClick={() => setContentTab('image')}
+                  className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${
+                    contentTab === 'image'
+                      ? 'bg-white dark:bg-zinc-700 text-black dark:text-zinc-50 shadow-sm'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-zinc-200'
+                  }`}
+                >
+                  Image
+                </button>
+                <button
+                  onClick={() => setContentTab('video')}
+                  className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${
+                    contentTab === 'video'
+                      ? 'bg-white dark:bg-zinc-700 text-black dark:text-zinc-50 shadow-sm'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-zinc-200'
+                  }`}
+                >
+                  Video
+                </button>
+              </div>
+            </div>
+
+            {/* Video Tab Content - Coming Soon */}
+            {contentTab === 'video' && (
+              <div className="flex-1 flex items-center justify-center py-12">
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  Video mode coming soon
+                </p>
+              </div>
+            )}
+
+            {/* Image Tab Content */}
+            {contentTab === 'image' && (
+              <>
             {/* Color Picker */}
             <div className="flex-shrink-0">
               <label
@@ -1440,8 +1648,272 @@ export default function Home() {
                 Format: width x height (e.g., 1080x1920)
               </p>
             </div>
+              </>
+            )}
               </div>
             </div>
+
+            {/* TikTok Post Settings - Only show when logged in */}
+            {userInfo && (
+              <div className="flex-shrink-0 px-4 pb-3 space-y-3 border-t border-zinc-200 dark:border-zinc-700 pt-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    Post Settings (Required for TikTok)
+                  </label>
+                  <button
+                    onClick={() => setShowPostSettings(!showPostSettings)}
+                    className="text-xs text-[#3B82F6] hover:text-[#2563EB]"
+                  >
+                    {showPostSettings ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+
+                {showPostSettings && (
+                  <div className="space-y-3 pt-2">
+                    {/* Title Input */}
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+                        Title <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={postTitle}
+                        onChange={(e) => setPostTitle(e.target.value)}
+                        placeholder="Enter post title"
+                        maxLength={90}
+                        className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] text-sm"
+                      />
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                        {postTitle.length}/90 characters
+                      </p>
+                    </div>
+
+                    {/* Privacy Level Dropdown */}
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+                        Privacy Status <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={postPrivacy}
+                        onChange={(e) => setPostPrivacy(e.target.value)}
+                        className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] text-sm"
+                      >
+                        <option value="">Select privacy status</option>
+                        {creatorInfo?.privacy_level_options?.map((option) => {
+                          const isPrivate = option === 'SELF_ONLY';
+                          const isDisabled = isPrivate && contentDisclosureEnabled && isBrandedContent;
+                          return (
+                            <option 
+                              key={option} 
+                              value={option}
+                              disabled={isDisabled}
+                            >
+                              {option.replace(/_/g, ' ')}{isDisabled ? ' (not available for branded content)' : ''}
+                            </option>
+                          );
+                        })}
+                      </select>
+                      {/* Warning when branded content is selected with private visibility */}
+                      {contentDisclosureEnabled && isBrandedContent && postPrivacy === 'SELF_ONLY' && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                          Branded content visibility cannot be set to private. Please select a different privacy setting.
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Interaction Settings - Only Allow Comment for photo posts */}
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                        Interaction Settings
+                      </label>
+                      <div className="space-y-2">
+                        {/* Allow Comment */}
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={allowComment}
+                            onChange={(e) => setAllowComment(e.target.checked)}
+                            disabled={creatorInfo?.comment_disabled === true}
+                            className="w-4 h-4 rounded border-zinc-300 dark:border-zinc-700 text-[#3B82F6] focus:ring-[#3B82F6] disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                          <span className={`text-sm ${creatorInfo?.comment_disabled === true ? 'text-zinc-400 dark:text-zinc-600' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                            Allow Comment
+                            {creatorInfo?.comment_disabled === true && (
+                              <span className="ml-1 text-xs">(disabled in your TikTok settings)</span>
+                            )}
+                          </span>
+                        </label>
+
+                        {/* Note about Duet and Stitch not applicable to photos */}
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 italic">
+                          Note: Duet and Stitch are not available for photo posts
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Content Disclosure Settings */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                          Content Disclosure
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setContentDisclosureEnabled(!contentDisclosureEnabled);
+                            if (contentDisclosureEnabled) {
+                              // Reset selections when disabling
+                              setIsYourBrand(false);
+                              setIsBrandedContent(false);
+                            }
+                          }}
+                          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                            contentDisclosureEnabled ? 'bg-[#3B82F6]' : 'bg-zinc-300 dark:bg-zinc-600'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              contentDisclosureEnabled ? 'translate-x-4' : 'translate-x-0.5'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
+                        Indicate if this content promotes yourself, a brand, product or service
+                      </p>
+
+                      {contentDisclosureEnabled && (
+                        <div className="space-y-2 pl-1 border-l-2 border-zinc-200 dark:border-zinc-700 ml-1">
+                          {/* Your Brand */}
+                          <label className="flex items-start gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={isYourBrand}
+                              onChange={(e) => setIsYourBrand(e.target.checked)}
+                              className="w-4 h-4 mt-0.5 rounded border-zinc-300 dark:border-zinc-700 text-[#3B82F6] focus:ring-[#3B82F6]"
+                            />
+                            <div>
+                              <span className="text-sm text-zinc-700 dark:text-zinc-300">Your brand</span>
+                              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                                You are promoting yourself or your own business
+                              </p>
+                            </div>
+                          </label>
+
+                          {/* Branded Content */}
+                          <label className="flex items-start gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={isBrandedContent}
+                              onChange={(e) => {
+                                const isChecked = e.target.checked;
+                                setIsBrandedContent(isChecked);
+                                // If enabling branded content and current privacy is SELF_ONLY, clear it
+                                if (isChecked && postPrivacy === 'SELF_ONLY') {
+                                  setPostPrivacy('');
+                                }
+                              }}
+                              className="w-4 h-4 mt-0.5 rounded border-zinc-300 dark:border-zinc-700 text-[#3B82F6] focus:ring-[#3B82F6]"
+                            />
+                            <div>
+                              <span className="text-sm text-zinc-700 dark:text-zinc-300">Branded content</span>
+                              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                                You are promoting another brand or a third party
+                              </p>
+                              {isBrandedContent && (
+                                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 italic">
+                                  Note: Branded content can only be set to public or friends visibility
+                                </p>
+                              )}
+                            </div>
+                          </label>
+
+                          {/* Content label indicator */}
+                          {(isYourBrand || isBrandedContent) && (
+                            <div className="mt-2 p-2 bg-zinc-100 dark:bg-zinc-800 rounded-md">
+                              <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                                {isBrandedContent 
+                                  ? "Your photo/video will be labeled as 'Paid partnership'"
+                                  : "Your photo/video will be labeled as 'Promotional content'"
+                                }
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Warning if disclosure enabled but nothing selected */}
+                          {!isYourBrand && !isBrandedContent && (
+                            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                              Please select at least one option to proceed with publishing
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Posting as indicator and Music Usage Consent */}
+            {userInfo && (
+              <div className="flex-shrink-0 px-4 pb-2 space-y-3">
+                <div className="flex items-center justify-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+                  <span>Posting to TikTok as:</span>
+                  <span className="font-semibold text-black dark:text-zinc-50">
+                    {userInfo.display_name || 'User'}
+                  </span>
+                </div>
+                
+                {/* Consent Declaration - Required by TikTok */}
+                {/* Changes based on content disclosure settings */}
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={musicUsageConsent}
+                    onChange={(e) => setMusicUsageConsent(e.target.checked)}
+                    className="w-4 h-4 mt-0.5 rounded border-zinc-300 dark:border-zinc-700 text-[#3B82F6] focus:ring-[#3B82F6]"
+                  />
+                  <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                    {contentDisclosureEnabled && isBrandedContent ? (
+                      // Branded content selected (with or without Your Brand)
+                      <>
+                        By posting, you agree to TikTok&apos;s{' '}
+                        <a
+                          href="https://www.tiktok.com/legal/branded-content-policy"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#3B82F6] hover:underline"
+                        >
+                          Branded Content Policy
+                        </a>
+                        {' '}and{' '}
+                        <a
+                          href="https://www.tiktok.com/legal/music-usage-confirmation"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#3B82F6] hover:underline"
+                        >
+                          Music Usage Confirmation
+                        </a>
+                      </>
+                    ) : (
+                      // Only Your Brand or no commercial content
+                      <>
+                        By posting, you agree to TikTok&apos;s{' '}
+                        <a
+                          href="https://www.tiktok.com/legal/music-usage-confirmation"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#3B82F6] hover:underline"
+                        >
+                          Music Usage Confirmation
+                        </a>
+                      </>
+                    )}
+                  </span>
+                </label>
+              </div>
+            )}
 
             {/* Download and Post Buttons - Fixed at bottom */}
             <div className="flex-shrink-0 flex gap-3 p-4 pt-3 border-t border-zinc-200 dark:border-zinc-700">
@@ -1493,44 +1965,60 @@ export default function Home() {
                   </>
                 )}
               </button>
-              <button
-                onClick={handlePostToTikTok}
-                disabled={isPosting || !currentCanvas.text.trim() || !userInfo}
-                className="flex-1 h-12 rounded-lg bg-black hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white font-semibold text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isPosting ? (
-                  <>
-                    <svg
-                      className="animate-spin h-4 w-4"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Posting...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
-                    </svg>
-                    Post
-                  </>
+              <div className="flex-1 relative group">
+                <button
+                  onClick={handlePostToTikTok}
+                  disabled={isPosting || !currentCanvas.text.trim() || !userInfo || !postTitle.trim() || !postPrivacy || !musicUsageConsent || (contentDisclosureEnabled && !isYourBrand && !isBrandedContent) || (contentDisclosureEnabled && isBrandedContent && postPrivacy === 'SELF_ONLY')}
+                  className="w-full h-12 rounded-lg bg-black hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white font-semibold text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isPosting ? (
+                    <>
+                      <svg
+                        className="animate-spin h-4 w-4"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Posting...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+                      </svg>
+                      Post
+                    </>
+                  )}
+                </button>
+                {/* Tooltip for content disclosure requirement */}
+                {contentDisclosureEnabled && !isYourBrand && !isBrandedContent && (
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-zinc-800 dark:bg-zinc-700 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                    You need to indicate if your content promotes yourself, a third party, or both.
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-zinc-800 dark:border-t-zinc-700"></div>
+                  </div>
                 )}
-              </button>
+                {/* Tooltip for branded content privacy conflict */}
+                {contentDisclosureEnabled && isBrandedContent && postPrivacy === 'SELF_ONLY' && (
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-zinc-800 dark:bg-zinc-700 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                    Branded content visibility cannot be set to private.
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-zinc-800 dark:border-t-zinc-700"></div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -2133,21 +2621,78 @@ export default function Home() {
 
       {/* Toast Notification */}
       {showToast && (
-        <div className="fixed bottom-6 left-1/2 z-50 px-6 py-4 rounded-lg shadow-lg bg-zinc-800 dark:bg-zinc-700 text-white font-medium text-sm flex items-center gap-3 animate-slide-up">
-          <svg
-            className="w-5 h-5 flex-shrink-0"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 px-6 py-4 rounded-lg shadow-lg text-white font-medium text-sm flex items-center gap-3 animate-slide-up max-w-md ${
+          postStatus === 'failed' 
+            ? 'bg-red-600 dark:bg-red-700' 
+            : postStatus === 'success' 
+              ? 'bg-green-600 dark:bg-green-700' 
+              : 'bg-zinc-800 dark:bg-zinc-700'
+        }`}>
+          {/* Icon based on status */}
+          {postStatus === 'processing' ? (
+            <svg
+              className="w-5 h-5 flex-shrink-0 animate-spin"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+          ) : postStatus === 'failed' ? (
+            <svg
+              className="w-5 h-5 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          ) : (
+            <svg
+              className="w-5 h-5 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          )}
+          <span>{toastMessage || 'Posted successfully'}</span>
+          
+          {/* Close button */}
+          <button
+            onClick={() => {
+              setShowToast(false);
+              setPostStatus(null);
+              setPublishId(null);
+            }}
+            className="ml-2 p-1 hover:bg-white/20 rounded transition-colors"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-          <span>Posted successfully</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
       )}
     </div>
