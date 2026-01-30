@@ -82,7 +82,6 @@ export default function Home() {
     stitch_disabled?: boolean;
     max_video_post_duration_sec?: number;
   } | null>(null);
-  const [showPostSettings, setShowPostSettings] = useState(true);
   const [musicUsageConsent, setMusicUsageConsent] = useState(false); // Must agree before posting
   
   // Content Disclosure Settings (TikTok requirement)
@@ -1650,26 +1649,14 @@ export default function Home() {
             </div>
               </>
             )}
-              </div>
-            </div>
 
-            {/* TikTok Post Settings - Only show when logged in */}
+            {/* Post Settings - In scroll flow, only when logged in */}
             {userInfo && (
-              <div className="flex-shrink-0 px-4 pb-3 space-y-3 border-t border-zinc-200 dark:border-zinc-700 pt-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                    Post Settings (Required for TikTok)
-                  </label>
-                  <button
-                    onClick={() => setShowPostSettings(!showPostSettings)}
-                    className="text-xs text-[#3B82F6] hover:text-[#2563EB]"
-                  >
-                    {showPostSettings ? 'Hide' : 'Show'}
-                  </button>
-                </div>
-
-                {showPostSettings && (
-                  <div className="space-y-3 pt-2">
+              <div className="space-y-3 pt-4 mt-4 border-t border-zinc-200 dark:border-zinc-700">
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Post Settings (Required for TikTok)
+                </label>
+                <div className="space-y-3">
                     {/* Title Input */}
                     <div>
                       <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
@@ -1699,16 +1686,24 @@ export default function Home() {
                         className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] text-sm"
                       >
                         <option value="">Select privacy status</option>
-                        {creatorInfo?.privacy_level_options?.map((option) => {
+                        {(creatorInfo?.privacy_level_options || ['PUBLIC_TO_EVERYONE', 'MUTUAL_FOLLOW_FRIENDS', 'SELF_ONLY']).map((option) => {
                           const isPrivate = option === 'SELF_ONLY';
                           const isDisabled = isPrivate && contentDisclosureEnabled && isBrandedContent;
+                          // User-friendly labels
+                          const labelMap: Record<string, string> = {
+                            'PUBLIC_TO_EVERYONE': 'Public',
+                            'MUTUAL_FOLLOW_FRIENDS': 'Friends',
+                            'FOLLOWER_OF_CREATOR': 'Followers',
+                            'SELF_ONLY': 'Only Me (Private)',
+                          };
+                          const label = labelMap[option] || option.replace(/_/g, ' ');
                           return (
                             <option 
                               key={option} 
                               value={option}
                               disabled={isDisabled}
                             >
-                              {option.replace(/_/g, ' ')}{isDisabled ? ' (not available for branded content)' : ''}
+                              {label}{isDisabled ? ' (not available for branded content)' : ''}
                             </option>
                           );
                         })}
@@ -1849,15 +1844,14 @@ export default function Home() {
                         </div>
                       )}
                     </div>
-                  </div>
-                )}
+                </div>
               </div>
             )}
 
-            {/* Posting as indicator and Music Usage Consent */}
+            {/* Posting as indicator and Music Usage Consent - In scroll flow */}
             {userInfo && (
-              <div className="flex-shrink-0 px-4 pb-2 space-y-3">
-                <div className="flex items-center justify-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+              <div className="space-y-3 pt-4 mt-4 border-t border-zinc-200 dark:border-zinc-700">
+                <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
                   <span>Posting to TikTok as:</span>
                   <span className="font-semibold text-black dark:text-zinc-50">
                     {userInfo.display_name || 'User'}
@@ -1865,7 +1859,6 @@ export default function Home() {
                 </div>
                 
                 {/* Consent Declaration - Required by TikTok */}
-                {/* Changes based on content disclosure settings */}
                 <label className="flex items-start gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -1875,7 +1868,6 @@ export default function Home() {
                   />
                   <span className="text-xs text-zinc-600 dark:text-zinc-400">
                     {contentDisclosureEnabled && isBrandedContent ? (
-                      // Branded content selected (with or without Your Brand)
                       <>
                         By posting, you agree to TikTok&apos;s{' '}
                         <a
@@ -1897,7 +1889,6 @@ export default function Home() {
                         </a>
                       </>
                     ) : (
-                      // Only Your Brand or no commercial content
                       <>
                         By posting, you agree to TikTok&apos;s{' '}
                         <a
@@ -1914,6 +1905,8 @@ export default function Home() {
                 </label>
               </div>
             )}
+              </div>
+            </div>
 
             {/* Download and Post Buttons - Fixed at bottom */}
             <div className="flex-shrink-0 flex gap-3 p-4 pt-3 border-t border-zinc-200 dark:border-zinc-700">
