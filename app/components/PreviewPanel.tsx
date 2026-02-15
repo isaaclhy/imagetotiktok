@@ -19,7 +19,7 @@ interface PreviewPanelProps {
   mode: 'plain' | 'video';
   videoBackgroundUrl: string | null;
   videoThumbnailUrl: string | null;
-  card2Texts: Array<{ text: string; color: string }>;
+  card2Texts?: Array<{ text: string; color: string }>;
   mounted: boolean;
 }
 
@@ -37,7 +37,6 @@ export function PreviewPanel({
   mode,
   videoBackgroundUrl,
   videoThumbnailUrl,
-  card2Texts,
   mounted,
 }: PreviewPanelProps) {
   const previewContent = useMemo(() => {
@@ -105,31 +104,15 @@ export function PreviewPanel({
           <div className="absolute inset-0 flex items-center justify-center p-4" style={{ pointerEvents: 'none', contain: 'layout style paint' }}>
             <div
               className="bg-white rounded-2xl border-4 shadow-lg flex flex-col items-start justify-start overflow-hidden relative"
-              style={{ width: '75%', aspectRatio, maxHeight: '65%', pointerEvents: 'auto', contain: 'layout style paint', paddingTop: currentCanvasId === '2' ? '1rem' : '35%', paddingLeft: currentCanvasId === '2' ? '1rem' : '0.5rem', paddingRight: currentCanvasId === '2' ? '1rem' : '0.5rem', paddingBottom: currentCanvasId === '2' ? '1.25rem' : '1rem', borderColor: getComplementaryColor(backgroundColor) }}
+              style={{ width: '75%', aspectRatio, maxHeight: '65%', pointerEvents: 'auto', contain: 'layout style paint', paddingTop: '35%', paddingLeft: '0.5rem', paddingRight: '0.5rem', paddingBottom: '1rem', borderColor: getComplementaryColor(backgroundColor) }}
             >
-              {currentCanvasId === '2' ? (
-                <>
-                  <p className="font-bold text-center" style={{ color: currentCanvas.textColor || '#000000', fontSize: `${previewFontSize}px`, lineHeight: '1.4', position: 'absolute', top: '1rem', left: '50%', transform: 'translateX(-50%)', width: 'calc(100% - 2rem)', textAlign: 'center', textDecoration: 'underline', textDecorationThickness: '2px', textUnderlineOffset: '0.25rem' }}>Instructions</p>
-                  {card2Texts.filter((t) => t.text.trim()).length > 0 && (
-                    <div className="flex flex-col gap-2 w-full" style={{ marginTop: '35%' }}>
-                      {card2Texts.filter((t) => t.text.trim()).map((textItem, idx) => (
-                        <div key={idx} className="flex items-center gap-2" style={{ width: '100%', maxWidth: '95%' }}>
-                          <span className="flex-shrink-0 flex items-center justify-center font-bold rounded-full" style={{ backgroundColor: textItem.color || '#000000', color: '#FFFFFF', width: `${previewFontSize * 0.8}px`, height: `${previewFontSize * 0.8}px`, fontSize: `${previewFontSize * 0.6}px`, minWidth: `${previewFontSize * 0.8}px`, lineHeight: '1' }}>{idx + 1}</span>
-                          <p className="font-bold text-left break-words overflow-hidden flex-1" style={{ color: textItem.color || '#000000', wordWrap: 'break-word', overflowWrap: 'break-word', fontSize: `${previewFontSize}px`, lineHeight: '1.4', minHeight: '1em', contain: 'layout style paint', willChange: 'auto', margin: 0, padding: 0 }}>{textItem.text}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <p className="font-bold text-left break-words px-2 overflow-hidden" style={{ color: currentCanvas.textColor || '#000000', width: '100%', maxWidth: '95%', wordWrap: 'break-word', overflowWrap: 'break-word', fontSize: `${previewFontSize}px`, lineHeight: '1.4', minHeight: '1em', maxHeight: '100%', contain: 'layout style paint', willChange: 'auto' }}>{currentCanvas.text || 'Your text will appear here'}</p>
-              )}
+              <p className="font-bold text-left break-words px-2 overflow-hidden" style={{ color: currentCanvas.textColor || '#000000', width: '100%', maxWidth: '95%', wordWrap: 'break-word', overflowWrap: 'break-word', fontSize: `${previewFontSize}px`, lineHeight: '1.4', minHeight: '1em', maxHeight: '100%', contain: 'layout style paint', willChange: 'auto' }}>{currentCanvas.text || 'Your text will appear here'}</p>
             </div>
           </div>
         )}
       </div>
     );
-  }, [mounted, backgroundColor, imageSize, currentCanvas.textSize, textSize, currentCanvasId, firstCard.textColor, firstCard.text, currentCanvas.textColor, currentCanvas.text, card2Texts, mode, videoBackgroundUrl]);
+  }, [mounted, backgroundColor, imageSize, currentCanvas.textSize, textSize, currentCanvasId, firstCard.textColor, firstCard.text, currentCanvas.textColor, currentCanvas.text, mode, videoBackgroundUrl]);
 
   return (
     <div className="flex flex-col p-4 bg-white dark:bg-zinc-900 rounded-2xl shadow-lg h-full max-h-screen overflow-hidden">
@@ -196,9 +179,9 @@ export function PreviewPanel({
                     style={{ backgroundColor: canvas.backgroundColor }}
                   >
                     <div className="absolute inset-0 flex items-center justify-center p-2 pointer-events-none">
-                      <div className="bg-white rounded-lg border-4 shadow-lg flex flex-col items-start justify-start pointer-events-none relative overflow-hidden" style={{ width: '75%', aspectRatio, maxHeight: '65%', paddingTop: canvas.id === '2' ? '0.5rem' : '35%', paddingLeft: canvas.id === '2' ? '0.5rem' : '0.25rem', paddingRight: canvas.id === '2' ? '0.5rem' : '0.25rem', paddingBottom: canvas.id === '2' ? '0.75rem' : '0.5rem', borderColor: getComplementaryColor(canvas.backgroundColor || '#000000') }} />
+                      <div className="bg-white rounded-lg border-4 shadow-lg flex flex-col items-start justify-start pointer-events-none relative overflow-hidden" style={{ width: '75%', aspectRatio, maxHeight: '65%', paddingTop: '35%', paddingLeft: '0.25rem', paddingRight: '0.25rem', paddingBottom: '0.5rem', borderColor: getComplementaryColor(canvas.backgroundColor || '#000000') }} />
                     </div>
-                    {canvases.length > 3 && canvas.id !== '1' && canvas.id !== '2' && canvas.id !== 'end' && (
+                    {canvases.length > 3 && canvas.id !== '1' && canvas.id !== 'end' && (
                       <button onClick={(e) => onDeleteCanvas(canvas.id, e)} className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold transition-colors z-10" title="Delete canvas">×</button>
                     )}
                   </div>

@@ -48,12 +48,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const { searchParams } = new URL(request.url);
+    const categoriesParam = searchParams.get('categories');
+    const allowedCategories = categoriesParam
+      ? categoriesParam.split(',').map((s) => s.trim()).filter(Boolean)
+      : null;
+
     // Build { level, category } pairs from Friends/Couples (any category)
     const eligible: { level: any; category: any }[] = [];
     for (const level of levels) {
       if (!level.categories?.length) continue;
       for (const cat of level.categories) {
-        eligible.push({ level, category: cat });
+        const catName = cat.name || cat.category || cat.title || '';
+        if (allowedCategories === null || allowedCategories.length === 0 || allowedCategories.includes(catName)) {
+          eligible.push({ level, category: cat });
+        }
       }
     }
 
@@ -61,7 +70,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'No categories found in Friends/Couples levels',
+          error: allowedCategories?.length
+            ? 'No categories match your selection. Try including more categories or leave all unchecked for any category.'
+            : 'No categories found in Friends/Couples levels',
         },
         { status: 404 }
       );
@@ -99,8 +110,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Step 4: Randomly select 4 questions (or all if less than 4)
-    const selectedQuestions = getRandomElements(questions, 4);
+    // Step 4: Randomly select 5 questions (or all if less than 5)
+    const selectedQuestions = getRandomElements(questions, 5);
 
     // Extract category name (could be name, category, or title field)
     const categoryName = selectedCategory?.name || 

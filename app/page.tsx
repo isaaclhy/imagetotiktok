@@ -4,17 +4,17 @@ import { useState, useEffect, useRef } from 'react';
 import JSZip from 'jszip';
 import type { CanvasData } from '@/app/lib/types';
 import { generateCardImage as generateCardImageLib } from '@/app/lib/generate-card-image';
+import { extractDominantColor } from '@/app/lib/canvas-utils';
+import { CARD_BG_FALLBACK_PALETTE } from '@/app/lib/constants';
 import { Sidebar } from '@/app/components/Sidebar';
 import { ActionBar } from '@/app/components/ActionBar';
 import { InputsCard } from '@/app/components/InputsCard';
 import { PreviewPanel } from '@/app/components/PreviewPanel';
 import { DownloadModal } from '@/app/components/DownloadModal';
-import { AutomateModal } from '@/app/components/AutomateModal';
 import { Toast } from '@/app/components/Toast';
 
 const INITIAL_CANVASES: CanvasData[] = [
   { id: '1', text: '', backgroundColor: '#000000', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' },
-  { id: '2', text: '', backgroundColor: '#000000', textColor: '#000000', textSize: '200', imageSize: '1080x1920' },
   { id: '3', text: '', backgroundColor: '#000000', textColor: '#000000', textSize: '200', imageSize: '1080x1920' },
   { id: 'end', text: '', backgroundColor: '#000000', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' },
 ];
@@ -34,7 +34,6 @@ export default function Home() {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
-  const [showAutomateModal, setShowAutomateModal] = useState(false);
   const [automateCount, setAutomateCount] = useState('5');
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -54,11 +53,10 @@ export default function Home() {
   const [contentDisclosureEnabled, setContentDisclosureEnabled] = useState(false);
   const [isYourBrand, setIsYourBrand] = useState(false);
   const [isBrandedContent, setIsBrandedContent] = useState(false);
-  const [card2Texts, setCard2Texts] = useState<Array<{ text: string; color: string }>>([{ text: '', color: '#000000' }]);
   const [levelName, setLevelName] = useState<string>('');
   const [theme, setTheme] = useState<string>('');
   const [mode, setMode] = useState<'plain' | 'video'>('video');
-  const [contentTab, setContentTab] = useState<'image' | 'video'>('image');
+  const [contentTab, setContentTab] = useState<'image' | 'video' | 'automate'>('image');
   const [videoBackgroundUrl, setVideoBackgroundUrl] = useState<string | null>(null);
   const [videoThumbnailUrl, setVideoThumbnailUrl] = useState<string | null>(null);
   const [videoLoading, setVideoLoading] = useState(false);
@@ -241,102 +239,102 @@ export default function Home() {
 
   const handleDeleteCanvas = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (id === '1' || id === '2' || id === 'end' || canvases.length <= 3) return;
+    if (id === '1' || id === 'end' || canvases.length <= 3) return;
     const newCanvases = canvases.filter((c) => c.id !== id);
     setCanvases(newCanvases);
     if (id === currentCanvasId) setCurrentCanvasId(newCanvases[0].id);
   };
 
   const generateCardImage = async (canvasData: CanvasData): Promise<Blob> =>
-    generateCardImageLib({ canvasData, mode, videoThumbnailUrl, card2Texts });
+    generateCardImageLib({ canvasData, mode, videoThumbnailUrl, card2Texts: [] });
 
-  const handleAutoGenerate = async () => {
+  const handleAutoGenerate = async (categories: string[] = []) => {
     const count = Math.min(20, Math.max(1, parseInt(automateCount, 10) || 5));
     setIsAutoGenerating(true);
-    try {
-      const zip = new JSZip();
 
-      for (let setIndex = 0; setIndex < count; setIndex++) {
-        const response = await fetch('/api/levels/random');
-        if (!response.ok) throw new Error('Failed to fetch random level');
-        const result = await response.json();
-        if (!result.success || !result.data) throw new Error('Invalid response from API');
-        const { levelName: ln, categoryName, instructions, questions } = result.data;
-        const themeContextParts: string[] = [];
-        if (categoryName) themeContextParts.push(`Category: ${categoryName}`);
-        const first3 = Array.isArray(questions) ? questions.slice(0, 3) : [];
-        if (first3.length) {
-          themeContextParts.push('Questions:');
-          first3.forEach((q: string) => themeContextParts.push(`- ${q}`));
-        }
-        const themeContext = themeContextParts.join('\n\n');
-        let themeText = 'couple in nature';
-        try {
-          const themeRes = await fetch('/api/openai/theme', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ context: themeContext }) });
-          const themeData = await themeRes.json();
-          if (themeRes.ok && themeData?.theme?.trim()) themeText = themeData.theme.trim();
-        } catch {}
-        let thumbnailUrl: string | null = null;
-        let avgColor = backgroundColor || '#000000';
-        if (themeText.trim()) {
-          try {
-            const page = 1 + Math.floor(Math.random() * 20);
-            const pexelsRes = await fetch(`/api/pexels/video?query=${encodeURIComponent(themeText)}&page=${page}`);
-            const pexelsData = await pexelsRes.json();
-            if (pexelsRes.ok && pexelsData?.videoUrl) {
-              thumbnailUrl = pexelsData.thumbnailUrl || pexelsData.videoUrl;
-              if (pexelsData.avgColor) avgColor = pexelsData.avgColor;
-            }
-          } catch {}
-        }
-        const contextParts: string[] = [];
-        if (ln) contextParts.push(`Level: ${ln}`);
-        if (categoryName) contextParts.push(`Category: ${categoryName}`);
-        if (Array.isArray(questions) && questions.length) {
-          contextParts.push('Questions:');
-          questions.forEach((q: string) => contextParts.push(`- ${q}`));
-        }
-        const context = contextParts.join('\n\n');
-        let titleText = categoryName || '';
-        try {
-          const titleRes = await fetch('/api/openai/title', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ context }) });
-          const titleData = await titleRes.json();
-          if (titleRes.ok && titleData?.title?.trim()) titleText = titleData.title.trim();
-        } catch {}
-        const instructionsForCard2 = instructions && instructions.length > 0 ? instructions.map((inst: string) => ({ text: inst, color: '#000000' })) : [{ text: '', color: '#000000' }];
-        const questionCards: CanvasData[] = (questions || []).map((q: string) => ({
-          id: `set${setIndex}-q-${Date.now()}-${Math.random()}`,
-          text: q,
-          backgroundColor: avgColor,
-          textColor: '#000000',
-          textSize: textSize || '200',
-          imageSize: imageSize || '1080x1920',
-        }));
-        const existingCard1 = canvases.find((c) => c.id === '1') || canvases[0];
-        const existingCard2 = canvases.find((c) => c.id === '2') || canvases[1];
-        const endingCard = canvases.find((c) => c.id === 'end');
-        let endingCardText = '';
-        if (ln && ln.toLowerCase() === 'friends') endingCardText = 'Share it with your friends and see what they say';
-        else if (ln && ln.toLowerCase() === 'couples') endingCardText = 'Share it with your boo and see what they say';
-        const newCanvases: CanvasData[] = [
-          { ...existingCard1, id: `set${setIndex}-1`, text: titleText, backgroundColor: avgColor },
-          { ...existingCard2, id: `set${setIndex}-2`, text: instructionsForCard2.map((t: { text: string; color: string }) => t.text).join('\n'), backgroundColor: avgColor },
-          ...questionCards,
-          endingCard ? { ...endingCard, id: `set${setIndex}-end`, text: endingCardText, backgroundColor: avgColor } : { id: `set${setIndex}-end`, text: endingCardText, backgroundColor: avgColor, textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' },
-        ];
-        const endIdx = newCanvases.findIndex((c) => c.id === `set${setIndex}-end`);
-        if (endIdx >= 0) newCanvases[endIdx].text = endingCardText;
+    const categoriesParam = categories.length > 0 ? `?categories=${encodeURIComponent(categories.join(','))}` : '';
+    const existingCard1 = canvases.find((c) => c.id === '1') || canvases[0];
+    const endingCard = canvases.find((c) => c.id === 'end');
 
-        for (let i = 0; i < newCanvases.length; i++) {
-          const c = newCanvases[i];
-          const libId = i === 0 ? '1' : i === 1 ? '2' : i === newCanvases.length - 1 ? 'end' : '3';
-          const blob = await generateCardImageLib({
+    const generateSet = async (setIndex: number): Promise<Array<{ filename: string; blob: Blob }>> => {
+      const separator = categoriesParam ? '&' : '?';
+      const response = await fetch(`/api/levels/random${categoriesParam}${separator}_=${setIndex}-${Date.now()}`, { cache: 'no-store' });
+      if (!response.ok) throw new Error('Failed to fetch random level');
+      const result = await response.json();
+      if (!result.success || !result.data) throw new Error('Invalid response from API');
+      const { levelName: ln, categoryName, instructions, questions } = result.data;
+      const contextParts: string[] = [];
+      if (ln) contextParts.push(`Level: ${ln}`);
+      if (categoryName) contextParts.push(`Category: ${categoryName}`);
+      if (Array.isArray(questions) && questions.length) {
+        contextParts.push('Questions:');
+        questions.forEach((q: string) => contextParts.push(`- ${q}`));
+      }
+      const context = contextParts.join('\n\n');
+      let titleText = categoryName || '';
+      try {
+        const titleRes = await fetch('/api/openai/title', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ context, level: ln }) });
+        const titleData = await titleRes.json();
+        if (titleRes.ok && titleData?.title?.trim()) titleText = titleData.title.trim();
+      } catch { }
+      let thumbnailUrl: string | null = null;
+      let avgColor = backgroundColor || '#000000';
+      try {
+        const coverRes = await fetch('/api/openai/cover-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ questiontext: titleText }),
+        });
+        const coverData = await coverRes.json();
+        if (coverRes.ok && coverData?.imageUrl) {
+          thumbnailUrl = coverData.imageUrl;
+          const extracted = await extractDominantColor(coverData.imageUrl);
+          if (extracted) avgColor = extracted;
+          else avgColor = CARD_BG_FALLBACK_PALETTE[setIndex % CARD_BG_FALLBACK_PALETTE.length]!;
+        }
+      } catch { }
+      if (avgColor === '#000000' || !avgColor?.trim()) {
+        avgColor = CARD_BG_FALLBACK_PALETTE[setIndex % CARD_BG_FALLBACK_PALETTE.length]!;
+      }
+      const questionCards: CanvasData[] = (questions || []).map((q: string) => ({
+        id: `set${setIndex}-q-${Date.now()}-${Math.random()}`,
+        text: q,
+        backgroundColor: avgColor,
+        textColor: '#000000',
+        textSize: textSize || '200',
+        imageSize: imageSize || '1080x1920',
+      }));
+      let endingCardText = '';
+      if (ln && ln.toLowerCase() === 'friends') endingCardText = 'Share it with your friends and see what they say';
+      else if (ln && ln.toLowerCase() === 'couples') endingCardText = 'Share it with your boo and see what they say';
+      const newCanvases: CanvasData[] = [
+        { ...existingCard1, id: `set${setIndex}-1`, text: titleText, backgroundColor: avgColor },
+        ...questionCards,
+        endingCard ? { ...endingCard, id: `set${setIndex}-end`, text: endingCardText, backgroundColor: avgColor } : { id: `set${setIndex}-end`, text: endingCardText, backgroundColor: avgColor, textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' },
+      ];
+      const endIdx = newCanvases.findIndex((c) => c.id === `set${setIndex}-end`);
+      if (endIdx >= 0) newCanvases[endIdx].text = endingCardText;
+
+      const blobs = await Promise.all(
+        newCanvases.map((c, i) => {
+          const libId = i === 0 ? '1' : i === newCanvases.length - 1 ? 'end' : '3';
+          return generateCardImageLib({
             canvasData: { ...c, id: libId },
             mode: 'video',
             videoThumbnailUrl: i === 0 ? thumbnailUrl : null,
-            card2Texts: instructionsForCard2,
+            card2Texts: [],
           });
-          zip.file(`set-${setIndex + 1}-card-${i + 1}.png`, blob);
+        })
+      );
+      return blobs.map((blob, i) => ({ filename: `set-${setIndex + 1}-card-${i + 1}.png`, blob }));
+    };
+
+    try {
+      const allSets = await Promise.all(Array.from({ length: count }, (_, i) => generateSet(i)));
+      const zip = new JSZip();
+      for (const files of allSets) {
+        for (const { filename, blob } of files) {
+          zip.file(filename, blob);
         }
       }
 
@@ -521,7 +519,7 @@ export default function Home() {
       <div className="flex-1 flex flex-col min-w-0 h-screen ml-56 overflow-y-auto">
         <div className="max-w-7xl mx-auto w-full flex flex-col flex-1 min-h-0">
           <ActionBar
-            onAutoGenerate={() => setShowAutomateModal(true)}
+            onAutoGenerate={() => setContentTab('automate')}
             onDownload={() => setShowDownloadModal(true)}
             onPost={handlePostToTikTok}
             isAutoGenerating={isAutoGenerating}
@@ -550,8 +548,6 @@ export default function Home() {
               firstCard={firstCard}
               canvases={canvases}
               setCanvases={setCanvases}
-              card2Texts={card2Texts}
-              setCard2Texts={setCard2Texts}
               textSize={textSize}
               setTextSize={setTextSize}
               onAddCanvas={handleAddCanvas}
@@ -572,6 +568,10 @@ export default function Home() {
               setIsBrandedContent={setIsBrandedContent}
               musicUsageConsent={musicUsageConsent}
               setMusicUsageConsent={setMusicUsageConsent}
+              automateCount={automateCount}
+              setAutomateCount={setAutomateCount}
+              onAutomateDownload={handleAutoGenerate}
+              isAutoGenerating={isAutoGenerating}
             />
             <PreviewPanel
               canvases={canvases}
@@ -587,13 +587,11 @@ export default function Home() {
               mode={mode}
               videoBackgroundUrl={videoBackgroundUrl}
               videoThumbnailUrl={videoThumbnailUrl}
-              card2Texts={card2Texts}
               mounted={mounted}
             />
           </div>
         </div>
       </div>
-      <AutomateModal isOpen={showAutomateModal} onClose={() => setShowAutomateModal(false)} onConfirm={handleAutoGenerate} isGenerating={isAutoGenerating} automateCount={automateCount} setAutomateCount={setAutomateCount} />
       <DownloadModal isOpen={showDownloadModal} onClose={() => setShowDownloadModal(false)} onConfirm={handleGenerate} isGenerating={isGenerating} />
       {showToast && <Toast message={toastMessage} status={postStatus} onClose={() => { setShowToast(false); setPostStatus(null); setPublishId(null); }} />}
     </div>

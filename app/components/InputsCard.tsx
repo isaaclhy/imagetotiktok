@@ -1,9 +1,11 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import type { CanvasData, CreatorInfo } from '@/app/lib/types';
+import { getDefaultAutomateCategories } from '@/app/lib/constants';
 
 interface InputsCardProps {
-  contentTab: 'image' | 'video';
+  contentTab: 'image' | 'video' | 'automate';
   // Image form state
   backgroundColor: string;
   setBackgroundColor: (v: string) => void;
@@ -18,8 +20,6 @@ interface InputsCardProps {
   firstCard: CanvasData;
   canvases: CanvasData[];
   setCanvases: React.Dispatch<React.SetStateAction<CanvasData[]>>;
-  card2Texts: Array<{ text: string; color: string }>;
-  setCard2Texts: React.Dispatch<React.SetStateAction<Array<{ text: string; color: string }>>>;
   textSize: string;
   setTextSize: (v: string) => void;
   onAddCanvas: () => void;
@@ -41,6 +41,11 @@ interface InputsCardProps {
   setIsBrandedContent: (v: boolean) => void;
   musicUsageConsent: boolean;
   setMusicUsageConsent: (v: boolean) => void;
+  // Automate tab
+  automateCount?: string;
+  setAutomateCount?: (v: string) => void;
+  onAutomateDownload?: (categories: string[]) => Promise<void>;
+  isAutoGenerating?: boolean;
 }
 
 export function InputsCard(props: InputsCardProps) {
@@ -59,8 +64,6 @@ export function InputsCard(props: InputsCardProps) {
     firstCard,
     canvases,
     setCanvases,
-    card2Texts,
-    setCard2Texts,
     textSize,
     setTextSize,
     onAddCanvas,
@@ -81,7 +84,45 @@ export function InputsCard(props: InputsCardProps) {
     setIsBrandedContent,
     musicUsageConsent,
     setMusicUsageConsent,
+    automateCount = '5',
+    setAutomateCount = () => {},
+    onAutomateDownload,
+    isAutoGenerating = false,
   } = props;
+
+  const [automateCategories, setAutomateCategories] = useState<string[]>([]);
+  const [automateSelectedCategories, setAutomateSelectedCategories] = useState<Set<string>>(new Set());
+  const [automateCategoriesLoading, setAutomateCategoriesLoading] = useState(false);
+
+  useEffect(() => {
+    if (contentTab === 'automate' && automateCategories.length === 0) {
+      setAutomateCategoriesLoading(true);
+      fetch('/api/levels/categories')
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.success && Array.isArray(data.data)) {
+            const list = data.data as string[];
+            setAutomateCategories(list);
+            setAutomateSelectedCategories(new Set(getDefaultAutomateCategories(list)));
+          }
+        })
+        .finally(() => setAutomateCategoriesLoading(false));
+    }
+  }, [contentTab]);
+
+  const toggleAutomateCategory = (name: string) => {
+    setAutomateSelectedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  };
+
+  const automateCategoriesToUse =
+    automateSelectedCategories.size === automateCategories.length && automateCategories.length > 0
+      ? []
+      : Array.from(automateSelectedCategories);
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-white dark:bg-zinc-900 rounded-2xl shadow-lg overflow-hidden">
@@ -90,6 +131,66 @@ export function InputsCard(props: InputsCardProps) {
           {contentTab === 'video' && (
             <div className="flex-1 flex items-center justify-center py-12">
               <p className="text-sm text-zinc-500 dark:text-zinc-400">Video mode coming soon</p>
+            </div>
+          )}
+
+          {contentTab === 'automate' && (
+            <div className="space-y-4">
+              <h3 className="text-base font-semibold text-zinc-800 dark:text-zinc-200">Automate</h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">Generate card sets with random categories, AI-generated titles, and cover images.</p>
+              <div>
+                <label htmlFor="automateCount" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Number of sets to generate</label>
+                <input
+                  type="number"
+                  id="automateCount"
+                  min={1}
+                  max={20}
+                  value={automateCount}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === '' || /^\d+$/.test(v)) setAutomateCount(v === '' ? '' : String(Math.min(20, Math.max(1, parseInt(v, 10) || 1))));
+                  }}
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] font-mono text-sm"
+                />
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">All sets will be downloaded in one ZIP file (1–20 sets)</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Categories to include (uncheck to exclude)</label>
+                {automateCategoriesLoading ? (
+                  <p className="text-xs text-zinc-500">Loading categories…</p>
+                ) : automateCategories.length === 0 ? (
+                  <p className="text-xs text-zinc-500">No categories available</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {automateCategories.map((cat) => (
+                      <label key={cat} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-700">
+                        <input type="checkbox" checked={automateSelectedCategories.has(cat)} onChange={() => toggleAutomateCategory(cat)} className="rounded" />
+                        <span className="text-sm text-zinc-700 dark:text-zinc-300">{cat}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">Uncheck categories you want to exclude</p>
+              </div>
+              {onAutomateDownload && (
+                <button
+                  onClick={() => onAutomateDownload(automateCategoriesToUse)}
+                  disabled={isAutoGenerating}
+                  className="w-full py-3 px-4 rounded-lg bg-black hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isAutoGenerating ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Generating...
+                    </>
+                  ) : (
+                    'Download'
+                  )}
+                </button>
+              )}
             </div>
           )}
 
@@ -142,10 +243,6 @@ export function InputsCard(props: InputsCardProps) {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <label htmlFor="theme" className="text-sm font-medium text-zinc-700 dark:text-zinc-300 w-28 flex-shrink-0">Theme</label>
-                  <input type="text" id="theme" value={theme} onChange={(e) => setTheme(e.target.value)} placeholder="e.g. cinematic, nature, city" disabled={mode === 'plain'} className="flex-1 min-w-0 px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent text-sm disabled:opacity-50 disabled:cursor-not-allowed" />
-                </div>
-                <div className="flex items-center gap-3">
                   <label htmlFor="title" className="text-sm font-medium text-zinc-700 dark:text-zinc-300 w-28 flex-shrink-0">Title</label>
                   <div className="flex gap-2 items-center flex-1 min-w-0">
                     <input type="text" id="title" value={text} onChange={(e) => setText(e.target.value)} placeholder="Enter title for the first card..." className="flex-1 min-w-0 px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent text-sm" />
@@ -160,36 +257,17 @@ export function InputsCard(props: InputsCardProps) {
                 </div>
               </div>
 
-              {/* Second Card section */}
-              {canvases.find((c) => c.id === '2') && (
-                <div className="flex-shrink-0 pt-4 mt-4 border-t border-zinc-200 dark:border-zinc-700 space-y-3">
-                  <h3 className="text-base font-semibold text-zinc-800 dark:text-zinc-200">Second Card</h3>
-                  <div className="space-y-3">
-                    {card2Texts.map((textItem, index) => (
-                      <div key={index} className="flex gap-3 items-center">
-                        <input type="text" value={textItem.text} onChange={(e) => { const newTexts = [...card2Texts]; newTexts[index].text = e.target.value; setCard2Texts(newTexts); const allTexts = newTexts.map((t) => t.text).filter((t) => t.trim()).join('\n'); setCanvases((prev) => prev.map((c) => (c.id === '2' ? { ...c, text: allTexts } : c))); }} placeholder={`Text line ${index + 1}...`} className="flex-1 px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent text-sm" />
-                        <input type="color" value={textItem.color} onChange={(e) => { const newTexts = [...card2Texts]; newTexts[index].color = e.target.value; setCard2Texts(newTexts); }} className="w-16 h-10 rounded-lg border border-zinc-300 dark:border-zinc-700 cursor-pointer flex-shrink-0" title={`Text line ${index + 1} color`} />
-                        {card2Texts.length > 1 && (
-                          <button onClick={() => { const newTexts = card2Texts.filter((_, i) => i !== index); setCard2Texts(newTexts); const allTexts = newTexts.map((t) => t.text).filter((t) => t.trim()).join('\n'); setCanvases((prev) => prev.map((c) => (c.id === '2' ? { ...c, text: allTexts } : c))); }} className="w-10 h-10 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-red-600 dark:text-red-400 flex items-center justify-center transition-colors flex-shrink-0" title="Remove text line">×</button>
-                        )}
-                      </div>
-                    ))}
-                    <button onClick={() => setCard2Texts([...card2Texts, { text: '', color: '#000000' }])} className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 border-dashed rounded-lg bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-400 text-sm transition-colors">+ Add Text Line</button>
-                  </div>
-                </div>
-              )}
-
               {/* Content Cards section */}
               <div className="flex-shrink-0 pt-4 mt-4 border-t border-zinc-200 dark:border-zinc-700 space-y-3">
                 <h3 className="text-base font-semibold text-zinc-800 dark:text-zinc-200">Content Cards</h3>
                 <div className="space-y-3">
-                  {canvases.filter((c) => c.id !== '1' && c.id !== '2' && c.id !== 'end').map((canvas, index) => {
-                    const cardNumber = index + 3;
+                  {canvases.filter((c) => c.id !== '1' && c.id !== 'end').map((canvas, index) => {
+                    const cardNumber = index + 2;
                     return (
                       <div key={canvas.id} className="flex gap-3 items-center">
                         <input type="text" value={canvas.text} onChange={(e) => setCanvases((prev) => prev.map((c) => (c.id === canvas.id ? { ...c, text: e.target.value } : c)))} placeholder={`Card ${cardNumber} text...`} className="flex-1 px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent text-sm" />
                         <input type="color" value={canvas.textColor} onChange={(e) => setCanvases((prev) => prev.map((c) => (c.id === canvas.id ? { ...c, textColor: e.target.value } : c)))} className="w-16 h-10 rounded-lg border border-zinc-300 dark:border-zinc-700 cursor-pointer flex-shrink-0" title={`Card ${cardNumber} text color`} />
-                        {canvases.filter((c) => c.id !== '1' && c.id !== '2' && c.id !== 'end').length > 1 && (
+                        {canvases.filter((c) => c.id !== '1' && c.id !== 'end').length > 1 && (
                           <button onClick={(e) => onDeleteCanvas(canvas.id, e)} className="w-10 h-10 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-red-600 dark:text-red-400 flex items-center justify-center transition-colors flex-shrink-0" title="Remove card">×</button>
                         )}
                       </div>
@@ -212,7 +290,7 @@ export function InputsCard(props: InputsCardProps) {
             </>
           )}
 
-          {userInfo && (
+          {userInfo && contentTab !== 'automate' && (
             <>
               <div className="space-y-3 pt-4 mt-4 border-t border-zinc-200 dark:border-zinc-700">
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Post Settings (Required for TikTok)</label>

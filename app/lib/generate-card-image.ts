@@ -76,14 +76,12 @@ export async function generateCardImage({
     ctx.stroke();
   }
 
-  const canvasText =
-    canvasData.id === '1'
-      ? canvasData.text || ''
-      : canvasData.id === '2'
-        ? card2Texts.filter((t) => t.text.trim()).map((t) => t.text).join('\n')
-        : canvasData.text || '';
+  const canvasText = canvasData.id === '1' ? '' : canvasData.text || '';
 
-  if (canvasData.id === '1' || canvasData.id === 'end') {
+  // Skip title overlay on first card when it has a background image (AI cover or Pexels);
+  // the image typically already has text or we avoid the extra overlay.
+  const isFirstWithImageBg = canvasData.id === '1' && mode === 'video' && !!videoThumbnailUrl;
+  if (canvasData.id === 'end' && !isFirstWithImageBg) {
     ctx.fillStyle = canvasData.textColor || '#FFFFFF';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -102,22 +100,12 @@ export async function generateCardImage({
     const lines = wrapText(ctx, canvasText, maxTextWidth);
     const lineHeight = fontSize * 1.4;
     const totalHeight = lines.length * lineHeight;
-    const vPad = canvasData.id === '1' ? fontSize * 0.08 : fontSize * 0.2;
+    const vPad = fontSize * 0.2;
     const gapBetweenLines = 0;
     const boxHeight = lineHeight + 2 * vPad;
     const lineSpacing = boxHeight + gapBetweenLines;
-    const totalBlockHeight = lines.length > 0 ? (lines.length - 1) * lineSpacing + boxHeight : 0;
-    let startY: number;
-    if (canvasData.id === '1') {
-      const topPad = height * 0.12;
-      const bottomPad = height * 0.12;
-      const minStartY = topPad + boxHeight / 2;
-      const maxStartY = height - bottomPad - totalBlockHeight + boxHeight / 2;
-      const range = Math.max(0, maxStartY - minStartY);
-      startY = minStartY + Math.random() * range;
-    } else {
-      startY = (height - totalHeight) / 2 + lineHeight / 2;
-    }
+    let startY: number
+    startY = (height - totalHeight) / 2 + lineHeight / 2;
     let iconSize = 0;
     let iconY = 0;
     if (canvasData.id === 'end') {
@@ -159,105 +147,12 @@ export async function generateCardImage({
       ctx.fill();
       ctx.restore();
     }
-    const pad = canvasData.id === '1' ? fontSize * 0.5 : fontSize * 0.45;
-    const radius = fontSize * 0.25;
-    if (canvasData.id === '1' && lines.length > 0) {
-      ctx.fillStyle = '#FFFFFF';
-      lines.forEach((line, idx) => {
-        const lineW = ctx.measureText(line).width;
-        const boxW = lineW + pad * 2;
-        const boxH = boxHeight;
-        const boxX = (width - boxW) / 2;
-        const centerY = startY + idx * lineSpacing;
-        const boxY = centerY - boxH / 2;
-        ctx.beginPath();
-        ctx.moveTo(boxX + radius, boxY);
-        ctx.lineTo(boxX + boxW - radius, boxY);
-        ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + radius);
-        ctx.lineTo(boxX + boxW, boxY + boxH - radius);
-        ctx.quadraticCurveTo(boxX + boxW, boxY + boxH, boxX + boxW - radius, boxY + boxH);
-        ctx.lineTo(boxX + radius, boxY + boxH);
-        ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - radius);
-        ctx.lineTo(boxX, boxY + radius);
-        ctx.quadraticCurveTo(boxX, boxY, boxX + radius, boxY);
-        ctx.closePath();
-        ctx.fill();
-      });
-    }
-    const titleColor = canvasData.id === '1' && lines.length > 0 ? '#000000' : canvasData.textColor || '#FFFFFF';
+   
+    const titleColor = canvasData.textColor || '#FFFFFF';
     ctx.fillStyle = titleColor;
     lines.forEach((line, idx) => {
       const y = canvasData.id === '1' ? startY + idx * lineSpacing : startY + idx * lineHeight;
       ctx.fillText(line, width / 2, y);
-    });
-  } else if (canvasData.id === '2') {
-    const baseRemSize = 16;
-    const remSize = baseRemSize * (width / 1080);
-    const padding = remSize * 4;
-    const textStartY = cardY + finalCardHeight * 0.25;
-    const canvasWidthScale = width / 1080;
-    const baseFontSize = parseInt(canvasData.textSize || '200') || 200;
-    const fontSize = (baseFontSize * canvasWidthScale * 0.75) / 3.7;
-    const whiteCardTextColor = canvasData.textColor || '#000000';
-    ctx.fillStyle = whiteCardTextColor;
-    ctx.textAlign = 'center';
-    ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
-    const instructionsText = 'Instructions';
-    const textMetrics = ctx.measureText(instructionsText);
-    ctx.textBaseline = 'top';
-    const instructionsY = cardY + padding + remSize * 2;
-    const instructionsX = cardX + finalCardWidth / 2;
-    ctx.fillText(instructionsText, instructionsX, instructionsY);
-    ctx.strokeStyle = whiteCardTextColor;
-    ctx.lineWidth = 4 * (width / 1080);
-    const underlineOffset = remSize * 0.25;
-    const underlineY = instructionsY + fontSize + underlineOffset;
-    const underlineLeft = Math.max(cardX + padding, instructionsX - textMetrics.width / 2);
-    const underlineRight = Math.min(cardX + finalCardWidth - padding, instructionsX + textMetrics.width / 2);
-    ctx.beginPath();
-    ctx.moveTo(underlineLeft, underlineY);
-    ctx.lineTo(underlineRight, underlineY);
-    ctx.stroke();
-    const instructionTexts = card2Texts.filter((t) => t.text.trim());
-    ctx.textAlign = 'left';
-    ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
-    const circleRadius = fontSize * 0.4;
-    const circleX = cardX + padding;
-    const textX = circleX + circleRadius + fontSize * 0.5;
-    const rightBoundary = cardX + finalCardWidth - padding;
-    const maxTextWidth = Math.max(0, rightBoundary - textX);
-    const lineHeight = fontSize * 1.4;
-    const itemSpacing = fontSize * 1.2;
-    let currentY = textStartY;
-    const itemPositions: Array<{ y: number; textLines: string[] }> = [];
-    instructionTexts.forEach((textItem, idx) => {
-      const textLines = wrapText(ctx, textItem.text, maxTextWidth);
-      itemPositions.push({ y: currentY, textLines });
-      const itemHeight = textLines.length * lineHeight;
-      currentY += itemHeight;
-      if (idx < instructionTexts.length - 1) currentY += itemSpacing;
-    });
-    itemPositions.forEach((itemPos, idx) => {
-      const y = itemPos.y;
-      const textLines = itemPos.textLines;
-      const circleY = y + fontSize * 0.5;
-      const itemColor = instructionTexts[idx].color || '#000000';
-      ctx.fillStyle = itemColor;
-      ctx.beginPath();
-      ctx.arc(circleX, circleY, circleRadius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#FFFFFF';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.font = `bold ${fontSize * 0.6}px system-ui, sans-serif`;
-      ctx.fillText(String(idx + 1), circleX, circleY);
-      ctx.fillStyle = itemColor;
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'top';
-      ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
-      textLines.forEach((line, lineIdx) => {
-        ctx.fillText(line, textX, y + lineIdx * lineHeight);
-      });
     });
   } else {
     const baseRemSize = 16;

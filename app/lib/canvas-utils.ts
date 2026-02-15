@@ -63,6 +63,48 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+/**
+ * Extract a dominant color from an image URL for use as card background.
+ * Samples a downscaled version, averages non-extreme pixels, and darkens for readability.
+ * Returns hex string or null on failure.
+ */
+export async function extractDominantColor(imageUrl: string): Promise<string | null> {
+  if (typeof document === 'undefined') return null;
+  try {
+    const img = await loadImage(imageUrl);
+    const size = 32;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0, size, size);
+    const data = ctx.getImageData(0, 0, size, size).data;
+    let r = 0, g = 0, b = 0, count = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      const pr = data[i]! / 255, pg = data[i + 1]! / 255, pb = data[i + 2]! / 255;
+      const l = 0.299 * pr + 0.587 * pg + 0.114 * pb;
+      if (l > 0.15 && l < 0.92) {
+        r += data[i]!;
+        g += data[i + 1]!;
+        b += data[i + 2]!;
+        count++;
+      }
+    }
+    if (count === 0) return null;
+    r = Math.round(r / count);
+    g = Math.round(g / count);
+    b = Math.round(b / count);
+    const darken = 0.55;
+    r = Math.round(r * darken);
+    g = Math.round(g * darken);
+    b = Math.round(b * darken);
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+  } catch {
+    return null;
+  }
+}
+
 /** Wrap title text into lines using canvas measure (matches export). Use in preview/carousel. */
 export function wrapTextToLines(
   text: string,
