@@ -30,7 +30,7 @@ export default function SpillItPage() {
       </h1>
 
       <Link
-        href="https://21questions.app/"
+        href="https://apps.apple.com/gb/app/spill-it-card-games/id6758108818"
         target="_blank"
         rel="noopener noreferrer"
         className="inline-flex items-center gap-3 px-6 py-4 bg-black text-white rounded-xl font-semibold text-lg hover:opacity-90 transition-opacity"
