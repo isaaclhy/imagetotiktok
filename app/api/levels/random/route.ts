@@ -110,8 +110,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Step 4: Randomly select 5 questions (or all if less than 5)
-    const selectedQuestions = getRandomElements(questions, 5);
+    const questionCount = parseInt(searchParams.get('count') || '5', 10) || 5;
+    const selectedQuestions = getRandomElements(questions, questionCount);
 
     // Extract category name (could be name, category, or title field)
     const categoryName = selectedCategory?.name || 

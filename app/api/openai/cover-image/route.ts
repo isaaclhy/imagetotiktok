@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const questiontext = typeof body?.questiontext === 'string' ? body.questiontext : '';
+    const promptIdParam = typeof body?.promptId === 'string' ? body.promptId.trim() : null;
 
     if (!questiontext.trim()) {
       return NextResponse.json(
@@ -47,7 +48,9 @@ export async function POST(request: NextRequest) {
     }
 
     const client = new OpenAI({ apiKey });
-    const promptId = PROMPT_IDS[Math.floor(Math.random() * PROMPT_IDS.length)]!;
+    const promptId = promptIdParam && PROMPT_IDS.includes(promptIdParam)
+      ? promptIdParam
+      : PROMPT_IDS[Math.floor(Math.random() * PROMPT_IDS.length)]!;
 
     const response = await client.responses.create({
       prompt: {

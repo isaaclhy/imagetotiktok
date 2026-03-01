@@ -248,7 +248,7 @@ export default function Home() {
   const generateCardImage = async (canvasData: CanvasData): Promise<Blob> =>
     generateCardImageLib({ canvasData, mode, videoThumbnailUrl, card2Texts: [] });
 
-  const handleAutoGenerate = async (categories: string[] = []) => {
+  const handleAutoGenerate = async (coverPromptId: string, categories: string[] = []) => {
     const count = Math.min(20, Math.max(1, parseInt(automateCount, 10) || 5));
     setIsAutoGenerating(true);
 
@@ -283,7 +283,7 @@ export default function Home() {
         const coverRes = await fetch('/api/openai/cover-image', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ questiontext: titleText }),
+          body: JSON.stringify({ questiontext: titleText, promptId: coverPromptId }),
         });
         const coverData = await coverRes.json();
         if (coverRes.ok && coverData?.imageUrl) {
@@ -573,22 +573,24 @@ export default function Home() {
               onAutomateDownload={handleAutoGenerate}
               isAutoGenerating={isAutoGenerating}
             />
-            <PreviewPanel
-              canvases={canvases}
-              currentCanvasId={currentCanvasId}
-              currentCanvas={currentCanvas}
-              firstCard={firstCard}
-              onSelectCanvas={handleSelectCanvas}
-              onAddCanvas={handleAddCanvas}
-              onDeleteCanvas={handleDeleteCanvas}
-              backgroundColor={backgroundColor}
-              imageSize={imageSize}
-              textSize={textSize}
-              mode={mode}
-              videoBackgroundUrl={videoBackgroundUrl}
-              videoThumbnailUrl={videoThumbnailUrl}
-              mounted={mounted}
-            />
+            {contentTab !== 'video' && (
+              <PreviewPanel
+                canvases={canvases}
+                currentCanvasId={currentCanvasId}
+                currentCanvas={currentCanvas}
+                firstCard={firstCard}
+                onSelectCanvas={handleSelectCanvas}
+                onAddCanvas={handleAddCanvas}
+                onDeleteCanvas={handleDeleteCanvas}
+                backgroundColor={backgroundColor}
+                imageSize={imageSize}
+                textSize={textSize}
+                mode={mode}
+                videoBackgroundUrl={videoBackgroundUrl}
+                videoThumbnailUrl={videoThumbnailUrl}
+                mounted={mounted}
+              />
+            )}
           </div>
         </div>
       </div>

@@ -18,7 +18,7 @@ export default function SpillItPage() {
     <div
       className="min-h-screen flex flex-col items-center justify-center p-8"
       style={{
-        backgroundColor: '#8C19FF',
+        backgroundColor: '#000000',
         fontFamily: 'var(--font-open-sans), Open Sans, sans-serif',
       }}
     >
@@ -33,11 +33,24 @@ export default function SpillItPage() {
         href="https://apps.apple.com/gb/app/spill-it-card-games/id6758108818"
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-3 px-6 py-4 bg-black text-white rounded-xl font-semibold text-lg hover:opacity-90 transition-opacity"
-        style={{ fontFamily: 'var(--font-open-sans), Open Sans, sans-serif' }}
+        className="relative inline-flex items-center gap-3 px-7 py-4 text-white rounded-2xl font-semibold text-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.15)] overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.12) 100%)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255,255,255,0.18)',
+          boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.25), inset 0 -1px 1px rgba(255,255,255,0.05), 0 4px 20px rgba(0,0,0,0.3)',
+          fontFamily: 'var(--font-open-sans), Open Sans, sans-serif',
+        }}
       >
-        <AppleIcon className="w-8 h-8" />
-        Download on the App Store
+        <span
+          className="absolute inset-0 pointer-events-none rounded-2xl"
+          style={{
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 40%)',
+          }}
+        />
+        <AppleIcon className="w-8 h-8 relative z-10" />
+        <span className="relative z-10">Download on the App Store</span>
       </Link>
     </div>
   );
