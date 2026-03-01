@@ -8,7 +8,7 @@ export const RemotionRoot: React.FC = () => {
   const defaultProps = { title: 'Sample Title', questions: ['Question 1', 'Question 2', 'Question 3'] };
 
   return (
-    <Composition<QuestionVideoProps>
+    <Composition
       id="QuestionVideo"
       component={QuestionVideo}
       durationInFrames={FPS * 5 + (defaultProps.questions.length + 1) * FPS * 10}
@@ -16,7 +16,7 @@ export const RemotionRoot: React.FC = () => {
       width={1080}
       height={1920}
       defaultProps={defaultProps}
-      calculateMetadata={({ props }) => ({
+      calculateMetadata={({ props }: { props: QuestionVideoProps }) => ({
         durationInFrames: FPS * 5 + (props.questions.length + 1) * FPS * 10,
       })}
     />
