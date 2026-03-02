@@ -1,4 +1,19 @@
+'use client';
+
+import Image from 'next/image';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+
+const REVIEWS = [
+  { text: 'We couldn\'t stop laughing, best date night game ever!', male: 'Jake', female: 'Emma', years: 3 },
+  { text: 'This game brought us so much closer than we expected', male: 'Marcus', female: 'Sofia', years: 5 },
+  { text: 'Perfect for spicing up our Friday nights at home together', male: 'Liam', female: 'Olivia', years: 2 },
+  { text: 'We learned things about each other we never knew before', male: 'Noah', female: 'Ava', years: 7 },
+  { text: 'Every couple needs this game, it\'s honestly so fun', male: 'Ethan', female: 'Mia', years: 1 },
+  { text: 'Had our friends over and everyone wanted to play again', male: 'Daniel', female: 'Chloe', years: 4 },
+  { text: 'The questions are deep, funny, and surprisingly romantic too', male: 'Ryan', female: 'Lily', years: 6 },
+  { text: 'We play this every weekend now, absolutely love it', male: 'James', female: 'Zoe', years: 2 },
+];
 
 function AppleIcon({ className }: { className?: string }) {
   return (
@@ -13,17 +28,56 @@ function AppleIcon({ className }: { className?: string }) {
   );
 }
 
+function ReviewSlideshow() {
+  const [index, setIndex] = useState(0);
+  const [fade, setFade] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFade(false);
+      setTimeout(() => {
+        setIndex((prev) => (prev + 1) % REVIEWS.length);
+        setFade(true);
+      }, 300);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="mt-20 z-10 flex flex-col items-center">
+      <div
+        className="transition-opacity duration-300"
+        style={{ opacity: fade ? 1 : 0 }}
+      >
+        <div className="flex justify-center gap-1 mb-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <svg key={i} className="w-5 h-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.957a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.37 2.448a1 1 0 00-.364 1.118l1.287 3.957c.3.921-.755 1.688-1.54 1.118l-3.37-2.448a1 1 0 00-1.176 0l-3.37 2.448c-.784.57-1.838-.197-1.539-1.118l1.287-3.957a1 1 0 00-.364-1.118L2.063 9.384c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.286-3.957z" />
+            </svg>
+          ))}
+        </div>
+        <p className="text-white/70 text-sm text-center font-medium">
+          &ldquo;{REVIEWS[index].text}&rdquo;
+        </p>
+        <p className="text-white/40 text-xs text-center mt-2">
+          {REVIEWS[index].female} & {REVIEWS[index].male} &middot; together {REVIEWS[index].years} {REVIEWS[index].years === 1 ? 'year' : 'years'}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function SpillItPage() {
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center p-8"
+      className="h-screen relative flex flex-col items-center p-8 pt-[8vh] overflow-hidden"
       style={{
         backgroundColor: '#000000',
         fontFamily: 'var(--font-open-sans), Open Sans, sans-serif',
       }}
     >
       <h1
-        className="text-4xl md:text-5xl font-bold text-white text-center mb-10"
+        className="text-3xl md:text-5xl font-bold text-white text-center mb-10 z-10 whitespace-nowrap"
         style={{ fontFamily: 'var(--font-open-sans), Open Sans, sans-serif' }}
       >
         Spill It - Card Games
@@ -33,7 +87,7 @@ export default function SpillItPage() {
         href="https://apps.apple.com/gb/app/spill-it-card-games/id6758108818"
         target="_blank"
         rel="noopener noreferrer"
-        className="relative inline-flex items-center gap-3 px-7 py-4 text-white rounded-2xl font-semibold text-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.15)] overflow-hidden"
+        className="relative flex items-center justify-center gap-2 w-full px-5 py-3 text-white rounded-2xl font-semibold text-lg whitespace-nowrap transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.15)] overflow-hidden z-10"
         style={{
           background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.12) 100%)',
           backdropFilter: 'blur(20px)',
@@ -49,9 +103,22 @@ export default function SpillItPage() {
             background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 40%)',
           }}
         />
-        <AppleIcon className="w-8 h-8 relative z-10" />
+        <AppleIcon className="w-6 h-6 relative z-10" />
         <span className="relative z-10">Download on the App Store</span>
       </Link>
+
+      <ReviewSlideshow />
+
+      <div className="absolute left-0 right-0 px-8 pointer-events-none" style={{ top: '55%' }}>
+        <Image
+          src="/app-preview.png"
+          alt="Spill It app preview"
+          width={340}
+          height={680}
+          className="w-full h-auto"
+          priority
+        />
+      </div>
     </div>
   );
 }
