@@ -1,161 +1,107 @@
+import Link from 'next/link';
+
+export const metadata = {
+  title: 'Privacy Policy - Bleamies',
+  description: 'Privacy policy for Bleamies',
+};
+
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-zinc-50 font-sans dark:bg-black p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-8 md:p-12">
-          <h1 className="text-4xl font-bold text-black dark:text-zinc-50 mb-2">
-            Privacy Policy
-          </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8">
-            Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+    <div
+      className="min-h-screen p-6 md:p-12 max-w-3xl mx-auto"
+      style={{
+        backgroundColor: '#000000',
+        color: '#ffffff',
+        fontFamily: 'var(--font-open-sans), Open Sans, sans-serif',
+      }}
+    >
+      <Link
+        href="/"
+        className="inline-block text-white/70 hover:text-white text-sm mb-8 transition-colors"
+      >
+        ← Back
+      </Link>
+
+      <h1 className="text-3xl font-bold mb-2">Privacy Policy</h1>
+      <p className="text-white/60 text-sm mb-4">Bleamies</p>
+      <p className="text-white/60 text-sm mb-10">Last updated: {new Date().toLocaleDateString('en-US')}</p>
+
+      <p className="text-white/80 mb-8">
+        This Privacy Policy describes how Bleamies collects, uses, and shares your information when you use our application and related services.
+      </p>
+
+      <div className="space-y-8 text-white/90 leading-relaxed">
+        <section>
+          <h2 className="text-xl font-semibold text-white mb-3">1. Information We Collect</h2>
+          <p>
+            When you use Bleamies, we may collect information you provide directly, such as when you create an account, contact us, or use our services. This may include your name, email address, and any other information you choose to provide.
           </p>
+        </section>
 
-          <div className="space-y-8 text-zinc-700 dark:text-zinc-300">
-            <section>
-              <h2 className="text-2xl font-semibold text-black dark:text-zinc-50 mb-4">
-                1. Introduction
-              </h2>
-              <p className="mb-4 leading-relaxed">
-                Welcome to Bleamies ("Bleamies," "we," "our," or "us"). Bleamies is committed to protecting your personal information and your right to privacy. This Privacy Policy explains how Bleamies collects, uses, discloses, and safeguards your information when you use the Bleamies service.
-              </p>
-              <p className="leading-relaxed">
-                Please read this Privacy Policy carefully. If you do not agree with the terms of this Privacy Policy, please do not access or use the Bleamies service.
-              </p>
-            </section>
+        <section>
+          <h2 className="text-xl font-semibold text-white mb-3">2. How We Use Your Information</h2>
+          <p>
+            We use the information we collect to provide, maintain, and improve Bleamies, to process transactions, to send you technical notices and support messages, and to respond to your inquiries.
+          </p>
+        </section>
 
-            <section>
-              <h2 className="text-2xl font-semibold text-black dark:text-zinc-50 mb-4">
-                2. Information We Collect
-              </h2>
-              <h3 className="text-xl font-medium text-black dark:text-zinc-50 mb-3 mt-4">
-                2.1 Information You Provide
-              </h3>
-              <p className="mb-4 leading-relaxed">
-                Bleamies collects information that you voluntarily provide to us when you use the Bleamies service, including:
-              </p>
-              <ul className="list-disc list-inside space-y-2 mb-4 ml-4">
-                <li>Text content and images you create using our service</li>
-                <li>Account information if you choose to create an account</li>
-                <li>Preferences and settings you configure</li>
-                <li>Communications with us, including support requests</li>
-              </ul>
+        <section>
+          <h2 className="text-xl font-semibold text-white mb-3">3. Information Sharing</h2>
+          <p>
+            We do not sell your personal information. We may share your information with service providers who assist us in operating Bleamies, subject to confidentiality obligations. We may also disclose information if required by law or to protect our rights.
+          </p>
+        </section>
 
-              <h3 className="text-xl font-medium text-black dark:text-zinc-50 mb-3 mt-4">
-                2.2 Automatically Collected Information
-              </h3>
-              <p className="mb-4 leading-relaxed">
-                When you access the Bleamies service, Bleamies may automatically collect certain information, including:
-              </p>
-              <ul className="list-disc list-inside space-y-2 mb-4 ml-4">
-                <li>Device information (browser type, operating system)</li>
-                <li>Usage data (pages visited, features used, time spent)</li>
-                <li>IP address and location data</li>
-                <li>Cookies and similar tracking technologies</li>
-              </ul>
-            </section>
+        <section>
+          <h2 className="text-xl font-semibold text-white mb-3">4. Cookies and Similar Technologies</h2>
+          <p>
+            We may use cookies and similar tracking technologies to collect information about your browsing activities when you visit our website. You can instruct your browser to refuse all cookies or to indicate when a cookie is being sent.
+          </p>
+        </section>
 
-            <section>
-              <h2 className="text-2xl font-semibold text-black dark:text-zinc-50 mb-4">
-                3. How We Use Your Information
-              </h2>
-              <p className="mb-4 leading-relaxed">
-                Bleamies uses the information we collect for various purposes, including:
-              </p>
-              <ul className="list-disc list-inside space-y-2 mb-4 ml-4">
-                <li>To provide, maintain, and improve our service</li>
-                <li>To process your requests and transactions</li>
-                <li>To send you administrative information and updates</li>
-                <li>To respond to your inquiries and provide customer support</li>
-                <li>To detect, prevent, and address technical issues and security threats</li>
-                <li>To analyze usage patterns and trends to improve user experience</li>
-                <li>To comply with legal obligations</li>
-              </ul>
-            </section>
+        <section>
+          <h2 className="text-xl font-semibold text-white mb-3">5. Data Security</h2>
+          <p>
+            We take reasonable measures to help protect your personal information from loss, theft, misuse, unauthorized access, disclosure, alteration, and destruction.
+          </p>
+        </section>
 
-            <section>
-              <h2 className="text-2xl font-semibold text-black dark:text-zinc-50 mb-4">
-                4. Information Sharing and Disclosure
-              </h2>
-              <p className="mb-4 leading-relaxed">
-                Bleamies does not sell, trade, or rent your personal information to third parties. Bleamies may share your information in the following circumstances:
-              </p>
-              <ul className="list-disc list-inside space-y-2 mb-4 ml-4">
-                <li><strong>Service Providers:</strong> We may share information with third-party service providers who perform services on our behalf, such as hosting, analytics, and customer support.</li>
-                <li><strong>Legal Requirements:</strong> We may disclose information if required by law or in response to valid legal requests.</li>
-                <li><strong>Business Transfers:</strong> In the event of a merger, acquisition, or sale of assets, your information may be transferred.</li>
-                <li><strong>With Your Consent:</strong> We may share information with your explicit consent.</li>
-              </ul>
-            </section>
+        <section>
+          <h2 className="text-xl font-semibold text-white mb-3">6. Your Rights</h2>
+          <p>
+            Depending on your location, you may have the right to access, correct, or delete your personal information, or to object to or restrict certain processing. Contact us to exercise these rights.
+          </p>
+        </section>
 
-            <section>
-              <h2 className="text-2xl font-semibold text-black dark:text-zinc-50 mb-4">
-                5. Third-Party Services
-              </h2>
-              <p className="mb-4 leading-relaxed">
-                The Bleamies service may integrate with third-party services, including TikTok, for posting content. When you connect these services, they may collect and process your information according to their own privacy policies. Bleamies encourages you to review the privacy policies of any third-party services you use.
-              </p>
-            </section>
+        <section>
+          <h2 className="text-xl font-semibold text-white mb-3">7. Children&apos;s Privacy</h2>
+          <p>
+            Bleamies is not directed to children under 13. We do not knowingly collect personal information from children under 13. If you believe we have collected such information, please contact us.
+          </p>
+        </section>
 
-            <section>
-              <h2 className="text-2xl font-semibold text-black dark:text-zinc-50 mb-4">
-                6. Data Security
-              </h2>
-              <p className="mb-4 leading-relaxed">
-                Bleamies implements appropriate technical and organizational security measures to protect your information against unauthorized access, alteration, disclosure, or destruction. However, no method of transmission over the internet or electronic storage is 100% secure, and Bleamies cannot guarantee absolute security.
-              </p>
-            </section>
+        <section>
+          <h2 className="text-xl font-semibold text-white mb-3">8. Changes to This Policy</h2>
+          <p>
+            We may update this Privacy Policy from time to time. We will notify you of any material changes by posting the new policy on this page and updating the &quot;Last updated&quot; date.
+          </p>
+        </section>
 
-            <section>
-              <h2 className="text-2xl font-semibold text-black dark:text-zinc-50 mb-4">
-                7. Your Rights and Choices
-              </h2>
-              <p className="mb-4 leading-relaxed">
-                Depending on your location, you may have certain rights regarding your personal information, including:
-              </p>
-              <ul className="list-disc list-inside space-y-2 mb-4 ml-4">
-                <li>The right to access your personal information</li>
-                <li>The right to correct inaccurate information</li>
-                <li>The right to delete your information</li>
-                <li>The right to restrict or object to processing</li>
-                <li>The right to data portability</li>
-                <li>The right to withdraw consent</li>
-              </ul>
-              <p className="leading-relaxed">
-                To exercise these rights, please contact Bleamies using the information provided in the "Contact Us" section below.
-              </p>
-            </section>
+        <section>
+          <h2 className="text-xl font-semibold text-white mb-3">9. Contact Us</h2>
+          <p>
+            If you have questions about this Privacy Policy or Bleamies, please contact us through the support or contact options provided in our app.
+          </p>
+        </section>
+      </div>
 
-            <section>
-              <h2 className="text-2xl font-semibold text-black dark:text-zinc-50 mb-4">
-                8. Data Retention
-              </h2>
-              <p className="mb-4 leading-relaxed">
-                Bleamies retains your personal information only for as long as necessary to fulfill the purposes outlined in this Privacy Policy, unless a longer retention period is required or permitted by law.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-semibold text-black dark:text-zinc-50 mb-4">
-                9. Children's Privacy
-              </h2>
-              <p className="mb-4 leading-relaxed">
-                The Bleamies service is not intended for children under the age of 13. Bleamies does not knowingly collect personal information from children under 13. If you become aware that a child has provided Bleamies with personal information, please contact us, and Bleamies will take steps to delete such information.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-semibold text-black dark:text-zinc-50 mb-4">
-                10. Changes to This Privacy Policy
-              </h2>
-              <p className="mb-4 leading-relaxed">
-                Bleamies may update this Privacy Policy from time to time. Bleamies will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last updated" date. You are advised to review this Privacy Policy periodically for any changes.
-              </p>
-              <p className="leading-relaxed">
-                <strong>Contact Information:</strong> If you have any questions about this Privacy Policy, please contact Bleamies.
-              </p>
-            </section>
-          </div>
-        </div>
+      <div className="mt-12 pt-8 border-t border-white/20">
+        <Link
+          href="/"
+          className="inline-block text-white/70 hover:text-white text-sm transition-colors"
+        >
+          ← Back to home
+        </Link>
       </div>
     </div>
   );

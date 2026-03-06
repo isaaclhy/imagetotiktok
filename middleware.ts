@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const AUTH_COOKIE = 'app_auth';
 
-// Routes that do NOT require password (Spill It page and auth flow)
-const PUBLIC_PATHS = ['/spill-it', '/password', '/api/auth'];
-
+// Routes that do NOT require password
 function isPublicPath(pathname: string): boolean {
   if (pathname.startsWith('/spill-it')) return true;
+  if (pathname.startsWith('/privacy')) return true;
+  if (pathname.startsWith('/terms')) return true;
+  if (pathname.startsWith('/support')) return true;
   if (pathname === '/password') return true;
   if (pathname.startsWith('/api/auth')) return true;
   return false;

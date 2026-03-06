@@ -4,14 +4,14 @@ import clientPromise from '@/lib/mongodb';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, title, message } = body;
+    const { email, name, message } = body;
 
     // Validate required fields
-    if (!email || !title || !message) {
+    if (!email || !name || !message) {
       return NextResponse.json(
         {
           success: false,
-          message: 'Email, title, and message are required',
+          message: 'Email, name, and message are required',
         },
         { status: 400 }
       );
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     // Insert the support request
     const result = await collection.insertOne({
       email,
-      title,
+      name,
       message,
       createdAt: new Date(),
       status: 'pending', // You can add status tracking if needed

@@ -1,10 +1,11 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 
 export default function SupportPage() {
   const [email, setEmail] = useState('');
-  const [title, setTitle] = useState('');
+  const [name, setName] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
@@ -12,7 +13,7 @@ export default function SupportPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !title || !message) {
+    if (!email || !name || !message) {
       setSubmitStatus({ type: 'error', message: 'Please fill in all fields' });
       return;
     }
@@ -26,7 +27,7 @@ export default function SupportPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, title, message }),
+        body: JSON.stringify({ email, name, message }),
       });
 
       const data = await response.json();
@@ -34,7 +35,7 @@ export default function SupportPage() {
       if (response.ok && data.success) {
         setSubmitStatus({ type: 'success', message: 'Thank you! Your message has been sent successfully.' });
         setEmail('');
-        setTitle('');
+        setName('');
         setMessage('');
       } else {
         setSubmitStatus({ type: 'error', message: data.message || 'Failed to send message. Please try again.' });
@@ -49,6 +50,9 @@ export default function SupportPage() {
   return (
     <div className="min-h-screen bg-zinc-50 font-sans dark:bg-black p-8">
       <div className="max-w-2xl mx-auto">
+        <Link href="/" className="inline-block text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 text-sm mb-6 transition-colors">
+          ← Back
+        </Link>
         <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-8 md:p-12">
           <h1 className="text-4xl font-bold text-black dark:text-zinc-50 mb-2">
             Contact Support
@@ -74,16 +78,16 @@ export default function SupportPage() {
             </div>
 
             <div>
-              <label htmlFor="title" className="block text-sm font-medium text-black dark:text-zinc-50 mb-2">
-                Subject
+              <label htmlFor="name" className="block text-sm font-medium text-black dark:text-zinc-50 mb-2">
+                Name
               </label>
               <input
                 type="text"
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="What is your message about?"
+                placeholder="Your name"
                 required
               />
             </div>
