@@ -6,13 +6,35 @@ import { useEffect, useState } from 'react';
 export default function SpillItPage() {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText('Spill It - Card Games');
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setCopied(false);
+  const handleCopy = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const text = 'Spill It - Card Games';
+    const fallbackCopy = () => {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        setCopied(false);
+      }
+      document.body.removeChild(ta);
+    };
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        })
+        .catch(fallbackCopy);
+    } else {
+      fallbackCopy();
     }
   };
   useEffect(() => {
@@ -22,7 +44,7 @@ export default function SpillItPage() {
 
   return (
     <div
-      className="h-screen relative flex flex-col items-start px-4 pt-[15vh] pb-8 overflow-hidden"
+      className="h-screen relative flex flex-col items-start px-4 pt-[10vh] pb-8 overflow-hidden"
       style={{
         backgroundColor: '#000000',
         fontFamily: 'var(--font-open-sans), Open Sans, sans-serif',
@@ -34,27 +56,30 @@ export default function SpillItPage() {
         </svg>
       </div>
 
+      <div className="relative z-20">
       <h1
-        className="text-2xl md:text-3xl font-bold text-left mb-6 z-10"
+        className="text-2xl md:text-3xl font-bold text-left mb-6"
         style={{ color: '#FFFFFF', fontFamily: 'var(--font-open-sans), Open Sans, sans-serif' }}
       >
         To download the app:
       </h1>
 
-      <ol className="text-base md:text-lg font-normal text-left space-y-3 z-10 list-decimal list-inside text-white">
+      <ol className="text-base md:text-lg font-normal text-left space-y-3 list-decimal list-inside text-white">
         <li>Tap on the <span className="bg-zinc-600 px-2 py-0.5 rounded">…</span> at the top right</li>
         <li>Then tap &quot;Open in browser&quot;</li>
       </ol>
-      <p className="text-base md:text-lg font-normal text-left z-10 text-white mt-4">
+      <p className="text-base md:text-lg font-normal text-left text-white mt-6 mb-6">
         or
       </p>
-      <p className="text-base md:text-lg font-normal text-left z-10 text-white mt-2">
+      <p className="text-base md:text-lg font-normal text-left text-white">
         Search &quot;Spill It - Card Games&quot; on the App Store
       </p>
       <button
         type="button"
-        onClick={handleCopy}
-        className="mt-4 px-4 py-2 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-white text-sm font-medium transition-colors z-10 inline-flex items-center gap-2"
+        onClick={(e) => handleCopy(e)}
+        className={`mt-4 px-4 py-2 rounded-lg text-white text-sm font-medium transition-all duration-200 inline-flex items-center gap-2 ${
+          copied ? 'bg-green-600 scale-105' : 'bg-zinc-700 hover:bg-zinc-600'
+        }`}
       >
         {copied ? (
           <>
@@ -72,8 +97,9 @@ export default function SpillItPage() {
           </>
         )}
       </button>
+      </div>
 
-      <div className="absolute left-0 right-0 px-4 pointer-events-none flex justify-center" style={{ top: '58%' }}>
+      <div className="absolute left-0 right-0 px-4 pointer-events-none flex justify-center z-10" style={{ top: '58%' }}>
         <Image
           src="/app-preview.png"
           alt="Spill It app preview"
