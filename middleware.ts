@@ -8,6 +8,7 @@ function isPublicPath(pathname: string): boolean {
   if (pathname.startsWith('/privacy')) return true;
   if (pathname.startsWith('/terms')) return true;
   if (pathname.startsWith('/support')) return true;
+  if (pathname.startsWith('/clickCount')) return true;
   if (pathname === '/password') return true;
   if (pathname.startsWith('/api/auth')) return true;
   return false;

@@ -87,6 +87,9 @@ export default function SpillItPage() {
         href="https://apps.apple.com/app/id6758108818"
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => {
+          fetch('/api/spill-it/click', { method: 'POST', keepalive: true }).catch(() => {});
+        }}
         className="relative flex items-center justify-center gap-2 w-full px-5 py-3 text-white rounded-2xl font-semibold text-lg whitespace-nowrap transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.15)] overflow-hidden z-10"
         style={{
           background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.12) 100%)',
