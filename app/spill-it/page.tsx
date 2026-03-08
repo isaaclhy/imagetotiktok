@@ -11,13 +11,13 @@ export default function SpillItPage() {
 
   return (
     <div
-      className="h-screen relative flex flex-col items-start p-8 pt-[15vh] overflow-hidden"
+      className="h-screen relative flex flex-col items-start px-4 pt-[15vh] pb-8 overflow-hidden"
       style={{
         backgroundColor: '#000000',
         fontFamily: 'var(--font-open-sans), Open Sans, sans-serif',
       }}
     >
-      <div className="absolute top-4 right-4 z-10 pointer-events-none text-white p-4">
+      <div className="absolute top-4 right-4 z-10 pointer-events-none text-white">
         <svg width="24" height="36" viewBox="0 0 24 36" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 4v20M8 8l4-4 4 4" />
         </svg>
@@ -35,7 +35,7 @@ export default function SpillItPage() {
         <li>Then tap &quot;Open in browser&quot;</li>
       </ol>
 
-      <div className="absolute left-0 right-0 px-8 pointer-events-none" style={{ top: '45%' }}>
+      <div className="absolute left-0 right-0 px-4 pointer-events-none" style={{ top: '45%' }}>
         <Image
           src="/app-preview.png"
           alt="Spill It app preview"
