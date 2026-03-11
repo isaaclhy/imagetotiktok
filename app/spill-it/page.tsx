@@ -9,7 +9,7 @@ export default function SpillItPage() {
   const handleCopy = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const text = 'Spill It - Card Games';
+    const text = 'Spill It Questions';
     const fallbackCopy = () => {
       const ta = document.createElement('textarea');
       ta.value = text;
@@ -39,6 +39,8 @@ export default function SpillItPage() {
   };
   useEffect(() => {
     fetch('/api/spill-it/click', { method: 'POST', keepalive: true }).catch(() => {});
+    // Skip redirect when ?preview=1 so you can see the page
+    if (typeof window !== 'undefined' && window.location.search.includes('preview=1')) return;
     window.location.href = 'https://apps.apple.com/app/id6758108818';
   }, []);
 
@@ -72,7 +74,7 @@ export default function SpillItPage() {
         or
       </p>
       <p className="text-base md:text-lg font-normal text-left text-white">
-        Search &quot;Spill It - Card Games&quot; on the App Store
+        Search &quot;Spill It Questions&quot; on the App Store
       </p>
       <button
         type="button"
