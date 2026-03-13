@@ -103,12 +103,11 @@ export default function SpillItPage() {
 
       <div className="absolute left-0 right-0 px-4 pointer-events-none flex justify-center z-10" style={{ top: '58%' }}>
         <Image
-          src="/app-preview.png"
+          src="/instagram-story.svg"
           alt="Spill It app preview"
           width={300}
           height={600}
           className="w-full max-w-[300px] h-auto"
-          quality={100}
           unoptimized
           priority
         />

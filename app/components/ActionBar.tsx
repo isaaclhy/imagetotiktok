@@ -1,6 +1,9 @@
 'use client';
 
 interface ActionBarProps {
+  contentTab: 'image' | 'video' | 'automate';
+  automateModel: 'gpt' | 'nana';
+  setAutomateModel: (v: 'gpt' | 'nana') => void;
   onAutoGenerate: () => void;
   onDownload: () => void;
   onPost: () => void;
@@ -16,6 +19,9 @@ interface ActionBarProps {
 }
 
 export function ActionBar({
+  contentTab,
+  automateModel,
+  setAutomateModel,
   onAutoGenerate,
   onDownload,
   onPost,
@@ -33,7 +39,24 @@ export function ActionBar({
   const showBrandedContentTooltip = contentDisclosureEnabled && isBrandedContent && postPrivacy === 'SELF_ONLY';
 
   return (
-    <div className="flex-shrink-0 flex items-center justify-end gap-3 px-4 py-3 mb-0">
+    <div className="flex-shrink-0 flex items-center justify-between gap-3 px-4 py-3 mb-0">
+      {contentTab === 'automate' ? (
+        <div className="flex items-center gap-2">
+          <label htmlFor="automate-model" className="text-sm font-medium text-zinc-700 dark:text-zinc-300 whitespace-nowrap">Model:</label>
+          <select
+            id="automate-model"
+            value={automateModel}
+            onChange={(e) => setAutomateModel(e.target.value as 'gpt' | 'nana')}
+            className="h-10 px-3 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+          >
+            <option value="gpt">GPT</option>
+            <option value="nana">Nana Banana</option>
+          </select>
+        </div>
+      ) : (
+        <div />
+      )}
+      <div className="flex items-center gap-3 ml-auto">
       <button
         onClick={onAutoGenerate}
         disabled={isAutoGenerating}
@@ -114,6 +137,7 @@ export function ActionBar({
             <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-zinc-800 dark:border-t-zinc-700"></div>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import type { CanvasData } from '@/app/lib/types';
 import { wrapTextToLines, getComplementaryColor } from '@/app/lib/canvas-utils';
 import { ROMANTIC_IMAGE_FILTER } from '@/app/lib/constants';
@@ -21,6 +21,16 @@ interface PreviewPanelProps {
   videoThumbnailUrl: string | null;
   card2Texts?: Array<{ text: string; color: string }>;
   mounted: boolean;
+  /** When on automate + nana, show these generated prompt results one by one */
+  automateDailyResults?: string[] | null;
+  /** Random prompt template with {x} intact, shown above the 5 results */
+  automateDailyTemplatePrompt?: string | null;
+  automateDailyIndex?: number;
+  onAutomateDailyIndexChange?: (i: number) => void;
+  /** Retry/replace a single slot with new prompt + question */
+  onRetryDailyItem?: (index: number) => void;
+  /** When true, hide canvas cards in the preview strip */
+  isAutomateNanaMode?: boolean;
 }
 
 export function PreviewPanel({
@@ -38,7 +48,26 @@ export function PreviewPanel({
   videoBackgroundUrl,
   videoThumbnailUrl,
   mounted,
+  automateDailyResults,
+  automateDailyTemplatePrompt,
+  automateDailyIndex = 0,
+  onAutomateDailyIndexChange,
+  onRetryDailyItem,
+  isAutomateNanaMode = false,
 }: PreviewPanelProps) {
+  const showAutomateDaily = automateDailyResults && automateDailyResults.length > 0;
+  const showCanvasCards = !isAutomateNanaMode;
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const handleCopy = useCallback(async (text: string, index: number) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex(null), 1500);
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const previewContent = useMemo(() => {
     const [widthStr, heightStr] = (imageSize || '1080x1920').split('x').map((s) => s.trim());
     const width = parseInt(widthStr) || 1080;
@@ -118,11 +147,81 @@ export function PreviewPanel({
     <div className="flex flex-col p-4 bg-white dark:bg-zinc-900 rounded-2xl shadow-lg h-full max-h-screen overflow-hidden">
       <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3 flex-shrink-0">Preview</label>
       <div className="flex-1 flex items-center justify-center min-h-0 mb-3 p-2 w-full overflow-hidden" style={{ position: 'relative', contain: 'layout style paint' }}>
-        {previewContent}
+        {((showAutomateDaily && automateDailyResults) || (isAutomateNanaMode && automateDailyTemplatePrompt)) ? (
+          <div className="w-full h-full flex flex-col gap-3 overflow-auto pr-1">
+            {automateDailyTemplatePrompt && (
+              <div className="flex gap-2 items-start p-3 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-zinc-100 dark:bg-zinc-800">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">Template prompt</p>
+                  <p className="text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
+                    {automateDailyTemplatePrompt}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleCopy(automateDailyTemplatePrompt, -1)}
+                  className="shrink-0 p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
+                  title="Copy"
+                  aria-label="Copy"
+                >
+                  {copiedIndex === -1 ? (
+                    <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                  )}
+                </button>
+              </div>
+            )}
+            {automateDailyResults?.map((text, i) => (
+              <div
+                key={i}
+                className="flex gap-2 items-start p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50"
+              >
+                <p className="flex-1 text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed min-w-0" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
+                  {text}
+                </p>
+                <div className="shrink-0 flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => onRetryDailyItem?.(i)}
+                    className="p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
+                    title="Retry with new prompt and question"
+                    aria-label="Retry"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(text, i)}
+                    className="p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
+                    title="Copy"
+                    aria-label="Copy"
+                  >
+                    {copiedIndex === i ? (
+                      <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : isAutomateNanaMode ? (
+          <div className="w-full h-full flex items-center justify-center rounded-lg border-2 border-dashed border-zinc-300 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-800/50 p-6">
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center">
+              Click Generate Daily TikTok to see prompts
+            </p>
+          </div>
+        ) : (
+          previewContent
+        )}
       </div>
+      {!showAutomateDaily && !(isAutomateNanaMode && automateDailyTemplatePrompt) && (
       <div className="flex-shrink-0">
         <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'thin' }}>
-          {canvases.map((canvas) => {
+          {showCanvasCards ? (
+          canvases.map((canvas) => {
             const [widthStr, heightStr] = (canvas.imageSize || '1080x1920').split('x').map((s) => s.trim());
             const width = parseInt(widthStr) || 1080;
             const height = parseInt(heightStr) || 1920;
@@ -188,12 +287,16 @@ export function PreviewPanel({
                 )}
               </div>
             );
-          })}
-          <button onClick={onAddCanvas} className="flex-shrink-0 w-20 aspect-[9/16] rounded-lg border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-[#3B82F6] dark:hover:border-[#3B82F6] flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-[#3B82F6] transition-colors bg-zinc-50 dark:bg-zinc-800" title="Add new canvas">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-          </button>
+          })
+          ) : null }
+          {showCanvasCards && (
+            <button onClick={onAddCanvas} className="flex-shrink-0 w-20 aspect-[9/16] rounded-lg border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-[#3B82F6] dark:hover:border-[#3B82F6] flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-[#3B82F6] transition-colors bg-zinc-50 dark:bg-zinc-800" title="Add new canvas">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+            </button>
+          )}
         </div>
       </div>
+      )}
     </div>
   );
 }

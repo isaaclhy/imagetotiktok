@@ -5,7 +5,7 @@ import JSZip from 'jszip';
 import type { CanvasData } from '@/app/lib/types';
 import { generateCardImage as generateCardImageLib } from '@/app/lib/generate-card-image';
 import { extractDominantColor } from '@/app/lib/canvas-utils';
-import { CARD_BG_FALLBACK_PALETTE } from '@/app/lib/constants';
+import { CARD_BG_FALLBACK_PALETTE, PROMPTS, FUNNY_QUESTIONS } from '@/app/lib/constants';
 import { Sidebar } from '@/app/components/Sidebar';
 import { ActionBar } from '@/app/components/ActionBar';
 import { InputsCard } from '@/app/components/InputsCard';
@@ -35,6 +35,7 @@ export default function Home() {
   const [showToast, setShowToast] = useState(false);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [automateCount, setAutomateCount] = useState('5');
+  const [automateModel, setAutomateModel] = useState<'gpt' | 'nana'>('nana');
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [postStatus, setPostStatus] = useState<'processing' | 'success' | 'failed' | null>(null);
@@ -61,6 +62,9 @@ export default function Home() {
   const [videoThumbnailUrl, setVideoThumbnailUrl] = useState<string | null>(null);
   const [videoLoading, setVideoLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [automateDailyResults, setAutomateDailyResults] = useState<string[] | null>(null);
+  const [automateDailyTemplatePrompt, setAutomateDailyTemplatePrompt] = useState<string | null>(null);
+  const [automateDailyIndex, setAutomateDailyIndex] = useState(0);
 
   const isUpdatingFromUserInput = useRef(false);
   const isSyncingFromCanvas = useRef(false);
@@ -247,6 +251,42 @@ export default function Home() {
 
   const generateCardImage = async (canvasData: CanvasData): Promise<Blob> =>
     generateCardImageLib({ canvasData, mode, videoThumbnailUrl, card2Texts: [] });
+
+  const shuffle = <T,>(arr: readonly T[]): T[] => {
+    const copy = [...arr];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  };
+
+  const handleGenerateDailyTikTok = () => {
+    const selectedPrompts = shuffle(PROMPTS).slice(0, 5);
+    const selectedQuestions = shuffle(FUNNY_QUESTIONS).slice(0, 5);
+    const results = selectedPrompts.map((p, i) => p.replace(/\{x\}/g, selectedQuestions[i]));
+    const templatePrompt = PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
+    setAutomateDailyResults(results);
+    setAutomateDailyTemplatePrompt(templatePrompt);
+    setAutomateDailyIndex(0);
+  };
+
+  const handleGetRandomTemplatePrompt = () => {
+    const prompt = PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
+    setAutomateDailyTemplatePrompt(prompt);
+  };
+
+  const handleRetryDailyItem = (index: number) => {
+    setAutomateDailyResults((prev) => {
+      if (!prev) return prev;
+      const prompt = PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
+      const question = FUNNY_QUESTIONS[Math.floor(Math.random() * FUNNY_QUESTIONS.length)];
+      const newText = prompt.replace(/\{x\}/g, question);
+      const next = [...prev];
+      next[index] = newText;
+      return next;
+    });
+  };
 
   const handleAutoGenerate = async (coverPromptId: string, categories: string[] = []) => {
     const count = Math.min(20, Math.max(1, parseInt(automateCount, 10) || 5));
@@ -519,6 +559,9 @@ export default function Home() {
       <div className="flex-1 flex flex-col min-w-0 h-screen ml-56 overflow-y-auto">
         <div className="max-w-7xl mx-auto w-full flex flex-col flex-1 min-h-0">
           <ActionBar
+            contentTab={contentTab}
+            automateModel={automateModel}
+            setAutomateModel={setAutomateModel}
             onAutoGenerate={() => setContentTab('automate')}
             onDownload={() => setShowDownloadModal(true)}
             onPost={handlePostToTikTok}
@@ -568,12 +611,15 @@ export default function Home() {
               setIsBrandedContent={setIsBrandedContent}
               musicUsageConsent={musicUsageConsent}
               setMusicUsageConsent={setMusicUsageConsent}
+              automateModel={automateModel}
               automateCount={automateCount}
               setAutomateCount={setAutomateCount}
               onAutomateDownload={handleAutoGenerate}
               isAutoGenerating={isAutoGenerating}
+              onGenerateDailyTikTok={handleGenerateDailyTikTok}
+              onGetRandomTemplatePrompt={handleGetRandomTemplatePrompt}
             />
-            {contentTab !== 'video' && (
+            {(contentTab === 'image' || (contentTab === 'automate' && automateModel === 'nana')) && (
               <PreviewPanel
                 canvases={canvases}
                 currentCanvasId={currentCanvasId}
@@ -589,6 +635,12 @@ export default function Home() {
                 videoBackgroundUrl={videoBackgroundUrl}
                 videoThumbnailUrl={videoThumbnailUrl}
                 mounted={mounted}
+                automateDailyResults={contentTab === 'automate' ? automateDailyResults : undefined}
+                automateDailyTemplatePrompt={contentTab === 'automate' ? automateDailyTemplatePrompt : undefined}
+                automateDailyIndex={automateDailyIndex}
+                onAutomateDailyIndexChange={setAutomateDailyIndex}
+                onRetryDailyItem={handleRetryDailyItem}
+                isAutomateNanaMode={contentTab === 'automate'}
               />
             )}
           </div>

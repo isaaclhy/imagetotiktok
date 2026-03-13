@@ -42,10 +42,13 @@ interface InputsCardProps {
   musicUsageConsent: boolean;
   setMusicUsageConsent: (v: boolean) => void;
   // Automate tab
+  automateModel?: 'gpt' | 'nana';
   automateCount?: string;
   setAutomateCount?: (v: string) => void;
   onAutomateDownload?: (coverPromptId: string, categories: string[]) => Promise<void>;
   isAutoGenerating?: boolean;
+  onGenerateDailyTikTok?: () => void;
+  onGetRandomTemplatePrompt?: () => void;
 }
 
 export function InputsCard(props: InputsCardProps) {
@@ -84,10 +87,13 @@ export function InputsCard(props: InputsCardProps) {
     setIsBrandedContent,
     musicUsageConsent,
     setMusicUsageConsent,
+    automateModel = 'nana',
     automateCount = '5',
     setAutomateCount = () => {},
     onAutomateDownload,
     isAutoGenerating = false,
+    onGenerateDailyTikTok,
+    onGetRandomTemplatePrompt,
   } = props;
 
   const [automateCoverStyle, setAutomateCoverStyle] = useState<CoverImageStyle>('creative');
@@ -321,6 +327,19 @@ export function InputsCard(props: InputsCardProps) {
 
           {contentTab === 'automate' && (
             <div className="space-y-4">
+              {automateModel === 'nana' ? (
+                <div className="space-y-3">
+                  <button
+                    type="button"
+                    onClick={onGetRandomTemplatePrompt}
+                    className="w-full py-2.5 px-4 rounded-lg border-2 border-zinc-300 dark:border-zinc-600 hover:border-zinc-400 dark:hover:border-zinc-500 bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-medium text-sm transition-colors flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    Get random prompt
+                  </button>
+                </div>
+              ) : (
+                <>
               <h3 className="text-base font-semibold text-zinc-800 dark:text-zinc-200">Automate</h3>
               <p className="text-sm text-zinc-600 dark:text-zinc-400">Generate card sets with random categories, AI-generated titles, and cover images.</p>
               <div>
@@ -393,6 +412,8 @@ export function InputsCard(props: InputsCardProps) {
                     'Download'
                   )}
                 </button>
+              )}
+                </>
               )}
             </div>
           )}
@@ -619,6 +640,17 @@ export function InputsCard(props: InputsCardProps) {
             ) : (
               'Download'
             )}
+          </button>
+        </div>
+      )}
+      {contentTab === 'automate' && automateModel === 'nana' && (
+        <div className="flex-shrink-0 px-4 py-3 border-t border-zinc-200 dark:border-zinc-700">
+          <button
+            type="button"
+            onClick={onGenerateDailyTikTok}
+            className="w-full py-3 px-4 rounded-lg bg-black hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+          >
+            Generate Daily TikTok
           </button>
         </div>
       )}
