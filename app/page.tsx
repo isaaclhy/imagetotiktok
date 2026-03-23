@@ -5,7 +5,7 @@ import JSZip from 'jszip';
 import type { CanvasData } from '@/app/lib/types';
 import { generateCardImage as generateCardImageLib } from '@/app/lib/generate-card-image';
 import { extractDominantColor } from '@/app/lib/canvas-utils';
-import { CARD_BG_FALLBACK_PALETTE, PROMPTS, FUNNY_QUESTIONS } from '@/app/lib/constants';
+import { CARD_BG_FALLBACK_PALETTE, PROMPTS, FUNNY_QUESTIONS, ME_OR_YOU_QUESTIONS } from '@/app/lib/constants';
 import { Sidebar } from '@/app/components/Sidebar';
 import { ActionBar } from '@/app/components/ActionBar';
 import { InputsCard } from '@/app/components/InputsCard';
@@ -63,8 +63,13 @@ export default function Home() {
   const [videoLoading, setVideoLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [automateDailyResults, setAutomateDailyResults] = useState<string[] | null>(null);
+  const [automateDailyVideoTitle, setAutomateDailyVideoTitle] = useState<string | null>(null);
+  const [automateDailyTitle, setAutomateDailyTitle] = useState<string | null>(null);
   const [automateDailyTemplatePrompt, setAutomateDailyTemplatePrompt] = useState<string | null>(null);
   const [automateDailyIndex, setAutomateDailyIndex] = useState(0);
+  const [isGeneratingDailyTikTok, setIsGeneratingDailyTikTok] = useState(false);
+  const [isRetryingTemplatePrompt, setIsRetryingTemplatePrompt] = useState(false);
+  const [automateQuestionType, setAutomateQuestionType] = useState<'funny' | 'me_or_you'>('funny');
 
   const isUpdatingFromUserInput = useRef(false);
   const isSyncingFromCanvas = useRef(false);
@@ -261,14 +266,70 @@ export default function Home() {
     return copy;
   };
 
-  const handleGenerateDailyTikTok = () => {
-    const selectedPrompts = shuffle(PROMPTS).slice(0, 5);
-    const selectedQuestions = shuffle(FUNNY_QUESTIONS).slice(0, 5);
-    const results = selectedPrompts.map((p, i) => p.replace(/\{x\}/g, selectedQuestions[i]));
-    const templatePrompt = PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
-    setAutomateDailyResults(results);
-    setAutomateDailyTemplatePrompt(templatePrompt);
-    setAutomateDailyIndex(0);
+  const handleGenerateDailyTikTok = async () => {
+    setIsGeneratingDailyTikTok(true);
+    try {
+      const questionPool = automateQuestionType === 'me_or_you' ? ME_OR_YOU_QUESTIONS : FUNNY_QUESTIONS;
+      const selectedPrompts = shuffle(PROMPTS).slice(0, 5);
+      const selectedQuestions = shuffle(questionPool).slice(0, 5);
+      const results = selectedPrompts.map((p, i) => p.replace(/\{x\}/g, selectedQuestions[i]));
+      setAutomateDailyResults(results);
+
+      const questionsForApi = selectedQuestions.join('\n');
+      try {
+        const [videoTitleRes, captionRes] = await Promise.all([
+          fetch('/api/openai/daily-video-title', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ questions: questionsForApi }),
+          }),
+          fetch('/api/openai/daily-title', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ questions: questionsForApi }),
+          }),
+        ]);
+        const videoTitleData = await videoTitleRes.json();
+        const captionData = await captionRes.json();
+        if (videoTitleRes.ok && typeof videoTitleData?.text === 'string') {
+          setAutomateDailyVideoTitle(videoTitleData.text);
+        } else {
+          setAutomateDailyVideoTitle(null);
+        }
+        if (captionRes.ok && typeof captionData?.text === 'string') {
+          setAutomateDailyTitle(captionData.text);
+        } else {
+          setAutomateDailyTitle(null);
+        }
+      } catch {
+        setAutomateDailyVideoTitle(null);
+        setAutomateDailyTitle(null);
+      }
+
+      const rawTemplatePrompt = PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
+      let templateWithXReplaced: string;
+      try {
+        const res = await fetch('/api/openai/daily-questions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        });
+        const data = await res.json();
+        if (!res.ok || typeof data?.text !== 'string') {
+          throw new Error(data?.error || 'Invalid response');
+        }
+        templateWithXReplaced = rawTemplatePrompt.replace(/\{x\}/g, data.text);
+      } catch {
+        templateWithXReplaced = rawTemplatePrompt.replace(
+          /\{x\}/g,
+          questionPool[Math.floor(Math.random() * questionPool.length)]
+        );
+      }
+      setAutomateDailyTemplatePrompt(templateWithXReplaced);
+      setAutomateDailyIndex(0);
+    } finally {
+      setIsGeneratingDailyTikTok(false);
+    }
   };
 
   const handleGetRandomTemplatePrompt = () => {
@@ -276,11 +337,41 @@ export default function Home() {
     setAutomateDailyTemplatePrompt(prompt);
   };
 
+  const handleRetryTemplatePrompt = async () => {
+    setIsRetryingTemplatePrompt(true);
+    try {
+      const questionPool = automateQuestionType === 'me_or_you' ? ME_OR_YOU_QUESTIONS : FUNNY_QUESTIONS;
+      const rawTemplatePrompt = PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
+      let templateWithXReplaced: string;
+      try {
+        const res = await fetch('/api/openai/daily-questions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        });
+        const data = await res.json();
+        if (!res.ok || typeof data?.text !== 'string') {
+          throw new Error(data?.error || 'Invalid response');
+        }
+        templateWithXReplaced = rawTemplatePrompt.replace(/\{x\}/g, data.text);
+      } catch {
+        templateWithXReplaced = rawTemplatePrompt.replace(
+          /\{x\}/g,
+          questionPool[Math.floor(Math.random() * questionPool.length)]
+        );
+      }
+      setAutomateDailyTemplatePrompt(templateWithXReplaced);
+    } finally {
+      setIsRetryingTemplatePrompt(false);
+    }
+  };
+
   const handleRetryDailyItem = (index: number) => {
     setAutomateDailyResults((prev) => {
       if (!prev) return prev;
+      const questionPool = automateQuestionType === 'me_or_you' ? ME_OR_YOU_QUESTIONS : FUNNY_QUESTIONS;
       const prompt = PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
-      const question = FUNNY_QUESTIONS[Math.floor(Math.random() * FUNNY_QUESTIONS.length)];
+      const question = questionPool[Math.floor(Math.random() * questionPool.length)];
       const newText = prompt.replace(/\{x\}/g, question);
       const next = [...prev];
       next[index] = newText;
@@ -617,7 +708,9 @@ export default function Home() {
               onAutomateDownload={handleAutoGenerate}
               isAutoGenerating={isAutoGenerating}
               onGenerateDailyTikTok={handleGenerateDailyTikTok}
-              onGetRandomTemplatePrompt={handleGetRandomTemplatePrompt}
+              isGeneratingDailyTikTok={isGeneratingDailyTikTok}
+              automateQuestionType={automateQuestionType}
+              setAutomateQuestionType={setAutomateQuestionType}
             />
             {(contentTab === 'image' || (contentTab === 'automate' && automateModel === 'nana')) && (
               <PreviewPanel
@@ -636,10 +729,14 @@ export default function Home() {
                 videoThumbnailUrl={videoThumbnailUrl}
                 mounted={mounted}
                 automateDailyResults={contentTab === 'automate' ? automateDailyResults : undefined}
+                automateDailyVideoTitle={contentTab === 'automate' ? automateDailyVideoTitle : undefined}
+                automateDailyTitle={contentTab === 'automate' ? automateDailyTitle : undefined}
                 automateDailyTemplatePrompt={contentTab === 'automate' ? automateDailyTemplatePrompt : undefined}
                 automateDailyIndex={automateDailyIndex}
                 onAutomateDailyIndexChange={setAutomateDailyIndex}
                 onRetryDailyItem={handleRetryDailyItem}
+                onRetryTemplatePrompt={handleRetryTemplatePrompt}
+                isRetryingTemplatePrompt={isRetryingTemplatePrompt}
                 isAutomateNanaMode={contentTab === 'automate'}
               />
             )}

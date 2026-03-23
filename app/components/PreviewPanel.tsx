@@ -23,12 +23,19 @@ interface PreviewPanelProps {
   mounted: boolean;
   /** When on automate + nana, show these generated prompt results one by one */
   automateDailyResults?: string[] | null;
+  /** API-generated video title, shown at top */
+  automateDailyVideoTitle?: string | null;
+  /** API-generated caption, shown above the template prompt */
+  automateDailyTitle?: string | null;
   /** Random prompt template with {x} intact, shown above the 5 results */
   automateDailyTemplatePrompt?: string | null;
   automateDailyIndex?: number;
   onAutomateDailyIndexChange?: (i: number) => void;
   /** Retry/replace a single slot with new prompt + question */
   onRetryDailyItem?: (index: number) => void;
+  /** Retry template prompt - new prompt + new API text for {x} */
+  onRetryTemplatePrompt?: () => void | Promise<void>;
+  isRetryingTemplatePrompt?: boolean;
   /** When true, hide canvas cards in the preview strip */
   isAutomateNanaMode?: boolean;
 }
@@ -49,10 +56,14 @@ export function PreviewPanel({
   videoThumbnailUrl,
   mounted,
   automateDailyResults,
+  automateDailyVideoTitle,
+  automateDailyTitle,
   automateDailyTemplatePrompt,
   automateDailyIndex = 0,
   onAutomateDailyIndexChange,
   onRetryDailyItem,
+  onRetryTemplatePrompt,
+  isRetryingTemplatePrompt = false,
   isAutomateNanaMode = false,
 }: PreviewPanelProps) {
   const showAutomateDaily = automateDailyResults && automateDailyResults.length > 0;
@@ -147,8 +158,54 @@ export function PreviewPanel({
     <div className="flex flex-col p-4 bg-white dark:bg-zinc-900 rounded-2xl shadow-lg h-full max-h-screen overflow-hidden">
       <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3 flex-shrink-0">Preview</label>
       <div className="flex-1 flex items-center justify-center min-h-0 mb-3 p-2 w-full overflow-hidden" style={{ position: 'relative', contain: 'layout style paint' }}>
-        {((showAutomateDaily && automateDailyResults) || (isAutomateNanaMode && automateDailyTemplatePrompt)) ? (
+        {((showAutomateDaily && automateDailyResults) || (isAutomateNanaMode && (automateDailyVideoTitle || automateDailyTitle || automateDailyTemplatePrompt))) ? (
           <div className="w-full h-full flex flex-col gap-3 overflow-auto pr-1">
+            {automateDailyVideoTitle && (
+              <div className="flex gap-2 items-start p-3 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-800/80">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">Title</p>
+                  <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 leading-relaxed" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
+                    {automateDailyVideoTitle}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleCopy(automateDailyVideoTitle, -3)}
+                  className="shrink-0 p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
+                  title="Copy"
+                  aria-label="Copy"
+                >
+                  {copiedIndex === -3 ? (
+                    <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                  )}
+                </button>
+              </div>
+            )}
+            {automateDailyTitle && (
+              <div className="flex gap-2 items-start p-3 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-800/80">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">Caption</p>
+                  <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 leading-relaxed" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
+                    {automateDailyTitle}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleCopy(automateDailyTitle, -2)}
+                  className="shrink-0 p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
+                  title="Copy"
+                  aria-label="Copy"
+                >
+                  {copiedIndex === -2 ? (
+                    <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                  )}
+                </button>
+              </div>
+            )}
             {automateDailyTemplatePrompt && (
               <div className="flex gap-2 items-start p-3 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-zinc-100 dark:bg-zinc-800">
                 <div className="flex-1 min-w-0">
@@ -157,19 +214,35 @@ export function PreviewPanel({
                     {automateDailyTemplatePrompt}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleCopy(automateDailyTemplatePrompt, -1)}
-                  className="shrink-0 p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
-                  title="Copy"
-                  aria-label="Copy"
-                >
-                  {copiedIndex === -1 ? (
-                    <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  ) : (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                  )}
-                </button>
+                <div className="shrink-0 flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => onRetryTemplatePrompt?.()}
+                    disabled={isRetryingTemplatePrompt}
+                    className="p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Retry with new prompt and title"
+                    aria-label="Retry"
+                  >
+                    {isRetryingTemplatePrompt ? (
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(automateDailyTemplatePrompt, -1)}
+                    className="p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
+                    title="Copy"
+                    aria-label="Copy"
+                  >
+                    {copiedIndex === -1 ? (
+                      <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    )}
+                  </button>
+                </div>
               </div>
             )}
             {automateDailyResults?.map((text, i) => (
@@ -217,7 +290,7 @@ export function PreviewPanel({
           previewContent
         )}
       </div>
-      {!showAutomateDaily && !(isAutomateNanaMode && automateDailyTemplatePrompt) && (
+      {!showAutomateDaily && !(isAutomateNanaMode && (automateDailyVideoTitle || automateDailyTitle || automateDailyTemplatePrompt)) && (
       <div className="flex-shrink-0">
         <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'thin' }}>
           {showCanvasCards ? (

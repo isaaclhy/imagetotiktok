@@ -47,8 +47,10 @@ interface InputsCardProps {
   setAutomateCount?: (v: string) => void;
   onAutomateDownload?: (coverPromptId: string, categories: string[]) => Promise<void>;
   isAutoGenerating?: boolean;
-  onGenerateDailyTikTok?: () => void;
-  onGetRandomTemplatePrompt?: () => void;
+  onGenerateDailyTikTok?: () => void | Promise<void>;
+  isGeneratingDailyTikTok?: boolean;
+  automateQuestionType?: 'funny' | 'me_or_you';
+  setAutomateQuestionType?: (v: 'funny' | 'me_or_you') => void;
 }
 
 export function InputsCard(props: InputsCardProps) {
@@ -93,7 +95,9 @@ export function InputsCard(props: InputsCardProps) {
     onAutomateDownload,
     isAutoGenerating = false,
     onGenerateDailyTikTok,
-    onGetRandomTemplatePrompt,
+    isGeneratingDailyTikTok = false,
+    automateQuestionType = 'funny',
+    setAutomateQuestionType = () => {},
   } = props;
 
   const [automateCoverStyle, setAutomateCoverStyle] = useState<CoverImageStyle>('creative');
@@ -328,15 +332,16 @@ export function InputsCard(props: InputsCardProps) {
           {contentTab === 'automate' && (
             <div className="space-y-4">
               {automateModel === 'nana' ? (
-                <div className="space-y-3">
-                  <button
-                    type="button"
-                    onClick={onGetRandomTemplatePrompt}
-                    className="w-full py-2.5 px-4 rounded-lg border-2 border-zinc-300 dark:border-zinc-600 hover:border-zinc-400 dark:hover:border-zinc-500 bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-medium text-sm transition-colors flex items-center justify-center gap-2"
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Question type</label>
+                  <select
+                    value={automateQuestionType}
+                    onChange={(e) => setAutomateQuestionType(e.target.value as 'funny' | 'me_or_you')}
+                    className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] text-sm"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                    Get random prompt
-                  </button>
+                    <option value="funny">Funny</option>
+                    <option value="me_or_you">Me or you</option>
+                  </select>
                 </div>
               ) : (
                 <>
@@ -648,9 +653,20 @@ export function InputsCard(props: InputsCardProps) {
           <button
             type="button"
             onClick={onGenerateDailyTikTok}
-            className="w-full py-3 px-4 rounded-lg bg-black hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+            disabled={isGeneratingDailyTikTok}
+            className="w-full py-3 px-4 rounded-lg bg-black hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Generate Daily TikTok
+            {isGeneratingDailyTikTok ? (
+              <>
+                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Generating...
+              </>
+            ) : (
+              'Generate Daily TikTok'
+            )}
           </button>
         </div>
       )}
