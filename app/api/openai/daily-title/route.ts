@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
 const PROMPT_ID = 'pmpt_69b5f2ad999c81949f29e044248eafe90dd231b3e36b0ca0';
-const PROMPT_VERSION = '2';
 
 /**
  * POST /api/openai/daily-title

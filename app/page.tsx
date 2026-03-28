@@ -63,6 +63,9 @@ export default function Home() {
   const [videoLoading, setVideoLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [automateDailyResults, setAutomateDailyResults] = useState<string[] | null>(null);
+  const [automateDailyRowPrompts, setAutomateDailyRowPrompts] = useState<string[] | null>(null);
+  const [automateDailyRowQuestions, setAutomateDailyRowQuestions] = useState<string[] | null>(null);
+  const [automateDailyTemplatePromptRaw, setAutomateDailyTemplatePromptRaw] = useState<string | null>(null);
   const [automateDailyVideoTitle, setAutomateDailyVideoTitle] = useState<string | null>(null);
   const [automateDailyTitle, setAutomateDailyTitle] = useState<string | null>(null);
   const [automateDailyTemplatePrompt, setAutomateDailyTemplatePrompt] = useState<string | null>(null);
@@ -266,14 +269,34 @@ export default function Home() {
     return copy;
   };
 
+  const pickRandom = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)]!;
+
   const handleGenerateDailyTikTok = async () => {
     setIsGeneratingDailyTikTok(true);
     try {
       const questionPool = automateQuestionType === 'me_or_you' ? ME_OR_YOU_QUESTIONS : FUNNY_QUESTIONS;
-      const selectedPrompts = shuffle(PROMPTS).slice(0, 5);
-      const selectedQuestions = shuffle(questionPool).slice(0, 5);
+      const shuffledP = shuffle(PROMPTS);
+      const selectedPrompts = shuffledP.slice(0, 5);
+      const rawTemplatePrompt =
+        shuffledP.length >= 6
+          ? shuffledP[5]!
+          : (() => {
+              const remaining = PROMPTS.filter((p) => !selectedPrompts.includes(p));
+              return remaining.length > 0 ? pickRandom(remaining) : pickRandom(PROMPTS);
+            })();
+
+      const qShuffled = shuffle(questionPool);
+      const selectedQuestions = qShuffled.slice(0, 5);
+      const usedQuestionSet = new Set(selectedQuestions);
+      const templateFallbackCandidates = questionPool.filter((q) => !usedQuestionSet.has(q));
+      const templateFallbackQuestion =
+        templateFallbackCandidates.length > 0 ? pickRandom(templateFallbackCandidates) : pickRandom(questionPool);
+
       const results = selectedPrompts.map((p, i) => p.replace(/\{x\}/g, selectedQuestions[i]));
       setAutomateDailyResults(results);
+      setAutomateDailyRowPrompts(selectedPrompts);
+      setAutomateDailyRowQuestions(selectedQuestions);
+      setAutomateDailyTemplatePromptRaw(rawTemplatePrompt);
 
       const questionsForApi = selectedQuestions.join('\n');
       try {
@@ -306,7 +329,6 @@ export default function Home() {
         setAutomateDailyTitle(null);
       }
 
-      const rawTemplatePrompt = PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
       let templateWithXReplaced: string;
       try {
         const res = await fetch('/api/openai/daily-questions', {
@@ -320,10 +342,7 @@ export default function Home() {
         }
         templateWithXReplaced = rawTemplatePrompt.replace(/\{x\}/g, data.text);
       } catch {
-        templateWithXReplaced = rawTemplatePrompt.replace(
-          /\{x\}/g,
-          questionPool[Math.floor(Math.random() * questionPool.length)]
-        );
+        templateWithXReplaced = rawTemplatePrompt.replace(/\{x\}/g, templateFallbackQuestion);
       }
       setAutomateDailyTemplatePrompt(templateWithXReplaced);
       setAutomateDailyIndex(0);
@@ -333,7 +352,11 @@ export default function Home() {
   };
 
   const handleGetRandomTemplatePrompt = () => {
-    const prompt = PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
+    const used = new Set<string>(automateDailyRowPrompts ?? []);
+    if (automateDailyTemplatePromptRaw) used.add(automateDailyTemplatePromptRaw);
+    const candidates = PROMPTS.filter((p) => !used.has(p));
+    const prompt = candidates.length > 0 ? pickRandom(candidates) : pickRandom(PROMPTS);
+    setAutomateDailyTemplatePromptRaw(prompt);
     setAutomateDailyTemplatePrompt(prompt);
   };
 
@@ -341,7 +364,18 @@ export default function Home() {
     setIsRetryingTemplatePrompt(true);
     try {
       const questionPool = automateQuestionType === 'me_or_you' ? ME_OR_YOU_QUESTIONS : FUNNY_QUESTIONS;
-      const rawTemplatePrompt = PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
+      const usedPrompts = new Set<string>(automateDailyRowPrompts ?? []);
+      if (automateDailyTemplatePromptRaw) usedPrompts.add(automateDailyTemplatePromptRaw);
+      const promptCandidates = PROMPTS.filter((p) => !usedPrompts.has(p));
+      const rawTemplatePrompt =
+        promptCandidates.length > 0 ? pickRandom(promptCandidates) : pickRandom(PROMPTS);
+      setAutomateDailyTemplatePromptRaw(rawTemplatePrompt);
+
+      const usedQuestions = new Set<string>(automateDailyRowQuestions ?? []);
+      const fallbackCandidates = questionPool.filter((q) => !usedQuestions.has(q));
+      const fallbackQuestion =
+        fallbackCandidates.length > 0 ? pickRandom(fallbackCandidates) : pickRandom(questionPool);
+
       let templateWithXReplaced: string;
       try {
         const res = await fetch('/api/openai/daily-questions', {
@@ -355,10 +389,7 @@ export default function Home() {
         }
         templateWithXReplaced = rawTemplatePrompt.replace(/\{x\}/g, data.text);
       } catch {
-        templateWithXReplaced = rawTemplatePrompt.replace(
-          /\{x\}/g,
-          questionPool[Math.floor(Math.random() * questionPool.length)]
-        );
+        templateWithXReplaced = rawTemplatePrompt.replace(/\{x\}/g, fallbackQuestion);
       }
       setAutomateDailyTemplatePrompt(templateWithXReplaced);
     } finally {
@@ -367,14 +398,97 @@ export default function Home() {
   };
 
   const handleRetryDailyItem = (index: number) => {
+    const questionPool = automateQuestionType === 'me_or_you' ? ME_OR_YOU_QUESTIONS : FUNNY_QUESTIONS;
+    if (
+      !automateDailyRowPrompts ||
+      !automateDailyRowQuestions ||
+      automateDailyRowPrompts.length !== 5 ||
+      automateDailyRowQuestions.length !== 5
+    ) {
+      setAutomateDailyResults((prev) => {
+        if (!prev) return prev;
+        const prompt = pickRandom(PROMPTS);
+        const question = pickRandom(questionPool);
+        const next = [...prev];
+        next[index] = prompt.replace(/\{x\}/g, question);
+        return next;
+      });
+      return;
+    }
+
+    const usedPrompts = new Set(automateDailyRowPrompts.filter((_, i) => i !== index));
+    if (automateDailyTemplatePromptRaw) usedPrompts.add(automateDailyTemplatePromptRaw);
+    const usedQuestions = new Set(automateDailyRowQuestions.filter((_, i) => i !== index));
+
+    const promptCandidates = PROMPTS.filter((p) => !usedPrompts.has(p));
+    const questionCandidates = questionPool.filter((q) => !usedQuestions.has(q));
+    const prompt = promptCandidates.length > 0 ? pickRandom(promptCandidates) : pickRandom(PROMPTS);
+    const question = questionCandidates.length > 0 ? pickRandom(questionCandidates) : pickRandom(questionPool);
+
+    const nextPrompts = [...automateDailyRowPrompts];
+    const nextQuestions = [...automateDailyRowQuestions];
+    nextPrompts[index] = prompt;
+    nextQuestions[index] = question;
+    setAutomateDailyRowPrompts(nextPrompts);
+    setAutomateDailyRowQuestions(nextQuestions);
     setAutomateDailyResults((prev) => {
       if (!prev) return prev;
-      const questionPool = automateQuestionType === 'me_or_you' ? ME_OR_YOU_QUESTIONS : FUNNY_QUESTIONS;
-      const prompt = PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
-      const question = questionPool[Math.floor(Math.random() * questionPool.length)];
-      const newText = prompt.replace(/\{x\}/g, question);
       const next = [...prev];
-      next[index] = newText;
+      next[index] = prompt.replace(/\{x\}/g, question);
+      return next;
+    });
+  };
+
+  const handleRetryDailyPromptOnly = (index: number) => {
+    if (
+      !automateDailyRowPrompts ||
+      !automateDailyRowQuestions ||
+      automateDailyRowPrompts.length !== 5 ||
+      automateDailyRowQuestions.length !== 5
+    ) {
+      return;
+    }
+    const currentQuestion = automateDailyRowQuestions[index]!;
+    const usedPrompts = new Set(automateDailyRowPrompts.filter((_, i) => i !== index));
+    usedPrompts.add(automateDailyRowPrompts[index]!);
+    if (automateDailyTemplatePromptRaw) usedPrompts.add(automateDailyTemplatePromptRaw);
+    const promptCandidates = PROMPTS.filter((p) => !usedPrompts.has(p));
+    const prompt = promptCandidates.length > 0 ? pickRandom(promptCandidates) : pickRandom(PROMPTS);
+
+    const nextPrompts = [...automateDailyRowPrompts];
+    nextPrompts[index] = prompt;
+    setAutomateDailyRowPrompts(nextPrompts);
+    setAutomateDailyResults((prev) => {
+      if (!prev) return prev;
+      const next = [...prev];
+      next[index] = prompt.replace(/\{x\}/g, currentQuestion);
+      return next;
+    });
+  };
+
+  const handleRetryDailyQuestionOnly = (index: number) => {
+    const questionPool = automateQuestionType === 'me_or_you' ? ME_OR_YOU_QUESTIONS : FUNNY_QUESTIONS;
+    if (
+      !automateDailyRowPrompts ||
+      !automateDailyRowQuestions ||
+      automateDailyRowPrompts.length !== 5 ||
+      automateDailyRowQuestions.length !== 5
+    ) {
+      return;
+    }
+    const currentPrompt = automateDailyRowPrompts[index]!;
+    const usedQuestions = new Set(automateDailyRowQuestions.filter((_, i) => i !== index));
+    usedQuestions.add(automateDailyRowQuestions[index]!);
+    const questionCandidates = questionPool.filter((q) => !usedQuestions.has(q));
+    const question = questionCandidates.length > 0 ? pickRandom(questionCandidates) : pickRandom(questionPool);
+
+    const nextQuestions = [...automateDailyRowQuestions];
+    nextQuestions[index] = question;
+    setAutomateDailyRowQuestions(nextQuestions);
+    setAutomateDailyResults((prev) => {
+      if (!prev) return prev;
+      const next = [...prev];
+      next[index] = currentPrompt.replace(/\{x\}/g, question);
       return next;
     });
   };
@@ -735,6 +849,8 @@ export default function Home() {
                 automateDailyIndex={automateDailyIndex}
                 onAutomateDailyIndexChange={setAutomateDailyIndex}
                 onRetryDailyItem={handleRetryDailyItem}
+                onRetryDailyPromptOnly={handleRetryDailyPromptOnly}
+                onRetryDailyQuestionOnly={handleRetryDailyQuestionOnly}
                 onRetryTemplatePrompt={handleRetryTemplatePrompt}
                 isRetryingTemplatePrompt={isRetryingTemplatePrompt}
                 isAutomateNanaMode={contentTab === 'automate'}

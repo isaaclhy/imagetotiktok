@@ -33,6 +33,10 @@ interface PreviewPanelProps {
   onAutomateDailyIndexChange?: (i: number) => void;
   /** Retry/replace a single slot with new prompt + question */
   onRetryDailyItem?: (index: number) => void;
+  /** Replace only the image prompt for a slot (keeps the question text) */
+  onRetryDailyPromptOnly?: (index: number) => void;
+  /** Replace only the question for a slot (keeps the image prompt) */
+  onRetryDailyQuestionOnly?: (index: number) => void;
   /** Retry template prompt - new prompt + new API text for {x} */
   onRetryTemplatePrompt?: () => void | Promise<void>;
   isRetryingTemplatePrompt?: boolean;
@@ -62,6 +66,8 @@ export function PreviewPanel({
   automateDailyIndex = 0,
   onAutomateDailyIndexChange,
   onRetryDailyItem,
+  onRetryDailyPromptOnly,
+  onRetryDailyQuestionOnly,
   onRetryTemplatePrompt,
   isRetryingTemplatePrompt = false,
   isAutomateNanaMode = false,
@@ -253,15 +259,15 @@ export function PreviewPanel({
                 <p className="flex-1 text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed min-w-0" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
                   {text}
                 </p>
-                <div className="shrink-0 flex gap-1">
+                <div className="shrink-0 flex flex-col gap-1">
                   <button
                     type="button"
                     onClick={() => onRetryDailyItem?.(i)}
                     className="p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
-                    title="Retry with new prompt and question"
-                    aria-label="Retry"
+                    title="Retry: new prompt and question"
+                    aria-label="Retry: new prompt and question"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                   </button>
                   <button
                     type="button"
@@ -271,10 +277,28 @@ export function PreviewPanel({
                     aria-label="Copy"
                   >
                     {copiedIndex === i ? (
-                      <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                      <svg className="w-4 h-4 mx-auto text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                     ) : (
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                      <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                     )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onRetryDailyPromptOnly?.(i)}
+                    className="px-2 py-1.5 rounded-md text-xs font-medium bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-200 transition-colors whitespace-nowrap"
+                    title="New image prompt only (same question)"
+                    aria-label="New prompt only"
+                  >
+                    Prompt
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onRetryDailyQuestionOnly?.(i)}
+                    className="px-2 py-1.5 rounded-md text-xs font-medium bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-200 transition-colors whitespace-nowrap"
+                    title="New question only (same image prompt)"
+                    aria-label="New question only"
+                  >
+                    Question
                   </button>
                 </div>
               </div>

@@ -70,6 +70,21 @@ export const PROMPTS = [
   'First person POV, you\'re doing a white tile drawing lesson. There are some stickers on it, there should be a text saying "{x}" painted on it with brush. The text should not be black. The tile should be facing you, the edges of the tile should be parallel to the frame',
   'First person POV, you\'re holding a cute polaroid image and on it has "{x}" written on it with marker and a heart. Focus on the text',
   'First person POV, with girlfriend on the beach (she\'s not in the picture), holding a cute polaroid, on the polaroid should be a couple and there\'s a text "{x}" written in marker with a heart',
+  'First person POV, in a huge college lecture hall full of students, there\'s a professor in the center stage pointing at the lecture slides in presentation mode. Inside the slide the background should be red, it should say "{x}", make it realistic. Zoom into the slides where the text is since it should be the main focus',
+  'Walking in a college town along frat row, on one of the flags it says "{x}". The flag should be red. It should be a very snowy day, the flag should occupy most of the screen space and the text should be the main focus',
+  'On a highway bridge, there\'s a clean white cloth-like material poster hanging down with the text "{x}" spray painted in red, with a heart spray painted at the bottom as well. The poster should occupy the center 70% of the image and is the main focus',
+  'Looking out the window on a bright day, it is very snowy with snow covering the ground. In the snow someone carved out the words "{x}" in the middle of the road with cars on both sides. The carved text should occupy about 60% width of the screen',
+  'On a snowy street in New York City, there\'s a restaurant red metal sign in a heart shape, on it there\'s text "{x}" painted on it in white, it should be in the center of the image. Must be realistic',
+  'Close up of the back of a car\'s windscreen covered in snow, however text carved out visibly so the carved-away part has almost no snow on it. The text says "{x}"',
+  'In a bright NYC coffee shop, a female hand holding a condom wrapper with the text "{x}" on it, a very cute dog should be on the chair looking at you. Make it very realistic',
+  'At home on a snowy day, pancakes on the side, there\'s a white mug in the center with a tea bag in it, you\'re holding the tea bag label which is red in color with text on it in white: "{x}". Make it realistic. Pull the teabag closer to the camera',
+  'You\'re on a bus in NYC, it\'s a sunny day, on the back of the seat in front of you there\'s a sticker with black background and white text, the text says "{x}". The sticker is a bit worn off',
+  'You\'re opening a fortune cookie in a restaurant and the paper is still a bit in the cookie, the message on the paper says "{x}". Make it realistic, the message should be in the center of the image. The message should be at least 60% of the screen width',
+  'You\'re inside a London tube station platform, across the tracks there\'s this huge ad with the message "{x}". Must be realistic. The ad should be facing straight',
+  'When you are exiting the train station on an escalator, you see a white sticker stuck on the back of one of the stairs, it says "{x}". Make it realistic',
+  'First person POV, looking out the airplane window, on the window the text "{x}" is written with marker. The text should be clearly visible and not obstructed by any part of the plane outside',
+  'First person POV, you\'re sitting on a plane. Looking in front of you, on the pull-out table in front of you, it has the text "{x}", the text should be clearly visible and at eye level. The text should be written with a marker',
+  'First person POV, you\'re at a fun fair holding a huge cotton candy, on it has a card and on the card has the text "{x}". Make the text the focus and visible and the card should be in the cotton candy',
 ] as const;
 
 /** Funny relationship questions for games. */
