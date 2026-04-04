@@ -69,10 +69,25 @@ export default function Home() {
   const [automateDailyVideoTitle, setAutomateDailyVideoTitle] = useState<string | null>(null);
   const [automateDailyTitle, setAutomateDailyTitle] = useState<string | null>(null);
   const [automateDailyTemplatePrompt, setAutomateDailyTemplatePrompt] = useState<string | null>(null);
+  /** Text currently filling {x} in the template prompt (for prompt-only / question-only edits) */
+  const [automateDailyTemplateReplacementText, setAutomateDailyTemplateReplacementText] = useState<string | null>(
+    null
+  );
   const [automateDailyIndex, setAutomateDailyIndex] = useState(0);
   const [isGeneratingDailyTikTok, setIsGeneratingDailyTikTok] = useState(false);
   const [isRetryingTemplatePrompt, setIsRetryingTemplatePrompt] = useState(false);
+  const [isRetryingTemplateQuestion, setIsRetryingTemplateQuestion] = useState(false);
+  const [isRetryingDailyVideoTitle, setIsRetryingDailyVideoTitle] = useState(false);
+  const [isRetryingDailyCaption, setIsRetryingDailyCaption] = useState(false);
   const [automateQuestionType, setAutomateQuestionType] = useState<'funny' | 'me_or_you'>('funny');
+  const [dailyGenIncludeQuestions, setDailyGenIncludeQuestions] = useState(true);
+  const [dailyGenIncludeTitle, setDailyGenIncludeTitle] = useState(true);
+  const [dailyGenIncludeCaption, setDailyGenIncludeCaption] = useState(true);
+  /** Template hook prompt (image prompt with {x}); labeled “cover image” in the UI */
+  const [dailyGenIncludeCoverImage, setDailyGenIncludeCoverImage] = useState(true);
+
+  /** Prompt strings from the previous Daily TikTok run — excluded next time so back-to-back runs rarely repeat */
+  const lastDailyPromptRunRef = useRef<Set<string>>(new Set());
 
   const isUpdatingFromUserInput = useRef(false);
   const isSyncingFromCanvas = useRef(false);
@@ -260,94 +275,190 @@ export default function Home() {
   const generateCardImage = async (canvasData: CanvasData): Promise<Blob> =>
     generateCardImageLib({ canvasData, mode, videoThumbnailUrl, card2Texts: [] });
 
+  const randomIndex = (maxExclusive: number): number => {
+    if (maxExclusive <= 0) return 0;
+    if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+      const rand = new Uint32Array(1);
+      crypto.getRandomValues(rand);
+      return rand[0]! % maxExclusive;
+    }
+    return Math.floor(Math.random() * maxExclusive);
+  };
+
   const shuffle = <T,>(arr: readonly T[]): T[] => {
     const copy = [...arr];
     for (let i = copy.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = randomIndex(i + 1);
       [copy[i], copy[j]] = [copy[j], copy[i]];
     }
     return copy;
   };
 
-  const pickRandom = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)]!;
+  const pickRandom = <T,>(arr: readonly T[]): T => arr[randomIndex(arr.length)]!;
 
   const handleGenerateDailyTikTok = async () => {
     setIsGeneratingDailyTikTok(true);
     try {
       const questionPool = automateQuestionType === 'me_or_you' ? ME_OR_YOU_QUESTIONS : FUNNY_QUESTIONS;
-      const shuffledP = shuffle(PROMPTS);
-      const selectedPrompts = shuffledP.slice(0, 5);
-      const rawTemplatePrompt =
-        shuffledP.length >= 6
-          ? shuffledP[5]!
-          : (() => {
-              const remaining = PROMPTS.filter((p) => !selectedPrompts.includes(p));
-              return remaining.length > 0 ? pickRandom(remaining) : pickRandom(PROMPTS);
-            })();
+      let rawTemplatePromptForCover: string | null = null;
+      let templateFallbackQuestion = pickRandom(questionPool);
+      let selectedQuestionsThisRun: string[] | null = null;
 
-      const qShuffled = shuffle(questionPool);
-      const selectedQuestions = qShuffled.slice(0, 5);
-      const usedQuestionSet = new Set(selectedQuestions);
-      const templateFallbackCandidates = questionPool.filter((q) => !usedQuestionSet.has(q));
-      const templateFallbackQuestion =
-        templateFallbackCandidates.length > 0 ? pickRandom(templateFallbackCandidates) : pickRandom(questionPool);
+      if (dailyGenIncludeQuestions) {
+        const needPrompts = dailyGenIncludeCoverImage ? 6 : 5;
+        const excluded = lastDailyPromptRunRef.current;
+        let promptPool = PROMPTS.filter((p) => !excluded.has(p));
+        if (promptPool.length < needPrompts) {
+          promptPool = [...PROMPTS];
+        }
+        const shuffledP = shuffle(promptPool);
+        const selectedPrompts = shuffledP.slice(0, 5);
+        rawTemplatePromptForCover = dailyGenIncludeCoverImage
+          ? shuffledP.length >= 6
+            ? shuffledP[5]!
+            : (() => {
+                const remaining = promptPool.filter((p) => !selectedPrompts.includes(p));
+                return remaining.length > 0 ? pickRandom(remaining) : pickRandom(PROMPTS);
+              })()
+          : null;
 
-      const results = selectedPrompts.map((p, i) => p.replace(/\{x\}/g, selectedQuestions[i]));
-      setAutomateDailyResults(results);
-      setAutomateDailyRowPrompts(selectedPrompts);
-      setAutomateDailyRowQuestions(selectedQuestions);
-      setAutomateDailyTemplatePromptRaw(rawTemplatePrompt);
+        const refSet = new Set<string>(selectedPrompts);
+        if (rawTemplatePromptForCover) refSet.add(rawTemplatePromptForCover);
+        lastDailyPromptRunRef.current = refSet;
 
-      const questionsForApi = selectedQuestions.join('\n');
-      try {
-        const [videoTitleRes, captionRes] = await Promise.all([
-          fetch('/api/openai/daily-video-title', {
+        const qShuffled = shuffle(questionPool);
+        const selectedQuestions = qShuffled.slice(0, 5);
+        selectedQuestionsThisRun = selectedQuestions;
+        const usedQuestionSet = new Set(selectedQuestions);
+        const templateFallbackCandidates = questionPool.filter((q) => !usedQuestionSet.has(q));
+        templateFallbackQuestion =
+          templateFallbackCandidates.length > 0 ? pickRandom(templateFallbackCandidates) : pickRandom(questionPool);
+
+        const results = selectedPrompts.map((p, i) => p.replace(/\{x\}/g, selectedQuestions[i]!));
+        setAutomateDailyResults(results);
+        setAutomateDailyRowPrompts(selectedPrompts);
+        setAutomateDailyRowQuestions(selectedQuestions);
+        if (rawTemplatePromptForCover) {
+          setAutomateDailyTemplatePromptRaw(rawTemplatePromptForCover);
+        }
+      } else if (dailyGenIncludeCoverImage) {
+        const excluded = lastDailyPromptRunRef.current;
+        let pool = PROMPTS.filter((p) => !excluded.has(p));
+        if (pool.length < 1) pool = [...PROMPTS];
+        rawTemplatePromptForCover = pickRandom(shuffle(pool));
+        setAutomateDailyTemplatePromptRaw(rawTemplatePromptForCover);
+        lastDailyPromptRunRef.current = new Set([rawTemplatePromptForCover]);
+        templateFallbackQuestion = pickRandom(questionPool);
+      }
+
+      const questionsForApi =
+        selectedQuestionsThisRun && selectedQuestionsThisRun.length === 5
+          ? selectedQuestionsThisRun.join('\n')
+          : automateDailyRowQuestions && automateDailyRowQuestions.length === 5
+            ? automateDailyRowQuestions.join('\n')
+            : '';
+
+      if (dailyGenIncludeTitle && questionsForApi) {
+        try {
+          const videoTitleRes = await fetch('/api/openai/daily-video-title', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ questions: questionsForApi }),
-          }),
-          fetch('/api/openai/daily-title', {
+          });
+          const videoTitleData = await videoTitleRes.json();
+          if (videoTitleRes.ok && typeof videoTitleData?.text === 'string') {
+            setAutomateDailyVideoTitle(videoTitleData.text.trim());
+          }
+        } catch {
+          // keep previous title
+        }
+      }
+
+      if (dailyGenIncludeCaption && questionsForApi) {
+        try {
+          const captionRes = await fetch('/api/openai/daily-title', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ questions: questionsForApi }),
-          }),
-        ]);
-        const videoTitleData = await videoTitleRes.json();
-        const captionData = await captionRes.json();
-        if (videoTitleRes.ok && typeof videoTitleData?.text === 'string') {
-          setAutomateDailyVideoTitle(videoTitleData.text);
-        } else {
-          setAutomateDailyVideoTitle(null);
+          });
+          const captionData = await captionRes.json();
+          if (captionRes.ok && typeof captionData?.text === 'string') {
+            setAutomateDailyTitle(captionData.text.trim());
+          }
+        } catch {
+          // keep previous caption
         }
-        if (captionRes.ok && typeof captionData?.text === 'string') {
-          setAutomateDailyTitle(captionData.text);
-        } else {
-          setAutomateDailyTitle(null);
-        }
-      } catch {
-        setAutomateDailyVideoTitle(null);
-        setAutomateDailyTitle(null);
       }
 
-      let templateWithXReplaced: string;
-      try {
-        const res = await fetch('/api/openai/daily-questions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({}),
-        });
-        const data = await res.json();
-        if (!res.ok || typeof data?.text !== 'string') {
-          throw new Error(data?.error || 'Invalid response');
+      if (dailyGenIncludeCoverImage && rawTemplatePromptForCover) {
+        const dailyQuestionsBody = questionsForApi ? { questions: questionsForApi } : {};
+        let templateWithXReplaced: string;
+        let templateReplacement: string;
+        try {
+          const res = await fetch('/api/openai/daily-questions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dailyQuestionsBody),
+          });
+          const data = await res.json();
+          if (!res.ok || typeof data?.text !== 'string') {
+            throw new Error(data?.error || 'Invalid response');
+          }
+          templateReplacement = data.text.trim();
+          templateWithXReplaced = rawTemplatePromptForCover.replace(/\{x\}/g, templateReplacement);
+        } catch {
+          templateReplacement = templateFallbackQuestion;
+          templateWithXReplaced = rawTemplatePromptForCover.replace(/\{x\}/g, templateFallbackQuestion);
         }
-        templateWithXReplaced = rawTemplatePrompt.replace(/\{x\}/g, data.text);
-      } catch {
-        templateWithXReplaced = rawTemplatePrompt.replace(/\{x\}/g, templateFallbackQuestion);
+        setAutomateDailyTemplateReplacementText(templateReplacement);
+        setAutomateDailyTemplatePrompt(templateWithXReplaced);
       }
-      setAutomateDailyTemplatePrompt(templateWithXReplaced);
+
       setAutomateDailyIndex(0);
     } finally {
       setIsGeneratingDailyTikTok(false);
+    }
+  };
+
+  const handleRegenerateDailyVideoTitle = async () => {
+    if (!automateDailyRowQuestions || automateDailyRowQuestions.length !== 5) return;
+    const questionsForApi = automateDailyRowQuestions.join('\n');
+    setIsRetryingDailyVideoTitle(true);
+    try {
+      const videoTitleRes = await fetch('/api/openai/daily-video-title', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questions: questionsForApi }),
+      });
+      const videoTitleData = await videoTitleRes.json();
+      if (videoTitleRes.ok && typeof videoTitleData?.text === 'string') {
+        setAutomateDailyVideoTitle(videoTitleData.text.trim());
+      }
+    } catch {
+      // keep previous title
+    } finally {
+      setIsRetryingDailyVideoTitle(false);
+    }
+  };
+
+  const handleRegenerateDailyCaption = async () => {
+    if (!automateDailyRowQuestions || automateDailyRowQuestions.length !== 5) return;
+    const questionsForApi = automateDailyRowQuestions.join('\n');
+    setIsRetryingDailyCaption(true);
+    try {
+      const captionRes = await fetch('/api/openai/daily-title', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questions: questionsForApi }),
+      });
+      const captionData = await captionRes.json();
+      if (captionRes.ok && typeof captionData?.text === 'string') {
+        setAutomateDailyTitle(captionData.text.trim());
+      }
+    } catch {
+      // keep previous caption
+    } finally {
+      setIsRetryingDailyCaption(false);
     }
   };
 
@@ -358,6 +469,7 @@ export default function Home() {
     const prompt = candidates.length > 0 ? pickRandom(candidates) : pickRandom(PROMPTS);
     setAutomateDailyTemplatePromptRaw(prompt);
     setAutomateDailyTemplatePrompt(prompt);
+    setAutomateDailyTemplateReplacementText(null);
   };
 
   const handleRetryTemplatePrompt = async () => {
@@ -377,6 +489,7 @@ export default function Home() {
         fallbackCandidates.length > 0 ? pickRandom(fallbackCandidates) : pickRandom(questionPool);
 
       let templateWithXReplaced: string;
+      let templateReplacement: string;
       try {
         const res = await fetch('/api/openai/daily-questions', {
           method: 'POST',
@@ -387,13 +500,70 @@ export default function Home() {
         if (!res.ok || typeof data?.text !== 'string') {
           throw new Error(data?.error || 'Invalid response');
         }
-        templateWithXReplaced = rawTemplatePrompt.replace(/\{x\}/g, data.text);
+        templateReplacement = data.text.trim();
+        templateWithXReplaced = rawTemplatePrompt.replace(/\{x\}/g, templateReplacement);
       } catch {
+        templateReplacement = fallbackQuestion;
         templateWithXReplaced = rawTemplatePrompt.replace(/\{x\}/g, fallbackQuestion);
       }
+      setAutomateDailyTemplateReplacementText(templateReplacement);
       setAutomateDailyTemplatePrompt(templateWithXReplaced);
     } finally {
       setIsRetryingTemplatePrompt(false);
+    }
+  };
+
+  const handleRetryTemplatePromptOnly = () => {
+    const raw = automateDailyTemplatePromptRaw;
+    const replacement = automateDailyTemplateReplacementText;
+    if (!raw?.trim() || !replacement?.trim()) return;
+
+    const usedPrompts = new Set<string>(automateDailyRowPrompts ?? []);
+    usedPrompts.add(raw);
+    const promptCandidates = PROMPTS.filter((p) => !usedPrompts.has(p));
+    const newPrompt = promptCandidates.length > 0 ? pickRandom(promptCandidates) : pickRandom(PROMPTS);
+    setAutomateDailyTemplatePromptRaw(newPrompt);
+    setAutomateDailyTemplatePrompt(newPrompt.replace(/\{x\}/g, replacement));
+  };
+
+  const handleRetryTemplateQuestionOnly = async () => {
+    const raw = automateDailyTemplatePromptRaw;
+    if (!raw?.trim()) return;
+
+    const questionsForApi =
+      automateDailyRowQuestions && automateDailyRowQuestions.length === 5
+        ? automateDailyRowQuestions.join('\n')
+        : '';
+
+    setIsRetryingTemplateQuestion(true);
+    try {
+      let newReplacement: string;
+      try {
+        const res = await fetch('/api/openai/daily-questions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(questionsForApi ? { questions: questionsForApi } : {}),
+        });
+        const data = await res.json();
+        if (!res.ok || typeof data?.text !== 'string') {
+          throw new Error(data?.error || 'Invalid response');
+        }
+        newReplacement = data.text.trim();
+      } catch {
+        const questionPool = automateQuestionType === 'me_or_you' ? ME_OR_YOU_QUESTIONS : FUNNY_QUESTIONS;
+        const usedQuestions = new Set<string>(automateDailyRowQuestions ?? []);
+        if (automateDailyTemplateReplacementText) {
+          usedQuestions.add(automateDailyTemplateReplacementText);
+        }
+        const questionCandidates = questionPool.filter((q) => !usedQuestions.has(q));
+        newReplacement = (
+          questionCandidates.length > 0 ? pickRandom(questionCandidates) : pickRandom(questionPool)
+        ).trim();
+      }
+      setAutomateDailyTemplateReplacementText(newReplacement);
+      setAutomateDailyTemplatePrompt(raw.replace(/\{x\}/g, newReplacement));
+    } finally {
+      setIsRetryingTemplateQuestion(false);
     }
   };
 
@@ -825,6 +995,14 @@ export default function Home() {
               isGeneratingDailyTikTok={isGeneratingDailyTikTok}
               automateQuestionType={automateQuestionType}
               setAutomateQuestionType={setAutomateQuestionType}
+              dailyGenIncludeQuestions={dailyGenIncludeQuestions}
+              setDailyGenIncludeQuestions={setDailyGenIncludeQuestions}
+              dailyGenIncludeTitle={dailyGenIncludeTitle}
+              setDailyGenIncludeTitle={setDailyGenIncludeTitle}
+              dailyGenIncludeCaption={dailyGenIncludeCaption}
+              setDailyGenIncludeCaption={setDailyGenIncludeCaption}
+              dailyGenIncludeCoverImage={dailyGenIncludeCoverImage}
+              setDailyGenIncludeCoverImage={setDailyGenIncludeCoverImage}
             />
             {(contentTab === 'image' || (contentTab === 'automate' && automateModel === 'nana')) && (
               <PreviewPanel
@@ -853,6 +1031,13 @@ export default function Home() {
                 onRetryDailyQuestionOnly={handleRetryDailyQuestionOnly}
                 onRetryTemplatePrompt={handleRetryTemplatePrompt}
                 isRetryingTemplatePrompt={isRetryingTemplatePrompt}
+                onRetryTemplatePromptOnly={handleRetryTemplatePromptOnly}
+                onRetryTemplateQuestionOnly={handleRetryTemplateQuestionOnly}
+                isRetryingTemplateQuestion={isRetryingTemplateQuestion}
+                onRegenerateDailyVideoTitle={handleRegenerateDailyVideoTitle}
+                onRegenerateDailyCaption={handleRegenerateDailyCaption}
+                isRetryingDailyVideoTitle={isRetryingDailyVideoTitle}
+                isRetryingDailyCaption={isRetryingDailyCaption}
                 isAutomateNanaMode={contentTab === 'automate'}
               />
             )}

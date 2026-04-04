@@ -51,6 +51,15 @@ interface InputsCardProps {
   isGeneratingDailyTikTok?: boolean;
   automateQuestionType?: 'funny' | 'me_or_you';
   setAutomateQuestionType?: (v: 'funny' | 'me_or_you') => void;
+  /** Daily TikTok: which sections to regenerate (Nana automate) */
+  dailyGenIncludeQuestions?: boolean;
+  setDailyGenIncludeQuestions?: (v: boolean) => void;
+  dailyGenIncludeTitle?: boolean;
+  setDailyGenIncludeTitle?: (v: boolean) => void;
+  dailyGenIncludeCaption?: boolean;
+  setDailyGenIncludeCaption?: (v: boolean) => void;
+  dailyGenIncludeCoverImage?: boolean;
+  setDailyGenIncludeCoverImage?: (v: boolean) => void;
 }
 
 export function InputsCard(props: InputsCardProps) {
@@ -98,6 +107,14 @@ export function InputsCard(props: InputsCardProps) {
     isGeneratingDailyTikTok = false,
     automateQuestionType = 'funny',
     setAutomateQuestionType = () => {},
+    dailyGenIncludeQuestions = true,
+    setDailyGenIncludeQuestions = () => {},
+    dailyGenIncludeTitle = true,
+    setDailyGenIncludeTitle = () => {},
+    dailyGenIncludeCaption = true,
+    setDailyGenIncludeCaption = () => {},
+    dailyGenIncludeCoverImage = true,
+    setDailyGenIncludeCoverImage = () => {},
   } = props;
 
   const [automateCoverStyle, setAutomateCoverStyle] = useState<CoverImageStyle>('creative');
@@ -332,16 +349,54 @@ export function InputsCard(props: InputsCardProps) {
           {contentTab === 'automate' && (
             <div className="space-y-4">
               {automateModel === 'nana' ? (
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Question type</label>
-                  <select
-                    value={automateQuestionType}
-                    onChange={(e) => setAutomateQuestionType(e.target.value as 'funny' | 'me_or_you')}
-                    className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] text-sm"
-                  >
-                    <option value="funny">Funny</option>
-                    <option value="me_or_you">Me or you</option>
-                  </select>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Question type</label>
+                    <select
+                      value={automateQuestionType}
+                      onChange={(e) => setAutomateQuestionType(e.target.value as 'funny' | 'me_or_you')}
+                      className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] text-sm"
+                    >
+                      <option value="funny">Funny</option>
+                      <option value="me_or_you">Me or you</option>
+                    </select>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Generate</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
+                      Turn off to skip that part when you click Generate Daily TikTok. Title and caption need five questions (generate questions first or use a prior run).
+                    </p>
+                    <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 divide-y divide-zinc-200 dark:divide-zinc-700 overflow-hidden bg-zinc-50/80 dark:bg-zinc-800/40">
+                      {(
+                        [
+                          ['Title', dailyGenIncludeTitle, setDailyGenIncludeTitle] as const,
+                          ['Caption', dailyGenIncludeCaption, setDailyGenIncludeCaption] as const,
+                          ['Cover image', dailyGenIncludeCoverImage, setDailyGenIncludeCoverImage] as const,
+                          ['Questions', dailyGenIncludeQuestions, setDailyGenIncludeQuestions] as const,
+                        ] as const
+                      ).map(([label, on, setOn]) => (
+                        <div key={label} className="flex items-center justify-between gap-3 px-3 py-2.5">
+                          <span className="text-sm text-zinc-800 dark:text-zinc-200">{label}</span>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={on}
+                            aria-label={`${on ? 'Disable' : 'Enable'} ${label}`}
+                            onClick={() => setOn(!on)}
+                            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3B82F6] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-900 ${
+                              on ? 'bg-[#3B82F6]' : 'bg-zinc-300 dark:bg-zinc-600'
+                            }`}
+                          >
+                            <span
+                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                                on ? 'translate-x-5' : 'translate-x-0.5'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <>

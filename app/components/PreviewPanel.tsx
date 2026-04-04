@@ -40,6 +40,16 @@ interface PreviewPanelProps {
   /** Retry template prompt - new prompt + new API text for {x} */
   onRetryTemplatePrompt?: () => void | Promise<void>;
   isRetryingTemplatePrompt?: boolean;
+  /** Template: new image prompt only, keep current {x} text */
+  onRetryTemplatePromptOnly?: () => void;
+  /** Template: new {x} text only, keep current image prompt */
+  onRetryTemplateQuestionOnly?: () => void | Promise<void>;
+  isRetryingTemplateQuestion?: boolean;
+  /** Regenerate API video title / caption from current daily questions */
+  onRegenerateDailyVideoTitle?: () => void | Promise<void>;
+  onRegenerateDailyCaption?: () => void | Promise<void>;
+  isRetryingDailyVideoTitle?: boolean;
+  isRetryingDailyCaption?: boolean;
   /** When true, hide canvas cards in the preview strip */
   isAutomateNanaMode?: boolean;
 }
@@ -70,10 +80,18 @@ export function PreviewPanel({
   onRetryDailyQuestionOnly,
   onRetryTemplatePrompt,
   isRetryingTemplatePrompt = false,
+  onRetryTemplatePromptOnly,
+  onRetryTemplateQuestionOnly,
+  isRetryingTemplateQuestion = false,
+  onRegenerateDailyVideoTitle,
+  onRegenerateDailyCaption,
+  isRetryingDailyVideoTitle = false,
+  isRetryingDailyCaption = false,
   isAutomateNanaMode = false,
 }: PreviewPanelProps) {
   const showAutomateDaily = automateDailyResults && automateDailyResults.length > 0;
   const showCanvasCards = !isAutomateNanaMode;
+  const templateActionsBusy = isRetryingTemplatePrompt || isRetryingTemplateQuestion;
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const handleCopy = useCallback(async (text: string, index: number) => {
     try {
@@ -174,19 +192,35 @@ export function PreviewPanel({
                     {automateDailyVideoTitle}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleCopy(automateDailyVideoTitle, -3)}
-                  className="shrink-0 p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
-                  title="Copy"
-                  aria-label="Copy"
-                >
-                  {copiedIndex === -3 ? (
-                    <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  ) : (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                  )}
-                </button>
+                <div className="shrink-0 flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => onRegenerateDailyVideoTitle?.()}
+                    disabled={isRetryingDailyVideoTitle}
+                    className="p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Regenerate title"
+                    aria-label="Regenerate title"
+                  >
+                    {isRetryingDailyVideoTitle ? (
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(automateDailyVideoTitle, -3)}
+                    className="p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
+                    title="Copy"
+                    aria-label="Copy"
+                  >
+                    {copiedIndex === -3 ? (
+                      <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    )}
+                  </button>
+                </div>
               </div>
             )}
             {automateDailyTitle && (
@@ -197,19 +231,35 @@ export function PreviewPanel({
                     {automateDailyTitle}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleCopy(automateDailyTitle, -2)}
-                  className="shrink-0 p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
-                  title="Copy"
-                  aria-label="Copy"
-                >
-                  {copiedIndex === -2 ? (
-                    <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  ) : (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                  )}
-                </button>
+                <div className="shrink-0 flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => onRegenerateDailyCaption?.()}
+                    disabled={isRetryingDailyCaption}
+                    className="p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Regenerate caption"
+                    aria-label="Regenerate caption"
+                  >
+                    {isRetryingDailyCaption ? (
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(automateDailyTitle, -2)}
+                    className="p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
+                    title="Copy"
+                    aria-label="Copy"
+                  >
+                    {copiedIndex === -2 ? (
+                      <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    )}
+                  </button>
+                </div>
               </div>
             )}
             {automateDailyTemplatePrompt && (
@@ -220,19 +270,19 @@ export function PreviewPanel({
                     {automateDailyTemplatePrompt}
                   </p>
                 </div>
-                <div className="shrink-0 flex gap-1">
+                <div className="shrink-0 flex flex-col gap-1">
                   <button
                     type="button"
                     onClick={() => onRetryTemplatePrompt?.()}
-                    disabled={isRetryingTemplatePrompt}
+                    disabled={templateActionsBusy}
                     className="p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Retry with new prompt and title"
-                    aria-label="Retry"
+                    title="Retry: new prompt and question text"
+                    aria-label="Retry: new prompt and question text"
                   >
                     {isRetryingTemplatePrompt ? (
-                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
+                      <svg className="w-4 h-4 mx-auto animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
                     ) : (
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                      <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                     )}
                   </button>
                   <button
@@ -243,9 +293,33 @@ export function PreviewPanel({
                     aria-label="Copy"
                   >
                     {copiedIndex === -1 ? (
-                      <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                      <svg className="w-4 h-4 mx-auto text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                     ) : (
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                      <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onRetryTemplatePromptOnly?.()}
+                    disabled={templateActionsBusy}
+                    className="px-2 py-1.5 rounded-md text-xs font-medium bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-200 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="New image prompt only (same text that replaced {x})"
+                    aria-label="New prompt only"
+                  >
+                    Prompt
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onRetryTemplateQuestionOnly?.()}
+                    disabled={templateActionsBusy}
+                    className="px-2 py-1.5 rounded-md text-xs font-medium bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-200 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="New text for {x} only (same image prompt)"
+                    aria-label="New question only"
+                  >
+                    {isRetryingTemplateQuestion ? (
+                      <svg className="w-4 h-4 mx-auto animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
+                    ) : (
+                      'Question'
                     )}
                   </button>
                 </div>
