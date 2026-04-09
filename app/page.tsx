@@ -19,6 +19,25 @@ const INITIAL_CANVASES: CanvasData[] = [
   { id: 'end', text: '', backgroundColor: '#000000', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' },
 ];
 
+const DAILY_TEMPLATE_TITLES = [
+  '5 Questions Every Girlfriends Should Ask Their Boyfriend',
+  '5 Questions To Make Your Boyfriend Take A Deep Breath',
+  '5 Risky Questions To Ask Your Boyfriend Tonight',
+  '5 Dumb Questions To Ragebait Your Boyfriend Tonight',
+  '5 Fun Questions To Tease Your Boyfriend Tonight',
+  '5 Cute Questions To Ask Your Boyfriend Before Moving In Together',
+  '5 Dumb Questions To Ask Your Boyfriend Tonight',
+  '5 Dumb Questions To Ask Your Boyfriend To Make Sure He Loves You',
+  '5 Ragebait Questions To Ask Your Boyfriend Tonight',
+  '5 Fun Questions To See How Much Does Your Boyfriend Loves You',
+  '5 Simple Question To Test Your Boyfriend Tonight',
+  '5 Cute Questions Every Boyfriend Must Answer Tonight',
+  '5 Questions Every Boyfriend Gets Wrong',
+  'Does Your Boyfriend Pass The Jealousy Test',
+  'Does Your boyfriend Pass The Loyalty Test',
+  '5 Cute Questions To Fall In Love Wi',
+] as const;
+
 export default function Home() {
   const [canvases, setCanvases] = useState<CanvasData[]>(INITIAL_CANVASES);
   const [currentCanvasId, setCurrentCanvasId] = useState<string>('1');
@@ -295,13 +314,13 @@ export default function Home() {
   };
 
   const pickRandom = <T,>(arr: readonly T[]): T => arr[randomIndex(arr.length)]!;
+  const pickTemplateHookTitle = (): string => pickRandom(DAILY_TEMPLATE_TITLES);
 
   const handleGenerateDailyTikTok = async () => {
     setIsGeneratingDailyTikTok(true);
     try {
       const questionPool = automateQuestionType === 'me_or_you' ? ME_OR_YOU_QUESTIONS : FUNNY_QUESTIONS;
       let rawTemplatePromptForCover: string | null = null;
-      let templateFallbackQuestion = pickRandom(questionPool);
       let selectedQuestionsThisRun: string[] | null = null;
 
       if (dailyGenIncludeQuestions) {
@@ -329,11 +348,6 @@ export default function Home() {
         const qShuffled = shuffle(questionPool);
         const selectedQuestions = qShuffled.slice(0, 5);
         selectedQuestionsThisRun = selectedQuestions;
-        const usedQuestionSet = new Set(selectedQuestions);
-        const templateFallbackCandidates = questionPool.filter((q) => !usedQuestionSet.has(q));
-        templateFallbackQuestion =
-          templateFallbackCandidates.length > 0 ? pickRandom(templateFallbackCandidates) : pickRandom(questionPool);
-
         const results = selectedPrompts.map((p, i) => p.replace(/\{x\}/g, selectedQuestions[i]!));
         setAutomateDailyResults(results);
         setAutomateDailyRowPrompts(selectedPrompts);
@@ -348,7 +362,6 @@ export default function Home() {
         rawTemplatePromptForCover = pickRandom(shuffle(pool));
         setAutomateDailyTemplatePromptRaw(rawTemplatePromptForCover);
         lastDailyPromptRunRef.current = new Set([rawTemplatePromptForCover]);
-        templateFallbackQuestion = pickRandom(questionPool);
       }
 
       const questionsForApi =
@@ -391,25 +404,9 @@ export default function Home() {
       }
 
       if (dailyGenIncludeCoverImage && rawTemplatePromptForCover) {
-        const dailyQuestionsBody = questionsForApi ? { questions: questionsForApi } : {};
         let templateWithXReplaced: string;
-        let templateReplacement: string;
-        try {
-          const res = await fetch('/api/openai/daily-questions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(dailyQuestionsBody),
-          });
-          const data = await res.json();
-          if (!res.ok || typeof data?.text !== 'string') {
-            throw new Error(data?.error || 'Invalid response');
-          }
-          templateReplacement = data.text.trim();
-          templateWithXReplaced = rawTemplatePromptForCover.replace(/\{x\}/g, templateReplacement);
-        } catch {
-          templateReplacement = templateFallbackQuestion;
-          templateWithXReplaced = rawTemplatePromptForCover.replace(/\{x\}/g, templateFallbackQuestion);
-        }
+        const templateReplacement = pickTemplateHookTitle().trim();
+        templateWithXReplaced = rawTemplatePromptForCover.replace(/\{x\}/g, templateReplacement);
         setAutomateDailyTemplateReplacementText(templateReplacement);
         setAutomateDailyTemplatePrompt(templateWithXReplaced);
       }
@@ -475,37 +472,14 @@ export default function Home() {
   const handleRetryTemplatePrompt = async () => {
     setIsRetryingTemplatePrompt(true);
     try {
-      const questionPool = automateQuestionType === 'me_or_you' ? ME_OR_YOU_QUESTIONS : FUNNY_QUESTIONS;
       const usedPrompts = new Set<string>(automateDailyRowPrompts ?? []);
       if (automateDailyTemplatePromptRaw) usedPrompts.add(automateDailyTemplatePromptRaw);
       const promptCandidates = PROMPTS.filter((p) => !usedPrompts.has(p));
       const rawTemplatePrompt =
         promptCandidates.length > 0 ? pickRandom(promptCandidates) : pickRandom(PROMPTS);
       setAutomateDailyTemplatePromptRaw(rawTemplatePrompt);
-
-      const usedQuestions = new Set<string>(automateDailyRowQuestions ?? []);
-      const fallbackCandidates = questionPool.filter((q) => !usedQuestions.has(q));
-      const fallbackQuestion =
-        fallbackCandidates.length > 0 ? pickRandom(fallbackCandidates) : pickRandom(questionPool);
-
-      let templateWithXReplaced: string;
-      let templateReplacement: string;
-      try {
-        const res = await fetch('/api/openai/daily-questions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({}),
-        });
-        const data = await res.json();
-        if (!res.ok || typeof data?.text !== 'string') {
-          throw new Error(data?.error || 'Invalid response');
-        }
-        templateReplacement = data.text.trim();
-        templateWithXReplaced = rawTemplatePrompt.replace(/\{x\}/g, templateReplacement);
-      } catch {
-        templateReplacement = fallbackQuestion;
-        templateWithXReplaced = rawTemplatePrompt.replace(/\{x\}/g, fallbackQuestion);
-      }
+      const templateReplacement = pickTemplateHookTitle().trim();
+      const templateWithXReplaced = rawTemplatePrompt.replace(/\{x\}/g, templateReplacement);
       setAutomateDailyTemplateReplacementText(templateReplacement);
       setAutomateDailyTemplatePrompt(templateWithXReplaced);
     } finally {
@@ -530,36 +504,9 @@ export default function Home() {
     const raw = automateDailyTemplatePromptRaw;
     if (!raw?.trim()) return;
 
-    const questionsForApi =
-      automateDailyRowQuestions && automateDailyRowQuestions.length === 5
-        ? automateDailyRowQuestions.join('\n')
-        : '';
-
     setIsRetryingTemplateQuestion(true);
     try {
-      let newReplacement: string;
-      try {
-        const res = await fetch('/api/openai/daily-questions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(questionsForApi ? { questions: questionsForApi } : {}),
-        });
-        const data = await res.json();
-        if (!res.ok || typeof data?.text !== 'string') {
-          throw new Error(data?.error || 'Invalid response');
-        }
-        newReplacement = data.text.trim();
-      } catch {
-        const questionPool = automateQuestionType === 'me_or_you' ? ME_OR_YOU_QUESTIONS : FUNNY_QUESTIONS;
-        const usedQuestions = new Set<string>(automateDailyRowQuestions ?? []);
-        if (automateDailyTemplateReplacementText) {
-          usedQuestions.add(automateDailyTemplateReplacementText);
-        }
-        const questionCandidates = questionPool.filter((q) => !usedQuestions.has(q));
-        newReplacement = (
-          questionCandidates.length > 0 ? pickRandom(questionCandidates) : pickRandom(questionPool)
-        ).trim();
-      }
+      const newReplacement = pickTemplateHookTitle().trim();
       setAutomateDailyTemplateReplacementText(newReplacement);
       setAutomateDailyTemplatePrompt(raw.replace(/\{x\}/g, newReplacement));
     } finally {
