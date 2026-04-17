@@ -95,6 +95,12 @@ export const PROMPTS = [
   'First person POV, you\'re wearing a skirt at a tennis court looking down at the ground; a few tennis balls and a racket are visible, and on the court or pavement the text "{x}" is written on the floor. Make the text the main focus, large and readable',
   'First person POV, you\'re on a helicopter ride looking out the window; the text "{x}" is written with marker on the glass. The writing must be clear, easily visible, and the main focus',
   'First person POV, on a sunny day you\'re walking down the street; outside a coffee shop there\'s a pink ad stand with only the words "{x}" printed on it and nothing else. The stand should be the main focus, facing straight toward you',
+  'A wall full of white tiles, and on one tile there is text "{x}" written with black marker. Add some heart and love themed stickers around it. Zoom in so the text is the main focus, and the tile should face the camera directly, not at an angle',
+  'First person POV, you\'re at Coachella in a big crowd; far away in the crowd, a woman is holding up a large white sign with the text "{x}". Make the sign the main focus, clear and readable, and facing directly toward you',
+  'First person POV, you\'re near the front stage at Coachella during daytime with a huge crowd. On the stage big screen, the text "{x}" is shown on a pink background. Zoom in so the screen text is the main focus',
+  'First person POV, you\'re walking down into a crowded tube station; you look at a station sign and it says "{x}". Make the sign text clear, readable, and the main focus',
+  'First person POV, you\'re standing on a crowded tube station platform and looking across the tracks at a big ad board. On the ad board, the text "{x}" is displayed. Make the text the main focus, zoom in on it, and face straight toward the ad',
+  'At Coachella, a female hand is holding a condom wrapper with the text "{x}" on it. Make it very realistic and keep the text clear and readable',
 ] as const;
 
 /** Funny relationship questions for games. */
@@ -188,6 +194,10 @@ export const FUNNY_QUESTIONS = [
   'Be honest, who\'s more weird?',
   'Would you rather lose all our messages or photos together?',
   'If you lost me in a supermarket, where would you look for me first?',
+  'Do you think you can do better than me?',
+  'Who wears the pants in the relationship?',
+  'Do you actually listen to me when I speak or do you just wait until your turn?',
+  'Would you rather I get horny only once a month or want it every day?',
 ] as const;
 
 /** "Me or you" questions for couples games. */
