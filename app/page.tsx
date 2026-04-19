@@ -5,7 +5,7 @@ import JSZip from 'jszip';
 import type { CanvasData } from '@/app/lib/types';
 import { generateCardImage as generateCardImageLib } from '@/app/lib/generate-card-image';
 import { extractDominantColor } from '@/app/lib/canvas-utils';
-import { CARD_BG_FALLBACK_PALETTE, PROMPTS, FUNNY_QUESTIONS, ME_OR_YOU_QUESTIONS } from '@/app/lib/constants';
+import { CARD_BG_FALLBACK_PALETTE, PROMPTS, FUNNY_QUESTIONS, FLIRTY_QUESTIONS, ME_OR_YOU_QUESTIONS } from '@/app/lib/constants';
 import { Sidebar } from '@/app/components/Sidebar';
 import { ActionBar } from '@/app/components/ActionBar';
 import { InputsCard } from '@/app/components/InputsCard';
@@ -20,6 +20,12 @@ const INITIAL_CANVASES: CanvasData[] = [
 ];
 
 const DAILY_TEMPLATE_TITLES = [
+  "5 Impossible Questions To Test Your Boyfriend Tonight",
+  "5 Questions Every Boyfriend Must Answer Tonight If He Loves You",
+  "5 Questions To Test If Your Boyfriend Is The One",
+  "5 Impossible QuestionS To Test If Your Boyfriend Is Husband Material",
+  "5 Questions For Internation Rage Bait Boyfriend Day",
+  "5 Questions To Ask Your Boyfriend When He's Busy Or Tired",
   '5 Questions Every Girlfriends Should Ask Their Boyfriend',
   '5 Questions To Make Your Boyfriend Take A Deep Breath',
   '5 Risky Questions To Ask Your Boyfriend Tonight',
@@ -35,7 +41,11 @@ const DAILY_TEMPLATE_TITLES = [
   '5 Questions Every Boyfriend Gets Wrong',
   'Does Your Boyfriend Pass The Jealousy Test',
   'Does Your boyfriend Pass The Loyalty Test',
-  '5 Cute Questions To Fall In Love Wi',
+  '5 Cute Questions To Fall In Love With Your Boyfriend',
+  '5 Questions A Good Boyfriend Should Get Right',
+  '5 Cute Questions All Boyfriends Must Answer Tonight',
+  '5 Questions Every Boyfriend Must Answer Tonight If They Love You',
+  "5 Questions To Check If He's The One"
 ] as const;
 
 export default function Home() {
@@ -98,7 +108,7 @@ export default function Home() {
   const [isRetryingTemplateQuestion, setIsRetryingTemplateQuestion] = useState(false);
   const [isRetryingDailyVideoTitle, setIsRetryingDailyVideoTitle] = useState(false);
   const [isRetryingDailyCaption, setIsRetryingDailyCaption] = useState(false);
-  const [automateQuestionType, setAutomateQuestionType] = useState<'funny' | 'me_or_you'>('funny');
+  const [automateQuestionType, setAutomateQuestionType] = useState<'funny' | 'flirty' | 'me_or_you'>('funny');
   const [dailyGenIncludeQuestions, setDailyGenIncludeQuestions] = useState(true);
   const [dailyGenIncludeTitle, setDailyGenIncludeTitle] = useState(true);
   const [dailyGenIncludeCaption, setDailyGenIncludeCaption] = useState(true);
@@ -319,7 +329,12 @@ export default function Home() {
   const handleGenerateDailyTikTok = async () => {
     setIsGeneratingDailyTikTok(true);
     try {
-      const questionPool = automateQuestionType === 'me_or_you' ? ME_OR_YOU_QUESTIONS : FUNNY_QUESTIONS;
+      const questionPool =
+        automateQuestionType === 'me_or_you'
+          ? ME_OR_YOU_QUESTIONS
+          : automateQuestionType === 'flirty'
+            ? FLIRTY_QUESTIONS
+            : FUNNY_QUESTIONS;
       let rawTemplatePromptForCover: string | null = null;
       let selectedQuestionsThisRun: string[] | null = null;
 
@@ -515,7 +530,12 @@ export default function Home() {
   };
 
   const handleRetryDailyItem = (index: number) => {
-    const questionPool = automateQuestionType === 'me_or_you' ? ME_OR_YOU_QUESTIONS : FUNNY_QUESTIONS;
+    const questionPool =
+      automateQuestionType === 'me_or_you'
+        ? ME_OR_YOU_QUESTIONS
+        : automateQuestionType === 'flirty'
+          ? FLIRTY_QUESTIONS
+          : FUNNY_QUESTIONS;
     if (
       !automateDailyRowPrompts ||
       !automateDailyRowQuestions ||
@@ -584,7 +604,12 @@ export default function Home() {
   };
 
   const handleRetryDailyQuestionOnly = (index: number) => {
-    const questionPool = automateQuestionType === 'me_or_you' ? ME_OR_YOU_QUESTIONS : FUNNY_QUESTIONS;
+    const questionPool =
+      automateQuestionType === 'me_or_you'
+        ? ME_OR_YOU_QUESTIONS
+        : automateQuestionType === 'flirty'
+          ? FLIRTY_QUESTIONS
+          : FUNNY_QUESTIONS;
     if (
       !automateDailyRowPrompts ||
       !automateDailyRowQuestions ||

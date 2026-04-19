@@ -101,6 +101,7 @@ export const PROMPTS = [
   'First person POV, you\'re walking down into a crowded tube station; you look at a station sign and it says "{x}". Make the sign text clear, readable, and the main focus',
   'First person POV, you\'re standing on a crowded tube station platform and looking across the tracks at a big ad board. On the ad board, the text "{x}" is displayed. Make the text the main focus, zoom in on it, and face straight toward the ad',
   'At Coachella, a female hand is holding a condom wrapper with the text "{x}" on it. Make it very realistic and keep the text clear and readable',
+  'First person POV, you\'re writing in a journal book; on the page there is text "{x}" with a heart next to it. The writing should not be cursive and should be done in single-color crayon. Make the text clear and the main focus',
 ] as const;
 
 /** Funny relationship questions for games. */
@@ -198,6 +199,20 @@ export const FUNNY_QUESTIONS = [
   'Who wears the pants in the relationship?',
   'Do you actually listen to me when I speak or do you just wait until your turn?',
   'Would you rather I get horny only once a month or want it every day?',
+] as const;
+
+/** Flirty relationship questions for games. */
+export const FLIRTY_QUESTIONS = [
+  'What would you do if I kissed you right now?',
+  'What\'s your favorite part of my body?',
+  'What\'s the most attractive thing I do without realizing?',
+  'If we were alone right now, what would you want to do?',
+  'What\'s something you want to try with me that we haven\'t yet?',
+  'What\'s your favorite memory of us being close?',
+  'Do you like it when I take the lead or when you do?',
+  'What\'s one compliment you want from me more often?',
+  'What\'s your favorite kind of kiss from me?',
+  'What\'s something small I do that turns you on?',
 ] as const;
 
 /** "Me or you" questions for couples games. */

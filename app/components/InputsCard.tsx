@@ -49,8 +49,8 @@ interface InputsCardProps {
   isAutoGenerating?: boolean;
   onGenerateDailyTikTok?: () => void | Promise<void>;
   isGeneratingDailyTikTok?: boolean;
-  automateQuestionType?: 'funny' | 'me_or_you';
-  setAutomateQuestionType?: (v: 'funny' | 'me_or_you') => void;
+  automateQuestionType?: 'funny' | 'flirty' | 'me_or_you';
+  setAutomateQuestionType?: (v: 'funny' | 'flirty' | 'me_or_you') => void;
   /** Daily TikTok: which sections to regenerate (Nana automate) */
   dailyGenIncludeQuestions?: boolean;
   setDailyGenIncludeQuestions?: (v: boolean) => void;
@@ -354,10 +354,11 @@ export function InputsCard(props: InputsCardProps) {
                     <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Question type</label>
                     <select
                       value={automateQuestionType}
-                      onChange={(e) => setAutomateQuestionType(e.target.value as 'funny' | 'me_or_you')}
+                      onChange={(e) => setAutomateQuestionType(e.target.value as 'funny' | 'flirty' | 'me_or_you')}
                       className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] text-sm"
                     >
                       <option value="funny">Funny</option>
+                      <option value="flirty">Flirty</option>
                       <option value="me_or_you">Me or you</option>
                     </select>
                   </div>
