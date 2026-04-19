@@ -102,6 +102,10 @@ export const PROMPTS = [
   'First person POV, you\'re standing on a crowded tube station platform and looking across the tracks at a big ad board. On the ad board, the text "{x}" is displayed. Make the text the main focus, zoom in on it, and face straight toward the ad',
   'At Coachella, a female hand is holding a condom wrapper with the text "{x}" on it. Make it very realistic and keep the text clear and readable',
   'First person POV, you\'re writing in a journal book; on the page there is text "{x}" with a heart next to it. The writing should not be cursive and should be done in single-color crayon. Make the text clear and the main focus',
+  'First person POV, you\'re outdoors in the city holding a piece of pink sticky note; on it has the text "{x}" written with a thick marker. Make the text the main focus and zoom in',
+  'First person POV, you\'re outdoors in the city holding a piece of pink sticky note; on it has the text "{x}" written with a thick marker. Make the text the main focus and zoom in',
+  'You\'re in the coffee shop holding some light pink napkins; on the napkin has the text "{x}" written on it with marker and hearts drawn on it. Zoom in on the text and make it visible',
+  'In a bright NYC coffee shop, a female hand holding a condom wrapper with the text "{x}" on it.',
 ] as const;
 
 /** Funny relationship questions for games. */
