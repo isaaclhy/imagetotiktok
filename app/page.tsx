@@ -20,6 +20,7 @@ const INITIAL_CANVASES: CanvasData[] = [
 ];
 
 const DAILY_TEMPLATE_TITLES = [
+  "5 Questions To Test How Well Trained Your Boyfriend Is",
   "5 Impossible Questions To Test Your Boyfriend Tonight",
   "5 Questions Every Boyfriend Must Answer Tonight If He Loves You",
   "5 Questions To Test If Your Boyfriend Is The One",

@@ -201,6 +201,10 @@ export const FUNNY_QUESTIONS = [
   'If you lost me in a supermarket, where would you look for me first?',
   'Do you think you can do better than me?',
   'Who wears the pants in the relationship?',
+  'Do you want our baby to look more like you or me?',
+  'If I come with a warning label, what would it be?',
+  'If I went missing, how would you describe me to the police?',
+  'Would you change my personality or my looks?',
   'Do you actually listen to me when I speak or do you just wait until your turn?',
   'Would you rather I get horny only once a month or want it every day?',
 ] as const;
