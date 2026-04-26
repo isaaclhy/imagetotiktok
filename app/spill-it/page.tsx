@@ -57,10 +57,6 @@ export default function SpillItPage() {
 
   useEffect(() => {
     fetch('/api/spill-it/click', { method: 'POST', keepalive: true }).catch(() => {});
-    // Disable redirect in dev; in production allow ?preview=1 to bypass.
-    if (process.env.NODE_ENV !== 'production') return;
-    if (typeof window !== 'undefined' && window.location.search.includes('preview=1')) return;
-    window.location.href = 'https://apps.apple.com/app/id6758108818';
   }, []);
 
   return (
