@@ -4,6 +4,19 @@ import { useState, useEffect } from 'react';
 import type { CanvasData, CreatorInfo } from '@/app/lib/types';
 import { COVER_IMAGE_PROMPTS, getDefaultAutomateCategories, type CoverImageStyle } from '@/app/lib/constants';
 
+const DEFAULT_VIDEO_OVERLAY_LINES = [
+  'Holding hands',
+  'Rage baiting each other',
+  'Eye contact',
+  'Hugs',
+  'Thinking about the last time',
+  'Touchy',
+  'cuddly',
+  'Ask each other questions on spill it',
+  'I love you',
+  'I miss you so much',
+];
+
 interface InputsCardProps {
   contentTab: 'image' | 'video' | 'automate';
   // Image form state
@@ -119,7 +132,9 @@ export function InputsCard(props: InputsCardProps) {
 
   const [automateCoverStyle, setAutomateCoverStyle] = useState<CoverImageStyle>('creative');
   const [videoTitle, setVideoTitle] = useState('');
-  const [videoQuestions, setVideoQuestions] = useState<string[]>(['']);
+  const [videoTemplate, setVideoTemplate] = useState('');
+  const [videoTemplateMode, setVideoTemplateMode] = useState<'static' | 'video'>('video');
+  const [videoQuestions, setVideoQuestions] = useState<string[]>(DEFAULT_VIDEO_OVERLAY_LINES);
   const [videoRandomLoading, setVideoRandomLoading] = useState(false);
   const [videoRendering, setVideoRendering] = useState(false);
   const [videoFilterOpen, setVideoFilterOpen] = useState(false);
@@ -193,6 +208,47 @@ export function InputsCard(props: InputsCardProps) {
         <div className="flex flex-col gap-4 py-3">
           {contentTab === 'video' && (
             <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Input select</label>
+                <select
+                  value={videoTemplateMode}
+                  onChange={(e) => setVideoTemplateMode(e.target.value as 'static' | 'video')}
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] text-sm"
+                >
+                  <option value="static">static</option>
+                  <option value="video">video</option>
+                </select>
+                {videoTemplateMode === 'static' ? (
+                  <div className="mt-3 space-y-3">
+                    <div className="flex gap-3 items-center">
+                      <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 w-20 shrink-0">Template</label>
+                      <input
+                        type="text"
+                        value={videoTemplate}
+                        onChange={(e) => setVideoTemplate(e.target.value)}
+                        disabled={videoRandomLoading}
+                        placeholder="Opening line (optional)…"
+                        className="flex-1 px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      />
+                    </div>
+                    <div className="flex gap-3 items-center">
+                      <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 w-20 shrink-0">Title</label>
+                      <input
+                        type="text"
+                        value={videoTitle}
+                        onChange={(e) => setVideoTitle(e.target.value)}
+                        disabled={videoRandomLoading}
+                        placeholder="Video title..."
+                        className="flex-1 px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                    In video mode, the opening slide lists every question below, then goes to the end card (no individual question slides).
+                  </p>
+                )}
+              </div>
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-semibold text-zinc-800 dark:text-zinc-200">Questions</h3>
                 <div className="flex items-center gap-2">
@@ -210,26 +266,30 @@ export function InputsCard(props: InputsCardProps) {
                         const questions = data.data.questions as string[];
                         setVideoQuestions(questions);
                         const { levelName, categoryName } = data.data;
-                        const contextParts: string[] = [];
-                        if (levelName) contextParts.push(`Level: ${levelName}`);
-                        if (categoryName) contextParts.push(`Category: ${categoryName}`);
-                        contextParts.push('Questions:');
-                        questions.forEach((q: string) => contextParts.push(`- ${q}`));
-                        const context = contextParts.join('\n\n');
-                        try {
-                          const titleRes = await fetch('/api/openai/title', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ context, level: levelName }),
-                          });
-                          const titleData = await titleRes.json();
-                          if (titleRes.ok && titleData?.title?.trim()) {
-                            setVideoTitle(titleData.title.trim());
-                          } else {
+                        if (videoTemplateMode === 'static') {
+                          setVideoTitle(categoryName || '');
+                        } else {
+                          const contextParts: string[] = [];
+                          if (levelName) contextParts.push(`Level: ${levelName}`);
+                          if (categoryName) contextParts.push(`Category: ${categoryName}`);
+                          contextParts.push('Questions:');
+                          questions.forEach((q: string) => contextParts.push(`- ${q}`));
+                          const context = contextParts.join('\n\n');
+                          try {
+                            const titleRes = await fetch('/api/openai/title', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ context, level: levelName }),
+                            });
+                            const titleData = await titleRes.json();
+                            if (titleRes.ok && titleData?.title?.trim()) {
+                              setVideoTitle(titleData.title.trim());
+                            } else {
+                              setVideoTitle(categoryName || '');
+                            }
+                          } catch {
                             setVideoTitle(categoryName || '');
                           }
-                        } catch {
-                          setVideoTitle(categoryName || '');
                         }
                       }
                     } catch {} finally {
@@ -278,18 +338,6 @@ export function InputsCard(props: InputsCardProps) {
                 </div>
                 </div>
               </div>
-              <div className="flex gap-3 items-center">
-                <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 w-12 shrink-0">Title</label>
-                <input
-                  type="text"
-                  value={videoTitle}
-                  onChange={(e) => setVideoTitle(e.target.value)}
-                  disabled={videoRandomLoading}
-                  placeholder="Video title..."
-                  className="flex-1 px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                />
-              </div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Questions</label>
               <div className="space-y-3">
                 {videoQuestions.map((q, index) => (
                   <div
@@ -666,7 +714,12 @@ export function InputsCard(props: InputsCardProps) {
                 const res = await fetch('/api/render', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ title: videoTitle.trim() || 'Spill It', questions }),
+                  body: JSON.stringify({
+                    templateMode: videoTemplateMode,
+                    template: videoTemplate,
+                    title: videoTitle.trim() || 'Spill It',
+                    questions,
+                  }),
                 });
                 if (!res.ok) {
                   const err = await res.json().catch(() => ({ error: 'Render failed' }));

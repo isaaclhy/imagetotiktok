@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { bundle } from '@remotion/bundler';
 import { renderMedia, selectComposition } from '@remotion/renderer';
-import path from 'path';
 import fs from 'fs';
 import os from 'os';
+import path from 'path';
+import { getRemotionBundleServeUrl } from './get-remotion-bundle';
 
 export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   let outputPath = '';
-  let bundled = '';
 
   try {
     const body = await request.json();
@@ -19,19 +18,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No questions provided' }, { status: 400 });
     }
 
-    const title = typeof body?.title === 'string' && body.title.trim() ? body.title.trim() : 'Spill It';
+    const titleRaw = typeof body?.title === 'string' && body.title.trim() ? body.title.trim() : '';
+    const templateRaw = typeof body?.template === 'string' ? body.template.trim() : '';
+    const templateMode = body?.templateMode === 'video' || body?.templateMode === 'questions_on_page'
+      ? 'video'
+      : 'static';
 
-    const entryPoint = path.join(process.cwd(), 'remotion', 'index.ts');
+    let title: string;
+    let showQuestionsAsSlides: boolean;
+    let showBranding: boolean;
+    let minimalVideo: boolean;
 
-    bundled = await bundle({
-      entryPoint,
-      webpackOverride: (config) => config,
-    });
+    if (templateMode === 'video') {
+      title = questions.join('\n') || titleRaw || 'Spill It';
+      showQuestionsAsSlides = false;
+      showBranding = false;
+      minimalVideo = true;
+    } else {
+      const parts = [templateRaw, titleRaw].filter(Boolean);
+      title = parts.join('\n') || 'Spill It';
+      showQuestionsAsSlides = true;
+      showBranding = false;
+      minimalVideo = false;
+    }
 
-    const inputProps = { title, questions };
+    const serveUrl = await getRemotionBundleServeUrl();
+
+    const inputProps = { title, questions, showQuestionsAsSlides, showBranding, minimalVideo };
 
     const composition = await selectComposition({
-      serveUrl: bundled,
+      serveUrl,
       id: 'QuestionVideo',
       inputProps,
     });
@@ -40,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     await renderMedia({
       composition,
-      serveUrl: bundled,
+      serveUrl,
       codec: 'h264',
       outputLocation: outputPath,
       inputProps,
@@ -62,9 +78,6 @@ export async function POST(request: NextRequest) {
   } finally {
     if (outputPath && fs.existsSync(outputPath)) {
       fs.unlinkSync(outputPath);
-    }
-    if (bundled && fs.existsSync(bundled)) {
-      fs.rmSync(bundled, { recursive: true, force: true });
     }
   }
 }

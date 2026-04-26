@@ -1,9 +1,13 @@
-import React, { useMemo } from 'react';
+import { loadFont } from '@remotion/google-fonts/Montserrat';
+import React, { useEffect, useMemo } from 'react';
 import {
   AbsoluteFill,
   Audio,
+  continueRender,
+  delayRender,
   Easing,
   Img,
+  OffthreadVideo,
   Sequence,
   interpolate,
   staticFile,
@@ -12,6 +16,25 @@ import {
 } from 'remotion';
 
 const BASE_COLOR = { h: 268, s: 97, l: 36 }; // #5B04B3
+const BACKGROUND_VIDEO = 'vecteezy_two-people-sitting-under-a-palm-tree-at-sunset_40457382.mp4';
+
+/**
+ * TikTok’s in-editor “Classic” look was Proxima Nova Semibold (not redistributable).
+ * Montserrat 600 is the usual free match and loads reliably via @remotion/google-fonts in headless render.
+ */
+const captionMontserrat = loadFont('normal', {
+  weights: ['600', '700'],
+  subsets: ['latin', 'latin-ext'],
+});
+
+const CAPTION_FONT_FAMILY = `${captionMontserrat.fontFamily}, sans-serif`;
+/** Light caption pink — readable on dark overlay; not the hot-magenta accent */
+const CAPTION_LIGHT_PINK = '#FFD6E8';
+
+const CAPTION_COLOR_STYLE: React.CSSProperties = {
+  color: CAPTION_LIGHT_PINK,
+  WebkitTextFillColor: CAPTION_LIGHT_PINK,
+};
 
 function seededRandom(seed: number): number {
   const x = Math.sin(seed * 9301 + 49297) * 49297;
@@ -32,15 +55,78 @@ function getColor(index: number): string {
 export interface QuestionVideoProps {
   title: string;
   questions: string[];
+  /** When false, only the opening hook slide and CTA are shown (no per-question slides). Default true. */
+  showQuestionsAsSlides?: boolean;
+  /** When false, hide all Spill It branding visuals/text. Default true. */
+  showBranding?: boolean;
+  /** Background video + centered text only (no logos, CTA, timer, or sfx). */
+  minimalVideo?: boolean;
 }
 
-export const QuestionVideo: React.FC<QuestionVideoProps> = ({ title, questions }) => {
+export const QuestionVideo: React.FC<QuestionVideoProps> = ({
+  title,
+  questions,
+  showQuestionsAsSlides = true,
+  showBranding = true,
+  minimalVideo = false,
+}) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+
+  useEffect(() => {
+    const handle = delayRender('caption-font');
+    captionMontserrat
+      .waitUntilDone()
+      .then(() => continueRender(handle))
+      .catch(() => continueRender(handle));
+  }, []);
+
+  if (minimalVideo) {
+    return (
+      <AbsoluteFill
+        style={{
+          backgroundColor: '#000',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 64,
+        }}
+      >
+        <OffthreadVideo
+          src={staticFile(BACKGROUND_VIDEO)}
+          startFrom={0}
+          muted
+          volume={0}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+        <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.35)' }} />
+        <div
+          style={{
+            position: 'relative',
+            zIndex: 1,
+            ...CAPTION_COLOR_STYLE,
+            fontSize: 44,
+            fontWeight: 600,
+            textAlign: 'center',
+            lineHeight: 1.06,
+            fontFamily: CAPTION_FONT_FAMILY,
+            textShadow: '0 1px 2px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.45)',
+            whiteSpace: 'pre-line',
+            maxWidth: '92%',
+          }}
+        >
+          {title}
+        </div>
+      </AbsoluteFill>
+    );
+  }
+
   const framesPerTitle = fps * 5;
   const framesPerQuestion = fps * 10;
-  const totalSlides = 2 + questions.length; // title, questions, CTA
-  const slides = [title, ...questions];
+  const questionSlideCount = showQuestionsAsSlides ? questions.length : 0;
+  const totalSlides = 2 + questionSlideCount; // opening, [questions…], CTA
+  const slides = showQuestionsAsSlides ? [title, ...questions] : [title];
+  const soundQuestionCount = showQuestionsAsSlides ? questions.length : 0;
 
   let slideIndex: number;
   let localFrame: number;
@@ -83,23 +169,31 @@ export const QuestionVideo: React.FC<QuestionVideoProps> = ({ title, questions }
         padding: 80,
       }}
     >
-      {isTitle && <MonogramBackground frame={frame} fps={fps} />}
-      {!isTitle && <PopUpLogos frame={frame - framesPerTitle} fps={fps} />}
-      <div
-        style={{
-          color: '#FFFFFF',
-          fontSize: 48,
-          fontWeight: 800,
-          textAlign: 'center',
-          fontFamily: 'Inter, system-ui, sans-serif',
-          letterSpacing: 2,
-          marginTop: 120,
-          textShadow: '0 2px 8px rgba(0,0,0,0.25)',
-          zIndex: 1,
-        }}
-      >
-        Spill It
-      </div>
+      <OffthreadVideo
+        src={staticFile(BACKGROUND_VIDEO)}
+        startFrom={0}
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+      />
+      <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.35)' }} />
+      {showBranding && isTitle && <MonogramBackground frame={frame} fps={fps} />}
+      {showBranding && !isTitle && <PopUpLogos frame={frame - framesPerTitle} fps={fps} />}
+      {showBranding && (
+        <div
+          style={{
+            color: '#FFFFFF',
+            fontSize: 48,
+            fontWeight: 800,
+            textAlign: 'center',
+            fontFamily: CAPTION_FONT_FAMILY,
+            letterSpacing: 2,
+            marginTop: 120,
+            textShadow: '0 2px 8px rgba(0,0,0,0.25)',
+            zIndex: 1,
+          }}
+        >
+          Spill It
+        </div>
+      )}
       <div
         style={{
           flex: 1,
@@ -119,28 +213,37 @@ export const QuestionVideo: React.FC<QuestionVideoProps> = ({ title, questions }
               flexDirection: 'column',
               alignItems: 'center',
               gap: 16,
-              color: '#FFFFFF',
+              ...CAPTION_COLOR_STYLE,
               textAlign: 'center',
-              fontFamily: 'Inter, system-ui, sans-serif',
-              textShadow: '0 4px 12px rgba(0,0,0,0.3)',
+              fontFamily: CAPTION_FONT_FAMILY,
+              textShadow: '0 1px 2px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.45)',
             }}
           >
-            <div style={{ fontSize: 44, fontWeight: 600 }}>Search</div>
-            <div style={{ fontSize: 72, fontWeight: 800, letterSpacing: 1 }}>Spill It - Card Games</div>
-            <div style={{ fontSize: 44, fontWeight: 600 }}>on App Store for more questions</div>
+            {showBranding ? (
+              <>
+                <div style={{ fontSize: 44, fontWeight: 600 }}>Search</div>
+                <div style={{ fontSize: 72, fontWeight: 800, letterSpacing: 1 }}>Spill It - Card Games</div>
+                <div style={{ fontSize: 44, fontWeight: 600 }}>on App Store for more questions</div>
+              </>
+            ) : (
+              <div style={{ fontSize: 56, fontWeight: 700, lineHeight: 1.1 }}>
+                Ask each other questions
+              </div>
+            )}
           </div>
         ) : (
           <div
             style={{
               opacity,
               transform: `scale(${scale})`,
-              color: '#FFFFFF',
+              ...CAPTION_COLOR_STYLE,
               fontSize: 52,
-              fontWeight: 700,
+              fontWeight: 600,
               textAlign: 'center',
-              lineHeight: 1.3,
-              fontFamily: 'Inter, system-ui, sans-serif',
-              textShadow: '0 4px 12px rgba(0,0,0,0.3)',
+              lineHeight: 1.06,
+              fontFamily: CAPTION_FONT_FAMILY,
+              textShadow: '0 1px 2px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.45)',
+              whiteSpace: 'pre-line',
             }}
           >
             {slideText}
@@ -151,8 +254,8 @@ export const QuestionVideo: React.FC<QuestionVideoProps> = ({ title, questions }
       <Sequence from={0} durationInFrames={1}>
         <Audio src={staticFile('whoosh.wav')} volume={0.6} />
       </Sequence>
-      <CorrectSounds questionCount={questions.length} framesPerTitle={framesPerTitle} framesPerQuestion={framesPerQuestion} />
-      <TickSounds questionCount={questions.length} fps={fps} framesPerTitle={framesPerTitle} framesPerQuestion={framesPerQuestion} />
+      <CorrectSounds questionCount={soundQuestionCount} framesPerTitle={framesPerTitle} framesPerQuestion={framesPerQuestion} />
+      <TickSounds questionCount={soundQuestionCount} fps={fps} framesPerTitle={framesPerTitle} framesPerQuestion={framesPerQuestion} />
     </AbsoluteFill>
   );
 };

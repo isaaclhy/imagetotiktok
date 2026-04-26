@@ -12,6 +12,7 @@
     "@napi-rs/canvas": "^0.1.88",
     "@remotion/bundler": "^4.0.427",
     "@remotion/cli": "^4.0.427",
+    "@remotion/google-fonts": "^4.0.427",
     "@remotion/renderer": "^4.0.427",
     "@vercel/blob": "^0.26.0",
     "google-auth-library": "^10.6.2",

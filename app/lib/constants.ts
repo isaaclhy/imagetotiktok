@@ -54,7 +54,7 @@ export const PROMPTS = [
   'A couple looking at a piece of art in a museum. we can only see their back and the girl\'s head is leaning slightly on the guy\'s shoulder. The art has the text "{x}" the art is very cartoony',
   'First person POV, You\'re in an arcade playing the basketball game. and on the board that shows scores, it says "{x}". There should not be any other text',
   'First person POV, in a drawing class. On the canvas, you painted a very simple image of a couple looking at the sunset, not fully colored yet, and below there\'s also this thick text: "{x}". You should be facing straight at the canvas, not at a angle. And zoom into the canvas',
-  'First person POV, on the tube, youre sitting across a person reading a book, on the book cover, the title should be "{x}". zoom in on the text',
+  'First person POV, on the tube, youre sitting across a person reading a book, on the book cover, it should be cartoon style and the title should be "{x}". zoom in on the text',
   'Cute tent at home with fairy lights. There are some lines hanging across the tent and on the lines there are characters which makes up the text "{x}". Should be very cute and realistic.',
   'First person POV, playing billiard and the text "{x}" is written with white chalk on the billiard table. Make it realistic and the text should be written on the table',
   'First person POV, You\'re at a fun and colorful arcade, on one of the arcades has the text "{x}" on one of their display',
@@ -106,6 +106,11 @@ export const PROMPTS = [
   'First person POV, you\'re outdoors in the city holding a piece of pink sticky note; on it has the text "{x}" written with a thick marker. Make the text the main focus and zoom in',
   'You\'re in the coffee shop holding some light pink napkins; on the napkin has the text "{x}" written on it with marker and hearts drawn on it. Zoom in on the text and make it visible',
   'In a bright NYC coffee shop, a female hand holding a condom wrapper with the text "{x}" on it.',
+  'First person POV, It\'s a sunny day, you\'re sitting outside a cafe and reading a book, on the book cover it says "5 questions to ask your bouyfriend tonight". The cover should be cartoon style with some figures but the text should be easily and clearly legible. Focus on the text. Make it realistic',
+  'First person POV, you\'re sitting down across your boyfriend in their 20s on the table. He is eating eggs. You (a female) holding onto your phone, you\'re on tiktok app and one of the post says "5 Questions to rage bait your boyfriend tonight". Focus on the phone text and zoom in.',
+  'First person POV, stylish, mid 20s boyfriend walking over, he is holding onto a book, reading it. On the book cover has the text "5 questions to rage bait your boyfriend tonight". Make it realistic and in a bedroom setting. Zoom in onto the text on the book cover',
+  'First person POV, you are on your phone, you have painted nails. sitting across your boyfriend who is eating breakfast. on your phone, there\'s a text, saying "5 questions to rage bait your boyfriend", it\'s sent from your bestie. Zoom in on the text and and focus on it.',
+  
 ] as const;
 
 /** Funny relationship questions for games. */
