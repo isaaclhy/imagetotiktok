@@ -109,7 +109,7 @@ export default function SpillItPage() {
         <br />
         fall in love again?
       </h1>
-      <div className="mt-6 flex items-start justify-center gap-6 text-white w-full">
+      <div className="mt-9 flex items-start justify-center gap-6 text-white w-full">
         <div className="flex items-center gap-1.5">
           <Laurel side="left" />
           <div className="text-center leading-tight">
