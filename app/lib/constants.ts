@@ -110,6 +110,7 @@ export const PROMPTS = [
   'First person POV, you\'re sitting down across your boyfriend in their 20s on the table. He is eating eggs. You (a female) holding onto your phone, you\'re on tiktok app and one of the post says "5 Questions to rage bait your boyfriend tonight". Focus on the phone text and zoom in.',
   'First person POV, stylish, mid 20s boyfriend walking over, he is holding onto a book, reading it. On the book cover has the text "5 questions to rage bait your boyfriend tonight". Make it realistic and in a bedroom setting. Zoom in onto the text on the book cover',
   'First person POV, you are on your phone, you have painted nails. sitting across your boyfriend who is eating breakfast. on your phone, there\'s a text, saying "5 questions to rage bait your boyfriend", it\'s sent from your bestie. Zoom in on the text and and focus on it.',
+  'First person POV, you are on your phone, sitting across your boyfriend who is eating breakfast. on your phone, there\'s a text, saying "5 questions to rage bait your boyfriend", it\'s sent from your bestie. Zoom in on the text and and focus on it.',
   
 ] as const;
 

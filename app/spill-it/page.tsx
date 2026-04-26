@@ -98,7 +98,7 @@ export default function SpillItPage() {
       </button>
       <div className="relative z-20 w-full">
       <h1
-        className="mt-6 text-4xl md:text-5xl font-bold text-left mb-6 leading-tight text-white"
+        className="mt-6 w-[90%] mx-auto text-4xl md:text-5xl font-bold text-left mb-6 leading-tight text-white"
         style={{ fontFamily: 'var(--font-open-sans), Open Sans, sans-serif' }}
       >
         Ready to
