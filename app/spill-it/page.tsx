@@ -21,12 +21,37 @@ export default function SpillItPage() {
   const [copied, setCopied] = useState(false);
 
   const handleCopyAppName = async () => {
-    try {
-      await navigator.clipboard.writeText('Spill It - Couples Questions');
+    const text = 'Spill It - Couples Questions';
+    const showCopied = () => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
+    };
+
+    const fallbackCopy = () => {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showCopied();
+      } catch {
+        // no-op fallback: keep page stable if clipboard is blocked
+      }
+      document.body.removeChild(ta);
+    };
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        showCopied();
+      } else {
+        fallbackCopy();
+      }
     } catch {
-      // no-op fallback: keep page stable if clipboard is blocked
+      fallbackCopy();
     }
   };
 
@@ -127,6 +152,16 @@ export default function SpillItPage() {
           unoptimized
           priority
         />
+      </div>
+
+      <div
+        className={`absolute bottom-6 left-1/2 -translate-x-1/2 z-30 px-6 py-3 rounded-xl bg-[#7c3aed]/90 border border-[#c4b5fd]/60 text-white text-base font-semibold backdrop-blur-sm shadow-[0_10px_28px_rgba(76,29,149,0.45)] transition-all duration-300 ${
+          copied ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'
+        }`}
+        role="status"
+        aria-live="polite"
+      >
+        App name copied
       </div>
     </div>
   );
