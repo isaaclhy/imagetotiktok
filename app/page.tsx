@@ -48,7 +48,14 @@ const DAILY_TEMPLATE_TITLES = [
   '5 Questions A Good Boyfriend Should Get Right',
   '5 Cute Questions All Boyfriends Must Answer Tonight',
   '5 Questions Every Boyfriend Must Answer Tonight If They Love You',
-  "5 Questions To Check If He's The One"
+  "5 Questions To Check If He's The One",
+  '5 Niche Conversation Starters To Keep The Spark Alive',
+  '5 Fun Questions To Check How Much Does He Love You',
+  '5 Fun Questions To Ragebait Your Boo',
+  'Does He Pass The Boyfriend Test',
+  '5 Impossible Questions To Ask Your Boyfriend Tonight',
+  '5 Dumb Questions To Annoy Your Boyfriend',
+  '5 Cute Questions To Fall In Love With You Boyfriend Again',
 ] as const;
 
 export default function Home() {
