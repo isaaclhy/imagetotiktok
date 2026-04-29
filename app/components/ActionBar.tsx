@@ -1,7 +1,7 @@
 'use client';
 
 interface ActionBarProps {
-  contentTab: 'image' | 'video' | 'automate';
+  contentTab: 'video' | 'automate';
   automateModel: 'gpt' | 'nana';
   setAutomateModel: (v: 'gpt' | 'nana') => void;
   onAutoGenerate: () => void;

@@ -113,6 +113,8 @@ export const PROMPTS = [
   'In London, on a sunny day, on a red wall, there\'s text "{x}" spray painted on it in white, with a heart below it as well.',
   'First person POV, walking down the street and looking down, you\'re holding a Starbucks hot drink. The lid is white, and on the lid there\'s text "{x}" written with black marker. Zoom in and focus on the text',
   'First person POV, you\'re a girl wearing baggy joggers with Adidas Sambas, looking down at the ground, and there\'s text "{x}" written with white chalk.',
+  'First person POV, you\'re holding a flat white full of foam, but some of the foam is separated and the text "{x}" can be seen. Zoom in and focus on the text',
+  'First person POV, you\'re having a cute date night, sitting on the floor in front of the coffee table with some wine and food; a cute cartoon and the text "{x}" are projected on the wall. Zoom in and focus on the text',
   
 ] as const;
 

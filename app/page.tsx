@@ -97,7 +97,7 @@ export default function Home() {
   const [levelName, setLevelName] = useState<string>('');
   const [theme, setTheme] = useState<string>('');
   const [mode, setMode] = useState<'plain' | 'video'>('video');
-  const [contentTab, setContentTab] = useState<'image' | 'video' | 'automate'>('image');
+  const [contentTab, setContentTab] = useState<'video' | 'automate'>('video');
   const [videoBackgroundUrl, setVideoBackgroundUrl] = useState<string | null>(null);
   const [videoThumbnailUrl, setVideoThumbnailUrl] = useState<string | null>(null);
   const [videoLoading, setVideoLoading] = useState(false);
@@ -987,7 +987,7 @@ export default function Home() {
               dailyGenIncludeCoverImage={dailyGenIncludeCoverImage}
               setDailyGenIncludeCoverImage={setDailyGenIncludeCoverImage}
             />
-            {(contentTab === 'image' || (contentTab === 'automate' && automateModel === 'nana')) && (
+            {contentTab === 'automate' && automateModel === 'nana' && (
               <PreviewPanel
                 canvases={canvases}
                 currentCanvasId={currentCanvasId}
