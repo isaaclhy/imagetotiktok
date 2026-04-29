@@ -103,13 +103,16 @@ export const PROMPTS = [
   'First person POV, you\'re outdoors in the city holding a piece of pink sticky note; on it has the text "{x}" written with a thick marker. Make the text the main focus and zoom in',
   'You\'re in the coffee shop holding some light pink napkins; on the napkin has the text "{x}" written on it with marker and hearts drawn on it. Zoom in on the text and make it visible',
   'In a bright NYC coffee shop, a female hand holding a condom wrapper with the text "{x}" on it.',
-  'First person POV, It\'s a sunny day, you\'re sitting outside a cafe and reading a book, on the book cover it says "5 questions to ask your bouyfriend tonight". The cover should be cartoon style with some figures but the text should be easily and clearly legible. Focus on the text. Make it realistic',
-  'First person POV, you\'re sitting down across your boyfriend in their 20s on the table. He is eating eggs. You (a female) holding onto your phone, you\'re on tiktok app and one of the post says "5 Questions to rage bait your boyfriend tonight". Focus on the phone text and zoom in.',
+  'First person POV, It\'s a sunny day, you\'re sitting outside a cafe and reading a book, on the book cover it says "{x}". The cover should be cartoon style with some figures but the text should be easily and clearly legible. Focus on the text. Make it realistic',
+  'First person POV, you\'re sitting down across your boyfriend in their 20s on the table. He is eating eggs. You (a female) holding onto your phone, you\'re on tiktok app and one of the post says "{x}". Focus on the phone text and zoom in.',
   'First person POV, stylish, mid 20s boyfriend walking over, he is holding onto a book, reading it. On the book cover has the text "{x}". Make it realistic and in a bedroom setting. Zoom in onto the text on the book cover',
   'First person POV, you are on your phone, you have painted nails. sitting across your boyfriend who is eating breakfast. on your phone, there\'s a text, saying "{x}", it\'s sent from your bestie. Zoom in on the text and and focus on it.',
   'First person POV, you are on your phone, sitting across your boyfriend who is eating breakfast. on your phone, there\'s a text, saying "{x}", it\'s sent from your bestie. Zoom in on the text and and focus on it.',
   'First person POV, you at the park with your boyfriend, you opened a book and started reading, and chapter 1 is titled "{x}". Zoom in and focus on the text',
   'First person POV, you\'re gently squeezing your boyfriend\'s cheek and you\'re holding a phone on the other hand, on the phone has a text message from your bestie saying "{x}", the phone should be close to you. Focus on the text',
+  'In London, on a sunny day, on a red wall, there\'s text "{x}" spray painted on it in white, with a heart below it as well.',
+  'First person POV, walking down the street and looking down, you\'re holding a Starbucks hot drink. The lid is white, and on the lid there\'s text "{x}" written with black marker. Zoom in and focus on the text',
+  'First person POV, you\'re a girl wearing baggy joggers with Adidas Sambas, looking down at the ground, and there\'s text "{x}" written with white chalk.',
   
 ] as const;
 

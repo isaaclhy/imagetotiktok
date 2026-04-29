@@ -50,6 +50,7 @@ const DAILY_TEMPLATE_TITLES = [
   '5 Questions Every Boyfriend Must Answer Tonight If They Love You',
   "5 Questions To Check If He's The One",
   '5 Niche Conversation Starters To Keep The Spark Alive',
+  '5 niche conversations to keep the spark alive',
   '5 Fun Questions To Check How Much Does He Love You',
   '5 Fun Questions To Ragebait Your Boo',
   'Does He Pass The Boyfriend Test',
