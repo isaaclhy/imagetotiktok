@@ -202,6 +202,7 @@ export const FUNNY_QUESTIONS = [
   'Would you rather be paralyzed from the neck down or hug another woman?',
   'Would you rather kiss another woman or fight a grizzly bear?',
   'Be honest, who\'s more weird?',
+  'If your dream girl walks in tomorrow, what would she have that I don\'t?',
   'Would you rather lose all our messages or photos together?',
   'If you lost me in a supermarket, where would you look for me first?',
   'Do you think you can do better than me?',

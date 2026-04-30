@@ -96,7 +96,12 @@ export default function Home() {
   const [levelName, setLevelName] = useState<string>('');
   const [theme, setTheme] = useState<string>('');
   const [mode, setMode] = useState<'plain' | 'video'>('video');
-  const [contentTab, setContentTab] = useState<'video' | 'automate'>('video');
+  const [contentTab, setContentTab] = useState<'image' | 'video' | 'automate'>('image');
+  const [selectedImageTemplateId, setSelectedImageTemplateId] = useState<number | null>(null);
+  const [selectedImageBrowserTab, setSelectedImageBrowserTab] = useState(0);
+  const imageTabFrameBg = '#FEFEFE';
+  const [imageTabFunnyQuestions, setImageTabFunnyQuestions] = useState<string[]>([]);
+  const [imageTabTexts, setImageTabTexts] = useState<string[]>([]);
   const [videoBackgroundUrl, setVideoBackgroundUrl] = useState<string | null>(null);
   const [videoThumbnailUrl, setVideoThumbnailUrl] = useState<string | null>(null);
   const [videoLoading, setVideoLoading] = useState(false);
@@ -900,6 +905,117 @@ export default function Home() {
     musicUsageConsent &&
     !(contentDisclosureEnabled && !isYourBrand && !isBrandedContent) &&
     !(contentDisclosureEnabled && isBrandedContent && postPrivacy === 'SELF_ONLY');
+  const imageTemplateCards = Array.from({ length: 4 }, (_, i) => ({
+    id: i + 1,
+    title: i === 0 ? 'Kawaii' : `Template ${i + 1}`,
+    subtitle: '',
+  }));
+  const imageTabSource = '/image-template-cat.png';
+  const imageFrameTitleLine1 = 'Questions to ask your';
+  const imageFrameTitleLine2 = 'boyfriend tonight <3';
+  const imageFrameCtaText = 'Remember to like, save and share the fun!';
+  const getDefaultImageFrameTextForTab = (tabIndex: number): string =>
+    tabIndex === 0
+      ? `${imageFrameTitleLine1}\n${imageFrameTitleLine2}`
+      : tabIndex >= 1 && tabIndex <= 5
+        ? imageTabFunnyQuestions[tabIndex - 1] || '...'
+        : imageFrameCtaText;
+  const getImageFrameTextForTab = (tabIndex: number): string =>
+    imageTabTexts[tabIndex] ?? getDefaultImageFrameTextForTab(tabIndex);
+  const imageFrameTextForActiveTab = getImageFrameTextForTab(selectedImageBrowserTab);
+  const imageTabLabelForActiveTab =
+    selectedImageBrowserTab === 0 ? 'Cover' : selectedImageBrowserTab <= 5 ? `Q${selectedImageBrowserTab}` : 'CTA';
+
+  const handleDownloadImageFrame = async () => {
+    try {
+      const frameWidth = 1080;
+      const frameHeight = 1440; // 3:4
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const el = new Image();
+        el.crossOrigin = 'anonymous';
+        el.onload = () => resolve(el);
+        el.onerror = () => reject(new Error('Failed to load image'));
+        el.src = imageTabSource;
+      });
+
+      const renderFrameBlob = async (tabIndex: number): Promise<Blob> => {
+        const canvas = document.createElement('canvas');
+        canvas.width = frameWidth;
+        canvas.height = frameHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Canvas context unavailable');
+
+        ctx.fillStyle = imageTabFrameBg;
+        ctx.fillRect(0, 0, frameWidth, frameHeight);
+
+        const maxW = frameWidth * 0.42;
+        const maxH = frameHeight * 0.20;
+        const scale = Math.min(maxW / img.width, maxH / img.height);
+        const drawW = img.width * scale;
+        const drawH = img.height * scale;
+        const drawX = (frameWidth - drawW) / 2;
+        const drawY = frameHeight - drawH - frameHeight * 0.09;
+
+        ctx.fillStyle = '#111111';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
+        ctx.shadowBlur = 12;
+        ctx.font = 'bold 40px "Comic Sans MS", "Trebuchet MS", sans-serif';
+        const drawWrapped = (text: string, yStart: number, maxWidth: number, lineHeight: number) => {
+          const words = text.trim().split(/\s+/);
+          const lines: string[] = [];
+          let current = words[0] ?? '';
+          for (let i = 1; i < words.length; i++) {
+            const next = `${current} ${words[i]}`;
+            if (ctx.measureText(next).width <= maxWidth) current = next;
+            else {
+              lines.push(current);
+              current = words[i] ?? '';
+            }
+          }
+          if (current) lines.push(current);
+          lines.forEach((line, idx) => ctx.fillText(line, frameWidth / 2, yStart + idx * lineHeight));
+        };
+        if (tabIndex >= 1 && tabIndex <= 6) {
+          drawWrapped(getImageFrameTextForTab(tabIndex), frameHeight * 0.21, frameWidth * 0.66, 52);
+        } else {
+          const coverY = frameHeight * 0.21;
+          const coverLineGap = 50;
+          ctx.fillText(imageFrameTitleLine1, frameWidth / 2, coverY);
+          ctx.fillText(imageFrameTitleLine2, frameWidth / 2, coverY + coverLineGap);
+        }
+        ctx.shadowBlur = 0;
+        ctx.drawImage(img, drawX, drawY, drawW, drawH);
+
+        return await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error('Failed to create image blob'));
+          }, 'image/png');
+        });
+      };
+
+      const zip = new JSZip();
+      for (let tabIndex = 0; tabIndex < 7; tabIndex++) {
+        const blob = await renderFrameBlob(tabIndex);
+        const tabName = tabIndex === 0 ? 'cover' : tabIndex <= 5 ? `q${tabIndex}` : 'cta';
+        zip.file(`template-${selectedImageTemplateId}-${tabName}.png`, blob);
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `template-${selectedImageTemplateId}-all-tabs.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Failed to download image frame:', e);
+    }
+  };
 
   return (
     <div className="h-screen overflow-hidden bg-zinc-50 font-sans dark:bg-black flex">
@@ -933,59 +1049,61 @@ export default function Home() {
             postPrivacy={postPrivacy}
           />
           <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-4 flex-1 min-h-0 px-3 pb-3 pt-0 overflow-hidden">
-            <InputsCard
-              contentTab={contentTab}
-              backgroundColor={backgroundColor}
-              setBackgroundColor={setBackgroundColor}
-              theme={theme}
-              setTheme={setTheme}
-              mode={mode}
-              setMode={setMode}
-              videoLoading={videoLoading}
-              onChangeVideo={handleChangeVideo}
-              text={text}
-              setText={setText}
-              firstCard={firstCard}
-              canvases={canvases}
-              setCanvases={setCanvases}
-              textSize={textSize}
-              setTextSize={setTextSize}
-              onAddCanvas={handleAddCanvas}
-              onDeleteCanvas={handleDeleteCanvas}
-              userInfo={userInfo}
-              postTitle={postTitle}
-              setPostTitle={setPostTitle}
-              postPrivacy={postPrivacy}
-              setPostPrivacy={setPostPrivacy}
-              creatorInfo={creatorInfo}
-              allowComment={allowComment}
-              setAllowComment={setAllowComment}
-              contentDisclosureEnabled={contentDisclosureEnabled}
-              setContentDisclosureEnabled={setContentDisclosureEnabled}
-              isYourBrand={isYourBrand}
-              setIsYourBrand={setIsYourBrand}
-              isBrandedContent={isBrandedContent}
-              setIsBrandedContent={setIsBrandedContent}
-              musicUsageConsent={musicUsageConsent}
-              setMusicUsageConsent={setMusicUsageConsent}
-              automateModel={automateModel}
-              automateCount={automateCount}
-              setAutomateCount={setAutomateCount}
-              onAutomateDownload={handleAutoGenerate}
-              isAutoGenerating={isAutoGenerating}
-              onGenerateDailyTikTok={handleGenerateDailyTikTok}
-              isGeneratingDailyTikTok={isGeneratingDailyTikTok}
-              automateQuestionType={automateQuestionType}
-              setAutomateQuestionType={setAutomateQuestionType}
-              dailyGenIncludeQuestions={dailyGenIncludeQuestions}
-              setDailyGenIncludeQuestions={setDailyGenIncludeQuestions}
-              dailyGenIncludeTitle={dailyGenIncludeTitle}
-              setDailyGenIncludeTitle={setDailyGenIncludeTitle}
-              dailyGenIncludeCaption={dailyGenIncludeCaption}
-              setDailyGenIncludeCaption={setDailyGenIncludeCaption}
-              dailyGenIncludeCoverImage={dailyGenIncludeCoverImage}
-              setDailyGenIncludeCoverImage={setDailyGenIncludeCoverImage}
-            />
+            {contentTab !== 'image' && (
+              <InputsCard
+                contentTab={contentTab}
+                backgroundColor={backgroundColor}
+                setBackgroundColor={setBackgroundColor}
+                theme={theme}
+                setTheme={setTheme}
+                mode={mode}
+                setMode={setMode}
+                videoLoading={videoLoading}
+                onChangeVideo={handleChangeVideo}
+                text={text}
+                setText={setText}
+                firstCard={firstCard}
+                canvases={canvases}
+                setCanvases={setCanvases}
+                textSize={textSize}
+                setTextSize={setTextSize}
+                onAddCanvas={handleAddCanvas}
+                onDeleteCanvas={handleDeleteCanvas}
+                userInfo={userInfo}
+                postTitle={postTitle}
+                setPostTitle={setPostTitle}
+                postPrivacy={postPrivacy}
+                setPostPrivacy={setPostPrivacy}
+                creatorInfo={creatorInfo}
+                allowComment={allowComment}
+                setAllowComment={setAllowComment}
+                contentDisclosureEnabled={contentDisclosureEnabled}
+                setContentDisclosureEnabled={setContentDisclosureEnabled}
+                isYourBrand={isYourBrand}
+                setIsYourBrand={setIsYourBrand}
+                isBrandedContent={isBrandedContent}
+                setIsBrandedContent={setIsBrandedContent}
+                musicUsageConsent={musicUsageConsent}
+                setMusicUsageConsent={setMusicUsageConsent}
+                automateModel={automateModel}
+                automateCount={automateCount}
+                setAutomateCount={setAutomateCount}
+                onAutomateDownload={handleAutoGenerate}
+                isAutoGenerating={isAutoGenerating}
+                onGenerateDailyTikTok={handleGenerateDailyTikTok}
+                isGeneratingDailyTikTok={isGeneratingDailyTikTok}
+                automateQuestionType={automateQuestionType}
+                setAutomateQuestionType={setAutomateQuestionType}
+                dailyGenIncludeQuestions={dailyGenIncludeQuestions}
+                setDailyGenIncludeQuestions={setDailyGenIncludeQuestions}
+                dailyGenIncludeTitle={dailyGenIncludeTitle}
+                setDailyGenIncludeTitle={setDailyGenIncludeTitle}
+                dailyGenIncludeCaption={dailyGenIncludeCaption}
+                setDailyGenIncludeCaption={setDailyGenIncludeCaption}
+                dailyGenIncludeCoverImage={dailyGenIncludeCoverImage}
+                setDailyGenIncludeCoverImage={setDailyGenIncludeCoverImage}
+              />
+            )}
             {contentTab === 'automate' && automateModel === 'nana' && (
               <PreviewPanel
                 canvases={canvases}
@@ -1022,6 +1140,152 @@ export default function Home() {
                 isRetryingDailyCaption={isRetryingDailyCaption}
                 isAutomateNanaMode={contentTab === 'automate'}
               />
+            )}
+            {contentTab === 'image' && (
+              <div className="lg:col-span-2 h-full min-h-0 overflow-y-auto p-1">
+                {selectedImageTemplateId === null ? (
+                  <>
+                    <div className="mb-4">
+                      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Pick a template</h2>
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400">Select one to start. Placeholder templates for now.</p>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {imageTemplateCards.map((card) => (
+                        <button
+                          key={card.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedImageTemplateId(card.id);
+                            setSelectedImageBrowserTab(0);
+                            const picked = [...FUNNY_QUESTIONS]
+                              .sort(() => Math.random() - 0.5)
+                              .slice(0, 5);
+                            setImageTabFunnyQuestions(picked);
+                            setImageTabTexts([
+                              `${imageFrameTitleLine1}\n${imageFrameTitleLine2}`,
+                              ...picked,
+                              imageFrameCtaText,
+                            ]);
+                          }}
+                          className="group rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 p-3 text-left hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                        >
+                          <div className="aspect-3/4 w-full rounded-lg mb-3 overflow-hidden">
+                            {card.id === 1 ? (
+                              <div
+                                className="w-full h-full relative"
+                                style={{ backgroundColor: '#FEFEFE' }}
+                              >
+                                <img
+                                  src={imageTabSource}
+                                  alt="Cover template preview"
+                                  className="absolute left-1/2 -translate-x-1/2 bottom-[6%] max-w-[42%] max-h-[24%] object-contain"
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-full h-full bg-linear-to-b from-zinc-200 to-zinc-300 dark:from-zinc-700 dark:to-zinc-800" />
+                            )}
+                          </div>
+                          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{card.title}</p>
+                          {card.subtitle ? <p className="text-xs text-zinc-500 dark:text-zinc-400">{card.subtitle}</p> : null}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div
+                    className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 overflow-hidden"
+                    style={{ fontFamily: '"Trebuchet MS", "Avenir Next", "Segoe UI", sans-serif' }}
+                  >
+                    <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-200 dark:border-zinc-700">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedImageTemplateId(null)}
+                        className="text-xs px-2 py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      >
+                        Back
+                      </button>
+                      <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Template {selectedImageTemplateId}</p>
+                      <button
+                        type="button"
+                        onClick={handleDownloadImageFrame}
+                        className="ml-auto text-xs px-2 py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      >
+                        Download
+                      </button>
+                    </div>
+                    <div className="flex gap-1 p-2 border-b border-zinc-200 dark:border-zinc-700 overflow-x-auto">
+                      {Array.from({ length: 7 }, (_, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setSelectedImageBrowserTab(i)}
+                          className={`px-3 py-1.5 rounded-md text-sm whitespace-nowrap transition-colors ${
+                            selectedImageBrowserTab === i
+                              ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
+                              : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                          }`}
+                        >
+                          {i === 0 ? 'Cover' : i <= 5 ? `Q${i}` : 'CTA'}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="p-6">
+                      <div className="flex flex-col md:flex-row items-start gap-4">
+                        <div
+                          className="relative w-full max-w-sm aspect-3/4 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden"
+                          style={{ backgroundColor: imageTabFrameBg }}
+                        >
+                          <p className="absolute top-[21%] left-1/2 -translate-x-1/2 text-center text-sm md:text-base font-semibold text-zinc-900 drop-shadow-[0_0_8px_rgba(255,255,255,0.9)] px-4 leading-tight max-w-[98%] whitespace-pre-line wrap-break-word">
+                            {imageFrameTextForActiveTab}
+                          </p>
+                          <img
+                            src={imageTabSource}
+                            alt={`Template ${selectedImageTemplateId} preview`}
+                            className="absolute left-1/2 -translate-x-1/2 bottom-[9%] max-w-[42%] max-h-[24%] object-contain"
+                          />
+                        </div>
+                        <div className="w-full md:w-80 md:self-start">
+                          <div className="flex items-center justify-between gap-2 mb-2">
+                            <label className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                              Frame text
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const pool = [...FUNNY_QUESTIONS];
+                                const current = imageFrameTextForActiveTab;
+                                let nextQuestion = pool[Math.floor(Math.random() * pool.length)] || current;
+                                if (pool.length > 1 && nextQuestion === current) {
+                                  nextQuestion = pool.find((q) => q !== current) || nextQuestion;
+                                }
+                                const next = [...imageTabTexts];
+                                next[selectedImageBrowserTab] = nextQuestion;
+                                setImageTabTexts(next);
+                              }}
+                              className="text-xs px-2 py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                            >
+                              Random question
+                            </button>
+                          </div>
+                          <input
+                            type="text"
+                            value={imageFrameTextForActiveTab}
+                            onChange={(e) => {
+                              const next = [...imageTabTexts];
+                              next[selectedImageBrowserTab] = e.target.value;
+                              setImageTabTexts(next);
+                            }}
+                            className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-zinc-400"
+                          />
+                        </div>
+                      </div>
+                      <p className="mt-4 text-center text-sm text-zinc-600 dark:text-zinc-300">
+                        {imageTabLabelForActiveTab}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>

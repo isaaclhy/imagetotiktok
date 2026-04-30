@@ -18,7 +18,7 @@ const DEFAULT_VIDEO_OVERLAY_LINES = [
 ];
 
 interface InputsCardProps {
-  contentTab: 'video' | 'automate';
+  contentTab: 'image' | 'video' | 'automate';
   // Image form state
   backgroundColor: string;
   setBackgroundColor: (v: string) => void;
@@ -201,6 +201,10 @@ export function InputsCard(props: InputsCardProps) {
     automateSelectedCategories.size === automateCategories.length && automateCategories.length > 0
       ? []
       : Array.from(automateSelectedCategories);
+
+  if (contentTab === 'image') {
+    return <div className="flex flex-col h-full min-h-0 bg-white dark:bg-zinc-900 rounded-2xl shadow-lg overflow-hidden" />;
+  }
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-white dark:bg-zinc-900 rounded-2xl shadow-lg overflow-hidden">
@@ -449,7 +453,7 @@ export function InputsCard(props: InputsCardProps) {
                 </div>
               ) : (
                 <>
-              <h3 className="text-base font-semibold text-zinc-800 dark:text-zinc-200">Automate</h3>
+              <h3 className="text-base font-semibold text-zinc-800 dark:text-zinc-200">Prompt</h3>
               <p className="text-sm text-zinc-600 dark:text-zinc-400">Generate card sets with random categories, AI-generated titles, and cover images.</p>
               <div>
                 <label htmlFor="automateCount" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Number of sets to generate</label>
