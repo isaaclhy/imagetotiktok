@@ -35,8 +35,22 @@ interface PreviewPanelProps {
   onRetryDailyItem?: (index: number) => void;
   /** Replace only the image prompt for a slot (keeps the question text) */
   onRetryDailyPromptOnly?: (index: number) => void;
+  /** Set a specific image prompt for a slot (keeps the question text) */
+  onSetDailyPrompt?: (index: number, prompt: string) => void;
   /** Replace only the question for a slot (keeps the image prompt) */
   onRetryDailyQuestionOnly?: (index: number) => void;
+  /** Current daily questions (for per-card selectors) */
+  automateDailyQuestions?: string[] | null;
+  /** Current daily prompts (for per-card prompt selectors) */
+  automateDailyPrompts?: string[] | null;
+  /** Available question options for selectors */
+  automateQuestionOptions?: string[];
+  /** Available prompt options for selectors */
+  automatePromptOptions?: string[];
+  /** Available template question/title options */
+  automateTemplateQuestionOptions?: string[];
+  /** Set a specific question for a slot */
+  onSetDailyQuestion?: (index: number, question: string) => void;
   /** Retry template prompt - new prompt + new API text for {x} */
   onRetryTemplatePrompt?: () => void | Promise<void>;
   isRetryingTemplatePrompt?: boolean;
@@ -45,6 +59,16 @@ interface PreviewPanelProps {
   /** Template: new {x} text only, keep current image prompt */
   onRetryTemplateQuestionOnly?: () => void | Promise<void>;
   isRetryingTemplateQuestion?: boolean;
+  /** Current template replacement text and setter for explicit selection */
+  automateTemplateReplacementText?: string | null;
+  onSetTemplateQuestion?: (question: string) => void;
+  /** Current template raw prompt and setter for explicit selection */
+  automateTemplatePromptRaw?: string | null;
+  onSetTemplatePrompt?: (prompt: string) => void;
+  /** Inline edit generated template prompt text */
+  onEditTemplatePromptText?: (text: string) => void;
+  /** Inline edit generated daily result text */
+  onEditDailyResultText?: (index: number, text: string) => void;
   /** Regenerate API video title / caption from current daily questions */
   onRegenerateDailyVideoTitle?: () => void | Promise<void>;
   onRegenerateDailyCaption?: () => void | Promise<void>;
@@ -77,12 +101,25 @@ export function PreviewPanel({
   onAutomateDailyIndexChange,
   onRetryDailyItem,
   onRetryDailyPromptOnly,
+  onSetDailyPrompt,
   onRetryDailyQuestionOnly,
+  automateDailyPrompts,
+  automateDailyQuestions,
+  automateQuestionOptions = [],
+  automatePromptOptions = [],
+  automateTemplateQuestionOptions = [],
+  onSetDailyQuestion,
   onRetryTemplatePrompt,
   isRetryingTemplatePrompt = false,
   onRetryTemplatePromptOnly,
   onRetryTemplateQuestionOnly,
   isRetryingTemplateQuestion = false,
+  automateTemplateReplacementText,
+  onSetTemplateQuestion,
+  automateTemplatePromptRaw,
+  onSetTemplatePrompt,
+  onEditTemplatePromptText,
+  onEditDailyResultText,
   onRegenerateDailyVideoTitle,
   onRegenerateDailyCaption,
   isRetryingDailyVideoTitle = false,
@@ -93,6 +130,10 @@ export function PreviewPanel({
   const showCanvasCards = !isAutomateNanaMode;
   const templateActionsBusy = isRetryingTemplatePrompt || isRetryingTemplateQuestion;
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [questionSelectValueByIndex, setQuestionSelectValueByIndex] = useState<Record<number, string>>({});
+  const [templateQuestionSelectValue, setTemplateQuestionSelectValue] = useState('');
+  const [promptSelectValueByIndex, setPromptSelectValueByIndex] = useState<Record<number, string>>({});
+  const [templatePromptSelectValue, setTemplatePromptSelectValue] = useState('');
   const handleCopy = useCallback(async (text: string, index: number) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -263,65 +304,130 @@ export function PreviewPanel({
               </div>
             )}
             {automateDailyTemplatePrompt && (
-              <div className="flex gap-2 items-start p-3 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-zinc-100 dark:bg-zinc-800">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">Template prompt</p>
-                  <p className="text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
-                    {automateDailyTemplatePrompt}
-                  </p>
-                </div>
-                <div className="shrink-0 flex flex-col gap-1">
-                  <button
-                    type="button"
-                    onClick={() => onRetryTemplatePrompt?.()}
-                    disabled={templateActionsBusy}
-                    className="p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Retry: new prompt and question text"
-                    aria-label="Retry: new prompt and question text"
-                  >
-                    {isRetryingTemplatePrompt ? (
-                      <svg className="w-4 h-4 mx-auto animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
-                    ) : (
-                      <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(automateDailyTemplatePrompt, -1)}
-                    className="p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
-                    title="Copy"
-                    aria-label="Copy"
-                  >
-                    {copiedIndex === -1 ? (
-                      <svg className="w-4 h-4 mx-auto text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                    ) : (
-                      <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onRetryTemplatePromptOnly?.()}
-                    disabled={templateActionsBusy}
-                    className="px-2 py-1.5 rounded-md text-xs font-medium bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-200 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="New image prompt only (same text that replaced {x})"
-                    aria-label="New prompt only"
-                  >
-                    Prompt
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onRetryTemplateQuestionOnly?.()}
-                    disabled={templateActionsBusy}
-                    className="px-2 py-1.5 rounded-md text-xs font-medium bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-200 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="New text for {x} only (same image prompt)"
-                    aria-label="New question only"
-                  >
-                    {isRetryingTemplateQuestion ? (
-                      <svg className="w-4 h-4 mx-auto animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
-                    ) : (
-                      'Question'
-                    )}
-                  </button>
+              <div className="p-3 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-zinc-100 dark:bg-zinc-800">
+                <div className="flex gap-2 items-start">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">Template prompt</p>
+                    <textarea
+                      value={automateDailyTemplatePrompt}
+                      onChange={(e) => onEditTemplatePromptText?.(e.target.value)}
+                      className="w-full min-h-[140px] resize-y rounded-md border border-zinc-300 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-900/40 px-2 py-1.5 text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed"
+                      style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+                      aria-label="Edit template prompt text inline"
+                    />
+                  </div>
+                  <div className="shrink-0 flex flex-col gap-1">
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => onRetryTemplatePrompt?.()}
+                        disabled={templateActionsBusy}
+                        className="p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Retry: new prompt and question text"
+                        aria-label="Retry: new prompt and question text"
+                      >
+                        {isRetryingTemplatePrompt ? (
+                          <svg className="w-4 h-4 mx-auto animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
+                        ) : (
+                          <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(automateDailyTemplatePrompt, -1)}
+                        className="p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
+                        title="Copy"
+                        aria-label="Copy"
+                      >
+                        {copiedIndex === -1 ? (
+                          <svg className="w-4 h-4 mx-auto text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                        ) : (
+                          <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                        )}
+                      </button>
+                    </div>
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => onRetryTemplatePromptOnly?.()}
+                      disabled={templateActionsBusy}
+                      className="w-[96px] px-2 py-1.5 rounded-md text-xs font-medium bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-200 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="New image prompt only (same text that replaced {x})"
+                      aria-label="New prompt only"
+                    >
+                      Prompt
+                    </button>
+                    <select
+                      value={templatePromptSelectValue}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setTemplatePromptSelectValue(value);
+                        if (!value) return;
+                        onSetTemplatePrompt?.(value);
+                        setTemplatePromptSelectValue('');
+                      }}
+                      className="w-[120px] px-2 py-1.5 rounded-md text-xs font-medium bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-200 transition-colors whitespace-nowrap"
+                      title="Pick specific prompt for template"
+                      aria-label="Pick specific prompt for template"
+                    >
+                      <option value="">Pick prompt</option>
+                      {automatePromptOptions
+                        .filter((p) => {
+                          const used = new Set((automateDailyPrompts ?? []).filter(Boolean));
+                          if (automateTemplatePromptRaw && p === automateTemplatePromptRaw) return true;
+                          return !used.has(p);
+                        })
+                        .map((p, optionIndex) => (
+                          <option key={`${p}-${optionIndex}`} value={p}>
+                            {p}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => onRetryTemplateQuestionOnly?.()}
+                        disabled={templateActionsBusy}
+                        className="w-[96px] px-2 py-1.5 rounded-md text-xs font-medium bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-200 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="New text for {x} only (same image prompt)"
+                        aria-label="New question only"
+                      >
+                        {isRetryingTemplateQuestion ? (
+                          <svg className="w-4 h-4 mx-auto animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
+                        ) : (
+                          'Question'
+                        )}
+                      </button>
+                      <select
+                        value={templateQuestionSelectValue}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setTemplateQuestionSelectValue(value);
+                          if (!value) return;
+                          onSetTemplateQuestion?.(value);
+                          setTemplateQuestionSelectValue('');
+                        }}
+                        className="w-[120px] px-2 py-1.5 rounded-md text-xs font-medium bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-200 transition-colors whitespace-nowrap"
+                        title="Pick specific question for template"
+                        aria-label="Pick specific question for template"
+                      >
+                        <option value="">Pick question</option>
+                        {automateTemplateQuestionOptions
+                          .filter((q, optionIndex, filtered) => {
+                            const used = new Set((automateDailyQuestions ?? []).filter(Boolean));
+                            const isAllowedCurrent = automateTemplateReplacementText && q === automateTemplateReplacementText;
+                            if (!isAllowedCurrent && used.has(q)) return false;
+                            return filtered.indexOf(q) === optionIndex;
+                          })
+                          .map((q, optionIndex) => (
+                            <option key={`${q}-${optionIndex}`} value={q}>
+                              {q}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -330,50 +436,108 @@ export function PreviewPanel({
                 key={i}
                 className="flex gap-2 items-start p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50"
               >
-                <p className="flex-1 text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed min-w-0" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
-                  {text}
-                </p>
+                <textarea
+                  value={text}
+                  onChange={(e) => onEditDailyResultText?.(i, e.target.value)}
+                  className="flex-1 min-w-0 min-h-[140px] resize-y rounded-md border border-zinc-300 dark:border-zinc-600 bg-zinc-100 dark:bg-zinc-900/40 px-2 py-1.5 text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed"
+                  style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+                  aria-label={`Edit result text inline for item ${i + 1}`}
+                />
                 <div className="shrink-0 flex flex-col gap-1">
-                  <button
-                    type="button"
-                    onClick={() => onRetryDailyItem?.(i)}
-                    className="p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
-                    title="Retry: new prompt and question"
-                    aria-label="Retry: new prompt and question"
-                  >
-                    <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(text, i)}
-                    className="p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
-                    title="Copy"
-                    aria-label="Copy"
-                  >
-                    {copiedIndex === i ? (
-                      <svg className="w-4 h-4 mx-auto text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                    ) : (
-                      <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onRetryDailyPromptOnly?.(i)}
-                    className="px-2 py-1.5 rounded-md text-xs font-medium bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-200 transition-colors whitespace-nowrap"
-                    title="New image prompt only (same question)"
-                    aria-label="New prompt only"
-                  >
-                    Prompt
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onRetryDailyQuestionOnly?.(i)}
-                    className="px-2 py-1.5 rounded-md text-xs font-medium bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-200 transition-colors whitespace-nowrap"
-                    title="New question only (same image prompt)"
-                    aria-label="New question only"
-                  >
-                    Question
-                  </button>
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => onRetryDailyItem?.(i)}
+                      className="p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
+                      title="Retry: new prompt and question"
+                      aria-label="Retry: new prompt and question"
+                    >
+                      <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(text, i)}
+                      className="p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
+                      title="Copy"
+                      aria-label="Copy"
+                    >
+                      {copiedIndex === i ? (
+                        <svg className="w-4 h-4 mx-auto text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                      ) : (
+                        <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                      )}
+                    </button>
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => onRetryDailyPromptOnly?.(i)}
+                      className="w-[96px] px-2 py-1.5 rounded-md text-xs font-medium bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-200 transition-colors whitespace-nowrap"
+                      title="New image prompt only (same question)"
+                      aria-label="New prompt only"
+                    >
+                      Prompt
+                    </button>
+                    <select
+                      value={promptSelectValueByIndex[i] ?? ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setPromptSelectValueByIndex((prev) => ({ ...prev, [i]: value }));
+                        if (!value) return;
+                        onSetDailyPrompt?.(i, value);
+                        setPromptSelectValueByIndex((prev) => ({ ...prev, [i]: '' }));
+                      }}
+                      className="w-[120px] px-2 py-1.5 rounded-md text-xs font-medium bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-200 transition-colors whitespace-nowrap"
+                      title="Pick specific prompt"
+                      aria-label={`Select specific prompt for item ${i + 1}`}
+                    >
+                      <option value="">Pick prompt</option>
+                      {automatePromptOptions
+                        .filter((p) => !new Set((automateDailyPrompts ?? []).filter((_, idx) => idx !== i)).has(p))
+                        .map((p, optionIndex) => (
+                          <option key={`${p}-${optionIndex}`} value={p}>
+                            {p}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => onRetryDailyQuestionOnly?.(i)}
+                      className="w-[96px] px-2 py-1.5 rounded-md text-xs font-medium bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-200 transition-colors whitespace-nowrap"
+                      title="New question only (same image prompt)"
+                      aria-label="New question only"
+                    >
+                      Question
+                    </button>
+                    <select
+                      value={questionSelectValueByIndex[i] ?? ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setQuestionSelectValueByIndex((prev) => ({ ...prev, [i]: value }));
+                        if (!value) return;
+                        onSetDailyQuestion?.(i, value);
+                        setQuestionSelectValueByIndex((prev) => ({ ...prev, [i]: '' }));
+                      }}
+                      className="w-[120px] px-2 py-1.5 rounded-md text-xs font-medium bg-zinc-200 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-200 transition-colors whitespace-nowrap"
+                      title="Pick a specific unused question"
+                      aria-label={`Select specific question for item ${i + 1}`}
+                    >
+                      <option value="">Pick question</option>
+                      {automateQuestionOptions
+                        .filter((q, optionIndex, filtered) => {
+                          const isUnused = !new Set((automateDailyQuestions ?? []).filter((_, idx) => idx !== i)).has(q);
+                          if (!isUnused) return false;
+                          return filtered.indexOf(q) === optionIndex;
+                        })
+                        .map((q, optionIndex) => (
+                          <option key={`${q}-${optionIndex}`} value={q}>
+                            {q}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
                 </div>
               </div>
             ))}

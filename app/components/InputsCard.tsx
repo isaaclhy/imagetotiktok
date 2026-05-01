@@ -55,7 +55,6 @@ interface InputsCardProps {
   musicUsageConsent: boolean;
   setMusicUsageConsent: (v: boolean) => void;
   // Automate tab
-  automateModel?: 'gpt' | 'nana';
   automateCount?: string;
   setAutomateCount?: (v: string) => void;
   onAutomateDownload?: (coverPromptId: string, categories: string[]) => Promise<void>;
@@ -111,7 +110,6 @@ export function InputsCard(props: InputsCardProps) {
     setIsBrandedContent,
     musicUsageConsent,
     setMusicUsageConsent,
-    automateModel = 'nana',
     automateCount = '5',
     setAutomateCount = () => {},
     onAutomateDownload,
@@ -400,9 +398,8 @@ export function InputsCard(props: InputsCardProps) {
 
           {contentTab === 'automate' && (
             <div className="space-y-4">
-              {automateModel === 'nana' ? (
-                <div className="space-y-4">
-                  <div>
+              <div className="space-y-4">
+                  <div className="max-w-[220px]">
                     <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Question type</label>
                     <select
                       value={automateQuestionType}
@@ -451,83 +448,6 @@ export function InputsCard(props: InputsCardProps) {
                     </div>
                   </div>
                 </div>
-              ) : (
-                <>
-              <h3 className="text-base font-semibold text-zinc-800 dark:text-zinc-200">Prompt</h3>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">Generate card sets with random categories, AI-generated titles, and cover images.</p>
-              <div>
-                <label htmlFor="automateCount" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Number of sets to generate</label>
-                <input
-                  type="number"
-                  id="automateCount"
-                  min={1}
-                  max={20}
-                  value={automateCount}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (v === '' || /^\d+$/.test(v)) setAutomateCount(v === '' ? '' : String(Math.min(20, Math.max(1, parseInt(v, 10) || 1))));
-                  }}
-                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] font-mono text-sm"
-                />
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">All sets will be downloaded in one ZIP file (1–20 sets)</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Cover image style</label>
-                <div className="flex flex-wrap gap-2">
-                  {(Object.keys(COVER_IMAGE_PROMPTS) as CoverImageStyle[]).map((style) => (
-                    <label key={style} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-700">
-                      <input
-                        type="radio"
-                        name="coverStyle"
-                        checked={automateCoverStyle === style}
-                        onChange={() => setAutomateCoverStyle(style)}
-                        className="rounded-full"
-                      />
-                      <span className="text-sm text-zinc-700 dark:text-zinc-300 capitalize">{style}</span>
-                    </label>
-                  ))}
-                </div>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">Choose the style for AI-generated cover images</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Categories to include (uncheck to exclude)</label>
-                {automateCategoriesLoading ? (
-                  <p className="text-xs text-zinc-500">Loading categories…</p>
-                ) : automateCategories.length === 0 ? (
-                  <p className="text-xs text-zinc-500">No categories available</p>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {automateCategories.map((cat) => (
-                      <label key={cat} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-700">
-                        <input type="checkbox" checked={automateSelectedCategories.has(cat)} onChange={() => toggleAutomateCategory(cat)} className="rounded" />
-                        <span className="text-sm text-zinc-700 dark:text-zinc-300">{cat}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">Uncheck categories you want to exclude</p>
-              </div>
-              {onAutomateDownload && (
-                <button
-                  onClick={() => onAutomateDownload(COVER_IMAGE_PROMPTS[automateCoverStyle], automateCategoriesToUse)}
-                  disabled={isAutoGenerating}
-                  className="w-full py-3 px-4 rounded-lg bg-black hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isAutoGenerating ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      Generating...
-                    </>
-                  ) : (
-                    'Download'
-                  )}
-                </button>
-              )}
-                </>
-              )}
             </div>
           )}
 
@@ -665,7 +585,7 @@ export function InputsCard(props: InputsCardProps) {
           </button>
         </div>
       )}
-      {contentTab === 'automate' && automateModel === 'nana' && (
+      {contentTab === 'automate' && (
         <div className="flex-shrink-0 px-4 py-3 border-t border-zinc-200 dark:border-zinc-700">
           <button
             type="button"

@@ -74,7 +74,6 @@ export default function Home() {
   const [showToast, setShowToast] = useState(false);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [automateCount, setAutomateCount] = useState('5');
-  const [automateModel, setAutomateModel] = useState<'gpt' | 'nana'>('nana');
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [postStatus, setPostStatus] = useState<'processing' | 'success' | 'failed' | null>(null);
@@ -102,6 +101,7 @@ export default function Home() {
   const imageTabFrameBg = '#FEFEFE';
   const [imageTabFunnyQuestions, setImageTabFunnyQuestions] = useState<string[]>([]);
   const [imageTabTexts, setImageTabTexts] = useState<string[]>([]);
+  const [imageTabSources, setImageTabSources] = useState<string[]>([]);
   const [videoBackgroundUrl, setVideoBackgroundUrl] = useState<string | null>(null);
   const [videoThumbnailUrl, setVideoThumbnailUrl] = useState<string | null>(null);
   const [videoLoading, setVideoLoading] = useState(false);
@@ -394,6 +394,14 @@ export default function Home() {
         lastDailyPromptRunRef.current = new Set([rawTemplatePromptForCover]);
       }
 
+      // Show cover as soon as prompt is ready (don't wait for title/caption APIs).
+      if (dailyGenIncludeCoverImage && rawTemplatePromptForCover) {
+        const templateReplacement = pickTemplateHookTitle().trim();
+        const templateWithXReplaced = rawTemplatePromptForCover.replace(/\{x\}/g, templateReplacement);
+        setAutomateDailyTemplateReplacementText(templateReplacement);
+        setAutomateDailyTemplatePrompt(templateWithXReplaced);
+      }
+
       const questionsForApi =
         selectedQuestionsThisRun && selectedQuestionsThisRun.length === 5
           ? selectedQuestionsThisRun.join('\n')
@@ -431,14 +439,6 @@ export default function Home() {
         } catch {
           // keep previous caption
         }
-      }
-
-      if (dailyGenIncludeCoverImage && rawTemplatePromptForCover) {
-        let templateWithXReplaced: string;
-        const templateReplacement = pickTemplateHookTitle().trim();
-        templateWithXReplaced = rawTemplatePromptForCover.replace(/\{x\}/g, templateReplacement);
-        setAutomateDailyTemplateReplacementText(templateReplacement);
-        setAutomateDailyTemplatePrompt(templateWithXReplaced);
       }
 
       setAutomateDailyIndex(0);
@@ -544,6 +544,33 @@ export default function Home() {
     }
   };
 
+  const handleSetTemplateQuestion = (question: string) => {
+    const raw = automateDailyTemplatePromptRaw;
+    if (!raw?.trim()) return;
+    setAutomateDailyTemplateReplacementText(question);
+    setAutomateDailyTemplatePrompt(raw.replace(/\{x\}/g, question));
+  };
+
+  const handleSetTemplatePrompt = (prompt: string) => {
+    const replacement = automateDailyTemplateReplacementText;
+    if (!prompt?.trim() || !replacement?.trim()) return;
+    setAutomateDailyTemplatePromptRaw(prompt);
+    setAutomateDailyTemplatePrompt(prompt.replace(/\{x\}/g, replacement));
+  };
+
+  const handleEditTemplatePromptText = (text: string) => {
+    setAutomateDailyTemplatePrompt(text);
+  };
+
+  const handleEditDailyResultText = (index: number, text: string) => {
+    setAutomateDailyResults((prev) => {
+      if (!prev) return prev;
+      const next = [...prev];
+      next[index] = text;
+      return next;
+    });
+  };
+
   const handleRetryDailyItem = (index: number) => {
     const questionPool =
       automateQuestionType === 'me_or_you'
@@ -618,6 +645,27 @@ export default function Home() {
     });
   };
 
+  const handleSetDailyPromptAtIndex = (index: number, prompt: string) => {
+    if (
+      !automateDailyRowPrompts ||
+      !automateDailyRowQuestions ||
+      automateDailyRowPrompts.length !== 5 ||
+      automateDailyRowQuestions.length !== 5
+    ) {
+      return;
+    }
+    const currentQuestion = automateDailyRowQuestions[index]!;
+    const nextPrompts = [...automateDailyRowPrompts];
+    nextPrompts[index] = prompt;
+    setAutomateDailyRowPrompts(nextPrompts);
+    setAutomateDailyResults((prev) => {
+      if (!prev) return prev;
+      const next = [...prev];
+      next[index] = prompt.replace(/\{x\}/g, currentQuestion);
+      return next;
+    });
+  };
+
   const handleRetryDailyQuestionOnly = (index: number) => {
     const questionPool =
       automateQuestionType === 'me_or_you'
@@ -639,6 +687,27 @@ export default function Home() {
     const questionCandidates = questionPool.filter((q) => !usedQuestions.has(q));
     const question = questionCandidates.length > 0 ? pickRandom(questionCandidates) : pickRandom(questionPool);
 
+    const nextQuestions = [...automateDailyRowQuestions];
+    nextQuestions[index] = question;
+    setAutomateDailyRowQuestions(nextQuestions);
+    setAutomateDailyResults((prev) => {
+      if (!prev) return prev;
+      const next = [...prev];
+      next[index] = currentPrompt.replace(/\{x\}/g, question);
+      return next;
+    });
+  };
+
+  const handleSetDailyQuestionAtIndex = (index: number, question: string) => {
+    if (
+      !automateDailyRowPrompts ||
+      !automateDailyRowQuestions ||
+      automateDailyRowPrompts.length !== 5 ||
+      automateDailyRowQuestions.length !== 5
+    ) {
+      return;
+    }
+    const currentPrompt = automateDailyRowPrompts[index]!;
     const nextQuestions = [...automateDailyRowQuestions];
     nextQuestions[index] = question;
     setAutomateDailyRowQuestions(nextQuestions);
@@ -910,7 +979,11 @@ export default function Home() {
     title: i === 0 ? 'Kawaii' : `Template ${i + 1}`,
     subtitle: '',
   }));
-  const imageTabSource = '/image-template-cat.png';
+  const dogImagePool = [
+    '/dog-images/image-template-cat.png',
+    '/dog-images/image-template-cat-2.png',
+    '/dog-images/image-template-cat-3.png',
+  ] as const;
   const imageFrameTitleLine1 = 'Questions to ask your';
   const imageFrameTitleLine2 = 'boyfriend tonight <3';
   const imageFrameCtaText = 'Remember to like, save and share the fun!';
@@ -922,7 +995,10 @@ export default function Home() {
         : imageFrameCtaText;
   const getImageFrameTextForTab = (tabIndex: number): string =>
     imageTabTexts[tabIndex] ?? getDefaultImageFrameTextForTab(tabIndex);
+  const getImageSourceForTab = (tabIndex: number): string =>
+    imageTabSources[tabIndex] ?? dogImagePool[tabIndex % dogImagePool.length]!;
   const imageFrameTextForActiveTab = getImageFrameTextForTab(selectedImageBrowserTab);
+  const imageSourceForActiveTab = getImageSourceForTab(selectedImageBrowserTab);
   const imageTabLabelForActiveTab =
     selectedImageBrowserTab === 0 ? 'Cover' : selectedImageBrowserTab <= 5 ? `Q${selectedImageBrowserTab}` : 'CTA';
 
@@ -930,15 +1006,14 @@ export default function Home() {
     try {
       const frameWidth = 1080;
       const frameHeight = 1440; // 3:4
-      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-        const el = new Image();
-        el.crossOrigin = 'anonymous';
-        el.onload = () => resolve(el);
-        el.onerror = () => reject(new Error('Failed to load image'));
-        el.src = imageTabSource;
-      });
-
       const renderFrameBlob = async (tabIndex: number): Promise<Blob> => {
+        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const el = new Image();
+          el.crossOrigin = 'anonymous';
+          el.onload = () => resolve(el);
+          el.onerror = () => reject(new Error('Failed to load image'));
+          el.src = getImageSourceForTab(tabIndex);
+        });
         const canvas = document.createElement('canvas');
         canvas.width = frameWidth;
         canvas.height = frameHeight;
@@ -1033,8 +1108,6 @@ export default function Home() {
         <div className="max-w-7xl mx-auto w-full flex flex-col flex-1 min-h-0">
           <ActionBar
             contentTab={contentTab}
-            automateModel={automateModel}
-            setAutomateModel={setAutomateModel}
             onAutoGenerate={() => setContentTab('automate')}
             onDownload={() => setShowDownloadModal(true)}
             onPost={handlePostToTikTok}
@@ -1048,7 +1121,11 @@ export default function Home() {
             isBrandedContent={isBrandedContent}
             postPrivacy={postPrivacy}
           />
-          <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-4 flex-1 min-h-0 px-3 pb-3 pt-0 overflow-hidden">
+          <div
+            className={`grid grid-cols-1 gap-4 flex-1 min-h-0 px-3 pb-3 pt-0 overflow-hidden ${
+              contentTab === 'automate' ? 'lg:grid-cols-[320px_1fr]' : 'lg:grid-cols-[400px_1fr]'
+            }`}
+          >
             {contentTab !== 'image' && (
               <InputsCard
                 contentTab={contentTab}
@@ -1085,7 +1162,6 @@ export default function Home() {
                 setIsBrandedContent={setIsBrandedContent}
                 musicUsageConsent={musicUsageConsent}
                 setMusicUsageConsent={setMusicUsageConsent}
-                automateModel={automateModel}
                 automateCount={automateCount}
                 setAutomateCount={setAutomateCount}
                 onAutomateDownload={handleAutoGenerate}
@@ -1104,7 +1180,7 @@ export default function Home() {
                 setDailyGenIncludeCoverImage={setDailyGenIncludeCoverImage}
               />
             )}
-            {contentTab === 'automate' && automateModel === 'nana' && (
+            {contentTab === 'automate' && (
               <PreviewPanel
                 canvases={canvases}
                 currentCanvasId={currentCanvasId}
@@ -1128,12 +1204,35 @@ export default function Home() {
                 onAutomateDailyIndexChange={setAutomateDailyIndex}
                 onRetryDailyItem={handleRetryDailyItem}
                 onRetryDailyPromptOnly={handleRetryDailyPromptOnly}
+                onSetDailyPrompt={handleSetDailyPromptAtIndex}
                 onRetryDailyQuestionOnly={handleRetryDailyQuestionOnly}
+                automateDailyPrompts={contentTab === 'automate' ? automateDailyRowPrompts : undefined}
+                automateDailyQuestions={contentTab === 'automate' ? automateDailyRowQuestions : undefined}
+                automateQuestionOptions={
+                  automateQuestionType === 'me_or_you'
+                    ? [...ME_OR_YOU_QUESTIONS]
+                    : automateQuestionType === 'flirty'
+                      ? [...FLIRTY_QUESTIONS]
+                      : [...FUNNY_QUESTIONS]
+                }
+                automatePromptOptions={[...PROMPTS]}
+                automateTemplateQuestionOptions={[...DAILY_TEMPLATE_TITLES]}
+                onSetDailyQuestion={handleSetDailyQuestionAtIndex}
                 onRetryTemplatePrompt={handleRetryTemplatePrompt}
                 isRetryingTemplatePrompt={isRetryingTemplatePrompt}
                 onRetryTemplatePromptOnly={handleRetryTemplatePromptOnly}
                 onRetryTemplateQuestionOnly={handleRetryTemplateQuestionOnly}
                 isRetryingTemplateQuestion={isRetryingTemplateQuestion}
+                automateTemplateReplacementText={
+                  contentTab === 'automate' ? automateDailyTemplateReplacementText : undefined
+                }
+                onSetTemplateQuestion={handleSetTemplateQuestion}
+                automateTemplatePromptRaw={
+                  contentTab === 'automate' ? automateDailyTemplatePromptRaw : undefined
+                }
+                onSetTemplatePrompt={handleSetTemplatePrompt}
+                onEditTemplatePromptText={handleEditTemplatePromptText}
+                onEditDailyResultText={handleEditDailyResultText}
                 onRegenerateDailyVideoTitle={handleRegenerateDailyVideoTitle}
                 onRegenerateDailyCaption={handleRegenerateDailyCaption}
                 isRetryingDailyVideoTitle={isRetryingDailyVideoTitle}
@@ -1166,6 +1265,9 @@ export default function Home() {
                               ...picked,
                               imageFrameCtaText,
                             ]);
+                            setImageTabSources(
+                              Array.from({ length: 7 }, () => dogImagePool[Math.floor(Math.random() * dogImagePool.length)]!)
+                            );
                           }}
                           className="group rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 p-3 text-left hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                         >
@@ -1176,7 +1278,7 @@ export default function Home() {
                                 style={{ backgroundColor: '#FEFEFE' }}
                               >
                                 <img
-                                  src={imageTabSource}
+                                  src={dogImagePool[0]}
                                   alt="Cover template preview"
                                   className="absolute left-1/2 -translate-x-1/2 bottom-[6%] max-w-[42%] max-h-[24%] object-contain"
                                 />
@@ -1239,7 +1341,7 @@ export default function Home() {
                             {imageFrameTextForActiveTab}
                           </p>
                           <img
-                            src={imageTabSource}
+                            src={imageSourceForActiveTab}
                             alt={`Template ${selectedImageTemplateId} preview`}
                             className="absolute left-1/2 -translate-x-1/2 bottom-[9%] max-w-[42%] max-h-[24%] object-contain"
                           />
