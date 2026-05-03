@@ -182,7 +182,6 @@ export const FUNNY_QUESTIONS = [
   'Would you rather have 100 kids or no kids at all?',
   'Would you still love me if my lower body is paralyzed?',
   'Would you rather forget me for a day or let me read all your DMs?',
-  'Would you rather walk in on your parents or have them walk in on us?',
   'Would you rather hook up with you ex or have my ex hook up with me?',
   'Would you rather get $1 mil but I can\'t celebrate your birthday with you or spend your birthday with me?',
   'Who do you love more, your mom or me?',
@@ -202,7 +201,7 @@ export const FUNNY_QUESTIONS = [
   'Would you rather be paralyzed from the neck down or hug another woman?',
   'Would you rather kiss another woman or fight a grizzly bear?',
   'If yuou\'re in a room with 30 other clones of me, how would you find me?',
-  'If I got bit by a zombie, would you let me bit you?',
+  'If I got bit by a zombie, would you let me bite you?',
   'Be honest, who\'s more weird?',
   'If your dream girl walks in tomorrow, what would she have that I don\'t?',
   'Would you rather lose all our messages or photos together?',
@@ -220,7 +219,8 @@ export const FUNNY_QUESTIONS = [
   'Would you change my personality or my looks?',
   'Do you actually listen to me when I speak or do you just wait until your turn?',
   'Would you rather I get horny only once a month or want it every day?',
-  
+  'Would you have a girlfriend if I wasn\'t born?',
+  'First person POV, you are on your phone, sitting across your boyfriend who is in his 20s wearing a hoodie and is eating breakfast. on your phone, there\'s a text, saying "{x}", it\'s sent from your bestie. Zoom in on the text and focus on it.',
 ] as const;
 
 /** Flirty relationship questions for games. */

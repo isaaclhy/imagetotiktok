@@ -13,6 +13,27 @@ import { PreviewPanel } from '@/app/components/PreviewPanel';
 import { DownloadModal } from '@/app/components/DownloadModal';
 import { Toast } from '@/app/components/Toast';
 
+function shuffleCopy<T>(items: T[]): T[] {
+  const a = [...items];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/** Draws `count` images without replacement within each shuffled pass over `pool`; reshuffles only after every file has been used once. With ≥7 assets, all `count` picks are distinct. */
+function pickDogUrlsWithoutReuseUntilDeckExhausted(pool: string[], count: number): string[] {
+  if (pool.length === 0) return Array.from({ length: count }, () => '');
+  const picked: string[] = [];
+  let deck: string[] = [];
+  for (let i = 0; i < count; i++) {
+    if (deck.length === 0) deck = shuffleCopy(pool);
+    picked.push(deck.pop()!);
+  }
+  return picked;
+}
+
 const INITIAL_CANVASES: CanvasData[] = [
   { id: '1', text: '', backgroundColor: '#000000', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' },
   { id: '3', text: '', backgroundColor: '#000000', textColor: '#000000', textSize: '200', imageSize: '1080x1920' },
@@ -102,6 +123,7 @@ export default function Home() {
   const [imageTabFunnyQuestions, setImageTabFunnyQuestions] = useState<string[]>([]);
   const [imageTabTexts, setImageTabTexts] = useState<string[]>([]);
   const [imageTabSources, setImageTabSources] = useState<string[]>([]);
+  const [dogImagePool, setDogImagePool] = useState<string[]>([]);
   const [videoBackgroundUrl, setVideoBackgroundUrl] = useState<string | null>(null);
   const [videoThumbnailUrl, setVideoThumbnailUrl] = useState<string | null>(null);
   const [videoLoading, setVideoLoading] = useState(false);
@@ -261,6 +283,32 @@ export default function Home() {
       );
     });
   }, [backgroundColor, textColor, textSize, imageSize, currentCanvasId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/dog-images');
+        if (!res.ok) return;
+        const data: unknown = await res.json();
+        if (
+          cancelled ||
+          !data ||
+          typeof data !== 'object' ||
+          !('urls' in data) ||
+          !Array.isArray((data as { urls: unknown }).urls)
+        ) {
+          return;
+        }
+        setDogImagePool((data as { urls: string[] }).urls.filter((u) => typeof u === 'string'));
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -979,11 +1027,6 @@ export default function Home() {
     title: i === 0 ? 'Kawaii' : `Template ${i + 1}`,
     subtitle: '',
   }));
-  const dogImagePool = [
-    '/dog-images/image-template-cat.png',
-    '/dog-images/image-template-cat-2.png',
-    '/dog-images/image-template-cat-3.png',
-  ] as const;
   const imageFrameTitleLine1 = 'Questions to ask your';
   const imageFrameTitleLine2 = 'boyfriend tonight <3';
   const imageFrameCtaText = 'Remember to like, save and share the fun!';
@@ -996,7 +1039,8 @@ export default function Home() {
   const getImageFrameTextForTab = (tabIndex: number): string =>
     imageTabTexts[tabIndex] ?? getDefaultImageFrameTextForTab(tabIndex);
   const getImageSourceForTab = (tabIndex: number): string =>
-    imageTabSources[tabIndex] ?? dogImagePool[tabIndex % dogImagePool.length]!;
+    imageTabSources[tabIndex] ??
+    (dogImagePool.length ? dogImagePool[tabIndex % dogImagePool.length]! : '');
   const imageFrameTextForActiveTab = getImageFrameTextForTab(selectedImageBrowserTab);
   const imageSourceForActiveTab = getImageSourceForTab(selectedImageBrowserTab);
   const imageTabLabelForActiveTab =
@@ -1266,7 +1310,7 @@ export default function Home() {
                               imageFrameCtaText,
                             ]);
                             setImageTabSources(
-                              Array.from({ length: 7 }, () => dogImagePool[Math.floor(Math.random() * dogImagePool.length)]!)
+                              dogImagePool.length ? pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 7) : []
                             );
                           }}
                           className="group rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 p-3 text-left hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
@@ -1277,11 +1321,13 @@ export default function Home() {
                                 className="w-full h-full relative"
                                 style={{ backgroundColor: '#FEFEFE' }}
                               >
-                                <img
-                                  src={dogImagePool[0]}
-                                  alt="Cover template preview"
-                                  className="absolute left-1/2 -translate-x-1/2 bottom-[6%] max-w-[42%] max-h-[24%] object-contain"
-                                />
+                                {dogImagePool[0] ? (
+                                  <img
+                                    src={dogImagePool[0]}
+                                    alt="Cover template preview"
+                                    className="absolute left-1/2 -translate-x-1/2 bottom-[6%] max-w-[42%] max-h-[24%] object-contain"
+                                  />
+                                ) : null}
                               </div>
                             ) : (
                               <div className="w-full h-full bg-linear-to-b from-zinc-200 to-zinc-300 dark:from-zinc-700 dark:to-zinc-800" />
