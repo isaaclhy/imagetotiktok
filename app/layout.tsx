@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter, Open_Sans } from "next/font/google";
+import "@fontsource/tiktok-sans/latin-900.css";
+import "@fontsource/tiktok-sans/latin-ext-900.css";
 import "./globals.css";
 
 const openSans = Open_Sans({

@@ -21,14 +21,20 @@ function shuffleCopy<T>(items: T[]): T[] {
   return a;
 }
 
+const TIKTOK_SANS_STACK = '"TikTok Sans", system-ui, -apple-system, sans-serif';
+
+/** Scales with frame width; shared by preview export and canvas burn-in. */
+function videoCaptionFontSizePx(frameW: number): number {
+  return Math.max(22, Math.min(84, Math.floor(frameW * 0.058)));
+}
+
 /** TikTok-style caption for canvas export (white fill, black stroke). */
 function drawTikTokCaptionOnCanvas(ctx: CanvasRenderingContext2D, w: number, h: number, text: string) {
   const trimmed = text.trim();
   if (!trimmed) return;
-  const maxWidth = w * 0.68;
-  const fontSize = Math.max(16, Math.min(62, Math.floor(w * 0.046)));
-  ctx.font =
-    `900 ${fontSize}px "Arial Black", "SF Pro Display", "Helvetica Neue", "Inter", system-ui, sans-serif`;
+  const maxWidth = w * 0.7;
+  const fontSize = videoCaptionFontSizePx(w);
+  ctx.font = `900 ${fontSize}px ${TIKTOK_SANS_STACK}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
@@ -48,15 +54,15 @@ function drawTikTokCaptionOnCanvas(ctx: CanvasRenderingContext2D, w: number, h: 
   const lineHeight = fontSize * 1.18;
   const totalH = lines.length * lineHeight;
   let y = h / 2 - totalH / 2 + lineHeight / 2;
-  const strokeW = Math.max(2, fontSize * 0.09);
+  const strokeW = Math.max(2.5, fontSize * 0.11);
   ctx.lineJoin = 'round';
   ctx.miterLimit = 2;
   for (const ln of lines) {
     ctx.lineWidth = strokeW;
     ctx.strokeStyle = '#000000';
     ctx.fillStyle = '#ffffff';
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.28)';
-    ctx.shadowBlur = Math.max(1, fontSize * 0.07);
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+    ctx.shadowBlur = Math.max(2, fontSize * 0.08);
     ctx.shadowOffsetY = Math.max(1, fontSize * 0.03);
     ctx.strokeText(ln, w / 2, y);
     ctx.fillText(ln, w / 2, y);
@@ -113,6 +119,15 @@ async function exportWebmWithCaptionOverlay(videoSrc: string, caption: string): 
   const w = video.videoWidth;
   const h = video.videoHeight;
   if (w <= 0 || h <= 0) throw new Error('Invalid video dimensions');
+
+  const captionFontSize = videoCaptionFontSizePx(w);
+  if (typeof document !== 'undefined' && document.fonts?.load) {
+    try {
+      await document.fonts.load(`900 ${captionFontSize}px "TikTok Sans"`);
+    } catch {
+      /* fall back to system font if load fails */
+    }
+  }
 
   const canvas = document.createElement('canvas');
   canvas.width = w;
@@ -324,6 +339,7 @@ export default function Home() {
   /** TikTok-style overlay on video templates (white fill, black stroke). */
   const [videoOverlayCaption, setVideoOverlayCaption] = useState('Your text here');
   const [isVideoExporting, setIsVideoExporting] = useState(false);
+  const [isImageTemplateDownloading, setIsImageTemplateDownloading] = useState(false);
   const [videoExportError, setVideoExportError] = useState<string | null>(null);
   const [selectedImageBrowserTab, setSelectedImageBrowserTab] = useState(0);
   const imageTabFrameBg = '#FEFEFE';
@@ -1280,16 +1296,40 @@ export default function Home() {
       : undefined;
 
   const handleDownloadImageFrame = async () => {
+    const KAWAII_DOWNLOAD_NUM_SETS = 5;
+    type ImageExportSlotData = { tabTexts: string[]; tabSources: string[] };
+
+    const scheduleRevokeObjectUrl = (url: string) => {
+      window.setTimeout(() => URL.revokeObjectURL(url), 2500);
+    };
+
+    setIsImageTemplateDownloading(true);
     try {
       const frameWidth = 1080;
       const frameHeight = 1440; // 3:4
-      const renderFrameBlob = async (tabIndex: number): Promise<Blob> => {
-        const source = tabIndex === 6 ? kawaiiCtaImageSrc : getImageSourceForTab(tabIndex);
+      const renderFrameBlob = async (tabIndex: number, slots?: ImageExportSlotData | null): Promise<Blob> => {
+        const textForTab = (i: number) =>
+          slots?.tabTexts[i] ?? imageTabTexts[i] ?? getDefaultImageFrameTextForTab(i);
+        const sourceForTab = (i: number) =>
+          slots?.tabSources[i] ??
+          imageTabSources[i] ??
+          (dogImagePool.length ? dogImagePool[i % dogImagePool.length]! : '');
+
+        const source = tabIndex === 6 ? kawaiiCtaImageSrc : sourceForTab(tabIndex);
+        if (!source.trim()) {
+          throw new Error('Missing image URL (dog images may still be loading).');
+        }
         const img = await new Promise<HTMLImageElement>((resolve, reject) => {
           const el = new Image();
           el.crossOrigin = 'anonymous';
-          el.onload = () => resolve(el);
-          el.onerror = () => reject(new Error('Failed to load image'));
+          el.onload = () => {
+            if (el.naturalWidth < 1 || el.naturalHeight < 1) {
+              reject(new Error('Invalid image dimensions'));
+              return;
+            }
+            resolve(el);
+          };
+          el.onerror = () => reject(new Error(`Failed to load image: ${source.slice(0, 80)}`));
           el.src = source;
         });
         const canvas = document.createElement('canvas');
@@ -1347,7 +1387,7 @@ export default function Home() {
         };
         if (tabIndex >= 1 && tabIndex <= 6) {
           drawWrapped(
-            getImageFrameTextForTab(tabIndex),
+            textForTab(tabIndex),
             frameHeight * 0.21,
             frameWidth * 0.66,
             imageFrameExportWrappedLineHeightPx
@@ -1355,8 +1395,15 @@ export default function Home() {
         } else {
           const coverY = frameHeight * 0.21;
           const coverLineGap = imageFrameExportCoverLineGapPx;
-          ctx.fillText(imageFrameTitleLine1, frameWidth / 2, coverY);
-          ctx.fillText(imageFrameTitleLine2, frameWidth / 2, coverY + coverLineGap);
+          const coverBlock = textForTab(0).trim();
+          const coverParts = coverBlock
+            .split('\n')
+            .map((s) => s.trim())
+            .filter(Boolean);
+          const coverLine1 = coverParts[0] ?? imageFrameTitleLine1;
+          const coverLine2 = coverParts[1] ?? imageFrameTitleLine2;
+          ctx.fillText(coverLine1, frameWidth / 2, coverY);
+          ctx.fillText(coverLine2, frameWidth / 2, coverY + coverLineGap);
         }
         ctx.shadowBlur = 0;
         ctx.drawImage(img, drawX, drawY, drawW, drawH);
@@ -1370,23 +1417,64 @@ export default function Home() {
       };
 
       const zip = new JSZip();
-      for (let tabIndex = 0; tabIndex < 7; tabIndex++) {
-        const blob = await renderFrameBlob(tabIndex);
-        const tabName = tabIndex === 0 ? 'cover' : tabIndex <= 5 ? `q${tabIndex}` : 'cta';
-        zip.file(`template-${selectedImageTemplateId}-${tabName}.png`, blob);
+      const isKawaiiTemplate = selectedImageTemplateId === 1;
+
+      const buildSevenTabSourcesForKawaiiSet = (): string[] => {
+        if (dogImagePool.length > 0) {
+          return pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 7);
+        }
+        const fromUi = imageTabSources.filter((u) => typeof u === 'string' && u.length > 0);
+        if (fromUi.length > 0) {
+          return Array.from({ length: 7 }, (_, i) => fromUi[i % fromUi.length]!);
+        }
+        return [];
+      };
+
+      if (isKawaiiTemplate) {
+        const probe = buildSevenTabSourcesForKawaiiSet();
+        if (probe.length < 7 || probe.slice(0, 6).some((u) => !u?.trim())) {
+          alert('Dog images are still loading. Wait a few seconds, then try Download again.');
+          return;
+        }
+        for (let setIdx = 0; setIdx < KAWAII_DOWNLOAD_NUM_SETS; setIdx++) {
+          const funnyPool = Array.from(FUNNY_QUESTIONS) as string[];
+          const picked = shuffleCopy(funnyPool).slice(0, 5);
+          const tabTexts = [`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked, imageFrameCtaText];
+          const tabSources = buildSevenTabSourcesForKawaiiSet();
+          const setPrefix = `set-${setIdx + 1}`;
+          for (let tabIndex = 0; tabIndex < 7; tabIndex++) {
+            const blob = await renderFrameBlob(tabIndex, { tabTexts, tabSources });
+            const tabName = tabIndex === 0 ? 'cover' : tabIndex <= 5 ? `q${tabIndex}` : 'cta';
+            zip.file(`${setPrefix}/template-${selectedImageTemplateId}-${tabName}.png`, blob);
+          }
+        }
+      } else {
+        for (let tabIndex = 0; tabIndex < 7; tabIndex++) {
+          const blob = await renderFrameBlob(tabIndex, null);
+          const tabName = tabIndex === 0 ? 'cover' : tabIndex <= 5 ? `q${tabIndex}` : 'cta';
+          zip.file(`template-${selectedImageTemplateId}-${tabName}.png`, blob);
+        }
       }
 
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const zipBlob = await zip.generateAsync({
+        type: 'blob',
+        compression: 'STORE',
+      });
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `template-${selectedImageTemplateId}-all-tabs.zip`;
+      a.download = isKawaiiTemplate
+        ? `template-${selectedImageTemplateId}-kawaii-${KAWAII_DOWNLOAD_NUM_SETS}-sets.zip`
+        : `template-${selectedImageTemplateId}-all-tabs.zip`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      scheduleRevokeObjectUrl(url);
     } catch (e) {
       console.error('Failed to download image frame:', e);
+      alert(e instanceof Error ? e.message : 'Download failed. Check the console for details.');
+    } finally {
+      setIsImageTemplateDownloading(false);
     }
   };
 
@@ -1412,7 +1500,7 @@ export default function Home() {
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            window.setTimeout(() => URL.revokeObjectURL(url), 2500);
           } finally {
             setIsVideoExporting(false);
           }
@@ -1428,7 +1516,7 @@ export default function Home() {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        window.setTimeout(() => URL.revokeObjectURL(url), 2500);
         return;
       }
       if (activeVideoTemplate.coverSrc) {
@@ -1442,7 +1530,7 @@ export default function Home() {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        window.setTimeout(() => URL.revokeObjectURL(url), 2500);
       }
     } catch (e) {
       console.error('Failed to download video template:', e);
@@ -1648,7 +1736,8 @@ export default function Home() {
                           <button
                             type="button"
                             onClick={regenerateImageTemplateContent}
-                            className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                            disabled={isImageTemplateDownloading}
+                            className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             Retry
                           </button>
@@ -1656,9 +1745,37 @@ export default function Home() {
                         <button
                           type="button"
                           onClick={handleDownloadImageFrame}
-                          className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                          disabled={isImageTemplateDownloading}
+                          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Download
+                          {isImageTemplateDownloading ? (
+                            <>
+                              <svg
+                                className="h-4 w-4 shrink-0 animate-spin"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                aria-hidden
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                />
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                />
+                              </svg>
+                              <span>Downloading…</span>
+                            </>
+                          ) : (
+                            'Download'
+                          )}
                         </button>
                       </div>
                     </div>
@@ -1802,9 +1919,36 @@ export default function Home() {
                         disabled={
                           (!activeVideoTemplate?.videoSrc && !activeVideoTemplate?.coverSrc) || isVideoExporting
                         }
-                        className="order-2 ml-auto w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="order-2 ml-auto inline-flex w-full sm:w-auto items-center justify-center gap-2 text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {isVideoExporting ? 'Exporting…' : 'Download'}
+                        {isVideoExporting ? (
+                          <>
+                            <svg
+                              className="h-4 w-4 shrink-0 animate-spin"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              aria-hidden
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              />
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              />
+                            </svg>
+                            <span>Exporting…</span>
+                          </>
+                        ) : (
+                          'Download'
+                        )}
                       </button>
                     </div>
                     {videoExportError ? (
@@ -1826,14 +1970,13 @@ export default function Home() {
                             {videoOverlayCaption.trim() ? (
                               <div className="absolute inset-0 z-10 flex items-center justify-center px-3 pointer-events-none">
                                 <p
-                                  className="w-full max-w-[68%] sm:max-w-44 md:max-w-48 text-center text-lg font-black leading-[1.15] tracking-[-0.01em] wrap-break-word sm:text-xl md:text-2xl"
+                                  className="video-overlay-caption w-full max-w-[78%] sm:max-w-52 md:max-w-56 text-center text-2xl leading-[1.12] tracking-[-0.02em] wrap-break-word sm:text-3xl md:text-4xl"
                                   style={{
                                     color: '#ffffff',
-                                    fontFamily:
-                                      '"Arial Black", "SF Pro Display", "Helvetica Neue", Inter, system-ui, sans-serif',
-                                    WebkitTextStroke: '1.8px #000000',
+                                    WebkitTextStroke: '2.5px #000000',
                                     paintOrder: 'stroke fill',
-                                    textShadow: '0 1px 1px rgba(0,0,0,0.45), 0 3px 8px rgba(0,0,0,0.25)',
+                                    textShadow:
+                                      '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 2px 8px rgba(0,0,0,0.35)',
                                   }}
                                 >
                                   {videoOverlayCaption}
