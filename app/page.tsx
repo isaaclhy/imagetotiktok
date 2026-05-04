@@ -120,6 +120,11 @@ export default function Home() {
   const [selectedImageTemplateId, setSelectedImageTemplateId] = useState<number | null>(null);
   const [selectedImageBrowserTab, setSelectedImageBrowserTab] = useState(0);
   const imageTabFrameBg = '#FEFEFE';
+  const kawaiiCtaImageSrc = '/dog-images/kawaii-cta-tab.png';
+  /** Kawaii image-tab frame: export is 1080×1440; keep preview text in the same ballpark via Tailwind below. */
+  const imageFrameExportFontPx = 54;
+  const imageFrameExportWrappedLineHeightPx = 70;
+  const imageFrameExportCoverLineGapPx = 64;
   const [imageTabFunnyQuestions, setImageTabFunnyQuestions] = useState<string[]>([]);
   const [imageTabTexts, setImageTabTexts] = useState<string[]>([]);
   const [imageTabSources, setImageTabSources] = useState<string[]>([]);
@@ -1042,7 +1047,8 @@ export default function Home() {
     imageTabSources[tabIndex] ??
     (dogImagePool.length ? dogImagePool[tabIndex % dogImagePool.length]! : '');
   const imageFrameTextForActiveTab = getImageFrameTextForTab(selectedImageBrowserTab);
-  const imageSourceForActiveTab = getImageSourceForTab(selectedImageBrowserTab);
+  const isCtaTabSelected = selectedImageBrowserTab === 6;
+  const imageSourceForActiveTab = isCtaTabSelected ? kawaiiCtaImageSrc : getImageSourceForTab(selectedImageBrowserTab);
   const imageTabLabelForActiveTab =
     selectedImageBrowserTab === 0 ? 'Cover' : selectedImageBrowserTab <= 5 ? `Q${selectedImageBrowserTab}` : 'CTA';
 
@@ -1051,12 +1057,13 @@ export default function Home() {
       const frameWidth = 1080;
       const frameHeight = 1440; // 3:4
       const renderFrameBlob = async (tabIndex: number): Promise<Blob> => {
+        const source = tabIndex === 6 ? kawaiiCtaImageSrc : getImageSourceForTab(tabIndex);
         const img = await new Promise<HTMLImageElement>((resolve, reject) => {
           const el = new Image();
           el.crossOrigin = 'anonymous';
           el.onload = () => resolve(el);
           el.onerror = () => reject(new Error('Failed to load image'));
-          el.src = getImageSourceForTab(tabIndex);
+          el.src = source;
         });
         const canvas = document.createElement('canvas');
         canvas.width = frameWidth;
@@ -1066,6 +1073,21 @@ export default function Home() {
 
         ctx.fillStyle = imageTabFrameBg;
         ctx.fillRect(0, 0, frameWidth, frameHeight);
+
+        if (tabIndex === 6) {
+          const coverScale = Math.max(frameWidth / img.width, frameHeight / img.height);
+          const coverW = img.width * coverScale;
+          const coverH = img.height * coverScale;
+          const coverX = (frameWidth - coverW) / 2;
+          const coverY = (frameHeight - coverH) / 2;
+          ctx.drawImage(img, coverX, coverY, coverW, coverH);
+          return await new Promise<Blob>((resolve, reject) => {
+            canvas.toBlob((blob) => {
+              if (blob) resolve(blob);
+              else reject(new Error('Failed to create image blob'));
+            }, 'image/png');
+          });
+        }
 
         const maxW = frameWidth * 0.42;
         const maxH = frameHeight * 0.20;
@@ -1080,7 +1102,7 @@ export default function Home() {
         ctx.textBaseline = 'top';
         ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
         ctx.shadowBlur = 12;
-        ctx.font = 'bold 40px "Comic Sans MS", "Trebuchet MS", sans-serif';
+        ctx.font = `bold ${imageFrameExportFontPx}px "Comic Sans MS", "Trebuchet MS", sans-serif`;
         const drawWrapped = (text: string, yStart: number, maxWidth: number, lineHeight: number) => {
           const words = text.trim().split(/\s+/);
           const lines: string[] = [];
@@ -1097,10 +1119,15 @@ export default function Home() {
           lines.forEach((line, idx) => ctx.fillText(line, frameWidth / 2, yStart + idx * lineHeight));
         };
         if (tabIndex >= 1 && tabIndex <= 6) {
-          drawWrapped(getImageFrameTextForTab(tabIndex), frameHeight * 0.21, frameWidth * 0.66, 52);
+          drawWrapped(
+            getImageFrameTextForTab(tabIndex),
+            frameHeight * 0.21,
+            frameWidth * 0.66,
+            imageFrameExportWrappedLineHeightPx
+          );
         } else {
           const coverY = frameHeight * 0.21;
-          const coverLineGap = 50;
+          const coverLineGap = imageFrameExportCoverLineGapPx;
           ctx.fillText(imageFrameTitleLine1, frameWidth / 2, coverY);
           ctx.fillText(imageFrameTitleLine2, frameWidth / 2, coverY + coverLineGap);
         }
@@ -1383,49 +1410,61 @@ export default function Home() {
                           className="relative w-full max-w-sm aspect-3/4 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden"
                           style={{ backgroundColor: imageTabFrameBg }}
                         >
-                          <p className="absolute top-[21%] left-1/2 -translate-x-1/2 text-center text-sm md:text-base font-semibold text-zinc-900 drop-shadow-[0_0_8px_rgba(255,255,255,0.9)] px-4 leading-tight max-w-[98%] whitespace-pre-line wrap-break-word">
-                            {imageFrameTextForActiveTab}
-                          </p>
-                          <img
-                            src={imageSourceForActiveTab}
-                            alt={`Template ${selectedImageTemplateId} preview`}
-                            className="absolute left-1/2 -translate-x-1/2 bottom-[9%] max-w-[42%] max-h-[24%] object-contain"
-                          />
+                          {isCtaTabSelected ? (
+                            <img
+                              src={kawaiiCtaImageSrc}
+                              alt="Kawaii CTA preview"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <>
+                              <p className="absolute top-[21%] left-1/2 -translate-x-1/2 text-center text-lg sm:text-xl md:text-2xl font-semibold text-zinc-900 drop-shadow-[0_0_10px_rgba(255,255,255,0.95)] px-3 sm:px-4 leading-snug max-w-[98%] whitespace-pre-line wrap-break-word">
+                                {imageFrameTextForActiveTab}
+                              </p>
+                              <img
+                                src={imageSourceForActiveTab}
+                                alt={`Template ${selectedImageTemplateId} preview`}
+                                className="absolute left-1/2 -translate-x-1/2 bottom-[9%] max-w-[42%] max-h-[24%] object-contain"
+                              />
+                            </>
+                          )}
                         </div>
-                        <div className="w-full md:w-80 md:self-start">
-                          <div className="flex items-center justify-between gap-2 mb-2">
-                            <label className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
-                              Frame text
-                            </label>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const pool = [...FUNNY_QUESTIONS];
-                                const current = imageFrameTextForActiveTab;
-                                let nextQuestion = pool[Math.floor(Math.random() * pool.length)] || current;
-                                if (pool.length > 1 && nextQuestion === current) {
-                                  nextQuestion = pool.find((q) => q !== current) || nextQuestion;
-                                }
+                        {!isCtaTabSelected ? (
+                          <div className="w-full md:w-80 md:self-start">
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <label className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                                Frame text
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const pool = [...FUNNY_QUESTIONS];
+                                  const current = imageFrameTextForActiveTab;
+                                  let nextQuestion = pool[Math.floor(Math.random() * pool.length)] || current;
+                                  if (pool.length > 1 && nextQuestion === current) {
+                                    nextQuestion = pool.find((q) => q !== current) || nextQuestion;
+                                  }
+                                  const next = [...imageTabTexts];
+                                  next[selectedImageBrowserTab] = nextQuestion;
+                                  setImageTabTexts(next);
+                                }}
+                                className="text-xs px-2 py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                              >
+                                Random question
+                              </button>
+                            </div>
+                            <input
+                              type="text"
+                              value={imageFrameTextForActiveTab}
+                              onChange={(e) => {
                                 const next = [...imageTabTexts];
-                                next[selectedImageBrowserTab] = nextQuestion;
+                                next[selectedImageBrowserTab] = e.target.value;
                                 setImageTabTexts(next);
                               }}
-                              className="text-xs px-2 py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                            >
-                              Random question
-                            </button>
+                              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-zinc-400"
+                            />
                           </div>
-                          <input
-                            type="text"
-                            value={imageFrameTextForActiveTab}
-                            onChange={(e) => {
-                              const next = [...imageTabTexts];
-                              next[selectedImageBrowserTab] = e.target.value;
-                              setImageTabTexts(next);
-                            }}
-                            className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-zinc-400"
-                          />
-                        </div>
+                        ) : null}
                       </div>
                       <p className="mt-4 text-center text-sm text-zinc-600 dark:text-zinc-300">
                         {imageTabLabelForActiveTab}
