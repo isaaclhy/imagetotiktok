@@ -44,7 +44,7 @@ export function getDefaultAutomateCategories(categories: string[]): string[] {
 /** Image prompts with {x} placeholder for dynamic text. */
 export const PROMPTS = [
   'A baseball cap, a bit worn out but the cap is in red, the text "{x}" embroidered on it. the text should be in white and the text should occupy only the center 70% of the screen space, leave some padding on the side. No need to show the entire cap, the text should be in the center',
-  'First person view, in an empty coffee shop, you (a women) holding an iphone watching an instagram story. The story should have a red background with large white text "{x}". On the right of the phone is a cute dog looking at you.',
+  'First person view, in an empty coffee shop, you (a women) holding an iphone watching an instagram story. The story should have a red background with large white text "{x}".',
   'First person POV, holding a white canvas with 2 hand marks from paint, one should be sky blue and one should be pink and on the canvas, it should also have the text "{x}"',
   'Close up holding a piece of very very small torn paper, almost thumbnail size, on the paper it\'s written "{x}", it\'s like the text is typed using a type writer. Make it realistic. The text should be very clear on the piece of paper',
   'A finished puzzle, on the puzzle should have the text "{x}". Make the text cartoon style',
@@ -74,7 +74,7 @@ export const PROMPTS = [
   'Looking out the window on a bright day, it is very snowy with snow covering the ground. In the snow someone carved out the words "{x}" in the middle of the road with cars on both sides. The carved text should occupy about 60% width of the screen',
   'On a snowy street in New York City, there\'s a restaurant red metal sign in a heart shape, on it there\'s text "{x}" painted on it in white, it should be in the center of the image. Must be realistic',
   'Close up of the back of a car\'s windscreen covered in snow, however text carved out visibly so the carved-away part has almost no snow on it. The text says "{x}"',
-  'In a bright NYC coffee shop, a female hand holding a condom wrapper with the text "{x}" on it, a very cute dog should be on the chair looking at you. Make it very realistic',
+  'In a bright NYC coffee shop, a female hand holding a condom wrapper with the text "{x}" on it. Make it very realistic',
   'At home on a snowy day, pancakes on the side, there\'s a white mug in the center with a tea bag in it, you\'re holding the tea bag label which is red in color with text on it in white: "{x}". Make it realistic. Pull the teabag closer to the camera',
   'You\'re on a bus in NYC, it\'s a sunny day, on the back of the seat in front of you there\'s a sticker with black background and white text, the text says "{x}". The sticker is a bit worn off',
   'You\'re opening a fortune cookie in a restaurant and the paper is still a bit in the cookie, the message on the paper says "{x}". Make it realistic, the message should be in the center of the image. The message should be at least 60% of the screen width',
