@@ -125,6 +125,9 @@ export default function Home() {
   const imageFrameExportFontPx = 54;
   const imageFrameExportWrappedLineHeightPx = 70;
   const imageFrameExportCoverLineGapPx = 64;
+  const imageFrameExportFontFamily = '"Comic Sans MS", "Marker Felt", "Chalkboard SE", "Trebuchet MS", sans-serif';
+  const imageFrameExportTextColor = '#2f2a31';
+  const imageFrameExportGlowColor = 'rgba(255, 255, 255, 0.9)';
   const [imageTabFunnyQuestions, setImageTabFunnyQuestions] = useState<string[]>([]);
   const [imageTabTexts, setImageTabTexts] = useState<string[]>([]);
   const [imageTabSources, setImageTabSources] = useState<string[]>([]);
@@ -1089,20 +1092,20 @@ export default function Home() {
           });
         }
 
-        const maxW = frameWidth * 0.42;
-        const maxH = frameHeight * 0.20;
+        const maxW = frameWidth * 0.48;
+        const maxH = frameHeight * 0.24;
         const scale = Math.min(maxW / img.width, maxH / img.height);
         const drawW = img.width * scale;
         const drawH = img.height * scale;
         const drawX = (frameWidth - drawW) / 2;
-        const drawY = frameHeight - drawH - frameHeight * 0.09;
+        const drawY = frameHeight - drawH - frameHeight * 0.13;
 
-        ctx.fillStyle = '#111111';
+        ctx.fillStyle = imageFrameExportTextColor;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
-        ctx.shadowBlur = 12;
-        ctx.font = `bold ${imageFrameExportFontPx}px "Comic Sans MS", "Trebuchet MS", sans-serif`;
+        ctx.shadowColor = imageFrameExportGlowColor;
+        ctx.shadowBlur = 14;
+        ctx.font = `bold ${imageFrameExportFontPx}px ${imageFrameExportFontFamily}`;
         const drawWrapped = (text: string, yStart: number, maxWidth: number, lineHeight: number) => {
           const words = text.trim().split(/\s+/);
           const lines: string[] = [];
@@ -1319,7 +1322,7 @@ export default function Home() {
                       <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Pick a template</h2>
                       <p className="text-sm text-zinc-500 dark:text-zinc-400">Select one to start. Placeholder templates for now.</p>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                       {imageTemplateCards.map((card) => (
                         <button
                           key={card.id}
@@ -1340,7 +1343,7 @@ export default function Home() {
                               dogImagePool.length ? pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 7) : []
                             );
                           }}
-                          className="group rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 p-3 text-left hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                          className="group rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 p-2 md:p-3 text-left hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                         >
                           <div className="aspect-3/4 w-full rounded-lg mb-3 overflow-hidden">
                             {card.id === 1 ? (
@@ -1371,7 +1374,7 @@ export default function Home() {
                     className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 overflow-hidden"
                     style={{ fontFamily: '"Trebuchet MS", "Avenir Next", "Segoe UI", sans-serif' }}
                   >
-                    <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-200 dark:border-zinc-700">
+                    <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-zinc-200 dark:border-zinc-700">
                       <button
                         type="button"
                         onClick={() => setSelectedImageTemplateId(null)}
@@ -1379,11 +1382,13 @@ export default function Home() {
                       >
                         Back
                       </button>
-                      <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Template {selectedImageTemplateId}</p>
+                      <p className="order-3 w-full text-xs font-medium text-zinc-800 dark:text-zinc-200 sm:order-0 sm:w-auto sm:text-sm">
+                        Template {selectedImageTemplateId}
+                      </p>
                       <button
                         type="button"
                         onClick={handleDownloadImageFrame}
-                        className="ml-auto text-xs px-2 py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        className="order-2 ml-auto w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                       >
                         Download
                       </button>
@@ -1394,7 +1399,7 @@ export default function Home() {
                           key={i}
                           type="button"
                           onClick={() => setSelectedImageBrowserTab(i)}
-                          className={`px-3 py-1.5 rounded-md text-sm whitespace-nowrap transition-colors ${
+                          className={`px-2.5 md:px-3 py-1.5 rounded-md text-xs md:text-sm whitespace-nowrap transition-colors ${
                             selectedImageBrowserTab === i
                               ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
                               : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
@@ -1404,10 +1409,10 @@ export default function Home() {
                         </button>
                       ))}
                     </div>
-                    <div className="p-6">
+                    <div className="p-3 sm:p-4 md:p-6">
                       <div className="flex flex-col md:flex-row items-start gap-4">
                         <div
-                          className="relative w-full max-w-sm aspect-3/4 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden"
+                          className="relative w-full max-w-sm mx-auto md:mx-0 aspect-3/4 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden"
                           style={{ backgroundColor: imageTabFrameBg }}
                         >
                           {isCtaTabSelected ? (
@@ -1418,20 +1423,28 @@ export default function Home() {
                             />
                           ) : (
                             <>
-                              <p className="absolute top-[21%] left-1/2 -translate-x-1/2 text-center text-lg sm:text-xl md:text-2xl font-semibold text-zinc-900 drop-shadow-[0_0_10px_rgba(255,255,255,0.95)] px-3 sm:px-4 leading-snug max-w-[98%] whitespace-pre-line wrap-break-word">
+                              <p
+                                className="absolute top-[21%] left-1/2 -translate-x-1/2 text-center text-base sm:text-xl md:text-2xl font-semibold px-2 sm:px-4 leading-snug max-w-[98%] whitespace-pre-line wrap-break-word"
+                                style={{
+                                  color: '#2f2a31',
+                                  textShadow: 'none',
+                                  letterSpacing: '0.01em',
+                                  fontFamily: '"Comic Sans MS", "Marker Felt", "Chalkboard SE", "Trebuchet MS", sans-serif',
+                                }}
+                              >
                                 {imageFrameTextForActiveTab}
                               </p>
                               <img
                                 src={imageSourceForActiveTab}
                                 alt={`Template ${selectedImageTemplateId} preview`}
-                                className="absolute left-1/2 -translate-x-1/2 bottom-[9%] max-w-[42%] max-h-[24%] object-contain"
+                                className="absolute left-1/2 -translate-x-1/2 bottom-[13%] max-w-[48%] max-h-[28%] object-contain"
                               />
                             </>
                           )}
                         </div>
                         {!isCtaTabSelected ? (
                           <div className="w-full md:w-80 md:self-start">
-                            <div className="flex items-center justify-between gap-2 mb-2">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                               <label className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
                                 Frame text
                               </label>
@@ -1448,7 +1461,7 @@ export default function Home() {
                                   next[selectedImageBrowserTab] = nextQuestion;
                                   setImageTabTexts(next);
                                 }}
-                                className="text-xs px-2 py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                               >
                                 Random question
                               </button>
@@ -1461,7 +1474,7 @@ export default function Home() {
                                 next[selectedImageBrowserTab] = e.target.value;
                                 setImageTabTexts(next);
                               }}
-                              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-zinc-400"
+                              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-zinc-400"
                             />
                           </div>
                         ) : null}
