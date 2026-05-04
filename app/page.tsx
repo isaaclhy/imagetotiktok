@@ -7,7 +7,6 @@ import { generateCardImage as generateCardImageLib } from '@/app/lib/generate-ca
 import { extractDominantColor } from '@/app/lib/canvas-utils';
 import { CARD_BG_FALLBACK_PALETTE, PROMPTS, FUNNY_QUESTIONS, FLIRTY_QUESTIONS, ME_OR_YOU_QUESTIONS } from '@/app/lib/constants';
 import { Sidebar } from '@/app/components/Sidebar';
-import { ActionBar } from '@/app/components/ActionBar';
 import { InputsCard } from '@/app/components/InputsCard';
 import { PreviewPanel } from '@/app/components/PreviewPanel';
 import { DownloadModal } from '@/app/components/DownloadModal';
@@ -20,6 +19,194 @@ function shuffleCopy<T>(items: T[]): T[] {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+/** TikTok-style caption for canvas export (white fill, black stroke). */
+function drawTikTokCaptionOnCanvas(ctx: CanvasRenderingContext2D, w: number, h: number, text: string) {
+  const trimmed = text.trim();
+  if (!trimmed) return;
+  const maxWidth = w * 0.68;
+  const fontSize = Math.max(16, Math.min(62, Math.floor(w * 0.046)));
+  ctx.font =
+    `900 ${fontSize}px "Arial Black", "SF Pro Display", "Helvetica Neue", "Inter", system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const words = trimmed.split(/\s+/);
+  const lines: string[] = [];
+  let line = '';
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width <= maxWidth) line = test;
+    else {
+      if (line) lines.push(line);
+      line = word;
+    }
+  }
+  if (line) lines.push(line);
+
+  const lineHeight = fontSize * 1.18;
+  const totalH = lines.length * lineHeight;
+  let y = h / 2 - totalH / 2 + lineHeight / 2;
+  const strokeW = Math.max(2, fontSize * 0.09);
+  ctx.lineJoin = 'round';
+  ctx.miterLimit = 2;
+  for (const ln of lines) {
+    ctx.lineWidth = strokeW;
+    ctx.strokeStyle = '#000000';
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.28)';
+    ctx.shadowBlur = Math.max(1, fontSize * 0.07);
+    ctx.shadowOffsetY = Math.max(1, fontSize * 0.03);
+    ctx.strokeText(ln, w / 2, y);
+    ctx.fillText(ln, w / 2, y);
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+    y += lineHeight;
+  }
+}
+
+function pickMediaRecorderMime(): string {
+  const candidates = [
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8,opus',
+    'video/webm;codecs=vp8',
+    'video/webm',
+  ];
+  for (const m of candidates) {
+    if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(m)) return m;
+  }
+  return '';
+}
+
+/**
+ * Re-encodes video with caption burned in (real-time playback). Output is WebM (browser limitation).
+ */
+async function exportWebmWithCaptionOverlay(videoSrc: string, caption: string): Promise<Blob> {
+  if (typeof MediaRecorder === 'undefined') throw new Error('MediaRecorder is not supported in this browser');
+
+  const mime = pickMediaRecorderMime();
+  if (!mime) throw new Error('No WebM recording format supported (try Chrome or Edge)');
+
+  const video = document.createElement('video');
+  video.crossOrigin = 'anonymous';
+  video.playsInline = true;
+  video.setAttribute('playsinline', '');
+  video.preload = 'auto';
+  video.src = videoSrc;
+
+  await new Promise<void>((resolve, reject) => {
+    video.addEventListener(
+      'loadeddata',
+      () => resolve(),
+      { once: true }
+    );
+    video.addEventListener(
+      'error',
+      () => reject(new Error('Failed to load video')),
+      { once: true }
+    );
+  });
+
+  const w = video.videoWidth;
+  const h = video.videoHeight;
+  if (w <= 0 || h <= 0) throw new Error('Invalid video dimensions');
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas not available');
+
+  const chunks: BlobPart[] = [];
+
+  await new Promise<void>((resolve, reject) => {
+    let rafId = 0;
+    let recorder: MediaRecorder | null = null;
+
+    const stopDrawing = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = 0;
+    };
+
+    const draw = () => {
+      if (video.ended) return;
+      if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+        ctx.drawImage(video, 0, 0, w, h);
+        drawTikTokCaptionOnCanvas(ctx, w, h, caption);
+      }
+      if (!video.ended) rafId = requestAnimationFrame(draw);
+    };
+
+    video.addEventListener(
+      'ended',
+      () => {
+        stopDrawing();
+        window.setTimeout(() => {
+          try {
+            if (recorder && recorder.state === 'recording') recorder.stop();
+          } catch {
+            reject(new Error('Failed to finish recording'));
+          }
+        }, 400);
+      },
+      { once: true }
+    );
+
+    const run = async () => {
+      try {
+        video.pause();
+        video.currentTime = 0;
+        video.muted = false;
+
+        const canvasStream = canvas.captureStream(30);
+        const videoWithCapture = video as HTMLVideoElement & { captureStream?: () => MediaStream };
+        if (typeof videoWithCapture.captureStream !== 'function') {
+          throw new Error('Video captureStream is not supported in this browser');
+        }
+        const videoAudioStream = videoWithCapture.captureStream();
+        const outStream = new MediaStream();
+        canvasStream.getVideoTracks().forEach((t: MediaStreamTrack) => outStream.addTrack(t));
+        videoAudioStream.getAudioTracks().forEach((t: MediaStreamTrack) => outStream.addTrack(t));
+
+        recorder = new MediaRecorder(outStream, { mimeType: mime, videoBitsPerSecond: 2_500_000 });
+        recorder.ondataavailable = (e) => {
+          if (e.data.size) chunks.push(e.data);
+        };
+        recorder.onerror = () => {
+          stopDrawing();
+          video.pause();
+          reject(new Error('Recording failed'));
+        };
+        recorder.onstop = () => {
+          stopDrawing();
+          video.pause();
+          resolve();
+        };
+
+        recorder.start(200);
+        try {
+          await video.play();
+        } catch {
+          video.muted = true;
+          await video.play();
+        }
+        draw();
+      } catch (e) {
+        stopDrawing();
+        video.pause();
+        reject(e instanceof Error ? e : new Error(String(e)));
+      }
+    };
+
+    void run();
+  });
+
+  if (chunks.length === 0) throw new Error('No video data was recorded');
+
+  return new Blob(chunks, { type: 'video/webm' });
 }
 
 /** Draws `count` images without replacement within each shuffled pass over `pool`; reshuffles only after every file has been used once. With ≥7 assets, all `count` picks are distinct. */
@@ -38,6 +225,21 @@ const INITIAL_CANVASES: CanvasData[] = [
   { id: '1', text: '', backgroundColor: '#000000', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' },
   { id: '3', text: '', backgroundColor: '#000000', textColor: '#000000', textSize: '200', imageSize: '1080x1920' },
   { id: 'end', text: '', backgroundColor: '#000000', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' },
+];
+
+type VideoTemplateCard = { id: number; title: string; subtitle: string; coverSrc?: string; videoSrc?: string };
+
+const VIDEO_TEMPLATE_CARDS: VideoTemplateCard[] = [
+  {
+    id: 1,
+    title: 'Blonde AI UGC',
+    subtitle: '',
+    coverSrc: '/video-templates/blonde-ai-ugc-cover.png',
+    videoSrc: '/blonde-video/hf_20260501_152346_d2467d52-3f87-48d3-a308-2872726f6fc1.mp4',
+  },
+  { id: 2, title: 'Template 2', subtitle: '' },
+  { id: 3, title: 'Template 3', subtitle: '' },
+  { id: 4, title: 'Template 4', subtitle: '' },
 ];
 
 const DAILY_TEMPLATE_TITLES = [
@@ -118,6 +320,11 @@ export default function Home() {
   const [mode, setMode] = useState<'plain' | 'video'>('video');
   const [contentTab, setContentTab] = useState<'image' | 'video' | 'automate'>('image');
   const [selectedImageTemplateId, setSelectedImageTemplateId] = useState<number | null>(null);
+  const [selectedVideoTemplateId, setSelectedVideoTemplateId] = useState<number | null>(null);
+  /** TikTok-style overlay on video templates (white fill, black stroke). */
+  const [videoOverlayCaption, setVideoOverlayCaption] = useState('Your text here');
+  const [isVideoExporting, setIsVideoExporting] = useState(false);
+  const [videoExportError, setVideoExportError] = useState<string | null>(null);
   const [selectedImageBrowserTab, setSelectedImageBrowserTab] = useState(0);
   const imageTabFrameBg = '#FEFEFE';
   const kawaiiCtaImageSrc = '/dog-images/kawaii-cta-tab.png';
@@ -317,6 +524,12 @@ export default function Home() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (contentTab !== 'video') {
+      setSelectedVideoTemplateId(null);
+    }
+  }, [contentTab]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -1038,6 +1251,13 @@ export default function Home() {
   const imageFrameTitleLine1 = 'Questions to ask your';
   const imageFrameTitleLine2 = 'boyfriend tonight <3';
   const imageFrameCtaText = 'Remember to like, save and share the fun!';
+  const regenerateImageTemplateContent = () => {
+    setSelectedImageBrowserTab(0);
+    const picked = [...FUNNY_QUESTIONS].sort(() => Math.random() - 0.5).slice(0, 5);
+    setImageTabFunnyQuestions(picked);
+    setImageTabTexts([`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked, imageFrameCtaText]);
+    setImageTabSources(dogImagePool.length ? pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 7) : []);
+  };
   const getDefaultImageFrameTextForTab = (tabIndex: number): string =>
     tabIndex === 0
       ? `${imageFrameTitleLine1}\n${imageFrameTitleLine2}`
@@ -1054,6 +1274,10 @@ export default function Home() {
   const imageSourceForActiveTab = isCtaTabSelected ? kawaiiCtaImageSrc : getImageSourceForTab(selectedImageBrowserTab);
   const imageTabLabelForActiveTab =
     selectedImageBrowserTab === 0 ? 'Cover' : selectedImageBrowserTab <= 5 ? `Q${selectedImageBrowserTab}` : 'CTA';
+  const activeVideoTemplate =
+    contentTab === 'video' && selectedVideoTemplateId !== null
+      ? VIDEO_TEMPLATE_CARDS.find((c) => c.id === selectedVideoTemplateId)
+      : undefined;
 
   const handleDownloadImageFrame = async () => {
     try {
@@ -1166,8 +1390,69 @@ export default function Home() {
     }
   };
 
+  const handleDownloadVideoTemplate = async () => {
+    if (!activeVideoTemplate || selectedVideoTemplateId === null) return;
+    setVideoExportError(null);
+    const baseName =
+      activeVideoTemplate.title
+        .replace(/[^\w\d-]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .toLowerCase() || `template-${selectedVideoTemplateId}`;
+    try {
+      if (activeVideoTemplate.videoSrc) {
+        const captionTrimmed = videoOverlayCaption.trim();
+        if (captionTrimmed) {
+          setIsVideoExporting(true);
+          try {
+            const blob = await exportWebmWithCaptionOverlay(activeVideoTemplate.videoSrc, captionTrimmed);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${baseName}-caption.webm`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          } finally {
+            setIsVideoExporting(false);
+          }
+          return;
+        }
+        const res = await fetch(activeVideoTemplate.videoSrc);
+        if (!res.ok) throw new Error('Failed to fetch video');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${baseName}.mp4`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        return;
+      }
+      if (activeVideoTemplate.coverSrc) {
+        const res = await fetch(activeVideoTemplate.coverSrc);
+        if (!res.ok) throw new Error('Failed to fetch cover image');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${baseName}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch (e) {
+      console.error('Failed to download video template:', e);
+      const msg = e instanceof Error ? e.message : 'Download failed';
+      setVideoExportError(msg);
+    }
+  };
+
   return (
-    <div className="h-screen overflow-hidden bg-zinc-50 font-sans dark:bg-black flex">
+    <div className="h-screen overflow-hidden overflow-x-hidden bg-zinc-50 font-sans dark:bg-black flex">
       <Sidebar
         contentTab={contentTab}
         onContentTabChange={setContentTab}
@@ -1178,29 +1463,14 @@ export default function Home() {
         setShowSettingsMenu={setShowSettingsMenu}
         onLogout={handleLogout}
       />
-      <div className="flex-1 flex flex-col min-w-0 h-screen ml-56 overflow-y-auto">
-        <div className="max-w-7xl mx-auto w-full flex flex-col flex-1 min-h-0">
-          <ActionBar
-            contentTab={contentTab}
-            onAutoGenerate={() => setContentTab('automate')}
-            onDownload={() => setShowDownloadModal(true)}
-            onPost={handlePostToTikTok}
-            isAutoGenerating={isAutoGenerating}
-            isGenerating={isGenerating}
-            isPosting={isPosting}
-            canDownload={!!currentCanvas.text.trim()}
-            canPost={canPost}
-            contentDisclosureEnabled={contentDisclosureEnabled}
-            isYourBrand={isYourBrand}
-            isBrandedContent={isBrandedContent}
-            postPrivacy={postPrivacy}
-          />
+      <div className="flex-1 flex flex-col min-w-0 h-screen ml-56 overflow-y-auto overflow-x-hidden">
+        <div className="max-w-7xl mx-auto w-full min-w-0 flex flex-col flex-1 min-h-0">
           <div
-            className={`grid grid-cols-1 gap-4 flex-1 min-h-0 px-3 pb-3 pt-0 overflow-hidden ${
-              contentTab === 'automate' ? 'lg:grid-cols-[320px_1fr]' : 'lg:grid-cols-[400px_1fr]'
+            className={`grid grid-cols-1 gap-4 flex-1 min-h-0 min-w-0 px-3 pb-3 pt-0 overflow-x-hidden overflow-y-hidden ${
+              contentTab === 'automate' ? 'lg:grid-cols-[320px_minmax(0,1fr)]' : 'lg:grid-cols-[400px_minmax(0,1fr)]'
             }`}
           >
-            {contentTab !== 'image' && (
+            {contentTab === 'automate' && (
               <InputsCard
                 contentTab={contentTab}
                 backgroundColor={backgroundColor}
@@ -1315,7 +1585,7 @@ export default function Home() {
               />
             )}
             {contentTab === 'image' && (
-              <div className="lg:col-span-2 h-full min-h-0 overflow-y-auto p-1">
+              <div className="lg:col-span-2 h-full min-h-0 min-w-0 max-w-full overflow-y-auto overflow-x-hidden p-1">
                 {selectedImageTemplateId === null ? (
                   <>
                     <div className="mb-4">
@@ -1329,19 +1599,7 @@ export default function Home() {
                           type="button"
                           onClick={() => {
                             setSelectedImageTemplateId(card.id);
-                            setSelectedImageBrowserTab(0);
-                            const picked = [...FUNNY_QUESTIONS]
-                              .sort(() => Math.random() - 0.5)
-                              .slice(0, 5);
-                            setImageTabFunnyQuestions(picked);
-                            setImageTabTexts([
-                              `${imageFrameTitleLine1}\n${imageFrameTitleLine2}`,
-                              ...picked,
-                              imageFrameCtaText,
-                            ]);
-                            setImageTabSources(
-                              dogImagePool.length ? pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 7) : []
-                            );
+                            regenerateImageTemplateContent();
                           }}
                           className="group rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 p-2 md:p-3 text-left hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                         >
@@ -1371,10 +1629,10 @@ export default function Home() {
                   </>
                 ) : (
                   <div
-                    className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 overflow-hidden"
+                    className="w-full min-w-0 max-w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 overflow-hidden"
                     style={{ fontFamily: '"Trebuchet MS", "Avenir Next", "Segoe UI", sans-serif' }}
                   >
-                    <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-zinc-200 dark:border-zinc-700">
+                    <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-zinc-200 dark:border-zinc-700 min-w-0">
                       <button
                         type="button"
                         onClick={() => setSelectedImageTemplateId(null)}
@@ -1385,15 +1643,26 @@ export default function Home() {
                       <p className="order-3 w-full text-xs font-medium text-zinc-800 dark:text-zinc-200 sm:order-0 sm:w-auto sm:text-sm">
                         Template {selectedImageTemplateId}
                       </p>
-                      <button
-                        type="button"
-                        onClick={handleDownloadImageFrame}
-                        className="order-2 ml-auto w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                      >
-                        Download
-                      </button>
+                      <div className="order-2 ml-auto flex w-full sm:w-auto flex-col sm:flex-row gap-2 sm:items-center sm:justify-end">
+                        {selectedImageTemplateId === 1 ? (
+                          <button
+                            type="button"
+                            onClick={regenerateImageTemplateContent}
+                            className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                          >
+                            Retry
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={handleDownloadImageFrame}
+                          className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        >
+                          Download
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex gap-1 p-2 border-b border-zinc-200 dark:border-zinc-700 overflow-x-auto">
+                    <div className="flex gap-1 p-2 border-b border-zinc-200 dark:border-zinc-700 overflow-x-auto min-w-0 max-w-full">
                       {Array.from({ length: 7 }, (_, i) => (
                         <button
                           key={i}
@@ -1409,10 +1678,10 @@ export default function Home() {
                         </button>
                       ))}
                     </div>
-                    <div className="p-3 sm:p-4 md:p-6">
-                      <div className="flex flex-col md:flex-row items-start gap-4">
+                    <div className="p-3 sm:p-4 md:p-6 w-full min-w-0 max-w-full box-border">
+                      <div className="flex flex-col md:flex-row items-start gap-4 min-w-0 w-full">
                         <div
-                          className="relative w-full max-w-sm mx-auto md:mx-0 aspect-3/4 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden"
+                          className="relative w-full max-w-sm mx-auto md:mx-0 aspect-3/4 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden min-w-0"
                           style={{ backgroundColor: imageTabFrameBg }}
                         >
                           {isCtaTabSelected ? (
@@ -1482,6 +1751,138 @@ export default function Home() {
                       <p className="mt-4 text-center text-sm text-zinc-600 dark:text-zinc-300">
                         {imageTabLabelForActiveTab}
                       </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {contentTab === 'video' && (
+              <div className="lg:col-span-2 h-full min-h-0 min-w-0 max-w-full overflow-y-auto overflow-x-hidden p-1">
+                {selectedVideoTemplateId === null ? (
+                  <>
+                    <div className="mb-4">
+                      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Pick a template</h2>
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400">Blank placeholders for now.</p>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                      {VIDEO_TEMPLATE_CARDS.map((card) => (
+                        <button
+                          key={card.id}
+                          type="button"
+                          onClick={() => setSelectedVideoTemplateId(card.id)}
+                          className="group rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 p-2 md:p-3 text-left hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                        >
+                          <div className="aspect-3/4 w-full rounded-lg mb-3 overflow-hidden bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-600/80">
+                            {card.coverSrc ? (
+                              <img src={card.coverSrc} alt={card.title} className="w-full h-full object-cover" />
+                            ) : null}
+                          </div>
+                          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{card.title}</p>
+                          {card.subtitle ? <p className="text-xs text-zinc-500 dark:text-zinc-400">{card.subtitle}</p> : null}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-full min-w-0 max-w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 overflow-hidden">
+                    <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-zinc-200 dark:border-zinc-700 min-w-0">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedVideoTemplateId(null)}
+                        className="text-xs px-2 py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      >
+                        Back
+                      </button>
+                      <p className="order-3 w-full text-xs font-medium text-zinc-800 dark:text-zinc-200 sm:order-0 sm:w-auto sm:text-sm">
+                        {activeVideoTemplate?.title ?? `Template ${selectedVideoTemplateId}`}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleDownloadVideoTemplate}
+                        disabled={
+                          (!activeVideoTemplate?.videoSrc && !activeVideoTemplate?.coverSrc) || isVideoExporting
+                        }
+                        className="order-2 ml-auto w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isVideoExporting ? 'Exporting…' : 'Download'}
+                      </button>
+                    </div>
+                    {videoExportError ? (
+                      <p className="px-3 pb-2 text-xs text-red-600 dark:text-red-400 border-b border-zinc-200 dark:border-zinc-700">
+                        {videoExportError}
+                      </p>
+                    ) : null}
+                    <div className="p-3 sm:p-4 md:p-6 w-full min-w-0 max-w-full box-border">
+                      {activeVideoTemplate?.videoSrc ? (
+                        <div className="flex flex-col md:flex-row items-start gap-4 min-w-0 w-full">
+                          <div className="relative w-full max-w-sm mx-auto md:mx-0 aspect-9/16 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden bg-black min-w-0">
+                            <video
+                              src={activeVideoTemplate.videoSrc}
+                              controls
+                              playsInline
+                              className="absolute inset-0 z-0 h-full w-full min-w-0 object-cover"
+                              poster={activeVideoTemplate.coverSrc}
+                            />
+                            {videoOverlayCaption.trim() ? (
+                              <div className="absolute inset-0 z-10 flex items-center justify-center px-3 pointer-events-none">
+                                <p
+                                  className="w-full max-w-[68%] sm:max-w-44 md:max-w-48 text-center text-lg font-black leading-[1.15] tracking-[-0.01em] wrap-break-word sm:text-xl md:text-2xl"
+                                  style={{
+                                    color: '#ffffff',
+                                    fontFamily:
+                                      '"Arial Black", "SF Pro Display", "Helvetica Neue", Inter, system-ui, sans-serif',
+                                    WebkitTextStroke: '1.8px #000000',
+                                    paintOrder: 'stroke fill',
+                                    textShadow: '0 1px 1px rgba(0,0,0,0.45), 0 3px 8px rgba(0,0,0,0.25)',
+                                  }}
+                                >
+                                  {videoOverlayCaption}
+                                </p>
+                              </div>
+                            ) : null}
+                          </div>
+                          <div className="w-full md:w-80 md:self-start">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                              <label className="text-xs font-medium text-zinc-600 dark:text-zinc-300">Frame text</label>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const pool = [...FUNNY_QUESTIONS];
+                                  const current = videoOverlayCaption;
+                                  let next = pool[Math.floor(Math.random() * pool.length)] ?? current;
+                                  if (pool.length > 1 && next === current) {
+                                    next = pool.find((q) => q !== current) ?? next;
+                                  }
+                                  setVideoOverlayCaption(next);
+                                }}
+                                className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                              >
+                                Random question
+                              </button>
+                            </div>
+                            <input
+                              type="text"
+                              value={videoOverlayCaption}
+                              onChange={(e) => setVideoOverlayCaption(e.target.value)}
+                              placeholder="Type your on-video text…"
+                              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-zinc-400"
+                            />
+                          </div>
+                        </div>
+                      ) : activeVideoTemplate?.coverSrc ? (
+                        <div className="relative w-full max-w-sm mx-auto aspect-3/4 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
+                          <img
+                            src={activeVideoTemplate.coverSrc}
+                            alt={activeVideoTemplate.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="relative w-full max-w-sm mx-auto aspect-3/4 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-900/80 flex flex-col items-center justify-center gap-2 px-4">
+                          <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400 text-center">Blank video template</p>
+                          <p className="text-xs text-zinc-500 dark:text-zinc-500 text-center">Content for this template will go here.</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
