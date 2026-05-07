@@ -199,6 +199,7 @@ export function InputsCard(props: InputsCardProps) {
     automateSelectedCategories.size === automateCategories.length && automateCategories.length > 0
       ? []
       : Array.from(automateSelectedCategories);
+  const isFlirtyQuestionType = automateQuestionType === 'flirty';
 
   if (contentTab === 'image') {
     return <div className="flex flex-col h-full min-h-0 bg-white dark:bg-zinc-900 rounded-2xl shadow-lg overflow-hidden" />;
@@ -419,21 +420,38 @@ export function InputsCard(props: InputsCardProps) {
                     <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 divide-y divide-zinc-200 dark:divide-zinc-700 overflow-hidden bg-zinc-50/80 dark:bg-zinc-800/40">
                       {(
                         [
-                          ['Title', dailyGenIncludeTitle, setDailyGenIncludeTitle] as const,
-                          ['Caption', dailyGenIncludeCaption, setDailyGenIncludeCaption] as const,
-                          ['Cover image', dailyGenIncludeCoverImage, setDailyGenIncludeCoverImage] as const,
-                          ['Questions', dailyGenIncludeQuestions, setDailyGenIncludeQuestions] as const,
+                          {
+                            label: 'Title',
+                            on: dailyGenIncludeTitle,
+                            setOn: setDailyGenIncludeTitle,
+                            disabled: isFlirtyQuestionType,
+                          },
+                          {
+                            label: 'Caption',
+                            on: dailyGenIncludeCaption,
+                            setOn: setDailyGenIncludeCaption,
+                            disabled: isFlirtyQuestionType,
+                          },
+                          { label: 'Cover image', on: dailyGenIncludeCoverImage, setOn: setDailyGenIncludeCoverImage, disabled: false },
+                          { label: 'Questions', on: dailyGenIncludeQuestions, setOn: setDailyGenIncludeQuestions, disabled: false },
                         ] as const
-                      ).map(([label, on, setOn]) => (
+                      ).map(({ label, on, setOn, disabled }) => (
                         <div key={label} className="flex items-center justify-between gap-3 px-3 py-2.5">
-                          <span className="text-sm text-zinc-800 dark:text-zinc-200">{label}</span>
+                          <span className={`text-sm ${disabled ? 'text-zinc-400 dark:text-zinc-500' : 'text-zinc-800 dark:text-zinc-200'}`}>
+                            {label}
+                          </span>
                           <button
                             type="button"
                             role="switch"
                             aria-checked={on}
+                            aria-disabled={disabled}
                             aria-label={`${on ? 'Disable' : 'Enable'} ${label}`}
-                            onClick={() => setOn(!on)}
-                            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3B82F6] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-900 ${
+                            onClick={() => !disabled && setOn(!on)}
+                            className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3B82F6] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-900 ${
+                              disabled
+                                ? 'cursor-not-allowed opacity-50'
+                                : 'cursor-pointer'
+                            } ${
                               on ? 'bg-[#3B82F6]' : 'bg-zinc-300 dark:bg-zinc-600'
                             }`}
                           >

@@ -257,7 +257,8 @@ const VIDEO_TEMPLATE_CARDS: VideoTemplateCard[] = [
   { id: 4, title: 'Template 4', subtitle: '' },
 ];
 
-const DAILY_TEMPLATE_TITLES = [
+const DAILY_TEMPLATE_TITLES_FUNNY = [
+  "5 Questions To Ask Your Sweet Heart Tonight",
   "5 Fun Questions To Gaslight Your Boyfriend Tonight",
   "Does he pass the good boyfriend test?",
   "5 Questions To Test How Well Trained Your Boyfriend Is",
@@ -299,6 +300,25 @@ const DAILY_TEMPLATE_TITLES = [
 The photo is taken from a low, ground-level angle. On the pavement in the foreground, handwritten in rough, slightly messy chalk, the text reads: "{x}" with a small imperfect heart underneath. The writing looks natural, uneven, and slightly smudged in places from moisture. There are faint reflections of the text in the damp pavement.
 
 Lighting is bright but not dramatic — natural sunlight, no cinematic effects. The image has slight grain, minor imperfections, and looks like a casual, unedited iPhone photo. Realistic colors, not oversaturated.`,
+] as const;
+
+const DAILY_TEMPLATE_TITLES_FLIRTY = [
+  '5 Dangerous Questions To Ask Your Boyfriend Tonight',
+  '5 Flirty Questions That Make Things Hotter',
+  '5 Flirty Questions That Make Him Sweat',
+  '5 Flirty Questions That Make Things Escalate Fast',
+  '5 Flirty Questions That Feels Like Temptation',
+  '5 Flirty Questions To Spicy Up Your Date Night',
+  '5 Flirty Questions To Make Him Blush Tonight',
+  '5 Questions To Turn Date Night Spicy',
+  '5 Flirty Questions To Tease Your Boyfriend Tonight',
+  '5 Questions To Build Tension With Your Boyfriend',
+  '5 Flirty Questions To Keep The Spark Alive',
+  '5 Questions To Make Him Want You More Tonight',
+  '5 Flirty Questions To Ask Before Bed Tonight',
+  '5 Questions To Heat Up Your Night Together',
+  '5 Flirty Questions To Make Him Fold First',
+  '5 Questions To Ask Your Boyfriend After Dark',
 ] as const;
 
 export default function Home() {
@@ -388,6 +408,12 @@ export default function Home() {
   /** Template hook prompt (image prompt with {x}); labeled “cover image” in the UI */
   const [dailyGenIncludeCoverImage, setDailyGenIncludeCoverImage] = useState(true);
 
+  useEffect(() => {
+    if (automateQuestionType !== 'flirty') return;
+    setDailyGenIncludeTitle(false);
+    setDailyGenIncludeCaption(false);
+  }, [automateQuestionType]);
+
   /** Prompt strings from the previous Daily TikTok run — excluded next time so back-to-back runs rarely repeat */
   const lastDailyPromptRunRef = useRef<Set<string>>(new Set());
 
@@ -400,6 +426,12 @@ export default function Home() {
   const prevFirstCardTextRef = useRef(firstCardTextValue);
 
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (selectedImageTemplateId === 1 && selectedImageBrowserTab > 5) {
+      setSelectedImageBrowserTab(0);
+    }
+  }, [selectedImageTemplateId, selectedImageBrowserTab]);
 
   useEffect(() => {
     if (mode !== 'video') {
@@ -629,7 +661,9 @@ export default function Home() {
   };
 
   const pickRandom = <T,>(arr: readonly T[]): T => arr[randomIndex(arr.length)]!;
-  const pickTemplateHookTitle = (): string => pickRandom(DAILY_TEMPLATE_TITLES);
+  const templateTitlePool =
+    automateQuestionType === 'flirty' ? DAILY_TEMPLATE_TITLES_FLIRTY : DAILY_TEMPLATE_TITLES_FUNNY;
+  const pickTemplateHookTitle = (): string => pickRandom(templateTitlePool);
 
   const handleGenerateDailyTikTok = async () => {
     setIsGeneratingDailyTikTok(true);
@@ -1272,12 +1306,19 @@ export default function Home() {
   const imageFrameTitleLine1 = 'Questions to ask your';
   const imageFrameTitleLine2 = 'boyfriend tonight <3';
   const imageFrameCtaText = 'Remember to like, save and share the fun!';
-  const regenerateImageTemplateContent = () => {
+  const regenerateImageTemplateContent = (templateId?: number) => {
+    const tid = templateId ?? selectedImageTemplateId;
+    const isKawaii = tid === 1;
     setSelectedImageBrowserTab(0);
     const picked = [...FUNNY_QUESTIONS].sort(() => Math.random() - 0.5).slice(0, 5);
     setImageTabFunnyQuestions(picked);
-    setImageTabTexts([`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked, imageFrameCtaText]);
-    setImageTabSources(dogImagePool.length ? pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 7) : []);
+    if (isKawaii) {
+      setImageTabTexts([`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked]);
+      setImageTabSources(dogImagePool.length ? pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 6) : []);
+    } else {
+      setImageTabTexts([`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked, imageFrameCtaText]);
+      setImageTabSources(dogImagePool.length ? pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 7) : []);
+    }
   };
   const getDefaultImageFrameTextForTab = (tabIndex: number): string =>
     tabIndex === 0
@@ -1291,10 +1332,12 @@ export default function Home() {
     imageTabSources[tabIndex] ??
     (dogImagePool.length ? dogImagePool[tabIndex % dogImagePool.length]! : '');
   const imageFrameTextForActiveTab = getImageFrameTextForTab(selectedImageBrowserTab);
-  const isCtaTabSelected = selectedImageBrowserTab === 6;
+  const isKawaiiImageTemplate = selectedImageTemplateId === 1;
+  const isCtaTabSelected = !isKawaiiImageTemplate && selectedImageBrowserTab === 6;
   const imageSourceForActiveTab = isCtaTabSelected ? kawaiiCtaImageSrc : getImageSourceForTab(selectedImageBrowserTab);
   const imageTabLabelForActiveTab =
     selectedImageBrowserTab === 0 ? 'Cover' : selectedImageBrowserTab <= 5 ? `Q${selectedImageBrowserTab}` : 'CTA';
+  const imageTemplateTabCount = isKawaiiImageTemplate ? 6 : 7;
   const activeVideoTemplate =
     contentTab === 'video' && selectedVideoTemplateId !== null
       ? VIDEO_TEMPLATE_CARDS.find((c) => c.id === selectedVideoTemplateId)
@@ -1424,32 +1467,32 @@ export default function Home() {
       const zip = new JSZip();
       const isKawaiiTemplate = selectedImageTemplateId === 1;
 
-      const buildSevenTabSourcesForKawaiiSet = (): string[] => {
+      const buildSixTabSourcesForKawaiiSet = (): string[] => {
         if (dogImagePool.length > 0) {
-          return pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 7);
+          return pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 6);
         }
         const fromUi = imageTabSources.filter((u) => typeof u === 'string' && u.length > 0);
         if (fromUi.length > 0) {
-          return Array.from({ length: 7 }, (_, i) => fromUi[i % fromUi.length]!);
+          return Array.from({ length: 6 }, (_, i) => fromUi[i % fromUi.length]!);
         }
         return [];
       };
 
       if (isKawaiiTemplate) {
-        const probe = buildSevenTabSourcesForKawaiiSet();
-        if (probe.length < 7 || probe.slice(0, 6).some((u) => !u?.trim())) {
+        const probe = buildSixTabSourcesForKawaiiSet();
+        if (probe.length < 6 || probe.some((u) => !u?.trim())) {
           alert('Dog images are still loading. Wait a few seconds, then try Download again.');
           return;
         }
         for (let setIdx = 0; setIdx < KAWAII_DOWNLOAD_NUM_SETS; setIdx++) {
           const funnyPool = Array.from(FUNNY_QUESTIONS) as string[];
           const picked = shuffleCopy(funnyPool).slice(0, 5);
-          const tabTexts = [`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked, imageFrameCtaText];
-          const tabSources = buildSevenTabSourcesForKawaiiSet();
+          const tabTexts = [`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked];
+          const tabSources = buildSixTabSourcesForKawaiiSet();
           const setPrefix = `set-${setIdx + 1}`;
-          for (let tabIndex = 0; tabIndex < 7; tabIndex++) {
+          for (let tabIndex = 0; tabIndex < 6; tabIndex++) {
             const blob = await renderFrameBlob(tabIndex, { tabTexts, tabSources });
-            const tabName = tabIndex === 0 ? 'cover' : tabIndex <= 5 ? `q${tabIndex}` : 'cta';
+            const tabName = tabIndex === 0 ? 'cover' : `q${tabIndex}`;
             zip.file(`${setPrefix}/template-${selectedImageTemplateId}-${tabName}.png`, blob);
           }
         }
@@ -1653,7 +1696,7 @@ export default function Home() {
                       : [...FUNNY_QUESTIONS]
                 }
                 automatePromptOptions={[...PROMPTS]}
-                automateTemplateQuestionOptions={[...DAILY_TEMPLATE_TITLES]}
+                automateTemplateQuestionOptions={[...templateTitlePool]}
                 onSetDailyQuestion={handleSetDailyQuestionAtIndex}
                 onRetryTemplatePrompt={handleRetryTemplatePrompt}
                 isRetryingTemplatePrompt={isRetryingTemplatePrompt}
@@ -1692,7 +1735,7 @@ export default function Home() {
                           type="button"
                           onClick={() => {
                             setSelectedImageTemplateId(card.id);
-                            regenerateImageTemplateContent();
+                            regenerateImageTemplateContent(card.id);
                           }}
                           className="group rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 p-2 md:p-3 text-left hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                         >
@@ -1740,7 +1783,7 @@ export default function Home() {
                         {selectedImageTemplateId === 1 ? (
                           <button
                             type="button"
-                            onClick={regenerateImageTemplateContent}
+                            onClick={() => regenerateImageTemplateContent(1)}
                             disabled={isImageTemplateDownloading}
                             className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
@@ -1785,7 +1828,7 @@ export default function Home() {
                       </div>
                     </div>
                     <div className="flex gap-1 p-2 border-b border-zinc-200 dark:border-zinc-700 overflow-x-auto min-w-0 max-w-full">
-                      {Array.from({ length: 7 }, (_, i) => (
+                      {Array.from({ length: imageTemplateTabCount }, (_, i) => (
                         <button
                           key={i}
                           type="button"
