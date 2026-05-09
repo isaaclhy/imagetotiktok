@@ -70,12 +70,9 @@ export const PROMPTS = [
   'First person POV, with girlfriend on the beach (she\'s not in the picture), holding a cute polaroid, on the polaroid should be a couple and there\'s a text "{x}" written in marker with a heart',
   'First person POV, in a huge college lecture hall full of students, there\'s a professor in the center stage pointing at the lecture slides in presentation mode. Inside the slide the background should be red, it should say "{x}", make it realistic. Zoom into the slides where the text is since it should be the main focus',
   'Walking in a college town along frat row, on one of the flags it says "{x}". The flag should be red. It should be a very snowy day, the flag should occupy most of the screen space and the text should be the main focus',
-  'On a highway bridge, there\'s a clean white cloth-like material poster hanging down with the text "{x}" spray painted in red, with a heart spray painted at the bottom as well. The poster should occupy the center 70% of the image and is the main focus',
-  'Looking out the window on a bright day, it is very snowy with snow covering the ground. In the snow someone carved out the words "{x}" in the middle of the road with cars on both sides. The carved text should occupy about 60% width of the screen',
+  'On a highway bridge, there\'s a clean white poster hanging down with the text "{x}" spray painted in red, with a heart spray painted at the bottom as well. The poster should occupy the center 70% of the image and is the main focus',
   'On a snowy street in New York City, there\'s a restaurant red metal sign in a heart shape, on it there\'s text "{x}" painted on it in white, it should be in the center of the image. Must be realistic',
-  'Close up of the back of a car\'s windscreen covered in snow, however text carved out visibly so the carved-away part has almost no snow on it. The text says "{x}"',
   'In a bright NYC coffee shop, a female hand holding a condom wrapper with the text "{x}" on it. Make it very realistic',
-  'At home on a snowy day, pancakes on the side, there\'s a white mug in the center with a tea bag in it, you\'re holding the tea bag label which is red in color with text on it in white: "{x}". Make it realistic. Pull the teabag closer to the camera',
   'You\'re on a bus in NYC, it\'s a sunny day, on the back of the seat in front of you there\'s a sticker with black background and white text, the text says "{x}". The sticker is a bit worn off',
   'You\'re opening a fortune cookie in a restaurant and the paper is still a bit in the cookie, the message on the paper says "{x}". Make it realistic, the message should be in the center of the image. The message should be at least 60% of the screen width',
   'You\'re inside a London tube station platform, across the tracks there\'s this huge ad with the message "{x}". Must be realistic. The ad should be facing straight at you and not at an angle',
@@ -90,10 +87,8 @@ export const PROMPTS = [
   'First person POV, you\'re making a heart-shaped pizza; the words "{x}" are spelled out in red tomato sauce on the pizza. Make the words large, readable, and the main focus',
   'First person POV, you\'re in a couples drawing class with your boyfriend: on the canvas there\'s a simple colorful doodle portrait of him (intentionally a bit rough), and he\'s good-looking in the background behind the easel. Below the drawing on the canvas, bold text says "{x}". Make that text the main focus',
   'First person POV, you\'re wearing a skirt at a tennis court looking down at the ground; a few tennis balls and a racket are visible, and on the court or pavement the text "{x}" is written on the floor. Make the text the main focus, large and readable',
-  'First person POV, you\'re on a helicopter ride looking out the window; the text "{x}" is written with marker on the glass. The writing must be clear, easily visible, and the main focus',
   'First person POV, on a sunny day you\'re walking down the street; outside a coffee shop there\'s a pink ad stand with only the words "{x}" printed on it and nothing else. The stand should be the main focus, facing straight toward you',
   'A wall full of white tiles, and on one tile there is text "{x}" written with black marker. Add some heart and love themed stickers around it. Zoom in so the text is the main focus, and the tile should face the camera directly, not at an angle',
-  'First person POV, you\'re at Coachella in a big crowd; far away in the crowd, a woman is holding up a large white sign with the text "{x}". Make the sign the main focus, clear and readable, and facing directly toward you',
   'First person POV, you\'re near the front stage at Coachella during daytime with a huge crowd. On the stage big screen, the text "{x}" is shown on a pink background. Zoom in so the screen text is the main focus',
   'First person POV, you\'re walking down into a crowded tube station; you look at a station sign and it says "{x}". Make the sign text clear, readable, and the main focus',
   'First person POV, you\'re standing on a crowded tube station platform and looking across the tracks at a big ad board. On the ad board, the text "{x}" is displayed. Make the text the main focus, zoom in on it, and face straight toward the ad',
@@ -105,7 +100,6 @@ export const PROMPTS = [
   'In a bright NYC coffee shop, a female hand holding a condom wrapper with the text "{x}" on it.',
   'First person POV, It\'s a sunny day, you\'re sitting outside a cafe and reading a book, on the book cover it says "{x}". The cover should be cartoon style with some figures but the text should be easily and clearly legible. Focus on the text. Make it realistic',
   'First person POV, you\'re sitting down across your boyfriend in their 20s on the table. He is eating eggs. You (a female) holding onto your phone, you\'re on tiktok app and one of the post says "{x}". Focus on the phone text and zoom in.',
-  'First person POV, stylish, mid 20s boyfriend walking over, he is holding onto a book, reading it. On the book cover has the text "{x}". Make it realistic and in a bedroom setting. Zoom in onto the text on the book cover',
   'First person POV, inside a car, you\'re sitting across your boyfriend who is a blonde high schooler wearing a hoodie, he\'s holding a hard cover open book, on the cover, it says "{x}" in white. He\'s focused on reading the book. Make the text the focus.',
   'First person POV, you are on your phone, you have painted nails. sitting across your boyfriend who is eating breakfast. on your phone, there\'s a text, saying "{x}", it\'s sent from your bestie. Zoom in on the text and and focus on it.',
   'First person POV, you are on your phone, sitting across your boyfriend who is eating breakfast. on your phone, there\'s a text, saying "{x}", it\'s sent from your bestie. Zoom in on the text and and focus on it.',
@@ -117,7 +111,11 @@ export const PROMPTS = [
   'First person POV, you\'re a girl wearing baggy joggers with Adidas Sambas, looking down at the ground, and there\'s text "{x}" written with white chalk.',
   'First person POV, you\'re holding a flat white full of foam, but some of the foam is separated and the text "{x}" can be seen. Zoom in and focus on the text',
   'First person POV, you\'re having a cute date night, sitting on the floor in front of the coffee table with some wine and food; a cute cartoon and the text "{x}" are projected on the wall. Zoom in and focus on the text',
-  
+  `A realistic iPhone photo of a quiet suburban street during the day with bright natural sunlight. The asphalt road is slightly wet with small puddles, reflecting soft daylight. The scene includes simple houses, trees, and a few parked cars in the background. Shadows are soft and natural, like a normal sunny afternoon after light rain.
+
+The photo is taken from a low, ground-level angle. On the pavement in the foreground, handwritten in rough, slightly messy chalk, the text reads: "{x}" with a small imperfect heart underneath. The writing looks natural, uneven, and slightly smudged in places from moisture. There are faint reflections of the text in the damp pavement.
+
+Lighting is bright but not dramatic — natural sunlight, no cinematic effects. The image has slight grain, minor imperfections, and looks like a casual, unedited iPhone photo. Realistic colors, not oversaturated.`
 ] as const;
 
 /** Funny relationship questions for games. */
@@ -160,7 +158,6 @@ export const FUNNY_QUESTIONS = [
   'If someone offered you $1 mil to punch me in the face as hard as you can, would you do it?',
   'How long would I have to be in a coma for, before you to start dating other people?',
   'How long would I have to be in a coma for before you start using dating apps again?',
-  'Would you rather see another men n*ked or another women n*ked?',
   'If you found a soulmate, would you leave me for them?',
   'If I have to spend a night at one of your friend\'s place, who\'s would you not let me spend it at?',
   'Would you rather I kiss your best friend once or stay loyal but never have sex with you again?',

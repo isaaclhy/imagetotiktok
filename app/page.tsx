@@ -281,8 +281,8 @@ const DAILY_TEMPLATE_TITLES_FUNNY = [
   '5 Simple Question To Test Your Boyfriend Tonight',
   '5 Cute Questions Every Boyfriend Must Answer Tonight',
   '5 Questions Every Boyfriend Gets Wrong',
-  'Does Your Boyfriend Pass The Jealousy Test',
-  'Does Your boyfriend Pass The Loyalty Test',
+  'Does Your Boyfriend Pass The Jealousy Test?',
+  'Does Your boyfriend Pass The Loyalty Test?',
   '5 Cute Questions To Fall In Love With Your Boyfriend',
   '5 Questions A Good Boyfriend Should Get Right',
   '5 Cute Questions All Boyfriends Must Answer Tonight',
@@ -295,11 +295,7 @@ const DAILY_TEMPLATE_TITLES_FUNNY = [
   '5 Impossible Questions To Ask Your Boyfriend Tonight',
   '5 Dumb Questions To Annoy Your Boyfriend',
   '5 Cute Questions To Fall In Love With You Boyfriend Again',
-  `A realistic iPhone photo of a quiet suburban street during the day with bright natural sunlight. The asphalt road is slightly wet with small puddles, reflecting soft daylight. The scene includes simple houses, trees, and a few parked cars in the background. Shadows are soft and natural, like a normal sunny afternoon after light rain.
-
-The photo is taken from a low, ground-level angle. On the pavement in the foreground, handwritten in rough, slightly messy chalk, the text reads: "{x}" with a small imperfect heart underneath. The writing looks natural, uneven, and slightly smudged in places from moisture. There are faint reflections of the text in the damp pavement.
-
-Lighting is bright but not dramatic — natural sunlight, no cinematic effects. The image has slight grain, minor imperfections, and looks like a casual, unedited iPhone photo. Realistic colors, not oversaturated.`,
+  
 ] as const;
 
 const DAILY_TEMPLATE_TITLES_FLIRTY = [
