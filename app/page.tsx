@@ -252,7 +252,13 @@ const VIDEO_TEMPLATE_CARDS: VideoTemplateCard[] = [
     coverSrc: '/video-templates/blonde-ai-ugc-cover.png',
     videoSrc: '/blonde-video/hf_20260501_152346_d2467d52-3f87-48d3-a308-2872726f6fc1.mp4',
   },
-  { id: 2, title: 'Template 2', subtitle: '' },
+  {
+    id: 2,
+    title: 'Template 2',
+    subtitle: '',
+    coverSrc: '/video-templates/template-2-cover.png',
+    videoSrc: '/blonde-video/template-2.mp4',
+  },
   { id: 3, title: 'Template 3', subtitle: '' },
   { id: 4, title: 'Template 4', subtitle: '' },
 ];
