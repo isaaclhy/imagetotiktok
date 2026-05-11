@@ -242,7 +242,15 @@ const INITIAL_CANVASES: CanvasData[] = [
   { id: 'end', text: '', backgroundColor: '#000000', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' },
 ];
 
-type VideoTemplateCard = { id: number; title: string; subtitle: string; coverSrc?: string; videoSrc?: string };
+type VideoTemplateCard = {
+  id: number;
+  title: string;
+  subtitle: string;
+  coverSrc?: string;
+  videoSrc?: string;
+  /** Bundled into the same ZIP as the main `videoSrc` on raw MP4 download (no caption overlay). */
+  extraDownloadVideoSrc?: string;
+};
 
 const VIDEO_TEMPLATE_CARDS: VideoTemplateCard[] = [
   {
@@ -258,6 +266,7 @@ const VIDEO_TEMPLATE_CARDS: VideoTemplateCard[] = [
     subtitle: '',
     coverSrc: '/video-templates/template-2-cover.png',
     videoSrc: '/blonde-video/template-2.mp4',
+    extraDownloadVideoSrc: '/blonde-video/hubnjkm.mp4',
   },
   { id: 3, title: 'Template 3', subtitle: '' },
   { id: 4, title: 'Template 4', subtitle: '' },
@@ -1556,7 +1565,34 @@ export default function Home() {
           }
           return;
         }
-        const res = await fetch(activeVideoTemplate.videoSrc);
+        const mainVideoSrc = activeVideoTemplate.videoSrc;
+        const extraVideoSrc = activeVideoTemplate.extraDownloadVideoSrc?.trim();
+        if (extraVideoSrc) {
+          setIsVideoExporting(true);
+          try {
+            const zip = new JSZip();
+            const mainRes = await fetch(mainVideoSrc);
+            if (!mainRes.ok) throw new Error('Failed to fetch video');
+            zip.file(`${baseName}.mp4`, await mainRes.blob());
+            const extraRes = await fetch(extraVideoSrc);
+            if (!extraRes.ok) throw new Error('Failed to fetch bundled video');
+            const extraFileName = extraVideoSrc.split('/').pop() || 'extra.mp4';
+            zip.file(extraFileName, await extraRes.blob());
+            const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
+            const url = URL.createObjectURL(zipBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${baseName}-videos.zip`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.setTimeout(() => URL.revokeObjectURL(url), 2500);
+          } finally {
+            setIsVideoExporting(false);
+          }
+          return;
+        }
+        const res = await fetch(mainVideoSrc);
         if (!res.ok) throw new Error('Failed to fetch video');
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
