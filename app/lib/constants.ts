@@ -44,11 +44,29 @@ export function getDefaultAutomateCategories(categories: string[]): string[] {
 /** Image prompts with {x} placeholder for dynamic text. */
 export const PROMPTS = [
   'A baseball cap, a bit worn out but the cap is in red, the text "{x}" embroidered on it. the text should be in white and the text should occupy only the center 70% of the screen space, leave some padding on the side. No need to show the entire cap, the text should be in the center',
-  'First person view, in an empty coffee shop, you (a women) holding an iphone watching an instagram story. The story should have a red background with large white text "{x}".',
+  `First-person POV inside a bright modern coffee shop during daytime, a feminine woman's hand holding an iPhone while viewing an Instagram story. Natural daylight pours through large windows, creating soft bright lighting and realistic shadows. A few people are sitting and casually talking in the background, slightly blurred and out of focus so they add atmosphere without distracting from the main subject. The scene feels natural and candid, like a real smartphone photo. The hand has feminine features with slender fingers, natural nails, and realistic skin texture. The phone screen is very bright and visually striking, emitting a vivid saturated bright red glow that immediately draws attention while still looking like a real phone display. On the Instagram story is a solid bright red background with la  rge centered bold white text: "{x}" Shallow depth of field, photorealistic, realistic iPhone proportions, authentic coffee shop atmosphere, iPhone camera photo style, natural composition, no CGI appearance.`,
   'First person POV, holding a white canvas with 2 hand marks from paint, one should be sky blue and one should be pink and on the canvas, it should also have the text "{x}". The text is facing you directly',
   'Close up holding a piece of very very small torn paper, almost thumbnail size, on the paper it\'s written "{x}", it\'s like the text is typed using a type writer. Make it realistic. The text should be very clear on the piece of paper',
   'A finished puzzle, on the puzzle should have the text "{x}". Make the text cartoon style',
-  'Late night home movie with a projector and the text "{x}" projected. We can only see the couple\'s back. Make the text the main focus and very clear.',
+  `Ultra realistic candid photo of a real couple watching a projector movie late at night in a small apartment living room.
+
+Shot from behind the couch at eye level. We only see the backs of the couple. The woman is leaning on the man’s shoulder naturally.
+
+A real projector on the coffee table projects onto a slightly wrinkled white bedsheet hanging on the wall.
+
+The projected text is the main focus and reads exactly:
+
+"{x}"
+
+Large bold condensed black sans-serif text on a bright white projection, perfectly legible and centered.
+
+Natural low-light photography, realistic apartment, imperfect couch fabric, subtle room clutter, authentic shadows, slight sensor noise, soft projector glow, visible light beam particles.
+
+Looks like a candid photo taken on a DSLR camera, not AI art, not a digital illustration.
+
+Realistic skin texture, realistic hair, natural posture, believable proportions, documentary photography style.
+
+No front-facing people, no fake cinematic lighting, no surrealism, no glossy surfaces, no perfect furniture, no extra text, no distorted letters, no watermark.`,
   'Picking ice cream among a bunch of flavors in the shop and on one of the flavor cards, it says "{x}". The text should be zoomed in and facing straight to you',
   'First person POV, making a heart pottery for girlfriend and on the pottery has the text "{x}" painted on it. The pottery is white and the text should be red',
   'A couple looking at a piece of art in a museum. we can only see their back and the girl\'s head is leaning slightly on the guy\'s shoulder. The art has the text "{x}" the art is very cartoony',
@@ -63,7 +81,7 @@ export const PROMPTS = [
   'First person POV, youre making a cake, on the top of the cake has the words "{x}" written in frosting. The cake and the frosting should have contrasting color. The text should not be cursive',
   'First person POV, you\'re in a packed theatre holding a theatre leaflet about the show, on the leaflet has the text "{x}" printed on the leaflet',
   'First person POV, you\'re ice skating with your girlfriend (can only see her arms), on the ice has the text "{x}" spray painted on the ice',
-  'First person POV, you\'re on the grass in a park, painting on a white canvas. On the white canvas, it\'s a heart and then a text "{x}". You\'re facing straight at the canvas',
+  `First-person POV sitting on grass in a park, painting on a white canvas directly in front of you. The camera/viewpoint is perfectly centered and perpendicular to the canvas surface. The canvas is perfectly upright, flat facing the viewer head-on (0° rotation), centered in frame, with no tilt, no perspective skew, symmetrical alignment. Hands holding paintbrush visible at bottom of frame. On the canvas is a red heart and the text: "{x}"`,
   'First person POV, you\'re doing a white tile drawing lesson. There are some stickers on it, there should be a text saying "{x}" painted on it with brush. The text should not be black. The tile should be facing you, the edges of the tile should be parallel to the frame',
   'First person POV, you\'re holding a cute polaroid image and on it has "{x}" written on it with marker and a heart. Focus on the text',
   'First person POV, with girlfriend on the beach (she\'s not in the picture), holding a cute polaroid, on the polaroid should be a couple and there\'s a text "{x}" written in marker with a heart',
