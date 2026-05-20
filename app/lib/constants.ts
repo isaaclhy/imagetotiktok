@@ -233,6 +233,8 @@ export const FUNNY_QUESTIONS = [
   'Do you actually listen to me when I speak or do you just wait until your turn?',
   'Would you rather I get horny only once a month or everyday?',
   'Would you have a girlfriend if I wasn\'t born?',
+  'If I texted you "I f*cked up", what do you think I\'ve done?',
+  'If Netflix has a series on our relationship, what would it be called?',
 ] as const;
 
 /** Flirty relationship questions for games. */

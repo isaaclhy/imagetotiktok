@@ -11,6 +11,7 @@ import { InputsCard } from '@/app/components/InputsCard';
 import { PreviewPanel } from '@/app/components/PreviewPanel';
 import { DownloadModal } from '@/app/components/DownloadModal';
 import { Toast } from '@/app/components/Toast';
+import { AutomateDriveUpload } from '@/app/components/AutomateDriveUpload';
 
 function shuffleCopy<T>(items: T[]): T[] {
   const a = [...items];
@@ -369,7 +370,7 @@ export default function Home() {
   const [levelName, setLevelName] = useState<string>('');
   const [theme, setTheme] = useState<string>('');
   const [mode, setMode] = useState<'plain' | 'video'>('video');
-  const [contentTab, setContentTab] = useState<'image' | 'video' | 'automate'>('image');
+  const [contentTab, setContentTab] = useState<'image' | 'video' | 'prompt' | 'automate'>('image');
   const [selectedImageTemplateId, setSelectedImageTemplateId] = useState<number | null>(null);
   const [selectedVideoTemplateId, setSelectedVideoTemplateId] = useState<number | null>(null);
   /** TikTok-style overlay on video templates (white fill, black stroke). */
@@ -1641,10 +1642,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto w-full min-w-0 flex flex-col flex-1 min-h-0">
           <div
             className={`grid grid-cols-1 gap-4 flex-1 min-h-0 min-w-0 px-3 pb-3 pt-0 overflow-x-hidden overflow-y-hidden ${
-              contentTab === 'automate' ? 'lg:grid-cols-[320px_minmax(0,1fr)]' : 'lg:grid-cols-[400px_minmax(0,1fr)]'
+              contentTab === 'prompt' ? 'lg:grid-cols-[320px_minmax(0,1fr)]' : 'lg:grid-cols-[400px_minmax(0,1fr)]'
             }`}
           >
-            {contentTab === 'automate' && (
+            {contentTab === 'prompt' && (
               <InputsCard
                 contentTab={contentTab}
                 backgroundColor={backgroundColor}
@@ -1698,7 +1699,7 @@ export default function Home() {
                 setDailyGenIncludeCoverImage={setDailyGenIncludeCoverImage}
               />
             )}
-            {contentTab === 'automate' && (
+            {contentTab === 'prompt' && (
               <PreviewPanel
                 canvases={canvases}
                 currentCanvasId={currentCanvasId}
@@ -1714,18 +1715,18 @@ export default function Home() {
                 videoBackgroundUrl={videoBackgroundUrl}
                 videoThumbnailUrl={videoThumbnailUrl}
                 mounted={mounted}
-                automateDailyResults={contentTab === 'automate' ? automateDailyResults : undefined}
-                automateDailyVideoTitle={contentTab === 'automate' ? automateDailyVideoTitle : undefined}
-                automateDailyTitle={contentTab === 'automate' ? automateDailyTitle : undefined}
-                automateDailyTemplatePrompt={contentTab === 'automate' ? automateDailyTemplatePrompt : undefined}
+                automateDailyResults={contentTab === 'prompt' ? automateDailyResults : undefined}
+                automateDailyVideoTitle={contentTab === 'prompt' ? automateDailyVideoTitle : undefined}
+                automateDailyTitle={contentTab === 'prompt' ? automateDailyTitle : undefined}
+                automateDailyTemplatePrompt={contentTab === 'prompt' ? automateDailyTemplatePrompt : undefined}
                 automateDailyIndex={automateDailyIndex}
                 onAutomateDailyIndexChange={setAutomateDailyIndex}
                 onRetryDailyItem={handleRetryDailyItem}
                 onRetryDailyPromptOnly={handleRetryDailyPromptOnly}
                 onSetDailyPrompt={handleSetDailyPromptAtIndex}
                 onRetryDailyQuestionOnly={handleRetryDailyQuestionOnly}
-                automateDailyPrompts={contentTab === 'automate' ? automateDailyRowPrompts : undefined}
-                automateDailyQuestions={contentTab === 'automate' ? automateDailyRowQuestions : undefined}
+                automateDailyPrompts={contentTab === 'prompt' ? automateDailyRowPrompts : undefined}
+                automateDailyQuestions={contentTab === 'prompt' ? automateDailyRowQuestions : undefined}
                 automateQuestionOptions={
                   automateQuestionType === 'me_or_you'
                     ? [...ME_OR_YOU_QUESTIONS]
@@ -1742,11 +1743,11 @@ export default function Home() {
                 onRetryTemplateQuestionOnly={handleRetryTemplateQuestionOnly}
                 isRetryingTemplateQuestion={isRetryingTemplateQuestion}
                 automateTemplateReplacementText={
-                  contentTab === 'automate' ? automateDailyTemplateReplacementText : undefined
+                  contentTab === 'prompt' ? automateDailyTemplateReplacementText : undefined
                 }
                 onSetTemplateQuestion={handleSetTemplateQuestion}
                 automateTemplatePromptRaw={
-                  contentTab === 'automate' ? automateDailyTemplatePromptRaw : undefined
+                  contentTab === 'prompt' ? automateDailyTemplatePromptRaw : undefined
                 }
                 onSetTemplatePrompt={handleSetTemplatePrompt}
                 onEditTemplatePromptText={handleEditTemplatePromptText}
@@ -1755,8 +1756,13 @@ export default function Home() {
                 onRegenerateDailyCaption={handleRegenerateDailyCaption}
                 isRetryingDailyVideoTitle={isRetryingDailyVideoTitle}
                 isRetryingDailyCaption={isRetryingDailyCaption}
-                isAutomateNanaMode={contentTab === 'automate'}
+                isAutomateNanaMode={contentTab === 'prompt'}
               />
+            )}
+            {contentTab === 'automate' && (
+              <div className="lg:col-span-2 h-full min-h-0 min-w-0 p-1">
+                <AutomateDriveUpload />
+              </div>
             )}
             {contentTab === 'image' && (
               <div className="lg:col-span-2 h-full min-h-0 min-w-0 max-w-full overflow-y-auto overflow-x-hidden p-1">

@@ -1,8 +1,8 @@
 'use client';
 
 interface SidebarProps {
-  contentTab: 'image' | 'video' | 'automate';
-  onContentTabChange: (tab: 'image' | 'video' | 'automate') => void;
+  contentTab: 'image' | 'video' | 'prompt' | 'automate';
+  onContentTabChange: (tab: 'image' | 'video' | 'prompt' | 'automate') => void;
   userInfo: { display_name?: string; avatar_url?: string } | null;
   showUserDropdown: boolean;
   setShowUserDropdown: (v: boolean) => void;
@@ -54,9 +54,9 @@ export function Sidebar({
           <span className="text-sm font-medium">Video</span>
         </button>
         <button
-          onClick={() => onContentTabChange('automate')}
+          onClick={() => onContentTabChange('prompt')}
           className={`w-full py-3 px-4 flex items-center gap-3 rounded-lg transition-colors text-left ${
-            contentTab === 'automate'
+            contentTab === 'prompt'
               ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-zinc-50'
               : 'text-zinc-500 dark:text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-700 dark:hover:text-zinc-300'
           }`}
@@ -65,6 +65,24 @@ export function Sidebar({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
           <span className="text-sm font-medium">Prompt</span>
+        </button>
+        <button
+          onClick={() => onContentTabChange('automate')}
+          className={`w-full py-3 px-4 flex items-center gap-3 rounded-lg transition-colors text-left ${
+            contentTab === 'automate'
+              ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-zinc-50'
+              : 'text-zinc-500 dark:text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-700 dark:hover:text-zinc-300'
+          }`}
+        >
+          <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
+          </svg>
+          <span className="text-sm font-medium">Automate</span>
         </button>
       </div>
       <div className="flex-1 min-h-4" />

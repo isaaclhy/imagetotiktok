@@ -18,7 +18,7 @@ const DEFAULT_VIDEO_OVERLAY_LINES = [
 ];
 
 interface InputsCardProps {
-  contentTab: 'image' | 'video' | 'automate';
+  contentTab: 'image' | 'video' | 'prompt' | 'automate';
   // Image form state
   backgroundColor: string;
   setBackgroundColor: (v: string) => void;
@@ -171,7 +171,7 @@ export function InputsCard(props: InputsCardProps) {
   };
 
   useEffect(() => {
-    if (contentTab === 'automate' && automateCategories.length === 0) {
+    if (contentTab === 'prompt' && automateCategories.length === 0) {
       setAutomateCategoriesLoading(true);
       fetch('/api/levels/categories')
         .then((r) => r.json())
@@ -397,7 +397,7 @@ export function InputsCard(props: InputsCardProps) {
             </div>
           )}
 
-          {contentTab === 'automate' && (
+          {contentTab === 'prompt' && (
             <div className="space-y-4">
               <div className="space-y-4">
                   <div className="max-w-[220px]">
@@ -469,7 +469,7 @@ export function InputsCard(props: InputsCardProps) {
             </div>
           )}
 
-          {userInfo && contentTab !== 'automate' && (
+          {userInfo && contentTab !== 'prompt' && (
             <>
               <div className="space-y-3 pt-4 mt-4 border-t border-zinc-200 dark:border-zinc-700">
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Post Settings (Required for TikTok)</label>
@@ -603,7 +603,7 @@ export function InputsCard(props: InputsCardProps) {
           </button>
         </div>
       )}
-      {contentTab === 'automate' && (
+      {contentTab === 'prompt' && (
         <div className="flex-shrink-0 px-4 py-3 border-t border-zinc-200 dark:border-zinc-700">
           <button
             type="button"
