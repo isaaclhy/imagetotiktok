@@ -1,0 +1,26 @@
+/** Nano Banana 2 — Gemini image generation defaults (override via .env.local). */
+export const GEMINI_IMAGE_MODEL =
+  process.env.GEMINI_IMAGE_MODEL?.trim() || 'gemini-3.1-flash-image-preview';
+
+export const GEMINI_IMAGE_ASPECT_RATIO =
+  process.env.GEMINI_IMAGE_ASPECT_RATIO?.trim() || '3:4';
+
+export const GEMINI_IMAGE_SIZE = (process.env.GEMINI_IMAGE_SIZE?.trim() || '2K') as
+  | '512'
+  | '1K'
+  | '2K'
+  | '4K';
+
+export const GEMINI_BATCH_POLL_INTERVAL_MS = Math.max(
+  2000,
+  parseInt(process.env.GEMINI_BATCH_POLL_INTERVAL_MS || '5000', 10) || 5000
+);
+
+export const GEMINI_BATCH_MAX_WAIT_MS = Math.max(
+  60_000,
+  parseInt(process.env.GEMINI_BATCH_MAX_WAIT_MS || '1800000', 10) || 1_800_000
+);
+
+export function isGeminiImageConfigured(): boolean {
+  return Boolean(process.env.GEMINI_API_KEY?.trim());
+}

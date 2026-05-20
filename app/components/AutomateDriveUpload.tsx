@@ -7,29 +7,29 @@ type DriveStatus = {
   connected?: boolean;
 };
 
-function readDriveAuthFromUrl(): string | null {
-  if (typeof window === 'undefined') return null;
-  const params = new URLSearchParams(window.location.search);
-  const auth = params.get('drive_auth');
-  if (!auth) return null;
-  const error = params.get('drive_error');
-  params.delete('drive_auth');
-  params.delete('drive_error');
-  const next = params.toString();
-  const path = window.location.pathname + (next ? `?${next}` : '');
-  window.history.replaceState({}, '', path);
-  if (auth === 'error') return error || 'Connection failed';
-  return null;
-}
+type AutomateDriveUploadProps = {
+  /** Render inside settings panel (no outer card chrome). */
+  embedded?: boolean;
+  initialError?: string | null;
+  connectionJustSucceeded?: boolean;
+  onClearError?: () => void;
+  onClearConnectionNotice?: () => void;
+};
 
-export function AutomateDriveUpload() {
+export function AutomateDriveUpload({
+  embedded = false,
+  initialError = null,
+  connectionJustSucceeded = false,
+  onClearError,
+  onClearConnectionNotice,
+}: AutomateDriveUploadProps) {
   const [oauthConfigured, setOauthConfigured] = useState<boolean | null>(null);
   const [connected, setConnected] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError);
   const [success, setSuccess] = useState<{ name: string; link?: string } | null>(null);
 
   const refreshStatus = useCallback(() => {
@@ -46,10 +46,16 @@ export function AutomateDriveUpload() {
   }, []);
 
   useEffect(() => {
-    const authError = readDriveAuthFromUrl();
-    if (authError) setError(authError);
     void refreshStatus();
   }, [refreshStatus]);
+
+  useEffect(() => {
+    if (initialError) setError(initialError);
+  }, [initialError]);
+
+  useEffect(() => {
+    if (connectionJustSucceeded) void refreshStatus();
+  }, [connectionJustSucceeded, refreshStatus]);
 
   useEffect(() => {
     if (!file) {
@@ -107,14 +113,35 @@ export function AutomateDriveUpload() {
 
   const canUpload = connected && oauthConfigured !== false;
 
+  const shellClass = embedded
+    ? 'p-4 flex flex-col gap-4'
+    : 'h-full min-h-[320px] rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 flex flex-col gap-5 max-w-lg';
+
   return (
-    <div className="h-full min-h-[320px] rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 flex flex-col gap-5 max-w-lg">
+    <div className={shellClass}>
       <div>
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Upload to Google Drive</h2>
+        <h3 className={`font-semibold text-zinc-900 dark:text-zinc-100 ${embedded ? 'text-sm' : 'text-lg'}`}>
+          Upload to Google Drive
+        </h3>
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
           Connect your Google account once. Uploads go to your folder and sync to your phone.
         </p>
       </div>
+
+      {connectionJustSucceeded && (
+        <p className="text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-lg px-3 py-2">
+          Google account connected.
+          {onClearConnectionNotice ? (
+            <button
+              type="button"
+              onClick={onClearConnectionNotice}
+              className="ml-2 underline"
+            >
+              Dismiss
+            </button>
+          ) : null}
+        </p>
+      )}
 
       {oauthConfigured === false && (
         <p className="text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
@@ -171,7 +198,16 @@ export function AutomateDriveUpload() {
         />
       )}
 
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && (
+        <p className="text-sm text-red-600 dark:text-red-400">
+          {error}
+          {onClearError ? (
+            <button type="button" onClick={() => { setError(null); onClearError(); }} className="ml-2 underline">
+              Dismiss
+            </button>
+          ) : null}
+        </p>
+      )}
 
       {success && (
         <p className="text-sm text-green-700 dark:text-green-400">

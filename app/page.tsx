@@ -11,7 +11,6 @@ import { InputsCard } from '@/app/components/InputsCard';
 import { PreviewPanel } from '@/app/components/PreviewPanel';
 import { DownloadModal } from '@/app/components/DownloadModal';
 import { Toast } from '@/app/components/Toast';
-import { AutomateDriveUpload } from '@/app/components/AutomateDriveUpload';
 
 function shuffleCopy<T>(items: T[]): T[] {
   const a = [...items];
@@ -1055,6 +1054,57 @@ export default function Home() {
     });
   };
 
+  const pollGeminiBatchCoverImages = async (jobName: string): Promise<Record<string, string>> => {
+    const maxAttempts = 360;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const res = await fetch(`/api/openai/cover-image/batch?jobName=${encodeURIComponent(jobName)}`);
+      const data = (await res.json()) as {
+        error?: string;
+        done?: boolean;
+        images?: Record<string, string>;
+      };
+      if (!res.ok) throw new Error(data.error || 'Batch poll failed');
+      if (data.done) {
+        if (data.error) throw new Error(data.error);
+        if (!data.images || Object.keys(data.images).length === 0) {
+          throw new Error('Batch completed with no images');
+        }
+        return data.images;
+      }
+      await new Promise((r) => setTimeout(r, 5000));
+    }
+    throw new Error('Batch image generation timed out');
+  };
+
+  const fetchCoverImagesBatch = async (
+    items: { key: string; questiontext: string }[],
+    coverPromptId: string
+  ): Promise<Record<string, string>> => {
+    const batchRes = await fetch('/api/openai/cover-image/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: items.map((it) => ({ key: it.key, questiontext: it.questiontext, promptId: coverPromptId })),
+      }),
+    });
+    const batchData = (await batchRes.json()) as { jobName?: string; error?: string };
+    if (batchRes.ok && batchData.jobName) {
+      return pollGeminiBatchCoverImages(batchData.jobName);
+    }
+
+    const images: Record<string, string> = {};
+    for (const item of items) {
+      const coverRes = await fetch('/api/openai/cover-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questiontext: item.questiontext, promptId: coverPromptId }),
+      });
+      const coverData = (await coverRes.json()) as { imageUrl?: string };
+      if (coverRes.ok && coverData?.imageUrl) images[item.key] = coverData.imageUrl;
+    }
+    return images;
+  };
+
   const handleAutoGenerate = async (coverPromptId: string, categories: string[] = []) => {
     const count = Math.min(20, Math.max(1, parseInt(automateCount, 10) || 5));
     setIsAutoGenerating(true);
@@ -1063,13 +1113,22 @@ export default function Home() {
     const existingCard1 = canvases.find((c) => c.id === '1') || canvases[0];
     const endingCard = canvases.find((c) => c.id === 'end');
 
-    const generateSet = async (setIndex: number): Promise<Array<{ filename: string; blob: Blob }>> => {
+    type SetMeta = {
+      setIndex: number;
+      ln: string;
+      titleText: string;
+      questions: string[];
+    };
+
+    const prepareSetMeta = async (setIndex: number): Promise<SetMeta> => {
       const separator = categoriesParam ? '&' : '?';
-      const response = await fetch(`/api/levels/random${categoriesParam}${separator}_=${setIndex}-${Date.now()}`, { cache: 'no-store' });
+      const response = await fetch(`/api/levels/random${categoriesParam}${separator}_=${setIndex}-${Date.now()}`, {
+        cache: 'no-store',
+      });
       if (!response.ok) throw new Error('Failed to fetch random level');
       const result = await response.json();
       if (!result.success || !result.data) throw new Error('Invalid response from API');
-      const { levelName: ln, categoryName, instructions, questions } = result.data;
+      const { levelName: ln, categoryName, questions } = result.data;
       const contextParts: string[] = [];
       if (ln) contextParts.push(`Level: ${ln}`);
       if (categoryName) contextParts.push(`Category: ${categoryName}`);
@@ -1080,30 +1139,34 @@ export default function Home() {
       const context = contextParts.join('\n\n');
       let titleText = categoryName || '';
       try {
-        const titleRes = await fetch('/api/openai/title', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ context, level: ln }) });
-        const titleData = await titleRes.json();
-        if (titleRes.ok && titleData?.title?.trim()) titleText = titleData.title.trim();
-      } catch { }
-      let thumbnailUrl: string | null = null;
-      let avgColor = backgroundColor || '#000000';
-      try {
-        const coverRes = await fetch('/api/openai/cover-image', {
+        const titleRes = await fetch('/api/openai/title', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ questiontext: titleText, promptId: coverPromptId }),
+          body: JSON.stringify({ context, level: ln }),
         });
-        const coverData = await coverRes.json();
-        if (coverRes.ok && coverData?.imageUrl) {
-          thumbnailUrl = coverData.imageUrl;
-          const extracted = await extractDominantColor(coverData.imageUrl);
-          if (extracted) avgColor = extracted;
-          else avgColor = CARD_BG_FALLBACK_PALETTE[setIndex % CARD_BG_FALLBACK_PALETTE.length]!;
-        }
-      } catch { }
-      if (avgColor === '#000000' || !avgColor?.trim()) {
+        const titleData = await titleRes.json();
+        if (titleRes.ok && titleData?.title?.trim()) titleText = titleData.title.trim();
+      } catch {
+        /* keep category title */
+      }
+      return { setIndex, ln: ln || '', titleText, questions: questions || [] };
+    };
+
+    const renderSetFiles = async (
+      meta: SetMeta,
+      thumbnailUrl: string | null
+    ): Promise<Array<{ filename: string; blob: Blob }>> => {
+      const { setIndex, ln, titleText, questions } = meta;
+      let avgColor = backgroundColor || '#000000';
+      if (thumbnailUrl) {
+        const extracted = await extractDominantColor(thumbnailUrl);
+        if (extracted) avgColor = extracted;
+        else avgColor = CARD_BG_FALLBACK_PALETTE[setIndex % CARD_BG_FALLBACK_PALETTE.length]!;
+      } else if (avgColor === '#000000' || !avgColor?.trim()) {
         avgColor = CARD_BG_FALLBACK_PALETTE[setIndex % CARD_BG_FALLBACK_PALETTE.length]!;
       }
-      const questionCards: CanvasData[] = (questions || []).map((q: string) => ({
+
+      const questionCards: CanvasData[] = questions.map((q: string) => ({
         id: `set${setIndex}-q-${Date.now()}-${Math.random()}`,
         text: q,
         backgroundColor: avgColor,
@@ -1112,12 +1175,24 @@ export default function Home() {
         imageSize: imageSize || '1080x1920',
       }));
       let endingCardText = '';
-      if (ln && ln.toLowerCase() === 'friends') endingCardText = 'Share it with your friends and see what they say';
-      else if (ln && ln.toLowerCase() === 'couples') endingCardText = 'Share it with your boo and see what they say';
+      if (ln && ln.toLowerCase() === 'friends') {
+        endingCardText = 'Share it with your friends and see what they say';
+      } else if (ln && ln.toLowerCase() === 'couples') {
+        endingCardText = 'Share it with your boo and see what they say';
+      }
       const newCanvases: CanvasData[] = [
         { ...existingCard1, id: `set${setIndex}-1`, text: titleText, backgroundColor: avgColor },
         ...questionCards,
-        endingCard ? { ...endingCard, id: `set${setIndex}-end`, text: endingCardText, backgroundColor: avgColor } : { id: `set${setIndex}-end`, text: endingCardText, backgroundColor: avgColor, textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' },
+        endingCard
+          ? { ...endingCard, id: `set${setIndex}-end`, text: endingCardText, backgroundColor: avgColor }
+          : {
+              id: `set${setIndex}-end`,
+              text: endingCardText,
+              backgroundColor: avgColor,
+              textColor: '#FFFFFF',
+              textSize: '200',
+              imageSize: '1080x1920',
+            },
       ];
       const endIdx = newCanvases.findIndex((c) => c.id === `set${setIndex}-end`);
       if (endIdx >= 0) newCanvases[endIdx].text = endingCardText;
@@ -1137,7 +1212,15 @@ export default function Home() {
     };
 
     try {
-      const allSets = await Promise.all(Array.from({ length: count }, (_, i) => generateSet(i)));
+      const metas = await Promise.all(Array.from({ length: count }, (_, i) => prepareSetMeta(i)));
+      const coverItems = metas.map((m) => ({
+        key: `set-${m.setIndex}`,
+        questiontext: m.titleText,
+      }));
+      const coverImages = await fetchCoverImagesBatch(coverItems, coverPromptId);
+      const allSets = await Promise.all(
+        metas.map((meta) => renderSetFiles(meta, coverImages[`set-${meta.setIndex}`] ?? null))
+      );
       const zip = new JSZip();
       for (const files of allSets) {
         for (const { filename, blob } of files) {
@@ -1760,8 +1843,10 @@ export default function Home() {
               />
             )}
             {contentTab === 'automate' && (
-              <div className="lg:col-span-2 h-full min-h-0 min-w-0 p-1">
-                <AutomateDriveUpload />
+              <div className="lg:col-span-2 h-full min-h-0 min-w-0 p-6 flex items-center justify-center">
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center max-w-md">
+                  Batch automation tools will live here. Connect Google Drive in Settings (gear icon) to sync uploads to your phone.
+                </p>
               </div>
             )}
             {contentTab === 'image' && (

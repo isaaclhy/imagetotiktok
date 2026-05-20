@@ -17,27 +17,27 @@ export async function GET(request: NextRequest) {
   const error = searchParams.get('error');
 
   if (error) {
-    return NextResponse.redirect(`${origin}/?drive_auth=error&drive_error=${encodeURIComponent(error)}`);
+    return NextResponse.redirect(`${origin}/?settings=1&drive_auth=error&drive_error=${encodeURIComponent(error)}`);
   }
 
   if (!code || !state) {
-    return NextResponse.redirect(`${origin}/?drive_auth=error&drive_error=missing_params`);
+    return NextResponse.redirect(`${origin}/?settings=1&drive_auth=error&drive_error=missing_params`);
   }
 
   if (!isOAuthConfigured()) {
-    return NextResponse.redirect(`${origin}/?drive_auth=error&drive_error=server_config`);
+    return NextResponse.redirect(`${origin}/?settings=1&drive_auth=error&drive_error=server_config`);
   }
 
   const cookieStore = await cookies();
   const storedState = cookieStore.get(GOOGLE_DRIVE_OAUTH_STATE_COOKIE)?.value;
   if (!storedState || state !== storedState) {
-    return NextResponse.redirect(`${origin}/?drive_auth=error&drive_error=invalid_state`);
+    return NextResponse.redirect(`${origin}/?settings=1&drive_auth=error&drive_error=invalid_state`);
   }
 
   try {
     const redirectUri = getGoogleRedirectUri(origin);
     const tokens = await exchangeCodeForTokens(code, redirectUri);
-    const response = NextResponse.redirect(`${origin}/?drive_auth=success`);
+    const response = NextResponse.redirect(`${origin}/?settings=1&drive_auth=success`);
     response.cookies.set(GOOGLE_DRIVE_REFRESH_COOKIE, tokens.refresh_token!, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     console.error('Google Drive OAuth callback failed:', e);
     const message = e instanceof Error ? e.message : 'token_exchange_failed';
     return NextResponse.redirect(
-      `${origin}/?drive_auth=error&drive_error=${encodeURIComponent(message)}`
+      `${origin}/?settings=1&drive_auth=error&drive_error=${encodeURIComponent(message)}`
     );
   }
 }

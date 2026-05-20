@@ -1,5 +1,8 @@
 'use client';
 
+import { useEffect } from 'react';
+import { SettingsMenuPanel } from '@/app/components/SettingsMenuPanel';
+
 interface SidebarProps {
   contentTab: 'image' | 'video' | 'prompt' | 'automate';
   onContentTabChange: (tab: 'image' | 'video' | 'prompt' | 'automate') => void;
@@ -21,6 +24,13 @@ export function Sidebar({
   setShowSettingsMenu,
   onLogout,
 }: SidebarProps) {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('settings') === '1' || params.has('drive_auth')) {
+      setShowSettingsMenu(true);
+    }
+  }, [setShowSettingsMenu]);
+
   return (
     <aside className="fixed left-0 top-0 h-screen w-56 flex-shrink-0 flex flex-col p-3 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 z-10">
       <h1 className="text-xl font-bold text-black dark:text-zinc-50 px-4 py-3 flex-shrink-0">
@@ -139,13 +149,7 @@ export function Sidebar({
           </div>
         )}
         {showSettingsMenu && (
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setShowSettingsMenu(false)} />
-            <div className="absolute left-0 right-0 bottom-full mb-2 w-full bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-700 z-50 overflow-hidden">
-              <a href="/terms" target="_blank" rel="noopener noreferrer" onClick={() => setShowSettingsMenu(false)} className="block w-full px-4 py-3 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors">Terms of Service</a>
-              <a href="/privacy" target="_blank" rel="noopener noreferrer" onClick={() => setShowSettingsMenu(false)} className="block w-full px-4 py-3 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors border-t border-zinc-200 dark:border-zinc-700">Privacy</a>
-            </div>
-          </>
+          <SettingsMenuPanel onClose={() => setShowSettingsMenu(false)} />
         )}
       </div>
     </aside>
