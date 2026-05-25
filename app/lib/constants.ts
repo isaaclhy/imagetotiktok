@@ -47,7 +47,7 @@ export const PROMPTS = [
   `First-person POV inside a bright modern coffee shop during daytime, a feminine woman's hand holding an iPhone while viewing an Instagram story. Natural daylight pours through large windows, creating soft bright lighting and realistic shadows. A few people are sitting and casually talking in the background, slightly blurred and out of focus so they add atmosphere without distracting from the main subject. The scene feels natural and candid, like a real smartphone photo. The hand has feminine features with slender fingers, natural nails, and realistic skin texture. The phone screen is very bright and visually striking, emitting a vivid saturated bright red glow that immediately draws attention while still looking like a real phone display. On the Instagram story is a solid bright red background with la  rge centered bold white text: "{x}" Shallow depth of field, photorealistic, realistic iPhone proportions, authentic coffee shop atmosphere, iPhone camera photo style, natural composition, no CGI appearance.`,
   'First person POV, holding a white canvas with 2 hand marks from paint, one should be sky blue and one should be pink and on the canvas, it should also have the text "{x}". The text is facing you directly',
   'Close up holding a piece of very very small torn paper, almost thumbnail size, on the paper it\'s written "{x}", it\'s like the text is typed using a type writer. Make it realistic. The text should be very clear on the piece of paper',
-  'A finished puzzle, on the puzzle should have the text "{x}". Make the text cartoon style',
+  'A finished puzzle, on the puzzle should have the text "{x}". Make the text cartoon style. The puzzle should be at an angle such that the text is directly facing me ',
   `Ultra realistic candid photo of a real couple watching a projector movie late at night in a small apartment living room.
 
 Shot from behind the couch at eye level. We only see the backs of the couple. The woman is leaning on the man’s shoulder naturally.
@@ -90,7 +90,11 @@ No front-facing people, no fake cinematic lighting, no surrealism, no glossy sur
   'In a bright NYC coffee shop, a female hand holding a condom wrapper with the text "{x}" on it. Make it very realistic',
   'You\'re on a bus in NYC, it\'s a sunny day, on the back of the seat in front of you there\'s a sticker with black background and white text, the text says "{x}". The sticker is a bit worn off',
   'You\'re opening a fortune cookie in a restaurant and the paper is still a bit in the cookie, the message on the paper says "{x}". Make it realistic, the message should be in the center of the image. The message should be at least 60% of the screen width',
-  'First person POV, looking out the airplane window, on the window the text "{x}" is written with marker. The text should be clearly visible and not obstructed by any part of the plane outside',
+  `First person POV from an airplane seat, looking directly out the airplane window. On the window glass, handwritten with a thick black marker in large bold letters:
+
+"{x}"
+
+The text must be the primary focus of the image and perfectly readable. Make the writing dark, high contrast, sharp, thick strokes, evenly spaced, centered on the window, and entirely inside the glass area. Keep a clean blue sky and soft clouds outside with a slightly blurred background so the text stands out clearly. No scenery or plane elements should overlap, distort, reflect, or obstruct any letters. The text should appear naturally written on the glass but remain crystal clear and highly legible, like a social media ad creative.`,
   'First person POV, you\'re sitting on a plane. Looking in front of you, on the pull-out table in front of you, it has the text "{x}", the text should be clearly visible and at eye level. The text should be written with a marker',
   'First person POV, you\'re at a fun fair holding a huge cotton candy, on it has a card and on the card has the text "{x}". Make the text the focus and visible and the card should be in the cotton candy',
   'First person POV, in a nice cafe holding a cup of iced matcha; on the outside of the cup the words "{x}" are printed in white as part of the cup design—not a digital overlay. Pull the cup toward the camera. Make the text the main focus, large and readable',
@@ -116,7 +120,6 @@ No front-facing people, no fake cinematic lighting, no surrealism, no glossy sur
   'First person POV, you are on your phone, you have painted nails. sitting across your boyfriend who is in his 20s and is eating breakfast. on your phone, there\'s a text, saying "{x}", it\'s sent from your bestie. Zoom in on the text and and focus on it.',
   'First person POV, you are on your phone, sitting across your boyfriend who is eating breakfast. on your phone, there\'s a text, saying "{x}", it\'s sent from your bestie. Zoom in on the text and and focus on it.',
   'First person POV, you at the park with your boyfriend, you opened a book and started reading, and chapter 1 is titled "{x}". Zoom in and focus on the text',
-  'First person POV, you\'re gently squeezing your boyfriend\'s cheek and you\'re holding a phone on the other hand, on the phone has a text message from your bestie saying "{x}", the phone should be close to you. Focus on the text',
   'First person POV, you\'re lying in bed under the covers, a projector is projecting to the wall in front, text "{x}". Focus and zoom in on the text.',
   'In London, on a sunny day, on a red wall, there\'s text "{x}" spray painted on it in white, with a heart below it as well.',
   'First person POV, walking down the street and looking down, you\'re holding a Starbucks hot drink. The lid is white, and on the lid there\'s text "{x}" written with black marker. Zoom in and focus on the text',
@@ -159,7 +162,7 @@ export const FUNNY_QUESTIONS = [
   'Would you let me start an OF if it gives us generational wealth?',
   'If I became a prostitute, would you still love me?',
   'Would you rather be the jealous one or the one causing jealousy?',
-  'Would you rather get my name tattooed on your neck or free or ex\'s for $1 mil?',
+  'Would you rather get my name tattooed on your neck or free or your ex\'s for $1 mil?',
   'Would you rather have an open relationship for a month or no intimacy for 1 year?',
   'Would you rather see me get with another person once or no intimacy for a year?',
   'If one of us has to cheat, who would it be?',

@@ -2,6 +2,13 @@
 export const GEMINI_IMAGE_MODEL =
   process.env.GEMINI_IMAGE_MODEL?.trim() || 'gemini-3.1-flash-image-preview';
 
+/**
+ * Prompt tab one-off images. Defaults to Nano Banana 2 (free-tier friendly).
+ * Set GEMINI_PROMPT_TAB_IMAGE_MODEL=gemini-3-pro-image-preview for Pro (paid quota).
+ */
+export const GEMINI_PROMPT_TAB_IMAGE_MODEL =
+  process.env.GEMINI_PROMPT_TAB_IMAGE_MODEL?.trim() || GEMINI_IMAGE_MODEL;
+
 export const GEMINI_IMAGE_ASPECT_RATIO =
   process.env.GEMINI_IMAGE_ASPECT_RATIO?.trim() || '3:4';
 

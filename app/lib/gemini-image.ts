@@ -5,6 +5,7 @@ import {
   GEMINI_IMAGE_ASPECT_RATIO,
   GEMINI_IMAGE_MODEL,
   GEMINI_IMAGE_SIZE,
+  GEMINI_PROMPT_TAB_IMAGE_MODEL,
   isGeminiImageConfigured,
 } from '@/app/lib/gemini-image-config';
 
@@ -44,15 +45,50 @@ export function toDataUrl(result: GeminiImageResult): string {
   return `data:${result.mimeType};base64,${result.base64}`;
 }
 
+export type GenerateGeminiImageOptions = {
+  /** Defaults to GEMINI_IMAGE_MODEL unless overridden. */
+  model?: string;
+};
+
 /** Standard (non-batch) single image — use for one-off retries. */
-export async function generateGeminiImageSync(prompt: string): Promise<GeminiImageResult> {
+export async function generateGeminiImageSync(
+  prompt: string,
+  options?: GenerateGeminiImageOptions
+): Promise<GeminiImageResult> {
   const ai = getClient();
   const response = await ai.models.generateContent({
-    model: GEMINI_IMAGE_MODEL,
+    model: options?.model ?? GEMINI_IMAGE_MODEL,
     contents: prompt,
     config: imageGenerateConfig(),
   });
   return extractImageFromResponse(response);
+}
+
+export function isGeminiQuotaError(e: unknown): boolean {
+  const msg = e instanceof Error ? e.message : String(e);
+  return (
+    msg.includes('429') ||
+    msg.includes('RESOURCE_EXHAUSTED') ||
+    msg.includes('quota') ||
+    msg.includes('Quota exceeded')
+  );
+}
+
+/** Prompt tab: tries GEMINI_PROMPT_TAB_IMAGE_MODEL, falls back to GEMINI_IMAGE_MODEL on quota errors. */
+export async function generateGeminiPromptTabImage(prompt: string): Promise<GeminiImageResult> {
+  const primary = GEMINI_PROMPT_TAB_IMAGE_MODEL;
+  const fallback = GEMINI_IMAGE_MODEL;
+  try {
+    return await generateGeminiImageSync(prompt, { model: primary });
+  } catch (e) {
+    if (primary !== fallback && isGeminiQuotaError(e)) {
+      console.warn(
+        `[gemini] Prompt tab quota hit for ${primary}; retrying with ${fallback}`
+      );
+      return generateGeminiImageSync(prompt, { model: fallback });
+    }
+    throw e;
+  }
 }
 
 export type GeminiBatchImageRequest = { key: string; prompt: string };

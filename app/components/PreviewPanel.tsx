@@ -4,6 +4,63 @@ import { useMemo, useState, useCallback } from 'react';
 import type { CanvasData } from '@/app/lib/types';
 import { wrapTextToLines, getComplementaryColor } from '@/app/lib/canvas-utils';
 import { ROMANTIC_IMAGE_FILTER } from '@/app/lib/constants';
+import { downloadDataUrl, extensionForMimeType } from '@/app/lib/download-data-url';
+
+function GenerateImageIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+      />
+    </svg>
+  );
+}
+
+function SpinnerIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" aria-hidden>
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+      />
+    </svg>
+  );
+}
+
+function PromptGenerateButton({
+  prompt,
+  genKey,
+  generatingKey,
+  onGenerate,
+}: {
+  prompt: string;
+  genKey: string;
+  generatingKey: string | null;
+  onGenerate: (prompt: string, key: string) => void;
+}) {
+  const busy = generatingKey === genKey;
+  return (
+    <button
+      type="button"
+      onClick={() => onGenerate(prompt, genKey)}
+      disabled={busy || !prompt.trim()}
+      className="p-2 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      title="Generate image (Gemini)"
+      aria-label="Generate image"
+    >
+      {busy ? (
+        <SpinnerIcon className="w-4 h-4 mx-auto animate-spin" />
+      ) : (
+        <GenerateImageIcon className="w-4 h-4 mx-auto" />
+      )}
+    </button>
+  );
+}
 
 interface PreviewPanelProps {
   canvases: CanvasData[];
@@ -134,6 +191,33 @@ export function PreviewPanel({
   const [templateQuestionSelectValue, setTemplateQuestionSelectValue] = useState('');
   const [promptSelectValueByIndex, setPromptSelectValueByIndex] = useState<Record<number, string>>({});
   const [templatePromptSelectValue, setTemplatePromptSelectValue] = useState('');
+  const [generatingImageKey, setGeneratingImageKey] = useState<string | null>(null);
+  const [generateImageError, setGenerateImageError] = useState<string | null>(null);
+
+  const handleGenerateImage = useCallback(async (prompt: string, key: string) => {
+    const trimmed = prompt.trim();
+    if (!trimmed) return;
+    setGeneratingImageKey(key);
+    setGenerateImageError(null);
+    try {
+      const res = await fetch('/api/gemini/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: trimmed }),
+      });
+      const data = (await res.json()) as { error?: string; imageUrl?: string; mimeType?: string };
+      if (!res.ok || !data.imageUrl) {
+        throw new Error(data.error || 'Image generation failed');
+      }
+      const ext = extensionForMimeType(data.mimeType);
+      downloadDataUrl(data.imageUrl, `prompt-${key}-${Date.now()}.${ext}`);
+    } catch (e) {
+      setGenerateImageError(e instanceof Error ? e.message : 'Image generation failed');
+    } finally {
+      setGeneratingImageKey(null);
+    }
+  }, []);
+
   const handleCopy = useCallback(async (text: string, index: number) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -225,6 +309,14 @@ export function PreviewPanel({
       <div className="flex-1 flex items-center justify-center min-h-0 mb-3 p-2 w-full overflow-hidden" style={{ position: 'relative', contain: 'layout style paint' }}>
         {((showAutomateDaily && automateDailyResults) || (isAutomateNanaMode && (automateDailyVideoTitle || automateDailyTitle || automateDailyTemplatePrompt))) ? (
           <div className="w-full h-full flex flex-col gap-3 overflow-auto pr-1">
+            {generateImageError && (
+              <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">
+                {generateImageError}
+                <button type="button" onClick={() => setGenerateImageError(null)} className="ml-2 underline">
+                  Dismiss
+                </button>
+              </p>
+            )}
             {automateDailyVideoTitle && (
               <div className="flex gap-2 items-start p-3 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-800/80">
                 <div className="flex-1 min-w-0">
@@ -345,6 +437,12 @@ export function PreviewPanel({
                           <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                         )}
                       </button>
+                      <PromptGenerateButton
+                        prompt={automateDailyTemplatePrompt}
+                        genKey="template"
+                        generatingKey={generatingImageKey}
+                        onGenerate={handleGenerateImage}
+                      />
                     </div>
                   <div className="flex gap-1">
                     <button
@@ -467,6 +565,12 @@ export function PreviewPanel({
                         <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                       )}
                     </button>
+                    <PromptGenerateButton
+                      prompt={text}
+                      genKey={`daily-${i}`}
+                      generatingKey={generatingImageKey}
+                      onGenerate={handleGenerateImage}
+                    />
                   </div>
                   <div className="flex gap-1">
                     <button

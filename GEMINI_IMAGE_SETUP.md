@@ -10,6 +10,8 @@ GEMINI_API_KEY=your_key_from_https://aistudio.google.com/apikey
 
 # Optional — defaults shown
 GEMINI_IMAGE_MODEL=gemini-3.1-flash-image-preview
+# Optional — defaults to GEMINI_IMAGE_MODEL (free tier). Pro needs paid quota:
+# GEMINI_PROMPT_TAB_IMAGE_MODEL=gemini-3-pro-image-preview
 GEMINI_IMAGE_ASPECT_RATIO=3:4
 GEMINI_IMAGE_SIZE=2K
 
@@ -38,6 +40,9 @@ Batch turnaround is often minutes; SLA up to 24 hours. See [Batch API](https://a
 | `POST /api/openai/cover-image` | One image (sync Gemini if key set) |
 | `POST /api/openai/cover-image/batch` | Start batch job for many images |
 | `GET /api/openai/cover-image/batch?jobName=...` | Poll until images are ready |
+| `POST /api/gemini/generate-image` | Prompt tab: Gemini → Vertex → OpenAI if Gemini quota hit |
+
+Prompt tab **Generate** uses Nano Banana 2 first. If Gemini returns 429 (free tier exhausted), it automatically tries **Vertex Imagen** (`GOOGLE_CLOUD_PROJECT`) then **OpenAI** (`OPENAI_API_KEY`).
 
 ## Automate flow
 
