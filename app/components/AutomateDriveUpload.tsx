@@ -160,6 +160,14 @@ export function AutomateDriveUpload({
             </span>
             <button
               type="button"
+              onClick={onConnect}
+              disabled={oauthConfigured === false || disconnecting}
+              className="text-sm px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50"
+            >
+              Reconnect
+            </button>
+            <button
+              type="button"
               onClick={onDisconnect}
               disabled={disconnecting}
               className="text-sm px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50"

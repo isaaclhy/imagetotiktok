@@ -78,7 +78,6 @@ No front-facing people, no fake cinematic lighting, no surrealism, no glossy sur
   'First person POV, In a record store with a lot of records, one of the records say "{x}" on the record cover',
   'First person POV, youre making a cake, on the top of the cake has the words "{x}" written in frosting. The cake and the frosting should have contrasting color. The text should not be cursive',
   'First person POV, you\'re in a packed theatre holding a theatre leaflet about the show, on the leaflet has the text "{x}" printed on the leaflet',
-  'First person POV, you\'re ice skating with your girlfriend (can only see her arms), on the ice has the text "{x}" spray painted on the ice',
   `First-person POV sitting on grass in a park, painting on a white canvas directly in front of you. The camera/viewpoint is perfectly centered and perpendicular to the canvas surface. The canvas is perfectly upright, flat facing the viewer head-on (0° rotation), centered in frame, with no tilt, no perspective skew, symmetrical alignment. Hands holding paintbrush visible at bottom of frame. On the canvas is a red heart and the text: "{x}"`,
   'First person POV, you\'re doing a white tile drawing lesson. There are some stickers on it, there should be a text saying "{x}" painted on it with brush. The text should not be black. The tile should be facing you, the edges of the tile should be parallel to the frame',
   'First person POV, you\'re holding a cute polaroid image and on it has "{x}" written on it with marker and a heart. Focus on the text',
@@ -311,3 +310,6 @@ export const ME_OR_YOU_QUESTIONS = [
   'Who is more likely to have a one night stand?',
   'Who is more likely to have an onlyfans?',
 ] as const;
+
+/** Google Drive folder for kawaii image-tab batch uploads. */
+export const KAWAII_DRIVE_FOLDER_ID = '1UqY0kLtlBXLd6q8NGTtK6UYOquoOzmKb';

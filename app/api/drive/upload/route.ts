@@ -44,9 +44,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'File too large (max 25 MB)' }, { status: 400 });
     }
 
+    const folderIdRaw = formData.get('folderId');
+    const folderId = typeof folderIdRaw === 'string' ? folderIdRaw : undefined;
+
     const buffer = Buffer.from(await file.arrayBuffer());
     const safeName = file.name.replace(/[^\w.\-]+/g, '_') || 'upload.png';
-    const uploaded = await uploadBufferToDrive(refreshToken, buffer, safeName, file.type || 'image/png');
+    const uploaded = await uploadBufferToDrive(
+      refreshToken,
+      buffer,
+      safeName,
+      file.type || 'image/png',
+      folderId
+    );
 
     return NextResponse.json({
       id: uploaded.id,

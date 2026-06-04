@@ -5,7 +5,14 @@ import JSZip from 'jszip';
 import type { CanvasData } from '@/app/lib/types';
 import { generateCardImage as generateCardImageLib } from '@/app/lib/generate-card-image';
 import { extractDominantColor } from '@/app/lib/canvas-utils';
-import { CARD_BG_FALLBACK_PALETTE, PROMPTS, FUNNY_QUESTIONS, FLIRTY_QUESTIONS, ME_OR_YOU_QUESTIONS } from '@/app/lib/constants';
+import {
+  CARD_BG_FALLBACK_PALETTE,
+  PROMPTS,
+  FUNNY_QUESTIONS,
+  FLIRTY_QUESTIONS,
+  ME_OR_YOU_QUESTIONS,
+  KAWAII_DRIVE_FOLDER_ID,
+} from '@/app/lib/constants';
 import { Sidebar } from '@/app/components/Sidebar';
 import { InputsCard } from '@/app/components/InputsCard';
 import { PreviewPanel } from '@/app/components/PreviewPanel';
@@ -273,6 +280,7 @@ const VIDEO_TEMPLATE_CARDS: VideoTemplateCard[] = [
 ];
 
 const DAILY_TEMPLATE_TITLES_FUNNY = [
+  "5 Impossible Questions To Tease Your Boyfriend Tonight",
   "5 Questions To Ask Your Sweet Heart Tonight",
   "5 Fun Questions To Gaslight Your Boyfriend Tonight",
   "Does he pass the good boyfriend test?",
@@ -376,13 +384,21 @@ export default function Home() {
   const [videoOverlayCaption, setVideoOverlayCaption] = useState('Your text here');
   const [isVideoExporting, setIsVideoExporting] = useState(false);
   const [isImageTemplateDownloading, setIsImageTemplateDownloading] = useState(false);
+  const [isImageTemplateUploading, setIsImageTemplateUploading] = useState(false);
   const [videoExportError, setVideoExportError] = useState<string | null>(null);
   const [selectedImageBrowserTab, setSelectedImageBrowserTab] = useState(0);
   const imageTabFrameBg = '#FEFEFE';
   const kawaiiCtaImageSrc = '/dog-images/kawaii-cta-tab.png';
+  const template2CoverImageSrc = '/image-templates/template-2-cover.png';
+  const template2QuestionBgImageSrc = '/image-templates/template-2-question-bg.png';
+  const template2QuestionFontFamily = 'Inter, system-ui, -apple-system, "Segoe UI", sans-serif';
+  const template2QuestionTextMaxWidthRatio = 0.72;
+  const template2QuestionTextColor = '#e0e0e0';
   /** Kawaii image-tab frame: export is 1080×1440; keep preview text in the same ballpark via Tailwind below. */
   const imageFrameExportFontPx = 54;
   const imageFrameExportWrappedLineHeightPx = 70;
+  const template2QuestionExportFontPx = imageFrameExportFontPx / 2;
+  const template2QuestionExportLineHeightPx = imageFrameExportWrappedLineHeightPx / 2;
   const imageFrameExportCoverLineGapPx = 64;
   const imageFrameExportFontFamily = '"Comic Sans MS", "Marker Felt", "Chalkboard SE", "Trebuchet MS", sans-serif';
   const imageFrameExportTextColor = '#2f2a31';
@@ -1410,6 +1426,9 @@ export default function Home() {
     if (isKawaii) {
       setImageTabTexts([`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked]);
       setImageTabSources(dogImagePool.length ? pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 6) : []);
+    } else if (tid === 2) {
+      setImageTabTexts(['', ...picked, imageFrameCtaText]);
+      setImageTabSources([template2CoverImageSrc, ...Array(5).fill(template2QuestionBgImageSrc), '']);
     } else {
       setImageTabTexts([`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked, imageFrameCtaText]);
       setImageTabSources(dogImagePool.length ? pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 7) : []);
@@ -1428,8 +1447,19 @@ export default function Home() {
     (dogImagePool.length ? dogImagePool[tabIndex % dogImagePool.length]! : '');
   const imageFrameTextForActiveTab = getImageFrameTextForTab(selectedImageBrowserTab);
   const isKawaiiImageTemplate = selectedImageTemplateId === 1;
+  const isTemplate2ImageTemplate = selectedImageTemplateId === 2;
   const isCtaTabSelected = !isKawaiiImageTemplate && selectedImageBrowserTab === 6;
-  const imageSourceForActiveTab = isCtaTabSelected ? kawaiiCtaImageSrc : getImageSourceForTab(selectedImageBrowserTab);
+  const isTemplate2CoverTabSelected = isTemplate2ImageTemplate && selectedImageBrowserTab === 0;
+  const isTemplate2QuestionTabSelected =
+    isTemplate2ImageTemplate && selectedImageBrowserTab >= 1 && selectedImageBrowserTab <= 5;
+  const isFullBleedImageTabSelected = isCtaTabSelected || isTemplate2CoverTabSelected;
+  const imageSourceForActiveTab = isCtaTabSelected
+    ? kawaiiCtaImageSrc
+    : isTemplate2CoverTabSelected
+      ? template2CoverImageSrc
+      : isTemplate2QuestionTabSelected
+        ? template2QuestionBgImageSrc
+        : getImageSourceForTab(selectedImageBrowserTab);
   const imageTabLabelForActiveTab =
     selectedImageBrowserTab === 0 ? 'Cover' : selectedImageBrowserTab <= 5 ? `Q${selectedImageBrowserTab}` : 'CTA';
   const imageTemplateTabCount = isKawaiiImageTemplate ? 6 : 7;
@@ -1438,81 +1468,86 @@ export default function Home() {
       ? VIDEO_TEMPLATE_CARDS.find((c) => c.id === selectedVideoTemplateId)
       : undefined;
 
-  const handleDownloadImageFrame = async () => {
-    const KAWAII_DOWNLOAD_NUM_SETS = 5;
+  const generateImageFrameExportEntries = async (options?: {
+    kawaiiNumSets?: number;
+  }): Promise<{
+    entries: { path: string; blob: Blob }[];
+    isKawaiiTemplate: boolean;
+    kawaiiNumSets?: number;
+  }> => {
+    const KAWAII_DOWNLOAD_NUM_SETS = options?.kawaiiNumSets ?? 5;
     type ImageExportSlotData = { tabTexts: string[]; tabSources: string[] };
 
-    const scheduleRevokeObjectUrl = (url: string) => {
-      window.setTimeout(() => URL.revokeObjectURL(url), 2500);
-    };
+    const frameWidth = 1080;
+    const frameHeight = 1440; // 3:4
+    const renderFrameBlob = async (tabIndex: number, slots?: ImageExportSlotData | null): Promise<Blob> => {
+      const textForTab = (i: number) =>
+        slots?.tabTexts[i] ?? imageTabTexts[i] ?? getDefaultImageFrameTextForTab(i);
+      const sourceForTab = (i: number) =>
+        slots?.tabSources[i] ??
+        imageTabSources[i] ??
+        (dogImagePool.length ? dogImagePool[i % dogImagePool.length]! : '');
 
-    setIsImageTemplateDownloading(true);
-    try {
-      const frameWidth = 1080;
-      const frameHeight = 1440; // 3:4
-      const renderFrameBlob = async (tabIndex: number, slots?: ImageExportSlotData | null): Promise<Blob> => {
-        const textForTab = (i: number) =>
-          slots?.tabTexts[i] ?? imageTabTexts[i] ?? getDefaultImageFrameTextForTab(i);
-        const sourceForTab = (i: number) =>
-          slots?.tabSources[i] ??
-          imageTabSources[i] ??
-          (dogImagePool.length ? dogImagePool[i % dogImagePool.length]! : '');
+      const isFullBleedTab = tabIndex === 6 || (selectedImageTemplateId === 2 && tabIndex === 0);
+      const isTemplate2QuestionTab = selectedImageTemplateId === 2 && tabIndex >= 1 && tabIndex <= 5;
+      const source = isFullBleedTab
+        ? tabIndex === 6
+          ? kawaiiCtaImageSrc
+          : template2CoverImageSrc
+        : isTemplate2QuestionTab
+          ? template2QuestionBgImageSrc
+          : sourceForTab(tabIndex);
+      if (!source.trim()) {
+        throw new Error('Missing image URL (dog images may still be loading).');
+      }
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const el = new Image();
+        el.crossOrigin = 'anonymous';
+        el.onload = () => {
+          if (el.naturalWidth < 1 || el.naturalHeight < 1) {
+            reject(new Error('Invalid image dimensions'));
+            return;
+          }
+          resolve(el);
+        };
+        el.onerror = () => reject(new Error(`Failed to load image: ${source.slice(0, 80)}`));
+        el.src = source;
+      });
+      const canvas = document.createElement('canvas');
+      canvas.width = frameWidth;
+      canvas.height = frameHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas context unavailable');
 
-        const source = tabIndex === 6 ? kawaiiCtaImageSrc : sourceForTab(tabIndex);
-        if (!source.trim()) {
-          throw new Error('Missing image URL (dog images may still be loading).');
-        }
-        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-          const el = new Image();
-          el.crossOrigin = 'anonymous';
-          el.onload = () => {
-            if (el.naturalWidth < 1 || el.naturalHeight < 1) {
-              reject(new Error('Invalid image dimensions'));
-              return;
-            }
-            resolve(el);
-          };
-          el.onerror = () => reject(new Error(`Failed to load image: ${source.slice(0, 80)}`));
-          el.src = source;
+      ctx.fillStyle = imageTabFrameBg;
+      ctx.fillRect(0, 0, frameWidth, frameHeight);
+
+      const drawFullBleedImage = () => {
+        const coverScale = Math.max(frameWidth / img.width, frameHeight / img.height);
+        const coverW = img.width * coverScale;
+        const coverH = img.height * coverScale;
+        const coverX = (frameWidth - coverW) / 2;
+        const coverY = (frameHeight - coverH) / 2;
+        ctx.drawImage(img, coverX, coverY, coverW, coverH);
+      };
+
+      if (isFullBleedTab) {
+        drawFullBleedImage();
+        return await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error('Failed to create image blob'));
+          }, 'image/png');
         });
-        const canvas = document.createElement('canvas');
-        canvas.width = frameWidth;
-        canvas.height = frameHeight;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) throw new Error('Canvas context unavailable');
+      }
 
-        ctx.fillStyle = imageTabFrameBg;
-        ctx.fillRect(0, 0, frameWidth, frameHeight);
-
-        if (tabIndex === 6) {
-          const coverScale = Math.max(frameWidth / img.width, frameHeight / img.height);
-          const coverW = img.width * coverScale;
-          const coverH = img.height * coverScale;
-          const coverX = (frameWidth - coverW) / 2;
-          const coverY = (frameHeight - coverH) / 2;
-          ctx.drawImage(img, coverX, coverY, coverW, coverH);
-          return await new Promise<Blob>((resolve, reject) => {
-            canvas.toBlob((blob) => {
-              if (blob) resolve(blob);
-              else reject(new Error('Failed to create image blob'));
-            }, 'image/png');
-          });
-        }
-
-        const maxW = frameWidth * 0.48;
-        const maxH = frameHeight * 0.24;
-        const scale = Math.min(maxW / img.width, maxH / img.height);
-        const drawW = img.width * scale;
-        const drawH = img.height * scale;
-        const drawX = (frameWidth - drawW) / 2;
-        const drawY = frameHeight - drawH - frameHeight * 0.13;
-
-        ctx.fillStyle = imageFrameExportTextColor;
+      if (isTemplate2QuestionTab) {
+        drawFullBleedImage();
+        ctx.fillStyle = template2QuestionTextColor;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        ctx.shadowColor = imageFrameExportGlowColor;
-        ctx.shadowBlur = 14;
-        ctx.font = `bold ${imageFrameExportFontPx}px ${imageFrameExportFontFamily}`;
+        ctx.shadowBlur = 0;
+        ctx.font = `600 ${template2QuestionExportFontPx}px ${template2QuestionFontFamily}`;
         const drawWrapped = (text: string, yStart: number, maxWidth: number, lineHeight: number) => {
           const words = text.trim().split(/\s+/);
           const lines: string[] = [];
@@ -1528,75 +1563,136 @@ export default function Home() {
           if (current) lines.push(current);
           lines.forEach((line, idx) => ctx.fillText(line, frameWidth / 2, yStart + idx * lineHeight));
         };
-        if (tabIndex >= 1 && tabIndex <= 6) {
-          drawWrapped(
-            textForTab(tabIndex),
-            frameHeight * 0.21,
-            frameWidth * 0.66,
-            imageFrameExportWrappedLineHeightPx
-          );
-        } else {
-          const coverY = frameHeight * 0.21;
-          const coverLineGap = imageFrameExportCoverLineGapPx;
-          const coverBlock = textForTab(0).trim();
-          const coverParts = coverBlock
-            .split('\n')
-            .map((s) => s.trim())
-            .filter(Boolean);
-          const coverLine1 = coverParts[0] ?? imageFrameTitleLine1;
-          const coverLine2 = coverParts[1] ?? imageFrameTitleLine2;
-          ctx.fillText(coverLine1, frameWidth / 2, coverY);
-          ctx.fillText(coverLine2, frameWidth / 2, coverY + coverLineGap);
-        }
-        ctx.shadowBlur = 0;
-        ctx.drawImage(img, drawX, drawY, drawW, drawH);
-
+        drawWrapped(
+          textForTab(tabIndex),
+          frameHeight * 0.21,
+          frameWidth * template2QuestionTextMaxWidthRatio,
+          template2QuestionExportLineHeightPx
+        );
         return await new Promise<Blob>((resolve, reject) => {
           canvas.toBlob((blob) => {
             if (blob) resolve(blob);
             else reject(new Error('Failed to create image blob'));
           }, 'image/png');
         });
-      };
+      }
 
-      const zip = new JSZip();
-      const isKawaiiTemplate = selectedImageTemplateId === 1;
+      const maxW = frameWidth * 0.48;
+      const maxH = frameHeight * 0.24;
+      const scale = Math.min(maxW / img.width, maxH / img.height);
+      const drawW = img.width * scale;
+      const drawH = img.height * scale;
+      const drawX = (frameWidth - drawW) / 2;
+      const drawY = frameHeight - drawH - frameHeight * 0.13;
 
-      const buildSixTabSourcesForKawaiiSet = (): string[] => {
-        if (dogImagePool.length > 0) {
-          return pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 6);
-        }
-        const fromUi = imageTabSources.filter((u) => typeof u === 'string' && u.length > 0);
-        if (fromUi.length > 0) {
-          return Array.from({ length: 6 }, (_, i) => fromUi[i % fromUi.length]!);
-        }
-        return [];
-      };
-
-      if (isKawaiiTemplate) {
-        const probe = buildSixTabSourcesForKawaiiSet();
-        if (probe.length < 6 || probe.some((u) => !u?.trim())) {
-          alert('Dog images are still loading. Wait a few seconds, then try Download again.');
-          return;
-        }
-        for (let setIdx = 0; setIdx < KAWAII_DOWNLOAD_NUM_SETS; setIdx++) {
-          const funnyPool = Array.from(FUNNY_QUESTIONS) as string[];
-          const picked = shuffleCopy(funnyPool).slice(0, 5);
-          const tabTexts = [`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked];
-          const tabSources = buildSixTabSourcesForKawaiiSet();
-          const setPrefix = `set-${setIdx + 1}`;
-          for (let tabIndex = 0; tabIndex < 6; tabIndex++) {
-            const blob = await renderFrameBlob(tabIndex, { tabTexts, tabSources });
-            const tabName = tabIndex === 0 ? 'cover' : `q${tabIndex}`;
-            zip.file(`${setPrefix}/template-${selectedImageTemplateId}-${tabName}.png`, blob);
+      ctx.fillStyle = imageFrameExportTextColor;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.shadowColor = imageFrameExportGlowColor;
+      ctx.shadowBlur = 14;
+      ctx.font = `bold ${imageFrameExportFontPx}px ${imageFrameExportFontFamily}`;
+      const drawWrapped = (text: string, yStart: number, maxWidth: number, lineHeight: number) => {
+        const words = text.trim().split(/\s+/);
+        const lines: string[] = [];
+        let current = words[0] ?? '';
+        for (let i = 1; i < words.length; i++) {
+          const next = `${current} ${words[i]}`;
+          if (ctx.measureText(next).width <= maxWidth) current = next;
+          else {
+            lines.push(current);
+            current = words[i] ?? '';
           }
         }
+        if (current) lines.push(current);
+        lines.forEach((line, idx) => ctx.fillText(line, frameWidth / 2, yStart + idx * lineHeight));
+      };
+      if (tabIndex >= 1 && tabIndex <= 6) {
+        drawWrapped(
+          textForTab(tabIndex),
+          frameHeight * 0.21,
+          frameWidth * 0.66,
+          imageFrameExportWrappedLineHeightPx
+        );
       } else {
-        for (let tabIndex = 0; tabIndex < 7; tabIndex++) {
-          const blob = await renderFrameBlob(tabIndex, null);
-          const tabName = tabIndex === 0 ? 'cover' : tabIndex <= 5 ? `q${tabIndex}` : 'cta';
-          zip.file(`template-${selectedImageTemplateId}-${tabName}.png`, blob);
+        const coverY = frameHeight * 0.21;
+        const coverLineGap = imageFrameExportCoverLineGapPx;
+        const coverBlock = textForTab(0).trim();
+        const coverParts = coverBlock
+          .split('\n')
+          .map((s) => s.trim())
+          .filter(Boolean);
+        const coverLine1 = coverParts[0] ?? imageFrameTitleLine1;
+        const coverLine2 = coverParts[1] ?? imageFrameTitleLine2;
+        ctx.fillText(coverLine1, frameWidth / 2, coverY);
+        ctx.fillText(coverLine2, frameWidth / 2, coverY + coverLineGap);
+      }
+      ctx.shadowBlur = 0;
+      ctx.drawImage(img, drawX, drawY, drawW, drawH);
+
+      return await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error('Failed to create image blob'));
+        }, 'image/png');
+      });
+    };
+
+    const entries: { path: string; blob: Blob }[] = [];
+    const isKawaiiTemplate = selectedImageTemplateId === 1;
+
+    const buildSixTabSourcesForKawaiiSet = (): string[] => {
+      if (dogImagePool.length > 0) {
+        return pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 6);
+      }
+      const fromUi = imageTabSources.filter((u) => typeof u === 'string' && u.length > 0);
+      if (fromUi.length > 0) {
+        return Array.from({ length: 6 }, (_, i) => fromUi[i % fromUi.length]!);
+      }
+      return [];
+    };
+
+    if (isKawaiiTemplate) {
+      const probe = buildSixTabSourcesForKawaiiSet();
+      if (probe.length < 6 || probe.some((u) => !u?.trim())) {
+        throw new Error('Dog images are still loading. Wait a few seconds, then try again.');
+      }
+      for (let setIdx = 0; setIdx < KAWAII_DOWNLOAD_NUM_SETS; setIdx++) {
+        const funnyPool = Array.from(FUNNY_QUESTIONS) as string[];
+        const picked = shuffleCopy(funnyPool).slice(0, 5);
+        const tabTexts = [`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked];
+        const tabSources = buildSixTabSourcesForKawaiiSet();
+        const setPrefix = `set-${setIdx + 1}`;
+        for (let tabIndex = 0; tabIndex < 6; tabIndex++) {
+          const blob = await renderFrameBlob(tabIndex, { tabTexts, tabSources });
+          const tabName = tabIndex === 0 ? 'cover' : `q${tabIndex}`;
+          entries.push({
+            path: `${setPrefix}/template-${selectedImageTemplateId}-${tabName}.png`,
+            blob,
+          });
         }
+      }
+      return { entries, isKawaiiTemplate, kawaiiNumSets: KAWAII_DOWNLOAD_NUM_SETS };
+    }
+
+    for (let tabIndex = 0; tabIndex < 7; tabIndex++) {
+      const blob = await renderFrameBlob(tabIndex, null);
+      const tabName = tabIndex === 0 ? 'cover' : tabIndex <= 5 ? `q${tabIndex}` : 'cta';
+      entries.push({ path: `template-${selectedImageTemplateId}-${tabName}.png`, blob });
+    }
+    return { entries, isKawaiiTemplate };
+  };
+
+  const handleDownloadImageFrame = async () => {
+    const scheduleRevokeObjectUrl = (url: string) => {
+      window.setTimeout(() => URL.revokeObjectURL(url), 2500);
+    };
+
+    setIsImageTemplateDownloading(true);
+    try {
+      const { entries, isKawaiiTemplate, kawaiiNumSets } = await generateImageFrameExportEntries();
+      const zip = new JSZip();
+      for (const { path, blob } of entries) {
+        zip.file(path, blob);
       }
 
       const zipBlob = await zip.generateAsync({
@@ -1607,7 +1703,7 @@ export default function Home() {
       const a = document.createElement('a');
       a.href = url;
       a.download = isKawaiiTemplate
-        ? `template-${selectedImageTemplateId}-kawaii-${KAWAII_DOWNLOAD_NUM_SETS}-sets.zip`
+        ? `template-${selectedImageTemplateId}-kawaii-${kawaiiNumSets}-sets.zip`
         : `template-${selectedImageTemplateId}-all-tabs.zip`;
       document.body.appendChild(a);
       a.click();
@@ -1618,6 +1714,54 @@ export default function Home() {
       alert(e instanceof Error ? e.message : 'Download failed. Check the console for details.');
     } finally {
       setIsImageTemplateDownloading(false);
+    }
+  };
+
+  const handleUploadKawaiiToFolder = async () => {
+    if (selectedImageTemplateId !== 1) return;
+
+    setIsImageTemplateUploading(true);
+    try {
+      const statusRes = await fetch('/api/drive/status');
+      const status = (await statusRes.json()) as { oauthConfigured?: boolean; connected?: boolean };
+      if (!status.oauthConfigured) {
+        alert('Google Drive is not configured. Add OAuth credentials to .env.local (see GOOGLE_DRIVE_SETUP.md).');
+        return;
+      }
+      if (!status.connected) {
+        if (window.confirm('Connect Google Drive to upload images to your folder?')) {
+          window.location.href = '/api/drive/auth';
+        }
+        return;
+      }
+
+      const clearRes = await fetch('/api/drive/clear-folder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folderId: KAWAII_DRIVE_FOLDER_ID }),
+      });
+      const clearData = (await clearRes.json()) as { error?: string };
+      if (!clearRes.ok) {
+        throw new Error(clearData.error || 'Failed to clear Google Drive folder');
+      }
+
+      const { entries } = await generateImageFrameExportEntries({ kawaiiNumSets: 1 });
+      for (const { path, blob } of entries) {
+        const filename = path.replace(/\//g, '-');
+        const formData = new FormData();
+        formData.append('file', blob, filename);
+        formData.append('folderId', KAWAII_DRIVE_FOLDER_ID);
+        const res = await fetch('/api/drive/upload', { method: 'POST', body: formData });
+        const data = (await res.json()) as { error?: string };
+        if (!res.ok) {
+          throw new Error(data.error || `Failed to upload ${filename}`);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to upload kawaii images to Drive:', e);
+      alert(e instanceof Error ? e.message : 'Upload failed. Check the console for details.');
+    } finally {
+      setIsImageTemplateUploading(false);
     }
   };
 
@@ -1882,6 +2026,12 @@ export default function Home() {
                                   />
                                 ) : null}
                               </div>
+                            ) : card.id === 2 ? (
+                              <img
+                                src={template2CoverImageSrc}
+                                alt="Template 2 cover preview"
+                                className="w-full h-full object-cover"
+                              />
                             ) : (
                               <div className="w-full h-full bg-linear-to-b from-zinc-200 to-zinc-300 dark:from-zinc-700 dark:to-zinc-800" />
                             )}
@@ -1913,7 +2063,7 @@ export default function Home() {
                           <button
                             type="button"
                             onClick={() => regenerateImageTemplateContent(1)}
-                            disabled={isImageTemplateDownloading}
+                            disabled={isImageTemplateDownloading || isImageTemplateUploading}
                             className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             Retry
@@ -1922,7 +2072,7 @@ export default function Home() {
                         <button
                           type="button"
                           onClick={handleDownloadImageFrame}
-                          disabled={isImageTemplateDownloading}
+                          disabled={isImageTemplateDownloading || isImageTemplateUploading}
                           className="inline-flex w-full sm:w-auto items-center justify-center gap-2 text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {isImageTemplateDownloading ? (
@@ -1954,6 +2104,43 @@ export default function Home() {
                             'Download'
                           )}
                         </button>
+                        {selectedImageTemplateId === 1 ? (
+                          <button
+                            type="button"
+                            onClick={handleUploadKawaiiToFolder}
+                            disabled={isImageTemplateDownloading || isImageTemplateUploading}
+                            className="inline-flex w-full sm:w-auto items-center justify-center gap-2 text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isImageTemplateUploading ? (
+                              <>
+                                <svg
+                                  className="h-4 w-4 shrink-0 animate-spin"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  aria-hidden
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  />
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                  />
+                                </svg>
+                                <span>Uploading…</span>
+                              </>
+                            ) : (
+                              'Upload to folder'
+                            )}
+                          </button>
+                        ) : null}
                       </div>
                     </div>
                     <div className="flex gap-1 p-2 border-b border-zinc-200 dark:border-zinc-700 overflow-x-auto min-w-0 max-w-full">
@@ -1978,12 +2165,30 @@ export default function Home() {
                           className="relative w-full max-w-sm mx-auto md:mx-0 aspect-3/4 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden min-w-0"
                           style={{ backgroundColor: imageTabFrameBg }}
                         >
-                          {isCtaTabSelected ? (
+                          {isFullBleedImageTabSelected ? (
                             <img
-                              src={kawaiiCtaImageSrc}
-                              alt="Kawaii CTA preview"
+                              src={imageSourceForActiveTab}
+                              alt={isCtaTabSelected ? 'CTA preview' : 'Cover preview'}
                               className="w-full h-full object-cover"
                             />
+                          ) : isTemplate2QuestionTabSelected ? (
+                            <>
+                              <img
+                                src={template2QuestionBgImageSrc}
+                                alt="Question background"
+                                className="w-full h-full object-cover"
+                              />
+                              <p
+                                className="absolute top-[21%] left-1/2 -translate-x-1/2 text-center text-xs sm:text-sm md:text-base font-medium px-3 sm:px-5 leading-snug max-w-[72%] whitespace-pre-line wrap-break-word"
+                                style={{
+                                  color: template2QuestionTextColor,
+                                  letterSpacing: '0.01em',
+                                  fontFamily: template2QuestionFontFamily,
+                                }}
+                              >
+                                {imageFrameTextForActiveTab}
+                              </p>
+                            </>
                           ) : (
                             <>
                               <p
@@ -2005,7 +2210,7 @@ export default function Home() {
                             </>
                           )}
                         </div>
-                        {!isCtaTabSelected ? (
+                        {!isFullBleedImageTabSelected ? (
                           <div className="w-full md:w-80 md:self-start">
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                               <label className="text-xs font-medium text-zinc-600 dark:text-zinc-300">

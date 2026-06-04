@@ -1,9 +1,11 @@
 import { OAuth2Client } from 'google-auth-library';
 
-/** Create/upload files the user opens with this app; sufficient for uploads into a folder you own. */
+/** Per-file Drive access (non-sensitive scope — no Google app verification required). */
 export const DRIVE_OAUTH_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+const DRIVE_FILES_URL = 'https://www.googleapis.com/drive/v3/files';
 const DRIVE_UPLOAD_URL =
   'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink';
+const DRIVE_FOLDER_MIME = 'application/vnd.google-apps.folder';
 
 export const GOOGLE_DRIVE_REFRESH_COOKIE = 'google_drive_refresh_token';
 export const GOOGLE_DRIVE_OAUTH_STATE_COOKIE = 'google_drive_oauth_state';
@@ -11,6 +13,14 @@ export const GOOGLE_DRIVE_OAUTH_STATE_COOKIE = 'google_drive_oauth_state';
 export function getDriveFolderId(): string {
   const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID?.trim();
   if (!folderId) throw new Error('Missing GOOGLE_DRIVE_FOLDER_ID');
+  return folderId;
+}
+
+export function resolveDriveFolderId(override?: string | null): string {
+  const folderId = override?.trim() || getDriveFolderId();
+  if (!/^[\w-]+$/.test(folderId)) {
+    throw new Error('Invalid Google Drive folder ID');
+  }
   return folderId;
 }
 
@@ -73,10 +83,11 @@ export async function uploadBufferToDrive(
   refreshToken: string,
   buffer: Buffer,
   filename: string,
-  mimeType: string
+  mimeType: string,
+  folderIdOverride?: string | null
 ): Promise<{ id?: string | null; name?: string | null; webViewLink?: string | null }> {
   const accessToken = await getAccessTokenFromRefreshToken(refreshToken);
-  const folderId = getDriveFolderId();
+  const folderId = resolveDriveFolderId(folderIdOverride);
   const metadata = JSON.stringify({ name: filename, parents: [folderId] });
   const boundary = `bleamies_${Date.now()}`;
 
@@ -109,4 +120,81 @@ export async function uploadBufferToDrive(
   }
 
   return data;
+}
+
+type DriveListItem = { id: string; mimeType?: string | null };
+
+async function driveApiRequest(
+  accessToken: string,
+  path: string,
+  init?: RequestInit
+): Promise<Response> {
+  return fetch(`${DRIVE_FILES_URL}${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      ...(init?.headers ?? {}),
+    },
+  });
+}
+
+async function listDirectChildren(accessToken: string, folderId: string): Promise<DriveListItem[]> {
+  const items: DriveListItem[] = [];
+  let pageToken: string | undefined;
+
+  do {
+    const params = new URLSearchParams({
+      q: `'${folderId}' in parents and trashed=false`,
+      fields: 'nextPageToken,files(id,mimeType)',
+      pageSize: '200',
+    });
+    if (pageToken) params.set('pageToken', pageToken);
+
+    const res = await driveApiRequest(accessToken, `?${params.toString()}`);
+    const data = (await res.json()) as {
+      error?: { message?: string };
+      files?: DriveListItem[];
+      nextPageToken?: string;
+    };
+    if (!res.ok) {
+      throw new Error(data.error?.message || `Drive list failed (${res.status})`);
+    }
+    items.push(...(data.files ?? []));
+    pageToken = data.nextPageToken;
+  } while (pageToken);
+
+  return items;
+}
+
+async function deleteDriveFile(accessToken: string, fileId: string): Promise<void> {
+  const res = await driveApiRequest(accessToken, `/${fileId}`, { method: 'DELETE' });
+  if (res.status === 204 || res.status === 200) return;
+
+  const data = (await res.json()) as { error?: { message?: string } };
+  throw new Error(data.error?.message || `Drive delete failed (${res.status})`);
+}
+
+async function clearDriveFolderContentsWithToken(accessToken: string, folderId: string): Promise<number> {
+  const children = await listDirectChildren(accessToken, folderId);
+  let deleted = 0;
+
+  for (const child of children) {
+    if (child.mimeType === DRIVE_FOLDER_MIME) {
+      deleted += await clearDriveFolderContentsWithToken(accessToken, child.id);
+    }
+    await deleteDriveFile(accessToken, child.id);
+    deleted += 1;
+  }
+
+  return deleted;
+}
+
+export async function clearDriveFolderContents(
+  refreshToken: string,
+  folderIdOverride?: string | null
+): Promise<{ deleted: number }> {
+  const accessToken = await getAccessTokenFromRefreshToken(refreshToken);
+  const folderId = resolveDriveFolderId(folderIdOverride);
+  const deleted = await clearDriveFolderContentsWithToken(accessToken, folderId);
+  return { deleted };
 }
