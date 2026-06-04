@@ -455,7 +455,7 @@ export default function Home() {
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    if (selectedImageTemplateId === 1 && selectedImageBrowserTab > 5) {
+    if (selectedImageTemplateId === 1 && selectedImageBrowserTab > 6) {
       setSelectedImageBrowserTab(0);
     }
   }, [selectedImageTemplateId, selectedImageBrowserTab]);
@@ -1424,8 +1424,9 @@ export default function Home() {
     const picked = [...FUNNY_QUESTIONS].sort(() => Math.random() - 0.5).slice(0, 5);
     setImageTabFunnyQuestions(picked);
     if (isKawaii) {
-      setImageTabTexts([`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked]);
-      setImageTabSources(dogImagePool.length ? pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 6) : []);
+      setImageTabTexts([`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked, imageFrameCtaText]);
+      const dogSources = dogImagePool.length ? pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 6) : [];
+      setImageTabSources([...dogSources, kawaiiCtaImageSrc]);
     } else if (tid === 2) {
       setImageTabTexts(['', ...picked, imageFrameCtaText]);
       setImageTabSources([template2CoverImageSrc, ...Array(5).fill(template2QuestionBgImageSrc), '']);
@@ -1448,7 +1449,7 @@ export default function Home() {
   const imageFrameTextForActiveTab = getImageFrameTextForTab(selectedImageBrowserTab);
   const isKawaiiImageTemplate = selectedImageTemplateId === 1;
   const isTemplate2ImageTemplate = selectedImageTemplateId === 2;
-  const isCtaTabSelected = !isKawaiiImageTemplate && selectedImageBrowserTab === 6;
+  const isCtaTabSelected = selectedImageBrowserTab === 6;
   const isTemplate2CoverTabSelected = isTemplate2ImageTemplate && selectedImageBrowserTab === 0;
   const isTemplate2QuestionTabSelected =
     isTemplate2ImageTemplate && selectedImageBrowserTab >= 1 && selectedImageBrowserTab <= 5;
@@ -1462,7 +1463,7 @@ export default function Home() {
         : getImageSourceForTab(selectedImageBrowserTab);
   const imageTabLabelForActiveTab =
     selectedImageBrowserTab === 0 ? 'Cover' : selectedImageBrowserTab <= 5 ? `Q${selectedImageBrowserTab}` : 'CTA';
-  const imageTemplateTabCount = isKawaiiImageTemplate ? 6 : 7;
+  const imageTemplateTabCount = 7;
   const activeVideoTemplate =
     contentTab === 'video' && selectedVideoTemplateId !== null
       ? VIDEO_TEMPLATE_CARDS.find((c) => c.id === selectedVideoTemplateId)
@@ -1659,12 +1660,12 @@ export default function Home() {
       for (let setIdx = 0; setIdx < KAWAII_DOWNLOAD_NUM_SETS; setIdx++) {
         const funnyPool = Array.from(FUNNY_QUESTIONS) as string[];
         const picked = shuffleCopy(funnyPool).slice(0, 5);
-        const tabTexts = [`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked];
+        const tabTexts = [`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked, imageFrameCtaText];
         const tabSources = buildSixTabSourcesForKawaiiSet();
         const setPrefix = `set-${setIdx + 1}`;
-        for (let tabIndex = 0; tabIndex < 6; tabIndex++) {
+        for (let tabIndex = 0; tabIndex < 7; tabIndex++) {
           const blob = await renderFrameBlob(tabIndex, { tabTexts, tabSources });
-          const tabName = tabIndex === 0 ? 'cover' : `q${tabIndex}`;
+          const tabName = tabIndex === 0 ? 'cover' : tabIndex <= 5 ? `q${tabIndex}` : 'cta';
           entries.push({
             path: `${setPrefix}/template-${selectedImageTemplateId}-${tabName}.png`,
             blob,
