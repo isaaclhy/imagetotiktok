@@ -12,12 +12,100 @@ import {
   FLIRTY_QUESTIONS,
   ME_OR_YOU_QUESTIONS,
   KAWAII_DRIVE_FOLDER_ID,
+  TEMPLATE2_DRIVE_FOLDER_IDS,
+  TEMPLATE2_COVER_TEXT,
+  TEMPLATE2_QUESTION_BG_IMAGES,
+  VIDEO_TEMPLATE2_PEXELS_QUERIES,
 } from '@/app/lib/constants';
 import { Sidebar } from '@/app/components/Sidebar';
 import { InputsCard } from '@/app/components/InputsCard';
 import { PreviewPanel } from '@/app/components/PreviewPanel';
 import { DownloadModal } from '@/app/components/DownloadModal';
 import { Toast } from '@/app/components/Toast';
+import { transcodeWebmToMp4 } from '@/app/lib/webm-to-mp4';
+
+type ContentTab = 'image' | 'video' | 'prompt' | 'automate';
+
+type AppUrlState = {
+  contentTab: ContentTab;
+  selectedImageTemplateId: number | null;
+  selectedVideoTemplateId: number | null;
+  selectedImageBrowserTab: number;
+};
+
+const CONTENT_TABS: ContentTab[] = ['image', 'video', 'prompt', 'automate'];
+
+function pexelsVideoProxySrc(directUrl: string): string {
+  return `/api/pexels/video-proxy?url=${encodeURIComponent(directUrl)}`;
+}
+
+function parsePositiveInt(raw: string | null): number | null {
+  if (!raw) return null;
+  const n = Number.parseInt(raw, 10);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function readAppUrlState(): AppUrlState {
+  if (typeof window === 'undefined') {
+    return {
+      contentTab: 'image',
+      selectedImageTemplateId: null,
+      selectedVideoTemplateId: null,
+      selectedImageBrowserTab: 0,
+    };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const tabRaw = params.get('tab');
+  const contentTab = CONTENT_TABS.includes(tabRaw as ContentTab) ? (tabRaw as ContentTab) : 'image';
+
+  let selectedImageTemplateId: number | null = null;
+  let selectedVideoTemplateId: number | null = null;
+  let selectedImageBrowserTab = 0;
+
+  if (contentTab === 'image') {
+    selectedImageTemplateId = parsePositiveInt(params.get('imageTemplate'));
+    const frameRaw = params.get('frame');
+    if (frameRaw !== null) {
+      const frame = Number.parseInt(frameRaw, 10);
+      if (Number.isFinite(frame)) selectedImageBrowserTab = Math.max(0, Math.min(6, frame));
+    }
+  }
+
+  if (contentTab === 'video') {
+    selectedVideoTemplateId = parsePositiveInt(params.get('videoTemplate'));
+  }
+
+  return {
+    contentTab,
+    selectedImageTemplateId,
+    selectedVideoTemplateId,
+    selectedImageBrowserTab,
+  };
+}
+
+function syncAppUrlState(state: AppUrlState) {
+  if (typeof window === 'undefined') return;
+
+  const params = new URLSearchParams(window.location.search);
+  params.set('tab', state.contentTab);
+  params.delete('imageTemplate');
+  params.delete('frame');
+  params.delete('videoTemplate');
+
+  if (state.contentTab === 'image' && state.selectedImageTemplateId !== null) {
+    params.set('imageTemplate', String(state.selectedImageTemplateId));
+    params.set('frame', String(state.selectedImageBrowserTab));
+  }
+
+  if (state.contentTab === 'video' && state.selectedVideoTemplateId !== null) {
+    params.set('videoTemplate', String(state.selectedVideoTemplateId));
+  }
+
+  const query = params.toString();
+  const nextUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname;
+  window.history.replaceState(null, '', nextUrl);
+}
 
 function shuffleCopy<T>(items: T[]): T[] {
   const a = [...items];
@@ -29,21 +117,222 @@ function shuffleCopy<T>(items: T[]): T[] {
 }
 
 const TIKTOK_SANS_STACK = '"TikTok Sans", system-ui, -apple-system, sans-serif';
+const TEMPLATE2_COVER_FONT_WEIGHT = 700;
 
 /** Scales with frame width; shared by preview export and canvas burn-in. */
 function videoCaptionFontSizePx(frameW: number): number {
   return Math.max(22, Math.min(84, Math.floor(frameW * 0.058)));
 }
 
+function template2CoverFontSizePx(frameW: number): number {
+  return Math.max(16, Math.min(44, Math.floor(frameW * 0.036)));
+}
+
+/** Video template 2 overlay sizes — scale with frame height so export matches preview proportions. */
+function videoTemplate2TitleFontSizePx(frameH: number): number {
+  return Math.max(40, Math.floor(frameH * 0.024));
+}
+
+function videoTemplate2QuestionFontSizePx(frameH: number): number {
+  return Math.max(28, Math.floor(frameH * 0.016));
+}
+
+function videoTemplate2FooterFontSizePx(frameH: number): number {
+  return Math.max(28, Math.floor(frameH * 0.017));
+}
+
+function videoTemplate2SectionGapPx(frameH: number): number {
+  return Math.max(48, Math.floor(frameH * 0.117));
+}
+
+/** Gap between title and question list (smaller than list-to-footer gap). */
+function videoTemplate2TitleListGapPx(frameH: number): number {
+  return Math.max(32, Math.floor(frameH * 0.085));
+}
+
+const VIDEO_TEMPLATE2_TITLE_TOP_RATIO = 0.11;
+/** Max length for template 2 preview and export (seconds). */
+const VIDEO_TEMPLATE2_MAX_DURATION_SEC = 9;
+/** Text block width as fraction of frame width — lower = more side padding. */
+const VIDEO_TEMPLATE2_CONTENT_MAX_WIDTH_RATIO = 0.72;
+
+const VIDEO_TEMPLATE2_SEARCH_FOOTER_LINES = [
+  'Search "Spill It - Couples Questions"',
+  'for more questions',
+] as const;
+const VIDEO_TEMPLATE2_DIM_OVERLAY = 'rgba(0, 0, 0, 0.28)';
+
+function drawVideoTemplate2DimOverlay(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  ctx.fillStyle = VIDEO_TEMPLATE2_DIM_OVERLAY;
+  ctx.fillRect(0, 0, w, h);
+}
+
+function pickRandomFunnyQuestions(count: number): string[] {
+  return shuffleCopy([...FUNNY_QUESTIONS]).slice(0, count);
+}
+
+type TikTokCaptionLayout = {
+  lines: string[];
+  fontSize: number;
+  lineHeight: number;
+  blockW: number;
+  blockH: number;
+};
+
+type NormalizedTextAnchor = { x: number; y: number };
+
+const IMAGE_FRAME_W = 1080;
+const IMAGE_FRAME_H = 1440;
+
+function layoutTikTokCaption(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  text: string,
+  fontWeight = 900,
+  fontSize = videoCaptionFontSizePx(w)
+): TikTokCaptionLayout {
+  const trimmed = text.trim();
+  const maxWidth = w * 0.7;
+  ctx.font = `${fontWeight} ${fontSize}px ${TIKTOK_SANS_STACK}`;
+
+  const words = trimmed ? trimmed.split(/\s+/) : [];
+  const lines: string[] = [];
+  let line = '';
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width <= maxWidth) line = test;
+    else {
+      if (line) lines.push(line);
+      line = word;
+    }
+  }
+  if (line) lines.push(line);
+  if (lines.length === 0) lines.push(trimmed || '');
+
+  const lineHeight = fontSize * 1.18;
+  const blockW = Math.max(...lines.map((ln) => ctx.measureText(ln).width), 0);
+  const blockH = lines.length * lineHeight;
+  return { lines, fontSize, lineHeight, blockW, blockH };
+}
+
+function pickRandomTikTokCaptionAnchor(w: number, h: number, blockW: number, blockH: number): NormalizedTextAnchor {
+  const padX = blockW / 2 + w * 0.06;
+  const minCx = padX;
+  const maxCx = w - padX;
+  const minCy = h * 0.25 + blockH / 2;
+  const maxCy = h * 0.75 - blockH / 2;
+  const spanX = Math.max(1, maxCx - minCx);
+  const spanY = Math.max(1, maxCy - minCy);
+  return {
+    x: (minCx + Math.random() * spanX) / w,
+    y: (minCy + Math.random() * spanY) / h,
+  };
+}
+
+function pickRandomTemplate2CoverTextAnchor(text: string): NormalizedTextAnchor {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return { x: 0.5, y: 0.4 };
+  const layout = layoutTikTokCaption(
+    ctx,
+    IMAGE_FRAME_W,
+    text,
+    TEMPLATE2_COVER_FONT_WEIGHT,
+    template2CoverFontSizePx(IMAGE_FRAME_W)
+  );
+  return pickRandomTikTokCaptionAnchor(IMAGE_FRAME_W, IMAGE_FRAME_H, layout.blockW, layout.blockH);
+}
+
+type VideoCaptionPosition = 'center' | 'top';
+type VideoCaptionStyle = 'stroke' | 'natural';
+
+type VideoCaptionDrawOptions = {
+  anchor?: NormalizedTextAnchor;
+  position?: VideoCaptionPosition;
+  fontSizePx?: number;
+};
+
 /** TikTok-style caption for canvas export (white fill, black stroke). */
-function drawTikTokCaptionOnCanvas(ctx: CanvasRenderingContext2D, w: number, h: number, text: string) {
+function drawTikTokCaptionOnCanvas(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  text: string,
+  options?: { anchor?: NormalizedTextAnchor; position?: VideoCaptionPosition }
+) {
   const trimmed = text.trim();
   if (!trimmed) return;
-  const maxWidth = w * 0.7;
-  const fontSize = videoCaptionFontSizePx(w);
+  const layout = layoutTikTokCaption(ctx, w, trimmed);
+  const { lines, fontSize, lineHeight, blockH } = layout;
+  const cx = (options?.anchor?.x ?? 0.5) * w;
+  const position = options?.position ?? 'center';
   ctx.font = `900 ${fontSize}px ${TIKTOK_SANS_STACK}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
+
+  let y =
+    position === 'top'
+      ? h * 0.08 + lineHeight / 2
+      : (options?.anchor?.y ?? 0.5) * h - blockH / 2 + lineHeight / 2;
+  const strokeW = Math.max(2.5, fontSize * 0.11);
+  ctx.lineJoin = 'round';
+  ctx.miterLimit = 2;
+  for (const ln of lines) {
+    ctx.lineWidth = strokeW;
+    ctx.strokeStyle = '#000000';
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+    ctx.shadowBlur = Math.max(2, fontSize * 0.08);
+    ctx.shadowOffsetY = Math.max(1, fontSize * 0.03);
+    ctx.strokeText(ln, cx, y);
+    ctx.fillText(ln, cx, y);
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+    y += lineHeight;
+  }
+}
+
+/** Plain white caption with soft shadow only (no stroke) — native TikTok overlay look. */
+function drawNaturalWhiteCaptionOnCanvas(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  text: string,
+  options?: VideoCaptionDrawOptions
+) {
+  const trimmed = text.trim();
+  if (!trimmed) return;
+  const fontSize = options?.fontSizePx ?? template2CoverFontSizePx(w);
+  const layout = layoutTikTokCaption(ctx, w, trimmed, TEMPLATE2_COVER_FONT_WEIGHT, fontSize);
+  const { lines, lineHeight, blockH } = layout;
+  const cx = (options?.anchor?.x ?? 0.5) * w;
+  const position = options?.position ?? 'center';
+  ctx.font = `${TEMPLATE2_COVER_FONT_WEIGHT} ${fontSize}px ${TIKTOK_SANS_STACK}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  let y =
+    position === 'top'
+      ? h * 0.08 + lineHeight / 2
+      : (options?.anchor?.y ?? 0.5) * h - blockH / 2 + lineHeight / 2;
+  for (const ln of lines) {
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.42)';
+    ctx.shadowBlur = Math.max(6, fontSize * 0.14);
+    ctx.shadowOffsetY = Math.max(1, fontSize * 0.04);
+    ctx.fillText(ln, cx, y);
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+    y += lineHeight;
+  }
+}
+
+/** Draws wrapped white TikTok-style text from a top Y; returns Y after the block. */
+function wrapCanvasTextLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  const trimmed = text.trim();
+  if (!trimmed) return [];
 
   const words = trimmed.split(/\s+/);
   const lines: string[] = [];
@@ -57,31 +346,116 @@ function drawTikTokCaptionOnCanvas(ctx: CanvasRenderingContext2D, w: number, h: 
     }
   }
   if (line) lines.push(line);
+  return lines;
+}
 
-  const lineHeight = fontSize * 1.18;
-  const totalH = lines.length * lineHeight;
-  let y = h / 2 - totalH / 2 + lineHeight / 2;
-  const strokeW = Math.max(2.5, fontSize * 0.11);
-  ctx.lineJoin = 'round';
-  ctx.miterLimit = 2;
+function measureWrappedBlockHeight(lineCount: number, fontSize: number, lineHeightMult: number): number {
+  if (lineCount <= 0) return 0;
+  return lineCount * fontSize * lineHeightMult;
+}
+
+function drawNaturalWhiteWrappedBlock(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  startY: number,
+  text: string,
+  options: { fontSizePx: number; maxWidthRatio?: number; lineHeightMult?: number }
+): number {
+  const trimmed = text.trim();
+  if (!trimmed) return startY;
+
+  const fontSize = options.fontSizePx;
+  const maxWidth = w * (options.maxWidthRatio ?? 0.84);
+  const lineHeight = fontSize * (options.lineHeightMult ?? 1.16);
+  ctx.font = `${TEMPLATE2_COVER_FONT_WEIGHT} ${fontSize}px ${TIKTOK_SANS_STACK}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const lines = wrapCanvasTextLines(ctx, trimmed, maxWidth);
+  if (lines.length === 0) return startY;
+
+  const cx = w / 2;
+  let y = startY + lineHeight / 2;
   for (const ln of lines) {
-    ctx.lineWidth = strokeW;
-    ctx.strokeStyle = '#000000';
     ctx.fillStyle = '#ffffff';
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
-    ctx.shadowBlur = Math.max(2, fontSize * 0.08);
-    ctx.shadowOffsetY = Math.max(1, fontSize * 0.03);
-    ctx.strokeText(ln, w / 2, y);
-    ctx.fillText(ln, w / 2, y);
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.42)';
+    ctx.shadowBlur = Math.max(6, fontSize * 0.14);
+    ctx.shadowOffsetY = Math.max(1, fontSize * 0.04);
+    ctx.fillText(ln, cx, y);
     ctx.shadowColor = 'transparent';
     ctx.shadowBlur = 0;
     ctx.shadowOffsetY = 0;
     y += lineHeight;
   }
+  return y - lineHeight / 2 + lineHeight;
+}
+
+function drawVideoTemplate2OverlayOnCanvas(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  title: string,
+  questions: string[]
+) {
+  const titleFontSize = videoTemplate2TitleFontSizePx(h);
+  const questionFontSize = videoTemplate2QuestionFontSizePx(h);
+  const footerFontSize = videoTemplate2FooterFontSizePx(h);
+  const questionLineHeightMult = 1.12;
+  const footerLineHeightMult = 1.12;
+  const questionGap = questionFontSize * 0.28;
+  const titleListGap = videoTemplate2TitleListGapPx(h);
+  const listFooterGap = videoTemplate2SectionGapPx(h);
+  const maxWidthRatio = VIDEO_TEMPLATE2_CONTENT_MAX_WIDTH_RATIO;
+  const maxWidth = w * maxWidthRatio;
+
+  const questionEntries = questions
+    .map((q, i) => {
+      const text = `${i + 1}. ${q.trim()}`;
+      ctx.font = `${TEMPLATE2_COVER_FONT_WEIGHT} ${questionFontSize}px ${TIKTOK_SANS_STACK}`;
+      return { text, lines: wrapCanvasTextLines(ctx, text, maxWidth) };
+    })
+    .filter((entry) => entry.lines.length > 0);
+
+  const hasTitle = title.trim().length > 0;
+  const hasQuestions = questionEntries.length > 0;
+  const hasFooter = VIDEO_TEMPLATE2_SEARCH_FOOTER_LINES.length > 0;
+
+  let y = h * VIDEO_TEMPLATE2_TITLE_TOP_RATIO;
+
+  if (hasTitle) {
+    y = drawNaturalWhiteWrappedBlock(ctx, w, y, title, {
+      fontSizePx: titleFontSize,
+      maxWidthRatio,
+    });
+    if (hasQuestions || hasFooter) y += hasQuestions ? titleListGap : listFooterGap;
+  }
+
+  for (let i = 0; i < questionEntries.length; i++) {
+    y = drawNaturalWhiteWrappedBlock(ctx, w, y, questionEntries[i]!.text, {
+      fontSizePx: questionFontSize,
+      lineHeightMult: questionLineHeightMult,
+      maxWidthRatio,
+    });
+    if (i < questionEntries.length - 1) y += questionGap;
+  }
+
+  if (hasQuestions && hasFooter) y += listFooterGap;
+
+  if (hasFooter) {
+    for (const footerLine of VIDEO_TEMPLATE2_SEARCH_FOOTER_LINES) {
+      y = drawNaturalWhiteWrappedBlock(ctx, w, y, footerLine, {
+        fontSizePx: footerFontSize,
+        lineHeightMult: footerLineHeightMult,
+        maxWidthRatio,
+      });
+    }
+  }
 }
 
 function pickMediaRecorderMime(): string {
   const candidates = [
+    'video/mp4;codecs="avc1.42E01E,mp4a.40.2"',
+    'video/mp4',
     'video/webm;codecs=vp9,opus',
     'video/webm;codecs=vp9',
     'video/webm;codecs=vp8,opus',
@@ -95,13 +469,27 @@ function pickMediaRecorderMime(): string {
 }
 
 /**
- * Re-encodes video with caption burned in (real-time playback). Output is WebM (browser limitation).
+ * Re-encodes video with caption burned in (real-time playback).
+ * Chrome records WebM; Safari may record MP4 directly. WebM is transcoded to MP4 on download.
  */
-async function exportWebmWithCaptionOverlay(videoSrc: string, caption: string): Promise<Blob> {
+async function exportVideoWithCaptionOverlay(
+  videoSrc: string,
+  caption: string,
+  options: {
+    position?: VideoCaptionPosition;
+    style?: VideoCaptionStyle;
+    numberedQuestions?: string[];
+    maxDurationSec?: number;
+  } = {}
+): Promise<Blob> {
+  const captionPosition = options.position ?? 'center';
+  const captionStyle = options.style ?? 'stroke';
+  const numberedQuestions = options.numberedQuestions ?? [];
+  const maxDurationSec = options.maxDurationSec;
   if (typeof MediaRecorder === 'undefined') throw new Error('MediaRecorder is not supported in this browser');
 
   const mime = pickMediaRecorderMime();
-  if (!mime) throw new Error('No WebM recording format supported (try Chrome or Edge)');
+  if (!mime) throw new Error('No supported video recording format in this browser');
 
   const video = document.createElement('video');
   video.crossOrigin = 'anonymous';
@@ -127,10 +515,18 @@ async function exportWebmWithCaptionOverlay(videoSrc: string, caption: string): 
   const h = video.videoHeight;
   if (w <= 0 || h <= 0) throw new Error('Invalid video dimensions');
 
-  const captionFontSize = videoCaptionFontSizePx(w);
+  const captionFontSize =
+    captionStyle === 'natural' ? videoTemplate2TitleFontSizePx(h) : videoCaptionFontSizePx(w);
+  const questionFontSize = videoTemplate2QuestionFontSizePx(h);
+  const footerFontSize = videoTemplate2FooterFontSizePx(h);
+  const captionFontWeight = captionStyle === 'natural' ? TEMPLATE2_COVER_FONT_WEIGHT : 900;
   if (typeof document !== 'undefined' && document.fonts?.load) {
     try {
-      await document.fonts.load(`900 ${captionFontSize}px "TikTok Sans"`);
+      await document.fonts.load(`${captionFontWeight} ${captionFontSize}px "TikTok Sans"`);
+      if (numberedQuestions.length > 0) {
+        await document.fonts.load(`${captionFontWeight} ${questionFontSize}px "TikTok Sans"`);
+        await document.fonts.load(`${captionFontWeight} ${footerFontSize}px "TikTok Sans"`);
+      }
     } catch {
       /* fall back to system font if load fails */
     }
@@ -147,35 +543,54 @@ async function exportWebmWithCaptionOverlay(videoSrc: string, caption: string): 
   await new Promise<void>((resolve, reject) => {
     let rafId = 0;
     let recorder: MediaRecorder | null = null;
+    let finished = false;
 
     const stopDrawing = () => {
       if (rafId) cancelAnimationFrame(rafId);
       rafId = 0;
     };
 
-    const draw = () => {
-      if (video.ended) return;
-      if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-        ctx.drawImage(video, 0, 0, w, h);
-        drawTikTokCaptionOnCanvas(ctx, w, h, caption);
-      }
-      if (!video.ended) rafId = requestAnimationFrame(draw);
+    const finishRecording = () => {
+      if (finished) return;
+      finished = true;
+      stopDrawing();
+      video.pause();
+      window.setTimeout(() => {
+        try {
+          if (recorder && recorder.state === 'recording') recorder.stop();
+        } catch {
+          reject(new Error('Failed to finish recording'));
+        }
+      }, 400);
     };
 
-    video.addEventListener(
-      'ended',
-      () => {
-        stopDrawing();
-        window.setTimeout(() => {
-          try {
-            if (recorder && recorder.state === 'recording') recorder.stop();
-          } catch {
-            reject(new Error('Failed to finish recording'));
-          }
-        }, 400);
-      },
-      { once: true }
-    );
+    const reachedMaxDuration = () =>
+      maxDurationSec !== undefined && video.currentTime >= maxDurationSec - 0.05;
+
+    const draw = () => {
+      if (video.ended || reachedMaxDuration()) {
+        if (reachedMaxDuration()) finishRecording();
+        return;
+      }
+      if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+        ctx.drawImage(video, 0, 0, w, h);
+        if (captionStyle === 'natural' && numberedQuestions.length > 0) {
+          drawVideoTemplate2DimOverlay(ctx, w, h);
+          drawVideoTemplate2OverlayOnCanvas(ctx, w, h, caption, numberedQuestions);
+        } else if (captionStyle === 'natural') {
+          drawVideoTemplate2DimOverlay(ctx, w, h);
+          drawNaturalWhiteCaptionOnCanvas(ctx, w, h, caption, {
+            position: captionPosition,
+            fontSizePx: videoTemplate2TitleFontSizePx(h),
+          });
+        } else {
+          drawTikTokCaptionOnCanvas(ctx, w, h, caption, { position: captionPosition });
+        }
+      }
+      if (!video.ended && !reachedMaxDuration()) rafId = requestAnimationFrame(draw);
+    };
+
+    video.addEventListener('ended', finishRecording, { once: true });
 
     const run = async () => {
       try {
@@ -228,7 +643,7 @@ async function exportWebmWithCaptionOverlay(videoSrc: string, caption: string): 
 
   if (chunks.length === 0) throw new Error('No video data was recorded');
 
-  return new Blob(chunks, { type: 'video/webm' });
+  return new Blob(chunks, { type: mime.includes('mp4') ? 'video/mp4' : 'video/webm' });
 }
 
 /** Draws `count` images without replacement within each shuffled pass over `pool`; reshuffles only after every file has been used once. With ≥7 assets, all `count` picks are distinct. */
@@ -271,8 +686,8 @@ const VIDEO_TEMPLATE_CARDS: VideoTemplateCard[] = [
     id: 2,
     title: 'Template 2',
     subtitle: '',
-    coverSrc: '/video-templates/template-2-cover.png',
-    videoSrc: '/blonde-video/template-2.mp4',
+    coverSrc: '/video-templates/template-2-cover.jpg',
+    videoSrc: '/video-template-2/15402243_2160_3840_30fps.mp4',
     extraDownloadVideoSrc: '/blonde-video/hubnjkm.mp4',
   },
   { id: 3, title: 'Template 3', subtitle: '' },
@@ -310,7 +725,7 @@ const DAILY_TEMPLATE_TITLES_FUNNY = [
   '5 Questions A Good Boyfriend Should Get Right',
   '5 Cute Questions All Boyfriends Must Answer Tonight',
   '5 Questions Every Boyfriend Must Answer Tonight If They Love You',
-  "5 Questions To Check If He's The One",
+  "5 Very Important Questions Your Boyfriend Need To Answer Tonight",
   '5 Niche Conversation Starters To Keep The Spark Alive',
   '5 Fun Questions To Check How Much Does He Love You',
   '5 Fun Questions To Ragebait Your Boo',
@@ -318,8 +733,18 @@ const DAILY_TEMPLATE_TITLES_FUNNY = [
   '5 Impossible Questions To Ask Your Boyfriend Tonight',
   '5 Dumb Questions To Annoy Your Boyfriend',
   '5 Cute Questions To Fall In Love With You Boyfriend Again',
-  
 ] as const;
+
+function pickRandomDailyFunnyTitle(exclude?: string): string {
+  const pool = [...DAILY_TEMPLATE_TITLES_FUNNY];
+  if (pool.length === 0) return '';
+  if (pool.length === 1) return pool[0]!;
+  let next = pool[Math.floor(Math.random() * pool.length)]!;
+  if (exclude && next === exclude) {
+    next = pool.find((t) => t !== exclude) ?? next;
+  }
+  return next;
+}
 
 const DAILY_TEMPLATE_TITLES_FLIRTY = [
   '5 Dangerous Questions To Ask Your Boyfriend Tonight',
@@ -377,11 +802,16 @@ export default function Home() {
   const [levelName, setLevelName] = useState<string>('');
   const [theme, setTheme] = useState<string>('');
   const [mode, setMode] = useState<'plain' | 'video'>('video');
-  const [contentTab, setContentTab] = useState<'image' | 'video' | 'prompt' | 'automate'>('image');
+  const [contentTab, setContentTab] = useState<ContentTab>('image');
   const [selectedImageTemplateId, setSelectedImageTemplateId] = useState<number | null>(null);
   const [selectedVideoTemplateId, setSelectedVideoTemplateId] = useState<number | null>(null);
   /** TikTok-style overlay on video templates (white fill, black stroke). */
   const [videoOverlayCaption, setVideoOverlayCaption] = useState('Your text here');
+  const [videoTemplate2Questions, setVideoTemplate2Questions] = useState<string[]>([]);
+  const [videoTemplate2PexelsVideoSrc, setVideoTemplate2PexelsVideoSrc] = useState<string | null>(null);
+  const [videoTemplate2PexelsPosterSrc, setVideoTemplate2PexelsPosterSrc] = useState<string | null>(null);
+  const [isVideoTemplate2VideoLoading, setIsVideoTemplate2VideoLoading] = useState(false);
+  const [videoTemplate2VideoError, setVideoTemplate2VideoError] = useState<string | null>(null);
   const [isVideoExporting, setIsVideoExporting] = useState(false);
   const [isImageTemplateDownloading, setIsImageTemplateDownloading] = useState(false);
   const [isImageTemplateUploading, setIsImageTemplateUploading] = useState(false);
@@ -390,15 +820,14 @@ export default function Home() {
   const imageTabFrameBg = '#FEFEFE';
   const kawaiiCtaImageSrc = '/dog-images/kawaii-cta-tab.png';
   const template2CoverImageSrc = '/image-templates/template-2-cover.png';
-  const template2QuestionBgImageSrc = '/image-templates/template-2-question-bg.png';
   const template2QuestionFontFamily = 'Inter, system-ui, -apple-system, "Segoe UI", sans-serif';
   const template2QuestionTextMaxWidthRatio = 0.72;
   const template2QuestionTextColor = '#e0e0e0';
   /** Kawaii image-tab frame: export is 1080×1440; keep preview text in the same ballpark via Tailwind below. */
   const imageFrameExportFontPx = 54;
   const imageFrameExportWrappedLineHeightPx = 70;
-  const template2QuestionExportFontPx = imageFrameExportFontPx / 2;
-  const template2QuestionExportLineHeightPx = imageFrameExportWrappedLineHeightPx / 2;
+  const template2QuestionExportFontPx = imageFrameExportFontPx;
+  const template2QuestionExportLineHeightPx = imageFrameExportWrappedLineHeightPx;
   const imageFrameExportCoverLineGapPx = 64;
   const imageFrameExportFontFamily = '"Comic Sans MS", "Marker Felt", "Chalkboard SE", "Trebuchet MS", sans-serif';
   const imageFrameExportTextColor = '#2f2a31';
@@ -406,11 +835,17 @@ export default function Home() {
   const [imageTabFunnyQuestions, setImageTabFunnyQuestions] = useState<string[]>([]);
   const [imageTabTexts, setImageTabTexts] = useState<string[]>([]);
   const [imageTabSources, setImageTabSources] = useState<string[]>([]);
+  const [template2CoverTextAnchor, setTemplate2CoverTextAnchor] = useState<NormalizedTextAnchor>({
+    x: 0.5,
+    y: 0.4,
+  });
+  const [template2CoverTextEnabled, setTemplate2CoverTextEnabled] = useState(true);
   const [dogImagePool, setDogImagePool] = useState<string[]>([]);
   const [videoBackgroundUrl, setVideoBackgroundUrl] = useState<string | null>(null);
   const [videoThumbnailUrl, setVideoThumbnailUrl] = useState<string | null>(null);
   const [videoLoading, setVideoLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [urlReady, setUrlReady] = useState(false);
   const [automateDailyResults, setAutomateDailyResults] = useState<string[] | null>(null);
   const [automateDailyRowPrompts, setAutomateDailyRowPrompts] = useState<string[] | null>(null);
   const [automateDailyRowQuestions, setAutomateDailyRowQuestions] = useState<string[] | null>(null);
@@ -455,10 +890,80 @@ export default function Home() {
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
+    const urlState = readAppUrlState();
+    setContentTab(urlState.contentTab);
+    setSelectedImageTemplateId(urlState.selectedImageTemplateId);
+    setSelectedVideoTemplateId(urlState.selectedVideoTemplateId);
+    setSelectedImageBrowserTab(urlState.selectedImageBrowserTab);
+    setUrlReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!urlReady) return;
+    syncAppUrlState({
+      contentTab,
+      selectedImageTemplateId,
+      selectedVideoTemplateId,
+      selectedImageBrowserTab,
+    });
+  }, [urlReady, contentTab, selectedImageTemplateId, selectedVideoTemplateId, selectedImageBrowserTab]);
+
+  useEffect(() => {
     if (selectedImageTemplateId === 1 && selectedImageBrowserTab > 6) {
       setSelectedImageBrowserTab(0);
     }
   }, [selectedImageTemplateId, selectedImageBrowserTab]);
+
+  const regenerateVideoTemplate2Title = () => {
+    setVideoOverlayCaption((current) => pickRandomDailyFunnyTitle(current));
+  };
+
+  const regenerateVideoTemplate2Content = () => {
+    regenerateVideoTemplate2Title();
+    setVideoTemplate2Questions(pickRandomFunnyQuestions(7));
+  };
+
+  const updateVideoTemplate2Question = (index: number, value: string) => {
+    setVideoTemplate2Questions((prev) => {
+      const next = [...prev];
+      while (next.length < 7) next.push('');
+      next[index] = value;
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (selectedVideoTemplateId === 2) {
+      regenerateVideoTemplate2Content();
+    } else {
+      setVideoTemplate2PexelsVideoSrc(null);
+      setVideoTemplate2PexelsPosterSrc(null);
+      setVideoTemplate2VideoError(null);
+    }
+  }, [selectedVideoTemplateId]);
+
+  const handleRegenerateVideoTemplate2Video = async () => {
+    setIsVideoTemplate2VideoLoading(true);
+    setVideoTemplate2VideoError(null);
+    try {
+      const query =
+        VIDEO_TEMPLATE2_PEXELS_QUERIES[Math.floor(Math.random() * VIDEO_TEMPLATE2_PEXELS_QUERIES.length)]!;
+      const page = 1 + Math.floor(Math.random() * 15);
+      const res = await fetch(
+        `/api/pexels/random-video?query=${encodeURIComponent(query)}&page=${page}`
+      );
+      const data = (await res.json()) as { videoUrl?: string; thumbnailUrl?: string | null; error?: string };
+      if (!res.ok || !data.videoUrl) {
+        throw new Error(data.error || 'Failed to fetch video');
+      }
+      setVideoTemplate2PexelsVideoSrc(data.videoUrl);
+      setVideoTemplate2PexelsPosterSrc(data.thumbnailUrl ?? null);
+    } catch (e) {
+      setVideoTemplate2VideoError(e instanceof Error ? e.message : 'Failed to fetch video');
+    } finally {
+      setIsVideoTemplate2VideoLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (mode !== 'video') {
@@ -1428,13 +1933,16 @@ export default function Home() {
       const dogSources = dogImagePool.length ? pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 6) : [];
       setImageTabSources([...dogSources, kawaiiCtaImageSrc]);
     } else if (tid === 2) {
-      setImageTabTexts(['', ...picked, imageFrameCtaText]);
-      setImageTabSources([template2CoverImageSrc, ...Array(5).fill(template2QuestionBgImageSrc), '']);
+      setTemplate2CoverTextAnchor(pickRandomTemplate2CoverTextAnchor(TEMPLATE2_COVER_TEXT));
+      setImageTabTexts([TEMPLATE2_COVER_TEXT, ...picked, imageFrameCtaText]);
+      setImageTabSources([template2CoverImageSrc, ...TEMPLATE2_QUESTION_BG_IMAGES, '']);
     } else {
       setImageTabTexts([`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked, imageFrameCtaText]);
       setImageTabSources(dogImagePool.length ? pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 7) : []);
     }
   };
+  const getTemplate2QuestionBgForTab = (tabIndex: number): string =>
+    TEMPLATE2_QUESTION_BG_IMAGES[tabIndex - 1] ?? TEMPLATE2_QUESTION_BG_IMAGES[0]!;
   const getDefaultImageFrameTextForTab = (tabIndex: number): string =>
     tabIndex === 0
       ? `${imageFrameTitleLine1}\n${imageFrameTitleLine2}`
@@ -1453,13 +1961,14 @@ export default function Home() {
   const isTemplate2CoverTabSelected = isTemplate2ImageTemplate && selectedImageBrowserTab === 0;
   const isTemplate2QuestionTabSelected =
     isTemplate2ImageTemplate && selectedImageBrowserTab >= 1 && selectedImageBrowserTab <= 5;
-  const isFullBleedImageTabSelected = isCtaTabSelected || isTemplate2CoverTabSelected;
+  const isFullBleedImageTabSelected = isCtaTabSelected;
+  const template2CoverDisplayText = imageTabTexts[0] || TEMPLATE2_COVER_TEXT;
   const imageSourceForActiveTab = isCtaTabSelected
     ? kawaiiCtaImageSrc
     : isTemplate2CoverTabSelected
       ? template2CoverImageSrc
       : isTemplate2QuestionTabSelected
-        ? template2QuestionBgImageSrc
+        ? getTemplate2QuestionBgForTab(selectedImageBrowserTab)
         : getImageSourceForTab(selectedImageBrowserTab);
   const imageTabLabelForActiveTab =
     selectedImageBrowserTab === 0 ? 'Cover' : selectedImageBrowserTab <= 5 ? `Q${selectedImageBrowserTab}` : 'CTA';
@@ -1468,6 +1977,18 @@ export default function Home() {
     contentTab === 'video' && selectedVideoTemplateId !== null
       ? VIDEO_TEMPLATE_CARDS.find((c) => c.id === selectedVideoTemplateId)
       : undefined;
+  const template2PlaybackVideoSrc =
+    selectedVideoTemplateId === 2
+      ? (videoTemplate2PexelsVideoSrc ?? activeVideoTemplate?.videoSrc ?? null)
+      : (activeVideoTemplate?.videoSrc ?? null);
+  const template2PlaybackPosterSrc =
+    selectedVideoTemplateId === 2
+      ? (videoTemplate2PexelsPosterSrc ?? activeVideoTemplate?.coverSrc)
+      : activeVideoTemplate?.coverSrc;
+  const template2ExportVideoSrc =
+    selectedVideoTemplateId === 2 && videoTemplate2PexelsVideoSrc
+      ? pexelsVideoProxySrc(videoTemplate2PexelsVideoSrc)
+      : (activeVideoTemplate?.videoSrc ?? null);
 
   const generateImageFrameExportEntries = async (options?: {
     kawaiiNumSets?: number;
@@ -1489,15 +2010,16 @@ export default function Home() {
         imageTabSources[i] ??
         (dogImagePool.length ? dogImagePool[i % dogImagePool.length]! : '');
 
-      const isFullBleedTab = tabIndex === 6 || (selectedImageTemplateId === 2 && tabIndex === 0);
+      const isFullBleedTab = tabIndex === 6;
+      const isTemplate2CoverTab = selectedImageTemplateId === 2 && tabIndex === 0;
       const isTemplate2QuestionTab = selectedImageTemplateId === 2 && tabIndex >= 1 && tabIndex <= 5;
       const source = isFullBleedTab
-        ? tabIndex === 6
-          ? kawaiiCtaImageSrc
-          : template2CoverImageSrc
-        : isTemplate2QuestionTab
-          ? template2QuestionBgImageSrc
-          : sourceForTab(tabIndex);
+        ? kawaiiCtaImageSrc
+        : isTemplate2CoverTab
+          ? template2CoverImageSrc
+          : isTemplate2QuestionTab
+            ? getTemplate2QuestionBgForTab(tabIndex)
+            : sourceForTab(tabIndex);
       if (!source.trim()) {
         throw new Error('Missing image URL (dog images may still be loading).');
       }
@@ -1534,6 +2056,31 @@ export default function Home() {
 
       if (isFullBleedTab) {
         drawFullBleedImage();
+        return await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error('Failed to create image blob'));
+          }, 'image/png');
+        });
+      }
+
+      if (isTemplate2CoverTab) {
+        drawFullBleedImage();
+        if (template2CoverTextEnabled) {
+          try {
+            const fontSize = template2CoverFontSizePx(frameWidth);
+            await document.fonts.load(`${TEMPLATE2_COVER_FONT_WEIGHT} ${fontSize}px "TikTok Sans"`);
+          } catch {
+            /* fall back to system font */
+          }
+          drawNaturalWhiteCaptionOnCanvas(
+            ctx,
+            frameWidth,
+            frameHeight,
+            textForTab(0) || TEMPLATE2_COVER_TEXT,
+            { anchor: template2CoverTextAnchor }
+          );
+        }
         return await new Promise<Blob>((resolve, reject) => {
           canvas.toBlob((blob) => {
             if (blob) resolve(blob);
@@ -1718,9 +2265,14 @@ export default function Home() {
     }
   };
 
-  const handleUploadKawaiiToFolder = async () => {
-    if (selectedImageTemplateId !== 1) return;
+  const handleUploadImageTemplateToFolder = async (
+    templateId: number,
+    folderIds: string | readonly string[],
+    options?: { kawaiiNumSets?: number }
+  ) => {
+    if (selectedImageTemplateId !== templateId) return;
 
+    const targets = [...folderIds];
     setIsImageTemplateUploading(true);
     try {
       const statusRes = await fetch('/api/drive/status');
@@ -1736,30 +2288,37 @@ export default function Home() {
         return;
       }
 
-      const clearRes = await fetch('/api/drive/clear-folder', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ folderId: KAWAII_DRIVE_FOLDER_ID }),
-      });
-      const clearData = (await clearRes.json()) as { error?: string };
-      if (!clearRes.ok) {
-        throw new Error(clearData.error || 'Failed to clear Google Drive folder');
+      for (const folderId of targets) {
+        const clearRes = await fetch('/api/drive/clear-folder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ folderId }),
+        });
+        const clearData = (await clearRes.json()) as { error?: string };
+        if (!clearRes.ok) {
+          throw new Error(clearData.error || 'Failed to clear Google Drive folder');
+        }
       }
 
-      const { entries } = await generateImageFrameExportEntries({ kawaiiNumSets: 1 });
-      for (const { path, blob } of entries) {
-        const filename = path.replace(/\//g, '-');
-        const formData = new FormData();
-        formData.append('file', blob, filename);
-        formData.append('folderId', KAWAII_DRIVE_FOLDER_ID);
-        const res = await fetch('/api/drive/upload', { method: 'POST', body: formData });
-        const data = (await res.json()) as { error?: string };
-        if (!res.ok) {
-          throw new Error(data.error || `Failed to upload ${filename}`);
+      const { entries } =
+        templateId === 1
+          ? await generateImageFrameExportEntries({ kawaiiNumSets: options?.kawaiiNumSets ?? 1 })
+          : await generateImageFrameExportEntries();
+      for (const folderId of targets) {
+        for (const { path, blob } of entries) {
+          const filename = path.replace(/\//g, '-');
+          const formData = new FormData();
+          formData.append('file', blob, filename);
+          formData.append('folderId', folderId);
+          const res = await fetch('/api/drive/upload', { method: 'POST', body: formData });
+          const data = (await res.json()) as { error?: string };
+          if (!res.ok) {
+            throw new Error(data.error || `Failed to upload ${filename}`);
+          }
         }
       }
     } catch (e) {
-      console.error('Failed to upload kawaii images to Drive:', e);
+      console.error('Failed to upload image template to Drive:', e);
       alert(e instanceof Error ? e.message : 'Upload failed. Check the console for details.');
     } finally {
       setIsImageTemplateUploading(false);
@@ -1775,16 +2334,28 @@ export default function Home() {
         .replace(/^-+|-+$/g, '')
         .toLowerCase() || `template-${selectedVideoTemplateId}`;
     try {
-      if (activeVideoTemplate.videoSrc) {
+      if (template2PlaybackVideoSrc) {
         const captionTrimmed = videoOverlayCaption.trim();
-        if (captionTrimmed) {
+        const shouldBurnCaption =
+          captionTrimmed ||
+          (selectedVideoTemplateId === 2 && videoTemplate2Questions.length > 0);
+        if (shouldBurnCaption) {
           setIsVideoExporting(true);
           try {
-            const blob = await exportWebmWithCaptionOverlay(activeVideoTemplate.videoSrc, captionTrimmed);
+            const exportSrc = template2ExportVideoSrc ?? template2PlaybackVideoSrc;
+            const recordedBlob = await exportVideoWithCaptionOverlay(exportSrc, captionTrimmed, {
+              position: selectedVideoTemplateId === 2 ? 'top' : 'center',
+              style: selectedVideoTemplateId === 2 ? 'natural' : 'stroke',
+              numberedQuestions: selectedVideoTemplateId === 2 ? videoTemplate2Questions : undefined,
+              maxDurationSec:
+                selectedVideoTemplateId === 2 ? VIDEO_TEMPLATE2_MAX_DURATION_SEC : undefined,
+            });
+            const blob =
+              recordedBlob.type.includes('mp4') ? recordedBlob : await transcodeWebmToMp4(recordedBlob);
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${baseName}-caption.webm`;
+            a.download = `${baseName}-caption.mp4`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -1794,7 +2365,7 @@ export default function Home() {
           }
           return;
         }
-        const mainVideoSrc = activeVideoTemplate.videoSrc;
+        const mainVideoSrc = template2ExportVideoSrc ?? template2PlaybackVideoSrc;
         const extraVideoSrc = activeVideoTemplate.extraDownloadVideoSrc?.trim();
         if (extraVideoSrc) {
           setIsVideoExporting(true);
@@ -2060,10 +2631,10 @@ export default function Home() {
                         Template {selectedImageTemplateId}
                       </p>
                       <div className="order-2 ml-auto flex w-full sm:w-auto flex-col sm:flex-row gap-2 sm:items-center sm:justify-end">
-                        {selectedImageTemplateId === 1 ? (
+                        {selectedImageTemplateId === 1 || selectedImageTemplateId === 2 ? (
                           <button
                             type="button"
-                            onClick={() => regenerateImageTemplateContent(1)}
+                            onClick={() => regenerateImageTemplateContent(selectedImageTemplateId!)}
                             disabled={isImageTemplateDownloading || isImageTemplateUploading}
                             className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
@@ -2105,10 +2676,17 @@ export default function Home() {
                             'Download'
                           )}
                         </button>
-                        {selectedImageTemplateId === 1 ? (
+                        {selectedImageTemplateId === 1 || selectedImageTemplateId === 2 ? (
                           <button
                             type="button"
-                            onClick={handleUploadKawaiiToFolder}
+                            onClick={() =>
+                              handleUploadImageTemplateToFolder(
+                                selectedImageTemplateId,
+                                selectedImageTemplateId === 1
+                                  ? KAWAII_DRIVE_FOLDER_ID
+                                  : TEMPLATE2_DRIVE_FOLDER_IDS
+                              )
+                            }
                             disabled={isImageTemplateDownloading || isImageTemplateUploading}
                             className="inline-flex w-full sm:w-auto items-center justify-center gap-2 text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
@@ -2169,18 +2747,40 @@ export default function Home() {
                           {isFullBleedImageTabSelected ? (
                             <img
                               src={imageSourceForActiveTab}
-                              alt={isCtaTabSelected ? 'CTA preview' : 'Cover preview'}
+                              alt="CTA preview"
                               className="w-full h-full object-cover"
                             />
+                          ) : isTemplate2CoverTabSelected ? (
+                            <>
+                              <img
+                                src={template2CoverImageSrc}
+                                alt="Cover preview"
+                                className="w-full h-full object-cover"
+                              />
+                              {template2CoverTextEnabled ? (
+                                <p
+                                  className="template2-cover-caption absolute text-center text-sm sm:text-base md:text-lg leading-[1.12] tracking-[-0.02em] max-w-[70%] whitespace-pre-line wrap-break-word pointer-events-none"
+                                  style={{
+                                    left: `${template2CoverTextAnchor.x * 100}%`,
+                                    top: `${template2CoverTextAnchor.y * 100}%`,
+                                    transform: 'translate(-50%, -50%)',
+                                    color: '#ffffff',
+                                    textShadow: '0 2px 14px rgba(0, 0, 0, 0.45)',
+                                  }}
+                                >
+                                  {template2CoverDisplayText}
+                                </p>
+                              ) : null}
+                            </>
                           ) : isTemplate2QuestionTabSelected ? (
                             <>
                               <img
-                                src={template2QuestionBgImageSrc}
+                                src={getTemplate2QuestionBgForTab(selectedImageBrowserTab)}
                                 alt="Question background"
                                 className="w-full h-full object-cover"
                               />
                               <p
-                                className="absolute top-[21%] left-1/2 -translate-x-1/2 text-center text-xs sm:text-sm md:text-base font-medium px-3 sm:px-5 leading-snug max-w-[72%] whitespace-pre-line wrap-break-word"
+                                className="absolute top-[21%] left-1/2 -translate-x-1/2 text-center text-base sm:text-xl md:text-2xl font-medium px-3 sm:px-5 leading-snug max-w-[72%] whitespace-pre-line wrap-break-word"
                                 style={{
                                   color: template2QuestionTextColor,
                                   letterSpacing: '0.01em',
@@ -2211,7 +2811,36 @@ export default function Home() {
                             </>
                           )}
                         </div>
-                        {!isFullBleedImageTabSelected ? (
+                        {isTemplate2CoverTabSelected ? (
+                          <div className="w-full md:w-80 md:self-start space-y-3">
+                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={template2CoverTextEnabled}
+                                onChange={(e) => setTemplate2CoverTextEnabled(e.target.checked)}
+                                className="rounded border-zinc-300 dark:border-zinc-600"
+                              />
+                              Add text on cover
+                            </label>
+                            {template2CoverTextEnabled ? (
+                              <>
+                                <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                                  Cover text
+                                </label>
+                                <input
+                                  type="text"
+                                  value={template2CoverDisplayText}
+                                  onChange={(e) => {
+                                    const next = [...imageTabTexts];
+                                    next[0] = e.target.value;
+                                    setImageTabTexts(next);
+                                  }}
+                                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-zinc-400"
+                                />
+                              </>
+                            ) : null}
+                          </div>
+                        ) : !isFullBleedImageTabSelected ? (
                           <div className="w-full md:w-80 md:self-start">
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                               <label className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
@@ -2296,103 +2925,229 @@ export default function Home() {
                       <p className="order-3 w-full text-xs font-medium text-zinc-800 dark:text-zinc-200 sm:order-0 sm:w-auto sm:text-sm">
                         {activeVideoTemplate?.title ?? `Template ${selectedVideoTemplateId}`}
                       </p>
-                      <button
-                        type="button"
-                        onClick={handleDownloadVideoTemplate}
-                        disabled={
-                          (!activeVideoTemplate?.videoSrc && !activeVideoTemplate?.coverSrc) || isVideoExporting
-                        }
-                        className="order-2 ml-auto inline-flex w-full sm:w-auto items-center justify-center gap-2 text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isVideoExporting ? (
-                          <>
-                            <svg
-                              className="h-4 w-4 shrink-0 animate-spin"
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              aria-hidden
-                            >
-                              <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                              />
-                              <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                              />
-                            </svg>
-                            <span>Exporting…</span>
-                          </>
-                        ) : (
-                          'Download'
-                        )}
-                      </button>
+                      <div className="order-2 ml-auto flex w-full sm:w-auto flex-col sm:flex-row gap-2">
+                        {selectedVideoTemplateId === 2 ? (
+                          <button
+                            type="button"
+                            onClick={handleRegenerateVideoTemplate2Video}
+                            disabled={isVideoTemplate2VideoLoading || isVideoExporting}
+                            className="inline-flex w-full sm:w-auto items-center justify-center gap-2 text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isVideoTemplate2VideoLoading ? (
+                              <>
+                                <svg
+                                  className="h-4 w-4 shrink-0 animate-spin"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  aria-hidden
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  />
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                  />
+                                </svg>
+                                <span>Loading…</span>
+                              </>
+                            ) : (
+                              'Regenerate video'
+                            )}
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={handleDownloadVideoTemplate}
+                          disabled={
+                            (!template2PlaybackVideoSrc && !activeVideoTemplate?.coverSrc) || isVideoExporting
+                          }
+                          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isVideoExporting ? (
+                            <>
+                              <svg
+                                className="h-4 w-4 shrink-0 animate-spin"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                aria-hidden
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                />
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                />
+                              </svg>
+                              <span>Exporting…</span>
+                            </>
+                          ) : (
+                            'Download'
+                          )}
+                        </button>
+                      </div>
                     </div>
-                    {videoExportError ? (
+                    {videoExportError || videoTemplate2VideoError ? (
                       <p className="px-3 pb-2 text-xs text-red-600 dark:text-red-400 border-b border-zinc-200 dark:border-zinc-700">
-                        {videoExportError}
+                        {videoExportError ?? videoTemplate2VideoError}
                       </p>
                     ) : null}
                     <div className="p-3 sm:p-4 md:p-6 w-full min-w-0 max-w-full box-border">
-                      {activeVideoTemplate?.videoSrc ? (
+                      {activeVideoTemplate?.videoSrc || template2PlaybackVideoSrc ? (
                         <div className="flex flex-col md:flex-row items-start gap-4 min-w-0 w-full">
                           <div className="relative w-full max-w-sm mx-auto md:mx-0 aspect-9/16 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden bg-black min-w-0">
                             <video
-                              src={activeVideoTemplate.videoSrc}
+                              key={template2PlaybackVideoSrc ?? undefined}
+                              src={template2PlaybackVideoSrc ?? undefined}
                               controls
                               playsInline
+                              onTimeUpdate={
+                                selectedVideoTemplateId === 2
+                                  ? (e) => {
+                                      const el = e.currentTarget;
+                                      if (el.currentTime >= VIDEO_TEMPLATE2_MAX_DURATION_SEC) {
+                                        el.currentTime = 0;
+                                      }
+                                    }
+                                  : undefined
+                              }
                               className="absolute inset-0 z-0 h-full w-full min-w-0 object-cover"
-                              poster={activeVideoTemplate.coverSrc}
+                              poster={template2PlaybackPosterSrc}
                             />
-                            {videoOverlayCaption.trim() ? (
-                              <div className="absolute inset-0 z-10 flex items-center justify-center px-3 pointer-events-none">
-                                <p
-                                  className="video-overlay-caption w-full max-w-[78%] sm:max-w-52 md:max-w-56 text-center text-2xl leading-[1.12] tracking-[-0.02em] wrap-break-word sm:text-3xl md:text-4xl"
-                                  style={{
-                                    color: '#ffffff',
-                                    WebkitTextStroke: '2.5px #000000',
-                                    paintOrder: 'stroke fill',
-                                    textShadow:
-                                      '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 2px 8px rgba(0,0,0,0.35)',
-                                  }}
-                                >
-                                  {videoOverlayCaption}
-                                </p>
-                              </div>
+                            {selectedVideoTemplateId === 2 ? (
+                              <div
+                                className="absolute inset-0 z-5 bg-black/30 pointer-events-none"
+                                aria-hidden
+                              />
+                            ) : null}
+                            {(videoOverlayCaption.trim() ||
+                              (selectedVideoTemplateId === 2 && videoTemplate2Questions.length > 0)) ? (
+                              selectedVideoTemplateId === 2 ? (
+                                <div className="absolute inset-x-0 top-[11%] z-10 flex flex-col items-center px-8 pointer-events-none sm:px-10">
+                                  {videoOverlayCaption.trim() ? (
+                                    <p
+                                      className="template2-cover-caption mb-14 w-full max-w-[72%] text-center text-base leading-[1.12] tracking-[-0.02em] wrap-break-word sm:mb-16 sm:text-lg md:text-xl"
+                                      style={{
+                                        color: '#ffffff',
+                                        textShadow: '0 2px 14px rgba(0, 0, 0, 0.45)',
+                                      }}
+                                    >
+                                      {videoOverlayCaption}
+                                    </p>
+                                  ) : null}
+                                  {videoTemplate2Questions.length > 0 ? (
+                                    <ol className="template2-cover-caption mb-20 w-full max-w-[72%] list-none space-y-1 text-center text-[11px] leading-snug sm:mb-24 sm:space-y-1.5 sm:text-xs md:text-sm">
+                                      {videoTemplate2Questions.map((q, i) => (
+                                        <li
+                                          key={`${i}-${q.slice(0, 16)}`}
+                                          style={{ textShadow: '0 2px 14px rgba(0, 0, 0, 0.45)' }}
+                                        >
+                                          {i + 1}. {q}
+                                        </li>
+                                      ))}
+                                    </ol>
+                                  ) : null}
+                                  {videoTemplate2Questions.length > 0 ? (
+                                    <p
+                                      className="template2-cover-caption w-full max-w-[72%] text-center text-xs leading-snug sm:text-sm md:text-base"
+                                      style={{ textShadow: '0 2px 14px rgba(0, 0, 0, 0.45)' }}
+                                    >
+                                      {VIDEO_TEMPLATE2_SEARCH_FOOTER_LINES[0]}
+                                      <br />
+                                      {VIDEO_TEMPLATE2_SEARCH_FOOTER_LINES[1]}
+                                    </p>
+                                  ) : null}
+                                </div>
+                              ) : (
+                                <div className="absolute inset-0 z-10 flex items-center justify-center px-3 pointer-events-none">
+                                  <p
+                                    className="video-overlay-caption w-full max-w-[78%] text-center text-2xl leading-[1.12] tracking-[-0.02em] wrap-break-word sm:max-w-52 sm:text-3xl md:max-w-56 md:text-4xl"
+                                    style={{
+                                      color: '#ffffff',
+                                      WebkitTextStroke: '2.5px #000000',
+                                      paintOrder: 'stroke fill',
+                                      textShadow:
+                                        '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 2px 8px rgba(0,0,0,0.35)',
+                                    }}
+                                  >
+                                    {videoOverlayCaption}
+                                  </p>
+                                </div>
+                              )
                             ) : null}
                           </div>
-                          <div className="w-full md:w-80 md:self-start">
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
-                              <label className="text-xs font-medium text-zinc-600 dark:text-zinc-300">Frame text</label>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const pool = [...FUNNY_QUESTIONS];
-                                  const current = videoOverlayCaption;
-                                  let next = pool[Math.floor(Math.random() * pool.length)] ?? current;
-                                  if (pool.length > 1 && next === current) {
-                                    next = pool.find((q) => q !== current) ?? next;
-                                  }
-                                  setVideoOverlayCaption(next);
-                                }}
-                                className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                              >
-                                Random question
-                              </button>
+                          <div className="w-full md:w-80 md:max-h-[calc(100vh-8rem)] md:overflow-y-auto md:self-start space-y-4">
+                            <div>
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                                <label className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                                  {selectedVideoTemplateId === 2 ? 'Title text' : 'Frame text'}
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (selectedVideoTemplateId === 2) {
+                                      regenerateVideoTemplate2Title();
+                                      return;
+                                    }
+                                    const pool = [...FUNNY_QUESTIONS];
+                                    const current = videoOverlayCaption;
+                                    let next = pool[Math.floor(Math.random() * pool.length)] ?? current;
+                                    if (pool.length > 1 && next === current) {
+                                      next = pool.find((q) => q !== current) ?? next;
+                                    }
+                                    setVideoOverlayCaption(next);
+                                  }}
+                                  className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                >
+                                  {selectedVideoTemplateId === 2 ? 'Retry' : 'Random question'}
+                                </button>
+                              </div>
+                              <input
+                                type="text"
+                                value={videoOverlayCaption}
+                                onChange={(e) => setVideoOverlayCaption(e.target.value)}
+                                placeholder="Type your on-video text…"
+                                className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-zinc-400"
+                              />
                             </div>
-                            <input
-                              type="text"
-                              value={videoOverlayCaption}
-                              onChange={(e) => setVideoOverlayCaption(e.target.value)}
-                              placeholder="Type your on-video text…"
-                              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-zinc-400"
-                            />
+                            {selectedVideoTemplateId === 2 ? (
+                              <div>
+                                <label className="mb-2 block text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                                  Questions
+                                </label>
+                                <div className="space-y-2">
+                                  {Array.from({ length: 7 }, (_, i) => (
+                                    <div key={i}>
+                                      <label className="mb-1 block text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+                                        Q{i + 1}
+                                      </label>
+                                      <input
+                                        type="text"
+                                        value={videoTemplate2Questions[i] ?? ''}
+                                        onChange={(e) => updateVideoTemplate2Question(i, e.target.value)}
+                                        placeholder={`Question ${i + 1}…`}
+                                        className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-zinc-400"
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : null}
                           </div>
                         </div>
                       ) : activeVideoTemplate?.coverSrc ? (

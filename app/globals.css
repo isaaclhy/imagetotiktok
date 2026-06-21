@@ -35,6 +35,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Image tab template 2 cover — TikTok Sans 700, plain white (no stroke). */
+.template2-cover-caption {
+  font-family: "TikTok Sans", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 700;
+  font-style: normal;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 @keyframes slideUp {
   from {
     transform: translateX(-50%) translateY(100%);

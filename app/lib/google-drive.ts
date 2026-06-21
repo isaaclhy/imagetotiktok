@@ -147,6 +147,8 @@ async function listDirectChildren(accessToken: string, folderId: string): Promis
       q: `'${folderId}' in parents and trashed=false`,
       fields: 'nextPageToken,files(id,mimeType)',
       pageSize: '200',
+      supportsAllDrives: 'true',
+      includeItemsFromAllDrives: 'true',
     });
     if (pageToken) params.set('pageToken', pageToken);
 
@@ -167,7 +169,7 @@ async function listDirectChildren(accessToken: string, folderId: string): Promis
 }
 
 async function deleteDriveFile(accessToken: string, fileId: string): Promise<void> {
-  const res = await driveApiRequest(accessToken, `/${fileId}`, { method: 'DELETE' });
+  const res = await driveApiRequest(accessToken, `/${fileId}?supportsAllDrives=true`, { method: 'DELETE' });
   if (res.status === 204 || res.status === 200) return;
 
   const data = (await res.json()) as { error?: { message?: string } };

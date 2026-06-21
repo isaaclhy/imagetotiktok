@@ -47,7 +47,11 @@ export const PROMPTS = [
   `First-person POV inside a bright modern coffee shop during daytime, a feminine woman's hand holding an iPhone while viewing an Instagram story. Natural daylight pours through large windows, creating soft bright lighting and realistic shadows. A few people are sitting and casually talking in the background, slightly blurred and out of focus so they add atmosphere without distracting from the main subject. The scene feels natural and candid, like a real smartphone photo. The hand has feminine features with slender fingers, natural nails, and realistic skin texture. The phone screen is very bright and visually striking, emitting a vivid saturated bright red glow that immediately draws attention while still looking like a real phone display. On the Instagram story is a solid bright red background with la  rge centered bold white text: "{x}" Shallow depth of field, photorealistic, realistic iPhone proportions, authentic coffee shop atmosphere, iPhone camera photo style, natural composition, no CGI appearance.`,
   'First person POV, holding a white canvas with 2 hand marks from paint, one should be sky blue and one should be pink and on the canvas, it should also have the text "{x}". The text is facing you directly',
   'Close up holding a piece of very very small torn paper, almost thumbnail size, on the paper it\'s written "{x}", it\'s like the text is typed using a type writer. Make it realistic. The text should be very clear on the piece of paper',
-  'A finished puzzle, on the puzzle should have the text "{x}". Make the text cartoon style. The puzzle should be at an angle such that the text is directly facing me ',
+  `A finished puzzle viewed straight-on from directly above, centered in the frame so the puzzle edges appear square and parallel to the image borders (no perspective tilt or angled view). On the puzzle, there's a cartoon style text and some cartoon on it, the text reads:
+
+"{x}"
+
+The text is facing the viewer directly. The camera is positioned perfectly perpendicular to the puzzle surface, creating a flat front-facing view with no skew, foreshortening, or rotation. High-resolution, realistic puzzle texture, sharp focus, clean composition, professional product photography.`,
   `Ultra realistic candid photo of a real couple watching a projector movie late at night in a small apartment living room.
 
 Shot from behind the couch at eye level. We only see the backs of the couple. The woman is leaning on the man’s shoulder naturally.
@@ -106,7 +110,6 @@ The text must be the primary focus of the image and perfectly readable. Make the
   'A wall full of white tiles, and on one tile there is text "{x}" written with black marker. Zoom in so the text is the main focus, and the tile should face the camera directly, not at an angle',
   'First person POV, you\'re near the front stage at Coachella during daytime with a huge crowd. On the stage big screen, the text "{x}" is shown on a pink background. Zoom in so the screen text is the main focus',
   'First person POV, you\'re walking down into a crowded tube station; you look at a station sign and it says "{x}". Make the sign text clear, readable, and the main focus',
-  'First person POV, you\'re standing on a crowded tube station platform and looking across the tracks at a big ad board. On the ad board, the text "{x}" is displayed. Make the text the main focus, zoom in on it, and face straight toward the ad. The text should be facing you directly.',
   'At Coachella, a female hand is holding a condom wrapper with the text "{x}" on it. Make it very realistic and keep the text clear and readable',
   'First person POV, you\'re writing in a journal book; on the page there is text "{x}" with a heart next to it. The writing should not be cursive and should be done in single-color crayon. Make the text clear and the main focus',
   'First person POV, you\'re outdoors in the city holding a piece of pink sticky note; on it has the text "{x}" written with a thick marker. Make the text the main focus and zoom in',
@@ -313,3 +316,35 @@ export const ME_OR_YOU_QUESTIONS = [
 
 /** Google Drive folder for kawaii image-tab batch uploads. */
 export const KAWAII_DRIVE_FOLDER_ID = '1UqY0kLtlBXLd6q8NGTtK6UYOquoOzmKb';
+
+/** Google Drive folder for template 2 image-tab uploads. */
+export const TEMPLATE2_DRIVE_FOLDER_ID = '18uCYGHPlJumipNjzK_CeE6x1NJxmj22X';
+
+/** Second Google Drive folder for template 2 image-tab uploads. */
+export const TEMPLATE2_DRIVE_FOLDER_ID_ALT = '1wStPbE2B6QytCh0yKbf7sNMzePwfP9PN';
+
+export const TEMPLATE2_DRIVE_FOLDER_IDS = [
+  TEMPLATE2_DRIVE_FOLDER_ID,
+  TEMPLATE2_DRIVE_FOLDER_ID_ALT,
+] as const;
+
+/** Default TikTok-style cover hook for image tab template 2. */
+export const TEMPLATE2_COVER_TEXT = '5 Dumb Questions To Ragebait Your Boyfriend Tonight';
+
+/** Q1–Q5 background images for image tab template 2. */
+export const TEMPLATE2_QUESTION_BG_IMAGES = [
+  '/image-templates/template-2-q1-bg.png',
+  '/image-templates/template-2-q2-bg.png',
+  '/image-templates/template-2-q3-bg.png',
+  '/image-templates/template-2-q4-bg.png',
+  '/image-templates/template-2-q5-bg.png',
+] as const;
+
+/** Pexels search queries for video template 2 background regeneration. */
+export const VIDEO_TEMPLATE2_PEXELS_QUERIES = [
+  'sunrise couples',
+  'couple romantic',
+  'couple nature',
+  'couple sunset',
+  'couple beach',
+] as const;

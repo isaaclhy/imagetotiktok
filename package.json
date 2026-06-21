@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2",
     "@fontsource/tiktok-sans": "^5.2.4",
     "@google/genai": "^2.4.0",
     "@napi-rs/canvas": "^0.1.88",
