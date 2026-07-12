@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "daily:video-template-2": "tsx scripts/run-daily-video-template-2.ts"
   },
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.12.15",
@@ -36,6 +37,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.3",
     "tailwindcss": "^4",
+    "tsx": "^4.23.0",
     "typescript": "^5"
   }
 }

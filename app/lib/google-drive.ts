@@ -24,6 +24,17 @@ export function resolveDriveFolderId(override?: string | null): string {
   return folderId;
 }
 
+/** Refresh token from env (cron/CI) or browser OAuth cookie. */
+export function getRefreshTokenForAutomation(cookieValue?: string | null): string {
+  const fromEnv = process.env.GOOGLE_DRIVE_REFRESH_TOKEN?.trim();
+  if (fromEnv) return fromEnv;
+  const fromCookie = cookieValue?.trim();
+  if (fromCookie) return fromCookie;
+  throw new Error(
+    'Missing Google Drive refresh token. Set GOOGLE_DRIVE_REFRESH_TOKEN in env or connect Drive in the app.'
+  );
+}
+
 export function getGoogleRedirectUri(origin: string): string {
   return (
     process.env.GOOGLE_REDIRECT_URI?.trim() || `${origin.replace(/\/$/, '')}/api/drive/callback`
@@ -159,7 +170,11 @@ async function listDirectChildren(accessToken: string, folderId: string): Promis
       nextPageToken?: string;
     };
     if (!res.ok) {
-      throw new Error(data.error?.message || `Drive list failed (${res.status})`);
+      const message = data.error?.message || `Drive list failed (${res.status})`;
+      if (res.status === 404 || /not found/i.test(message)) {
+        return [];
+      }
+      throw new Error(message);
     }
     items.push(...(data.files ?? []));
     pageToken = data.nextPageToken;

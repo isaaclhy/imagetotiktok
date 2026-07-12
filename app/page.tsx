@@ -21,6 +21,7 @@ import { Sidebar } from '@/app/components/Sidebar';
 import { InputsCard } from '@/app/components/InputsCard';
 import { PreviewPanel } from '@/app/components/PreviewPanel';
 import { DownloadModal } from '@/app/components/DownloadModal';
+import { VideoDownloadModal } from '@/app/components/VideoDownloadModal';
 import { Toast } from '@/app/components/Toast';
 import { transcodeWebmToMp4 } from '@/app/lib/webm-to-mp4';
 
@@ -37,6 +38,20 @@ const CONTENT_TABS: ContentTab[] = ['image', 'video', 'prompt', 'automate'];
 
 function pexelsVideoProxySrc(directUrl: string): string {
   return `/api/pexels/video-proxy?url=${encodeURIComponent(directUrl)}`;
+}
+
+async function fetchRandomPexelsVideoUrlForExport(): Promise<string> {
+  const query =
+    VIDEO_TEMPLATE2_PEXELS_QUERIES[Math.floor(Math.random() * VIDEO_TEMPLATE2_PEXELS_QUERIES.length)]!;
+  const page = 1 + Math.floor(Math.random() * 15);
+  const res = await fetch(
+    `/api/pexels/random-video?query=${encodeURIComponent(query)}&page=${page}`
+  );
+  const data = (await res.json()) as { videoUrl?: string; error?: string };
+  if (!res.ok || !data.videoUrl) {
+    throw new Error(data.error || 'Failed to fetch video');
+  }
+  return pexelsVideoProxySrc(data.videoUrl);
 }
 
 function parsePositiveInt(raw: string | null): number | null {
@@ -813,6 +828,11 @@ export default function Home() {
   const [isVideoTemplate2VideoLoading, setIsVideoTemplate2VideoLoading] = useState(false);
   const [videoTemplate2VideoError, setVideoTemplate2VideoError] = useState<string | null>(null);
   const [isVideoExporting, setIsVideoExporting] = useState(false);
+  const [showVideoDownloadModal, setShowVideoDownloadModal] = useState(false);
+  const [videoDownloadCount, setVideoDownloadCount] = useState('1');
+  const [videoExportProgress, setVideoExportProgress] = useState<{ current: number; total: number } | null>(
+    null
+  );
   const [isImageTemplateDownloading, setIsImageTemplateDownloading] = useState(false);
   const [isImageTemplateUploading, setIsImageTemplateUploading] = useState(false);
   const [videoExportError, setVideoExportError] = useState<string | null>(null);
@@ -1992,12 +2012,14 @@ export default function Home() {
 
   const generateImageFrameExportEntries = async (options?: {
     kawaiiNumSets?: number;
+    templateId?: number;
   }): Promise<{
     entries: { path: string; blob: Blob }[];
     isKawaiiTemplate: boolean;
     kawaiiNumSets?: number;
   }> => {
     const KAWAII_DOWNLOAD_NUM_SETS = options?.kawaiiNumSets ?? 5;
+    const exportTemplateId = options?.templateId ?? selectedImageTemplateId;
     type ImageExportSlotData = { tabTexts: string[]; tabSources: string[] };
 
     const frameWidth = 1080;
@@ -2011,8 +2033,8 @@ export default function Home() {
         (dogImagePool.length ? dogImagePool[i % dogImagePool.length]! : '');
 
       const isFullBleedTab = tabIndex === 6;
-      const isTemplate2CoverTab = selectedImageTemplateId === 2 && tabIndex === 0;
-      const isTemplate2QuestionTab = selectedImageTemplateId === 2 && tabIndex >= 1 && tabIndex <= 5;
+      const isTemplate2CoverTab = exportTemplateId === 2 && tabIndex === 0;
+      const isTemplate2QuestionTab = exportTemplateId === 2 && tabIndex >= 1 && tabIndex <= 5;
       const source = isFullBleedTab
         ? kawaiiCtaImageSrc
         : isTemplate2CoverTab
@@ -2186,7 +2208,7 @@ export default function Home() {
     };
 
     const entries: { path: string; blob: Blob }[] = [];
-    const isKawaiiTemplate = selectedImageTemplateId === 1;
+    const isKawaiiTemplate = exportTemplateId === 1;
 
     const buildSixTabSourcesForKawaiiSet = (): string[] => {
       if (dogImagePool.length > 0) {
@@ -2214,7 +2236,7 @@ export default function Home() {
           const blob = await renderFrameBlob(tabIndex, { tabTexts, tabSources });
           const tabName = tabIndex === 0 ? 'cover' : tabIndex <= 5 ? `q${tabIndex}` : 'cta';
           entries.push({
-            path: `${setPrefix}/template-${selectedImageTemplateId}-${tabName}.png`,
+            path: `${setPrefix}/template-${exportTemplateId}-${tabName}.png`,
             blob,
           });
         }
@@ -2225,7 +2247,7 @@ export default function Home() {
     for (let tabIndex = 0; tabIndex < 7; tabIndex++) {
       const blob = await renderFrameBlob(tabIndex, null);
       const tabName = tabIndex === 0 ? 'cover' : tabIndex <= 5 ? `q${tabIndex}` : 'cta';
-      entries.push({ path: `template-${selectedImageTemplateId}-${tabName}.png`, blob });
+      entries.push({ path: `template-${exportTemplateId}-${tabName}.png`, blob });
     }
     return { entries, isKawaiiTemplate };
   };
@@ -2270,9 +2292,7 @@ export default function Home() {
     folderIds: string | readonly string[],
     options?: { kawaiiNumSets?: number }
   ) => {
-    if (selectedImageTemplateId !== templateId) return;
-
-    const targets = [...folderIds];
+    const targets = folderIds.length > 0 ? [...folderIds] : [undefined];
     setIsImageTemplateUploading(true);
     try {
       const statusRes = await fetch('/api/drive/status');
@@ -2292,29 +2312,51 @@ export default function Home() {
         const clearRes = await fetch('/api/drive/clear-folder', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ folderId }),
+          body: JSON.stringify(folderId ? { folderId } : {}),
         });
         const clearData = (await clearRes.json()) as { error?: string };
         if (!clearRes.ok) {
-          throw new Error(clearData.error || 'Failed to clear Google Drive folder');
+          const msg = clearData.error || 'Failed to clear Google Drive folder';
+          if (!/not found/i.test(msg)) {
+            throw new Error(msg);
+          }
         }
       }
 
       const { entries } =
         templateId === 1
-          ? await generateImageFrameExportEntries({ kawaiiNumSets: options?.kawaiiNumSets ?? 1 })
-          : await generateImageFrameExportEntries();
+          ? await generateImageFrameExportEntries({
+              kawaiiNumSets: options?.kawaiiNumSets ?? 1,
+              templateId,
+            })
+          : await generateImageFrameExportEntries({ templateId });
+
+      const uploadFileToDrive = async (blob: Blob, filename: string, folderId?: string) => {
+        const attemptUpload = async (targetFolderId?: string) => {
+          const formData = new FormData();
+          formData.append('file', blob, filename);
+          if (targetFolderId) formData.append('folderId', targetFolderId);
+          const res = await fetch('/api/drive/upload', { method: 'POST', body: formData });
+          const data = (await res.json()) as { error?: string };
+          return { res, data };
+        };
+
+        const first = await attemptUpload(folderId);
+        if (first.res.ok) return;
+
+        const firstError = first.data.error || `Failed to upload ${filename}`;
+        if (folderId && /not found/i.test(firstError)) {
+          const fallback = await attemptUpload(undefined);
+          if (fallback.res.ok) return;
+          throw new Error(fallback.data.error || `Failed to upload ${filename}`);
+        }
+        throw new Error(firstError);
+      };
+
       for (const folderId of targets) {
         for (const { path, blob } of entries) {
           const filename = path.replace(/\//g, '-');
-          const formData = new FormData();
-          formData.append('file', blob, filename);
-          formData.append('folderId', folderId);
-          const res = await fetch('/api/drive/upload', { method: 'POST', body: formData });
-          const data = (await res.json()) as { error?: string };
-          if (!res.ok) {
-            throw new Error(data.error || `Failed to upload ${filename}`);
-          }
+          await uploadFileToDrive(blob, filename, folderId);
         }
       }
     } catch (e) {
@@ -2325,8 +2367,77 @@ export default function Home() {
     }
   };
 
+  const handleConfirmVideoDownload = async (count: number) => {
+    if (selectedVideoTemplateId !== 2) return;
+
+    setVideoExportError(null);
+    setIsVideoExporting(true);
+    setVideoExportProgress({ current: 0, total: count });
+
+    const scheduleRevokeObjectUrl = (url: string) => {
+      window.setTimeout(() => URL.revokeObjectURL(url), 2500);
+    };
+
+    try {
+      const zip = new JSZip();
+
+      for (let i = 0; i < count; i++) {
+        setVideoExportProgress({ current: i + 1, total: count });
+
+        const title = pickRandomDailyFunnyTitle();
+        const questions = pickRandomFunnyQuestions(7);
+        const videoSrc = await fetchRandomPexelsVideoUrlForExport();
+        const recordedBlob = await exportVideoWithCaptionOverlay(videoSrc, title, {
+          position: 'top',
+          style: 'natural',
+          numberedQuestions: questions,
+          maxDurationSec: VIDEO_TEMPLATE2_MAX_DURATION_SEC,
+        });
+        const blob =
+          recordedBlob.type.includes('mp4') ? recordedBlob : await transcodeWebmToMp4(recordedBlob);
+
+        if (count === 1) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'template-2-video.mp4';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          scheduleRevokeObjectUrl(url);
+          setShowVideoDownloadModal(false);
+          return;
+        }
+
+        zip.file(`template-2-video-${i + 1}.mp4`, blob);
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `template-2-videos-${count}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      scheduleRevokeObjectUrl(url);
+      setShowVideoDownloadModal(false);
+    } catch (e) {
+      console.error('Failed to download video template batch:', e);
+      const msg = e instanceof Error ? e.message : 'Download failed';
+      setVideoExportError(msg);
+    } finally {
+      setIsVideoExporting(false);
+      setVideoExportProgress(null);
+    }
+  };
+
   const handleDownloadVideoTemplate = async () => {
     if (!activeVideoTemplate || selectedVideoTemplateId === null) return;
+    if (selectedVideoTemplateId === 2) {
+      setShowVideoDownloadModal(true);
+      return;
+    }
     setVideoExportError(null);
     const baseName =
       activeVideoTemplate.title
@@ -2967,7 +3078,10 @@ export default function Home() {
                           type="button"
                           onClick={handleDownloadVideoTemplate}
                           disabled={
-                            (!template2PlaybackVideoSrc && !activeVideoTemplate?.coverSrc) || isVideoExporting
+                            (selectedVideoTemplateId === 2
+                              ? isVideoExporting
+                              : (!template2PlaybackVideoSrc && !activeVideoTemplate?.coverSrc) ||
+                                isVideoExporting)
                           }
                           className="inline-flex w-full sm:w-auto items-center justify-center gap-2 text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
@@ -2994,12 +3108,55 @@ export default function Home() {
                                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                                 />
                               </svg>
-                              <span>Exporting…</span>
+                              <span>
+                                {videoExportProgress
+                                  ? `Exporting ${videoExportProgress.current}/${videoExportProgress.total}…`
+                                  : 'Exporting…'}
+                              </span>
                             </>
                           ) : (
                             'Download'
                           )}
                         </button>
+                        {selectedVideoTemplateId === 2 ? (
+                          <button
+                            type="button"
+                            onClick={() => handleUploadImageTemplateToFolder(1, KAWAII_DRIVE_FOLDER_ID)}
+                            disabled={
+                              isImageTemplateUploading || isVideoExporting || isVideoTemplate2VideoLoading
+                            }
+                            className="inline-flex w-full sm:w-auto items-center justify-center gap-2 text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isImageTemplateUploading ? (
+                              <>
+                                <svg
+                                  className="h-4 w-4 shrink-0 animate-spin"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  aria-hidden
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  />
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                  />
+                                </svg>
+                                <span>Uploading…</span>
+                              </>
+                            ) : (
+                              'Upload to folder'
+                            )}
+                          </button>
+                        ) : null}
                       </div>
                     </div>
                     {videoExportError || videoTemplate2VideoError ? (
@@ -3173,6 +3330,15 @@ export default function Home() {
         </div>
       </div>
       <DownloadModal isOpen={showDownloadModal} onClose={() => setShowDownloadModal(false)} onConfirm={handleGenerate} isGenerating={isGenerating} />
+      <VideoDownloadModal
+        isOpen={showVideoDownloadModal}
+        onClose={() => !isVideoExporting && setShowVideoDownloadModal(false)}
+        onConfirm={handleConfirmVideoDownload}
+        isExporting={isVideoExporting}
+        videoCount={videoDownloadCount}
+        setVideoCount={setVideoDownloadCount}
+        exportProgress={videoExportProgress}
+      />
       {showToast && <Toast message={toastMessage} status={postStatus} onClose={() => { setShowToast(false); setPostStatus(null); setPublishId(null); }} />}
     </div>
   );
