@@ -2,6 +2,10 @@
 export const ROMANTIC_IMAGE_FILTER =
   'brightness(0.82) contrast(0.88) saturate(0.72) sepia(0.18) hue-rotate(-8deg)';
 
+/** Fantasy / magical grade for Couples Nature video background (preview + export). */
+export const COUPLES_NATURE_VIDEO_FILTER =
+  'brightness(1.12) contrast(0.88) saturate(1.55) sepia(0.32) hue-rotate(-22deg)';
+
 /** Font for first-card title (TikTok-style clean sans-serif). */
 export const TITLE_FONT = 'Inter, sans-serif';
 
@@ -302,28 +306,8 @@ export const ME_OR_YOU_QUESTIONS = [
 /** Google Drive folder for kawaii image-tab batch uploads. */
 export const KAWAII_DRIVE_FOLDER_ID = '1UqY0kLtlBXLd6q8NGTtK6UYOquoOzmKb';
 
-/** Google Drive folder for template 2 image-tab uploads. */
-export const TEMPLATE2_DRIVE_FOLDER_ID = '18uCYGHPlJumipNjzK_CeE6x1NJxmj22X';
-
-/** Second Google Drive folder for template 2 image-tab uploads. */
-export const TEMPLATE2_DRIVE_FOLDER_ID_ALT = '1wStPbE2B6QytCh0yKbf7sNMzePwfP9PN';
-
-export const TEMPLATE2_DRIVE_FOLDER_IDS = [
-  TEMPLATE2_DRIVE_FOLDER_ID,
-  TEMPLATE2_DRIVE_FOLDER_ID_ALT,
-] as const;
-
-/** Default TikTok-style cover hook for image tab template 2. */
-export const TEMPLATE2_COVER_TEXT = '5 Dumb Questions To Ragebait Your Boyfriend Tonight';
-
-/** Q1–Q5 background images for image tab template 2. */
-export const TEMPLATE2_QUESTION_BG_IMAGES = [
-  '/image-templates/template-2-q1-bg.png',
-  '/image-templates/template-2-q2-bg.png',
-  '/image-templates/template-2-q3-bg.png',
-  '/image-templates/template-2-q4-bg.png',
-  '/image-templates/template-2-q5-bg.png',
-] as const;
+/** Google Drive folder for Couples Nature (video tab) image uploads. */
+export const COUPLES_NATURE_DRIVE_FOLDER_ID = '1wStPbE2B6QytCh0yKbf7sNMzePwfP9PN';
 
 /** Pexels search queries for video template 2 background regeneration. */
 export const VIDEO_TEMPLATE2_PEXELS_QUERIES = [

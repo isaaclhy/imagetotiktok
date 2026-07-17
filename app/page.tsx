@@ -12,9 +12,8 @@ import {
   FLIRTY_QUESTIONS,
   ME_OR_YOU_QUESTIONS,
   KAWAII_DRIVE_FOLDER_ID,
-  TEMPLATE2_DRIVE_FOLDER_IDS,
-  TEMPLATE2_COVER_TEXT,
-  TEMPLATE2_QUESTION_BG_IMAGES,
+  COUPLES_NATURE_DRIVE_FOLDER_ID,
+  COUPLES_NATURE_VIDEO_FILTER,
   VIDEO_TEMPLATE2_PEXELS_QUERIES,
 } from '@/app/lib/constants';
 import { Sidebar } from '@/app/components/Sidebar';
@@ -149,23 +148,23 @@ function videoTemplate2TitleFontSizePx(frameH: number): number {
 }
 
 function videoTemplate2QuestionFontSizePx(frameH: number): number {
-  return Math.max(28, Math.floor(frameH * 0.016));
+  return Math.max(25, Math.floor(frameH * 0.014));
 }
 
 function videoTemplate2FooterFontSizePx(frameH: number): number {
-  return Math.max(28, Math.floor(frameH * 0.017));
+  return Math.max(22, Math.floor(frameH * 0.0125));
 }
 
 function videoTemplate2SectionGapPx(frameH: number): number {
-  return Math.max(48, Math.floor(frameH * 0.117));
+  return Math.max(20, Math.floor(frameH * 0.04));
 }
 
 /** Gap between title and question list (smaller than list-to-footer gap). */
 function videoTemplate2TitleListGapPx(frameH: number): number {
-  return Math.max(32, Math.floor(frameH * 0.085));
+  return Math.max(14, Math.floor(frameH * 0.032));
 }
 
-const VIDEO_TEMPLATE2_TITLE_TOP_RATIO = 0.11;
+const VIDEO_TEMPLATE2_TITLE_TOP_RATIO = 0.16;
 /** Max length for template 2 preview and export (seconds). */
 const VIDEO_TEMPLATE2_MAX_DURATION_SEC = 9;
 /** Text block width as fraction of frame width — lower = more side padding. */
@@ -175,7 +174,7 @@ const VIDEO_TEMPLATE2_SEARCH_FOOTER_LINES = [
   'Search "Spill It - Couples Questions"',
   'for more questions',
 ] as const;
-const VIDEO_TEMPLATE2_DIM_OVERLAY = 'rgba(0, 0, 0, 0.28)';
+const VIDEO_TEMPLATE2_DIM_OVERLAY = 'rgba(0, 0, 0, 0.38)';
 
 function drawVideoTemplate2DimOverlay(ctx: CanvasRenderingContext2D, w: number, h: number) {
   ctx.fillStyle = VIDEO_TEMPLATE2_DIM_OVERLAY;
@@ -196,8 +195,8 @@ type TikTokCaptionLayout = {
 
 type NormalizedTextAnchor = { x: number; y: number };
 
-const IMAGE_FRAME_W = 1080;
-const IMAGE_FRAME_H = 1440;
+type VideoCaptionPosition = 'center' | 'top';
+type VideoCaptionStyle = 'stroke' | 'natural';
 
 function layoutTikTokCaption(
   ctx: CanvasRenderingContext2D,
@@ -229,37 +228,6 @@ function layoutTikTokCaption(
   const blockH = lines.length * lineHeight;
   return { lines, fontSize, lineHeight, blockW, blockH };
 }
-
-function pickRandomTikTokCaptionAnchor(w: number, h: number, blockW: number, blockH: number): NormalizedTextAnchor {
-  const padX = blockW / 2 + w * 0.06;
-  const minCx = padX;
-  const maxCx = w - padX;
-  const minCy = h * 0.25 + blockH / 2;
-  const maxCy = h * 0.75 - blockH / 2;
-  const spanX = Math.max(1, maxCx - minCx);
-  const spanY = Math.max(1, maxCy - minCy);
-  return {
-    x: (minCx + Math.random() * spanX) / w,
-    y: (minCy + Math.random() * spanY) / h,
-  };
-}
-
-function pickRandomTemplate2CoverTextAnchor(text: string): NormalizedTextAnchor {
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return { x: 0.5, y: 0.4 };
-  const layout = layoutTikTokCaption(
-    ctx,
-    IMAGE_FRAME_W,
-    text,
-    TEMPLATE2_COVER_FONT_WEIGHT,
-    template2CoverFontSizePx(IMAGE_FRAME_W)
-  );
-  return pickRandomTikTokCaptionAnchor(IMAGE_FRAME_W, IMAGE_FRAME_H, layout.blockW, layout.blockH);
-}
-
-type VideoCaptionPosition = 'center' | 'top';
-type VideoCaptionStyle = 'stroke' | 'natural';
 
 type VideoCaptionDrawOptions = {
   anchor?: NormalizedTextAnchor;
@@ -588,7 +556,14 @@ async function exportVideoWithCaptionOverlay(
         return;
       }
       if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+        const useMagicalGrade = captionStyle === 'natural' && numberedQuestions.length > 0;
+        if (useMagicalGrade) {
+          ctx.filter = COUPLES_NATURE_VIDEO_FILTER;
+        }
         ctx.drawImage(video, 0, 0, w, h);
+        if (useMagicalGrade) {
+          ctx.filter = 'none';
+        }
         if (captionStyle === 'natural' && numberedQuestions.length > 0) {
           drawVideoTemplate2DimOverlay(ctx, w, h);
           drawVideoTemplate2OverlayOnCanvas(ctx, w, h, caption, numberedQuestions);
@@ -685,25 +660,15 @@ type VideoTemplateCard = {
   subtitle: string;
   coverSrc?: string;
   videoSrc?: string;
-  /** Bundled into the same ZIP as the main `videoSrc` on raw MP4 download (no caption overlay). */
-  extraDownloadVideoSrc?: string;
 };
 
 const VIDEO_TEMPLATE_CARDS: VideoTemplateCard[] = [
   {
-    id: 1,
-    title: 'Blonde AI UGC',
-    subtitle: '',
-    coverSrc: '/video-templates/blonde-ai-ugc-cover.png',
-    videoSrc: '/blonde-video/hf_20260501_152346_d2467d52-3f87-48d3-a308-2872726f6fc1.mp4',
-  },
-  {
     id: 2,
-    title: 'Template 2',
+    title: 'Couples Nature',
     subtitle: '',
     coverSrc: '/video-templates/template-2-cover.jpg',
     videoSrc: '/video-template-2/15402243_2160_3840_30fps.mp4',
-    extraDownloadVideoSrc: '/blonde-video/hubnjkm.mp4',
   },
   { id: 3, title: 'Template 3', subtitle: '' },
   { id: 4, title: 'Template 4', subtitle: '' },
@@ -839,15 +804,9 @@ export default function Home() {
   const [selectedImageBrowserTab, setSelectedImageBrowserTab] = useState(0);
   const imageTabFrameBg = '#FEFEFE';
   const kawaiiCtaImageSrc = '/dog-images/kawaii-cta-tab.png';
-  const template2CoverImageSrc = '/image-templates/template-2-cover.png';
-  const template2QuestionFontFamily = 'Inter, system-ui, -apple-system, "Segoe UI", sans-serif';
-  const template2QuestionTextMaxWidthRatio = 0.72;
-  const template2QuestionTextColor = '#e0e0e0';
   /** Kawaii image-tab frame: export is 1080×1440; keep preview text in the same ballpark via Tailwind below. */
   const imageFrameExportFontPx = 54;
   const imageFrameExportWrappedLineHeightPx = 70;
-  const template2QuestionExportFontPx = imageFrameExportFontPx;
-  const template2QuestionExportLineHeightPx = imageFrameExportWrappedLineHeightPx;
   const imageFrameExportCoverLineGapPx = 64;
   const imageFrameExportFontFamily = '"Comic Sans MS", "Marker Felt", "Chalkboard SE", "Trebuchet MS", sans-serif';
   const imageFrameExportTextColor = '#2f2a31';
@@ -855,11 +814,6 @@ export default function Home() {
   const [imageTabFunnyQuestions, setImageTabFunnyQuestions] = useState<string[]>([]);
   const [imageTabTexts, setImageTabTexts] = useState<string[]>([]);
   const [imageTabSources, setImageTabSources] = useState<string[]>([]);
-  const [template2CoverTextAnchor, setTemplate2CoverTextAnchor] = useState<NormalizedTextAnchor>({
-    x: 0.5,
-    y: 0.4,
-  });
-  const [template2CoverTextEnabled, setTemplate2CoverTextEnabled] = useState(true);
   const [dogImagePool, setDogImagePool] = useState<string[]>([]);
   const [videoBackgroundUrl, setVideoBackgroundUrl] = useState<string | null>(null);
   const [videoThumbnailUrl, setVideoThumbnailUrl] = useState<string | null>(null);
@@ -913,7 +867,10 @@ export default function Home() {
     const urlState = readAppUrlState();
     setContentTab(urlState.contentTab);
     setSelectedImageTemplateId(urlState.selectedImageTemplateId);
-    setSelectedVideoTemplateId(urlState.selectedVideoTemplateId);
+    const videoId = urlState.selectedVideoTemplateId;
+    setSelectedVideoTemplateId(
+      videoId !== null && VIDEO_TEMPLATE_CARDS.some((c) => c.id === videoId) ? videoId : null
+    );
     setSelectedImageBrowserTab(urlState.selectedImageBrowserTab);
     setUrlReady(true);
   }, []);
@@ -952,16 +909,6 @@ export default function Home() {
     });
   };
 
-  useEffect(() => {
-    if (selectedVideoTemplateId === 2) {
-      regenerateVideoTemplate2Content();
-    } else {
-      setVideoTemplate2PexelsVideoSrc(null);
-      setVideoTemplate2PexelsPosterSrc(null);
-      setVideoTemplate2VideoError(null);
-    }
-  }, [selectedVideoTemplateId]);
-
   const handleRegenerateVideoTemplate2Video = async () => {
     setIsVideoTemplate2VideoLoading(true);
     setVideoTemplate2VideoError(null);
@@ -984,6 +931,17 @@ export default function Home() {
       setIsVideoTemplate2VideoLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (selectedVideoTemplateId === 2) {
+      regenerateVideoTemplate2Content();
+      void handleRegenerateVideoTemplate2Video();
+    } else {
+      setVideoTemplate2PexelsVideoSrc(null);
+      setVideoTemplate2PexelsPosterSrc(null);
+      setVideoTemplate2VideoError(null);
+    }
+  }, [selectedVideoTemplateId]);
 
   useEffect(() => {
     if (mode !== 'video') {
@@ -1934,8 +1892,8 @@ export default function Home() {
     musicUsageConsent &&
     !(contentDisclosureEnabled && !isYourBrand && !isBrandedContent) &&
     !(contentDisclosureEnabled && isBrandedContent && postPrivacy === 'SELF_ONLY');
-  const imageTemplateCards = Array.from({ length: 4 }, (_, i) => ({
-    id: i + 1,
+  const imageTemplateCards = Array.from({ length: 3 }, (_, i) => ({
+    id: i === 0 ? 1 : i + 1,
     title: i === 0 ? 'Kawaii' : `Template ${i + 1}`,
     subtitle: '',
   }));
@@ -1952,17 +1910,11 @@ export default function Home() {
       setImageTabTexts([`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked, imageFrameCtaText]);
       const dogSources = dogImagePool.length ? pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 6) : [];
       setImageTabSources([...dogSources, kawaiiCtaImageSrc]);
-    } else if (tid === 2) {
-      setTemplate2CoverTextAnchor(pickRandomTemplate2CoverTextAnchor(TEMPLATE2_COVER_TEXT));
-      setImageTabTexts([TEMPLATE2_COVER_TEXT, ...picked, imageFrameCtaText]);
-      setImageTabSources([template2CoverImageSrc, ...TEMPLATE2_QUESTION_BG_IMAGES, '']);
     } else {
       setImageTabTexts([`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked, imageFrameCtaText]);
       setImageTabSources(dogImagePool.length ? pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 7) : []);
     }
   };
-  const getTemplate2QuestionBgForTab = (tabIndex: number): string =>
-    TEMPLATE2_QUESTION_BG_IMAGES[tabIndex - 1] ?? TEMPLATE2_QUESTION_BG_IMAGES[0]!;
   const getDefaultImageFrameTextForTab = (tabIndex: number): string =>
     tabIndex === 0
       ? `${imageFrameTitleLine1}\n${imageFrameTitleLine2}`
@@ -1975,21 +1927,11 @@ export default function Home() {
     imageTabSources[tabIndex] ??
     (dogImagePool.length ? dogImagePool[tabIndex % dogImagePool.length]! : '');
   const imageFrameTextForActiveTab = getImageFrameTextForTab(selectedImageBrowserTab);
-  const isKawaiiImageTemplate = selectedImageTemplateId === 1;
-  const isTemplate2ImageTemplate = selectedImageTemplateId === 2;
   const isCtaTabSelected = selectedImageBrowserTab === 6;
-  const isTemplate2CoverTabSelected = isTemplate2ImageTemplate && selectedImageBrowserTab === 0;
-  const isTemplate2QuestionTabSelected =
-    isTemplate2ImageTemplate && selectedImageBrowserTab >= 1 && selectedImageBrowserTab <= 5;
   const isFullBleedImageTabSelected = isCtaTabSelected;
-  const template2CoverDisplayText = imageTabTexts[0] || TEMPLATE2_COVER_TEXT;
   const imageSourceForActiveTab = isCtaTabSelected
     ? kawaiiCtaImageSrc
-    : isTemplate2CoverTabSelected
-      ? template2CoverImageSrc
-      : isTemplate2QuestionTabSelected
-        ? getTemplate2QuestionBgForTab(selectedImageBrowserTab)
-        : getImageSourceForTab(selectedImageBrowserTab);
+    : getImageSourceForTab(selectedImageBrowserTab);
   const imageTabLabelForActiveTab =
     selectedImageBrowserTab === 0 ? 'Cover' : selectedImageBrowserTab <= 5 ? `Q${selectedImageBrowserTab}` : 'CTA';
   const imageTemplateTabCount = 7;
@@ -2033,15 +1975,7 @@ export default function Home() {
         (dogImagePool.length ? dogImagePool[i % dogImagePool.length]! : '');
 
       const isFullBleedTab = tabIndex === 6;
-      const isTemplate2CoverTab = exportTemplateId === 2 && tabIndex === 0;
-      const isTemplate2QuestionTab = exportTemplateId === 2 && tabIndex >= 1 && tabIndex <= 5;
-      const source = isFullBleedTab
-        ? kawaiiCtaImageSrc
-        : isTemplate2CoverTab
-          ? template2CoverImageSrc
-          : isTemplate2QuestionTab
-            ? getTemplate2QuestionBgForTab(tabIndex)
-            : sourceForTab(tabIndex);
+      const source = isFullBleedTab ? kawaiiCtaImageSrc : sourceForTab(tabIndex);
       if (!source.trim()) {
         throw new Error('Missing image URL (dog images may still be loading).');
       }
@@ -2078,67 +2012,6 @@ export default function Home() {
 
       if (isFullBleedTab) {
         drawFullBleedImage();
-        return await new Promise<Blob>((resolve, reject) => {
-          canvas.toBlob((blob) => {
-            if (blob) resolve(blob);
-            else reject(new Error('Failed to create image blob'));
-          }, 'image/png');
-        });
-      }
-
-      if (isTemplate2CoverTab) {
-        drawFullBleedImage();
-        if (template2CoverTextEnabled) {
-          try {
-            const fontSize = template2CoverFontSizePx(frameWidth);
-            await document.fonts.load(`${TEMPLATE2_COVER_FONT_WEIGHT} ${fontSize}px "TikTok Sans"`);
-          } catch {
-            /* fall back to system font */
-          }
-          drawNaturalWhiteCaptionOnCanvas(
-            ctx,
-            frameWidth,
-            frameHeight,
-            textForTab(0) || TEMPLATE2_COVER_TEXT,
-            { anchor: template2CoverTextAnchor }
-          );
-        }
-        return await new Promise<Blob>((resolve, reject) => {
-          canvas.toBlob((blob) => {
-            if (blob) resolve(blob);
-            else reject(new Error('Failed to create image blob'));
-          }, 'image/png');
-        });
-      }
-
-      if (isTemplate2QuestionTab) {
-        drawFullBleedImage();
-        ctx.fillStyle = template2QuestionTextColor;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        ctx.shadowBlur = 0;
-        ctx.font = `600 ${template2QuestionExportFontPx}px ${template2QuestionFontFamily}`;
-        const drawWrapped = (text: string, yStart: number, maxWidth: number, lineHeight: number) => {
-          const words = text.trim().split(/\s+/);
-          const lines: string[] = [];
-          let current = words[0] ?? '';
-          for (let i = 1; i < words.length; i++) {
-            const next = `${current} ${words[i]}`;
-            if (ctx.measureText(next).width <= maxWidth) current = next;
-            else {
-              lines.push(current);
-              current = words[i] ?? '';
-            }
-          }
-          if (current) lines.push(current);
-          lines.forEach((line, idx) => ctx.fillText(line, frameWidth / 2, yStart + idx * lineHeight));
-        };
-        drawWrapped(
-          textForTab(tabIndex),
-          frameHeight * 0.21,
-          frameWidth * template2QuestionTextMaxWidthRatio,
-          template2QuestionExportLineHeightPx
-        );
         return await new Promise<Blob>((resolve, reject) => {
           canvas.toBlob((blob) => {
             if (blob) resolve(blob);
@@ -2367,6 +2240,103 @@ export default function Home() {
     }
   };
 
+  const handleUploadCouplesNatureVideoToFolder = async () => {
+    if (selectedVideoTemplateId !== 2) return;
+
+    setVideoExportError(null);
+    setIsImageTemplateUploading(true);
+    try {
+      const statusRes = await fetch('/api/drive/status');
+      const status = (await statusRes.json()) as { oauthConfigured?: boolean; connected?: boolean };
+      if (!status.oauthConfigured) {
+        alert('Google Drive is not configured. Add OAuth credentials to .env.local (see GOOGLE_DRIVE_SETUP.md).');
+        return;
+      }
+      if (!status.connected) {
+        if (window.confirm('Connect Google Drive to upload video to your folder?')) {
+          window.location.href = '/api/drive/auth';
+        }
+        return;
+      }
+
+      const clearDriveFolder = async (folderId?: string) => {
+        const clearRes = await fetch('/api/drive/clear-folder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(folderId ? { folderId } : {}),
+        });
+        const clearData = (await clearRes.json()) as { error?: string };
+        if (!clearRes.ok) {
+          const msg = clearData.error || 'Failed to clear Google Drive folder';
+          if (!/not found/i.test(msg)) {
+            throw new Error(msg);
+          }
+          return false;
+        }
+        return true;
+      };
+
+      const preferredFolderId = COUPLES_NATURE_DRIVE_FOLDER_ID;
+      const preferredCleared = await clearDriveFolder(preferredFolderId);
+
+      const title = videoOverlayCaption.trim() || pickRandomDailyFunnyTitle();
+      const questions =
+        videoTemplate2Questions.length > 0
+          ? videoTemplate2Questions
+          : pickRandomFunnyQuestions(7);
+      const videoSrc = template2ExportVideoSrc ?? template2PlaybackVideoSrc;
+      if (!videoSrc) {
+        throw new Error('No video available to export. Wait for the background to load, then try again.');
+      }
+
+      setIsVideoExporting(true);
+      let blob: Blob;
+      try {
+        const recordedBlob = await exportVideoWithCaptionOverlay(videoSrc, title, {
+          position: 'top',
+          style: 'natural',
+          numberedQuestions: questions,
+          maxDurationSec: VIDEO_TEMPLATE2_MAX_DURATION_SEC,
+        });
+        blob =
+          recordedBlob.type.includes('mp4') ? recordedBlob : await transcodeWebmToMp4(recordedBlob);
+      } finally {
+        setIsVideoExporting(false);
+      }
+
+      const filename = `couples-nature-${new Date().toISOString().slice(0, 10)}.mp4`;
+      const attemptUpload = async (targetFolderId?: string) => {
+        const formData = new FormData();
+        formData.append('file', blob, filename);
+        if (targetFolderId) formData.append('folderId', targetFolderId);
+        const res = await fetch('/api/drive/upload', { method: 'POST', body: formData });
+        const data = (await res.json()) as { error?: string };
+        return { res, data };
+      };
+
+      const first = await attemptUpload(preferredFolderId);
+      if (first.res.ok) return;
+
+      const firstError = first.data.error || 'Failed to upload video';
+      if (/not found/i.test(firstError) || !preferredCleared) {
+        // Preferred folder inaccessible — clear default Drive folder, then upload there.
+        await clearDriveFolder(undefined);
+        const fallback = await attemptUpload(undefined);
+        if (fallback.res.ok) return;
+        throw new Error(fallback.data.error || 'Failed to upload video');
+      }
+      throw new Error(firstError);
+    } catch (e) {
+      console.error('Failed to upload Couples Nature video to Drive:', e);
+      const msg = e instanceof Error ? e.message : 'Upload failed';
+      setVideoExportError(msg);
+      alert(msg);
+    } finally {
+      setIsImageTemplateUploading(false);
+      setIsVideoExporting(false);
+    }
+  };
+
   const handleConfirmVideoDownload = async (count: number) => {
     if (selectedVideoTemplateId !== 2) return;
 
@@ -2384,9 +2354,22 @@ export default function Home() {
       for (let i = 0; i < count; i++) {
         setVideoExportProgress({ current: i + 1, total: count });
 
-        const title = pickRandomDailyFunnyTitle();
-        const questions = pickRandomFunnyQuestions(7);
-        const videoSrc = await fetchRandomPexelsVideoUrlForExport();
+        // Single download uses the on-screen preview; batch downloads get fresh random content.
+        const usePreview = count === 1;
+        const title = usePreview
+          ? videoOverlayCaption.trim() || pickRandomDailyFunnyTitle()
+          : pickRandomDailyFunnyTitle();
+        const questions = usePreview
+          ? (videoTemplate2Questions.length > 0
+              ? videoTemplate2Questions
+              : pickRandomFunnyQuestions(7))
+          : pickRandomFunnyQuestions(7);
+        const videoSrc = usePreview
+          ? (template2ExportVideoSrc ?? template2PlaybackVideoSrc)
+          : await fetchRandomPexelsVideoUrlForExport();
+        if (!videoSrc) {
+          throw new Error('No video available to export. Wait for the background to load, then try again.');
+        }
         const recordedBlob = await exportVideoWithCaptionOverlay(videoSrc, title, {
           position: 'top',
           style: 'natural',
@@ -2477,32 +2460,6 @@ export default function Home() {
           return;
         }
         const mainVideoSrc = template2ExportVideoSrc ?? template2PlaybackVideoSrc;
-        const extraVideoSrc = activeVideoTemplate.extraDownloadVideoSrc?.trim();
-        if (extraVideoSrc) {
-          setIsVideoExporting(true);
-          try {
-            const zip = new JSZip();
-            const mainRes = await fetch(mainVideoSrc);
-            if (!mainRes.ok) throw new Error('Failed to fetch video');
-            zip.file(`${baseName}.mp4`, await mainRes.blob());
-            const extraRes = await fetch(extraVideoSrc);
-            if (!extraRes.ok) throw new Error('Failed to fetch bundled video');
-            const extraFileName = extraVideoSrc.split('/').pop() || 'extra.mp4';
-            zip.file(extraFileName, await extraRes.blob());
-            const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
-            const url = URL.createObjectURL(zipBlob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${baseName}-videos.zip`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.setTimeout(() => URL.revokeObjectURL(url), 2500);
-          } finally {
-            setIsVideoExporting(false);
-          }
-          return;
-        }
         const res = await fetch(mainVideoSrc);
         if (!res.ok) throw new Error('Failed to fetch video');
         const blob = await res.blob();
@@ -2684,7 +2641,7 @@ export default function Home() {
                       <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Pick a template</h2>
                       <p className="text-sm text-zinc-500 dark:text-zinc-400">Select one to start. Placeholder templates for now.</p>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                       {imageTemplateCards.map((card) => (
                         <button
                           key={card.id}
@@ -2709,12 +2666,6 @@ export default function Home() {
                                   />
                                 ) : null}
                               </div>
-                            ) : card.id === 2 ? (
-                              <img
-                                src={template2CoverImageSrc}
-                                alt="Template 2 cover preview"
-                                className="w-full h-full object-cover"
-                              />
                             ) : (
                               <div className="w-full h-full bg-linear-to-b from-zinc-200 to-zinc-300 dark:from-zinc-700 dark:to-zinc-800" />
                             )}
@@ -2742,7 +2693,7 @@ export default function Home() {
                         Template {selectedImageTemplateId}
                       </p>
                       <div className="order-2 ml-auto flex w-full sm:w-auto flex-col sm:flex-row gap-2 sm:items-center sm:justify-end">
-                        {selectedImageTemplateId === 1 || selectedImageTemplateId === 2 ? (
+                        {selectedImageTemplateId === 1 ? (
                           <button
                             type="button"
                             onClick={() => regenerateImageTemplateContent(selectedImageTemplateId!)}
@@ -2787,15 +2738,13 @@ export default function Home() {
                             'Download'
                           )}
                         </button>
-                        {selectedImageTemplateId === 1 || selectedImageTemplateId === 2 ? (
+                        {selectedImageTemplateId === 1 ? (
                           <button
                             type="button"
                             onClick={() =>
                               handleUploadImageTemplateToFolder(
                                 selectedImageTemplateId,
-                                selectedImageTemplateId === 1
-                                  ? KAWAII_DRIVE_FOLDER_ID
-                                  : TEMPLATE2_DRIVE_FOLDER_IDS
+                                KAWAII_DRIVE_FOLDER_ID
                               )
                             }
                             disabled={isImageTemplateDownloading || isImageTemplateUploading}
@@ -2861,46 +2810,6 @@ export default function Home() {
                               alt="CTA preview"
                               className="w-full h-full object-cover"
                             />
-                          ) : isTemplate2CoverTabSelected ? (
-                            <>
-                              <img
-                                src={template2CoverImageSrc}
-                                alt="Cover preview"
-                                className="w-full h-full object-cover"
-                              />
-                              {template2CoverTextEnabled ? (
-                                <p
-                                  className="template2-cover-caption absolute text-center text-sm sm:text-base md:text-lg leading-[1.12] tracking-[-0.02em] max-w-[70%] whitespace-pre-line wrap-break-word pointer-events-none"
-                                  style={{
-                                    left: `${template2CoverTextAnchor.x * 100}%`,
-                                    top: `${template2CoverTextAnchor.y * 100}%`,
-                                    transform: 'translate(-50%, -50%)',
-                                    color: '#ffffff',
-                                    textShadow: '0 2px 14px rgba(0, 0, 0, 0.45)',
-                                  }}
-                                >
-                                  {template2CoverDisplayText}
-                                </p>
-                              ) : null}
-                            </>
-                          ) : isTemplate2QuestionTabSelected ? (
-                            <>
-                              <img
-                                src={getTemplate2QuestionBgForTab(selectedImageBrowserTab)}
-                                alt="Question background"
-                                className="w-full h-full object-cover"
-                              />
-                              <p
-                                className="absolute top-[21%] left-1/2 -translate-x-1/2 text-center text-base sm:text-xl md:text-2xl font-medium px-3 sm:px-5 leading-snug max-w-[72%] whitespace-pre-line wrap-break-word"
-                                style={{
-                                  color: template2QuestionTextColor,
-                                  letterSpacing: '0.01em',
-                                  fontFamily: template2QuestionFontFamily,
-                                }}
-                              >
-                                {imageFrameTextForActiveTab}
-                              </p>
-                            </>
                           ) : (
                             <>
                               <p
@@ -2922,36 +2831,7 @@ export default function Home() {
                             </>
                           )}
                         </div>
-                        {isTemplate2CoverTabSelected ? (
-                          <div className="w-full md:w-80 md:self-start space-y-3">
-                            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={template2CoverTextEnabled}
-                                onChange={(e) => setTemplate2CoverTextEnabled(e.target.checked)}
-                                className="rounded border-zinc-300 dark:border-zinc-600"
-                              />
-                              Add text on cover
-                            </label>
-                            {template2CoverTextEnabled ? (
-                              <>
-                                <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-300">
-                                  Cover text
-                                </label>
-                                <input
-                                  type="text"
-                                  value={template2CoverDisplayText}
-                                  onChange={(e) => {
-                                    const next = [...imageTabTexts];
-                                    next[0] = e.target.value;
-                                    setImageTabTexts(next);
-                                  }}
-                                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-zinc-400"
-                                />
-                              </>
-                            ) : null}
-                          </div>
-                        ) : !isFullBleedImageTabSelected ? (
+                        {!isFullBleedImageTabSelected ? (
                           <div className="w-full md:w-80 md:self-start">
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                               <label className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
@@ -3121,7 +3001,7 @@ export default function Home() {
                         {selectedVideoTemplateId === 2 ? (
                           <button
                             type="button"
-                            onClick={() => handleUploadImageTemplateToFolder(1, KAWAII_DRIVE_FOLDER_ID)}
+                            onClick={() => void handleUploadCouplesNatureVideoToFolder()}
                             disabled={
                               isImageTemplateUploading || isVideoExporting || isVideoTemplate2VideoLoading
                             }
@@ -3184,21 +3064,26 @@ export default function Home() {
                                   : undefined
                               }
                               className="absolute inset-0 z-0 h-full w-full min-w-0 object-cover"
+                              style={
+                                selectedVideoTemplateId === 2
+                                  ? { filter: COUPLES_NATURE_VIDEO_FILTER }
+                                  : undefined
+                              }
                               poster={template2PlaybackPosterSrc}
                             />
                             {selectedVideoTemplateId === 2 ? (
                               <div
-                                className="absolute inset-0 z-5 bg-black/30 pointer-events-none"
+                                className="absolute inset-0 z-5 bg-black/40 pointer-events-none"
                                 aria-hidden
                               />
                             ) : null}
                             {(videoOverlayCaption.trim() ||
                               (selectedVideoTemplateId === 2 && videoTemplate2Questions.length > 0)) ? (
                               selectedVideoTemplateId === 2 ? (
-                                <div className="absolute inset-x-0 top-[11%] z-10 flex flex-col items-center px-8 pointer-events-none sm:px-10">
+                                <div className="absolute inset-x-0 top-[16%] z-10 flex flex-col items-center px-8 pointer-events-none sm:px-10">
                                   {videoOverlayCaption.trim() ? (
                                     <p
-                                      className="template2-cover-caption mb-14 w-full max-w-[72%] text-center text-base leading-[1.12] tracking-[-0.02em] wrap-break-word sm:mb-16 sm:text-lg md:text-xl"
+                                      className="template2-cover-caption mb-4 w-full max-w-[72%] text-center text-lg leading-[1.12] tracking-[-0.02em] wrap-break-word sm:mb-5 sm:text-xl md:text-2xl"
                                       style={{
                                         color: '#ffffff',
                                         textShadow: '0 2px 14px rgba(0, 0, 0, 0.45)',
@@ -3208,7 +3093,7 @@ export default function Home() {
                                     </p>
                                   ) : null}
                                   {videoTemplate2Questions.length > 0 ? (
-                                    <ol className="template2-cover-caption mb-20 w-full max-w-[72%] list-none space-y-1 text-center text-[11px] leading-snug sm:mb-24 sm:space-y-1.5 sm:text-xs md:text-sm">
+                                    <ol className="template2-cover-caption mb-5 w-full max-w-[72%] list-none space-y-1 text-center text-[11px] leading-snug sm:mb-6 sm:space-y-1.5 sm:text-xs md:text-sm">
                                       {videoTemplate2Questions.map((q, i) => (
                                         <li
                                           key={`${i}-${q.slice(0, 16)}`}
@@ -3221,7 +3106,7 @@ export default function Home() {
                                   ) : null}
                                   {videoTemplate2Questions.length > 0 ? (
                                     <p
-                                      className="template2-cover-caption w-full max-w-[72%] text-center text-xs leading-snug sm:text-sm md:text-base"
+                                      className="template2-cover-caption w-full max-w-[72%] text-center text-[10px] leading-snug sm:text-[11px] md:text-xs"
                                       style={{ textShadow: '0 2px 14px rgba(0, 0, 0, 0.45)' }}
                                     >
                                       {VIDEO_TEMPLATE2_SEARCH_FOOTER_LINES[0]}

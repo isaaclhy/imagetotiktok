@@ -6,7 +6,11 @@ import {
   uploadBufferToDrive,
 } from '@/app/lib/google-drive';
 
-const MAX_BYTES = 25 * 1024 * 1024;
+const MAX_BYTES = 100 * 1024 * 1024;
+
+function isAllowedDriveUpload(file: File): boolean {
+  return file.type.startsWith('image/') || file.type === 'video/mp4' || file.type.startsWith('video/');
+}
 
 export async function POST(request: Request) {
   if (!isOAuthConfigured()) {
@@ -36,24 +40,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing file' }, { status: 400 });
     }
 
-    if (!file.type.startsWith('image/')) {
-      return NextResponse.json({ error: 'Only image files are allowed' }, { status: 400 });
+    if (!isAllowedDriveUpload(file)) {
+      return NextResponse.json({ error: 'Only image or video files are allowed' }, { status: 400 });
     }
 
     if (file.size > MAX_BYTES) {
-      return NextResponse.json({ error: 'File too large (max 25 MB)' }, { status: 400 });
+      return NextResponse.json({ error: 'File too large (max 100 MB)' }, { status: 400 });
     }
 
     const folderIdRaw = formData.get('folderId');
     const folderId = typeof folderIdRaw === 'string' ? folderIdRaw : undefined;
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const safeName = file.name.replace(/[^\w.\-]+/g, '_') || 'upload.png';
+    const defaultName = file.type.startsWith('video/') ? 'upload.mp4' : 'upload.png';
+    const safeName = file.name.replace(/[^\w.\-]+/g, '_') || defaultName;
     const uploaded = await uploadBufferToDrive(
       refreshToken,
       buffer,
       safeName,
-      file.type || 'image/png',
+      file.type || (file.type.startsWith('video/') ? 'video/mp4' : 'image/png'),
       folderId
     );
 
