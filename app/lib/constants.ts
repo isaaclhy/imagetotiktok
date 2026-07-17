@@ -304,7 +304,7 @@ export const ME_OR_YOU_QUESTIONS = [
 ] as const;
 
 /** Google Drive folder for kawaii image-tab batch uploads. */
-export const KAWAII_DRIVE_FOLDER_ID = '1RGLIWrM5Kgnr7T6j7ofRtcTRdIt2WGe7';
+export const KAWAII_DRIVE_FOLDER_ID = '1UqY0kLtlBXLd6q8NGTtK6UYOquoOzmKb';
 
 /** Google Drive folder for Couples Nature (video tab) image uploads. */
 export const COUPLES_NATURE_DRIVE_FOLDER_ID = '1wStPbE2B6QytCh0yKbf7sNMzePwfP9PN';
