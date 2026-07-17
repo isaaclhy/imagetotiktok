@@ -1,7 +1,7 @@
 import { OAuth2Client } from 'google-auth-library';
 
-/** Per-file Drive access (non-sensitive scope — no Google app verification required). */
-export const DRIVE_OAUTH_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+/** Full Drive access so uploads can target existing folders by ID (reconnect after changing). */
+export const DRIVE_OAUTH_SCOPE = 'https://www.googleapis.com/auth/drive';
 const DRIVE_FILES_URL = 'https://www.googleapis.com/drive/v3/files';
 const DRIVE_UPLOAD_URL =
   'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink';
@@ -206,12 +206,44 @@ async function clearDriveFolderContentsWithToken(accessToken: string, folderId: 
   return deleted;
 }
 
+export async function assertDriveFolderAccessible(
+  refreshToken: string,
+  folderIdOverride?: string | null
+): Promise<string> {
+  const accessToken = await getAccessTokenFromRefreshToken(refreshToken);
+  const folderId = resolveDriveFolderId(folderIdOverride);
+  const res = await driveApiRequest(
+    accessToken,
+    `/${folderId}?fields=id,mimeType,name&supportsAllDrives=true`
+  );
+  const data = (await res.json()) as {
+    error?: { message?: string };
+    id?: string;
+    mimeType?: string;
+  };
+  if (!res.ok) {
+    throw new Error(data.error?.message || `Drive folder not found (${res.status})`);
+  }
+  if (data.mimeType && data.mimeType !== DRIVE_FOLDER_MIME) {
+    throw new Error('Drive folder ID does not point to a folder');
+  }
+  return folderId;
+}
+
 export async function clearDriveFolderContents(
   refreshToken: string,
   folderIdOverride?: string | null
 ): Promise<{ deleted: number }> {
   const accessToken = await getAccessTokenFromRefreshToken(refreshToken);
   const folderId = resolveDriveFolderId(folderIdOverride);
+  const metaRes = await driveApiRequest(
+    accessToken,
+    `/${folderId}?fields=id,mimeType&supportsAllDrives=true`
+  );
+  if (!metaRes.ok) {
+    const data = (await metaRes.json()) as { error?: { message?: string } };
+    throw new Error(data.error?.message || `Drive folder not found (${metaRes.status})`);
+  }
   const deleted = await clearDriveFolderContentsWithToken(accessToken, folderId);
   return { deleted };
 }

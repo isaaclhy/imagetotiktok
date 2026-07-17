@@ -2165,7 +2165,17 @@ export default function Home() {
     folderIds: string | readonly string[],
     options?: { kawaiiNumSets?: number }
   ) => {
-    const targets = folderIds.length > 0 ? [...folderIds] : [undefined];
+    // Normalize: a plain string must not be spread (that turns the ID into characters, e.g. "1").
+    const targetFolderId = (() => {
+      if (typeof folderIds === 'string') return folderIds.trim();
+      const ids = folderIds.map((id) => id.trim()).filter(Boolean);
+      return ids[0] ?? '';
+    })();
+    if (!targetFolderId) {
+      alert('Missing Google Drive folder ID for this template.');
+      return;
+    }
+
     setIsImageTemplateUploading(true);
     try {
       const statusRes = await fetch('/api/drive/status');
@@ -2181,19 +2191,17 @@ export default function Home() {
         return;
       }
 
-      for (const folderId of targets) {
-        const clearRes = await fetch('/api/drive/clear-folder', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(folderId ? { folderId } : {}),
-        });
-        const clearData = (await clearRes.json()) as { error?: string };
-        if (!clearRes.ok) {
-          const msg = clearData.error || 'Failed to clear Google Drive folder';
-          if (!/not found/i.test(msg)) {
-            throw new Error(msg);
-          }
-        }
+      const clearRes = await fetch('/api/drive/clear-folder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folderId: targetFolderId }),
+      });
+      const clearData = (await clearRes.json()) as { error?: string };
+      if (!clearRes.ok) {
+        throw new Error(
+          clearData.error ||
+            `Cannot access Drive folder ${targetFolderId}. Reconnect Google Drive and try again.`
+        );
       }
 
       const { entries } =
@@ -2204,32 +2212,15 @@ export default function Home() {
             })
           : await generateImageFrameExportEntries({ templateId });
 
-      const uploadFileToDrive = async (blob: Blob, filename: string, folderId?: string) => {
-        const attemptUpload = async (targetFolderId?: string) => {
-          const formData = new FormData();
-          formData.append('file', blob, filename);
-          if (targetFolderId) formData.append('folderId', targetFolderId);
-          const res = await fetch('/api/drive/upload', { method: 'POST', body: formData });
-          const data = (await res.json()) as { error?: string };
-          return { res, data };
-        };
-
-        const first = await attemptUpload(folderId);
-        if (first.res.ok) return;
-
-        const firstError = first.data.error || `Failed to upload ${filename}`;
-        if (folderId && /not found/i.test(firstError)) {
-          const fallback = await attemptUpload(undefined);
-          if (fallback.res.ok) return;
-          throw new Error(fallback.data.error || `Failed to upload ${filename}`);
-        }
-        throw new Error(firstError);
-      };
-
-      for (const folderId of targets) {
-        for (const { path, blob } of entries) {
-          const filename = path.replace(/\//g, '-');
-          await uploadFileToDrive(blob, filename, folderId);
+      for (const { path, blob } of entries) {
+        const filename = path.replace(/\//g, '-');
+        const formData = new FormData();
+        formData.append('file', blob, filename);
+        formData.append('folderId', targetFolderId);
+        const res = await fetch('/api/drive/upload', { method: 'POST', body: formData });
+        const data = (await res.json()) as { error?: string };
+        if (!res.ok) {
+          throw new Error(data.error || `Failed to upload ${filename}`);
         }
       }
     } catch (e) {
@@ -2278,6 +2269,10 @@ export default function Home() {
 
       const preferredFolderId = COUPLES_NATURE_DRIVE_FOLDER_ID;
       const preferredCleared = await clearDriveFolder(preferredFolderId);
+      const uploadFolderId = preferredCleared ? preferredFolderId : undefined;
+      if (!preferredCleared) {
+        await clearDriveFolder(undefined);
+      }
 
       const title = videoOverlayCaption.trim() || pickRandomDailyFunnyTitle();
       const questions =
@@ -2305,27 +2300,14 @@ export default function Home() {
       }
 
       const filename = `couples-nature-${new Date().toISOString().slice(0, 10)}.mp4`;
-      const attemptUpload = async (targetFolderId?: string) => {
-        const formData = new FormData();
-        formData.append('file', blob, filename);
-        if (targetFolderId) formData.append('folderId', targetFolderId);
-        const res = await fetch('/api/drive/upload', { method: 'POST', body: formData });
-        const data = (await res.json()) as { error?: string };
-        return { res, data };
-      };
-
-      const first = await attemptUpload(preferredFolderId);
-      if (first.res.ok) return;
-
-      const firstError = first.data.error || 'Failed to upload video';
-      if (/not found/i.test(firstError) || !preferredCleared) {
-        // Preferred folder inaccessible — clear default Drive folder, then upload there.
-        await clearDriveFolder(undefined);
-        const fallback = await attemptUpload(undefined);
-        if (fallback.res.ok) return;
-        throw new Error(fallback.data.error || 'Failed to upload video');
+      const formData = new FormData();
+      formData.append('file', blob, filename);
+      if (uploadFolderId) formData.append('folderId', uploadFolderId);
+      const res = await fetch('/api/drive/upload', { method: 'POST', body: formData });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to upload video');
       }
-      throw new Error(firstError);
     } catch (e) {
       console.error('Failed to upload Couples Nature video to Drive:', e);
       const msg = e instanceof Error ? e.message : 'Upload failed';
@@ -2805,11 +2787,13 @@ export default function Home() {
                           style={{ backgroundColor: imageTabFrameBg }}
                         >
                           {isFullBleedImageTabSelected ? (
-                            <img
-                              src={imageSourceForActiveTab}
-                              alt="CTA preview"
-                              className="w-full h-full object-cover"
-                            />
+                            imageSourceForActiveTab ? (
+                              <img
+                                src={imageSourceForActiveTab}
+                                alt="CTA preview"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : null
                           ) : (
                             <>
                               <p
@@ -2823,11 +2807,13 @@ export default function Home() {
                               >
                                 {imageFrameTextForActiveTab}
                               </p>
-                              <img
-                                src={imageSourceForActiveTab}
-                                alt={`Template ${selectedImageTemplateId} preview`}
-                                className="absolute left-1/2 -translate-x-1/2 bottom-[13%] max-w-[48%] max-h-[28%] object-contain"
-                              />
+                              {imageSourceForActiveTab ? (
+                                <img
+                                  src={imageSourceForActiveTab}
+                                  alt={`Template ${selectedImageTemplateId} preview`}
+                                  className="absolute left-1/2 -translate-x-1/2 bottom-[13%] max-w-[48%] max-h-[28%] object-contain"
+                                />
+                              ) : null}
                             </>
                           )}
                         </div>
@@ -3050,7 +3036,7 @@ export default function Home() {
                           <div className="relative w-full max-w-sm mx-auto md:mx-0 aspect-9/16 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden bg-black min-w-0">
                             <video
                               key={template2PlaybackVideoSrc ?? undefined}
-                              src={template2PlaybackVideoSrc ?? undefined}
+                              src={template2PlaybackVideoSrc || undefined}
                               controls
                               playsInline
                               onTimeUpdate={
@@ -3069,7 +3055,7 @@ export default function Home() {
                                   ? { filter: COUPLES_NATURE_VIDEO_FILTER }
                                   : undefined
                               }
-                              poster={template2PlaybackPosterSrc}
+                              poster={template2PlaybackPosterSrc || undefined}
                             />
                             {selectedVideoTemplateId === 2 ? (
                               <div
