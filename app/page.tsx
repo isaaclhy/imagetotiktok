@@ -16,7 +16,25 @@ import {
   COUPLES_NATURE_VIDEO_FILTER,
   VIDEO_TEMPLATE2_PEXELS_QUERIES,
 } from '@/app/lib/constants';
+import {
+  DEFAULT_STUDIO_APP_ID,
+  getImageTemplatesForApp,
+  getVideoTemplatesForApp,
+  resolveStudioAppId,
+  type StudioAppId,
+} from '@/app/lib/apps';
+import {
+  FAB_HEART_MESSAGES,
+  FAB_PAPER_COLORS,
+  fillFabHeartPaperPrompt,
+} from '@/app/lib/fab-prompts';
+import {
+  FAB_NOTES_MAX_DURATION_SEC,
+  FAB_NOTES_PEXELS_QUERIES,
+} from '@/app/lib/fab-video';
+import { exportFabNotesVideo } from '@/app/lib/export-fab-notes-video';
 import { Sidebar } from '@/app/components/Sidebar';
+import { FabNotesOverlay } from '@/app/components/FabNotesOverlay';
 import { InputsCard } from '@/app/components/InputsCard';
 import { PreviewPanel } from '@/app/components/PreviewPanel';
 import { DownloadModal } from '@/app/components/DownloadModal';
@@ -28,6 +46,7 @@ type ContentTab = 'image' | 'video' | 'prompt' | 'automate';
 
 type AppUrlState = {
   contentTab: ContentTab;
+  selectedAppId: StudioAppId;
   selectedImageTemplateId: number | null;
   selectedVideoTemplateId: number | null;
   selectedImageBrowserTab: number;
@@ -63,6 +82,7 @@ function readAppUrlState(): AppUrlState {
   if (typeof window === 'undefined') {
     return {
       contentTab: 'image',
+      selectedAppId: DEFAULT_STUDIO_APP_ID,
       selectedImageTemplateId: null,
       selectedVideoTemplateId: null,
       selectedImageBrowserTab: 0,
@@ -72,13 +92,19 @@ function readAppUrlState(): AppUrlState {
   const params = new URLSearchParams(window.location.search);
   const tabRaw = params.get('tab');
   const contentTab = CONTENT_TABS.includes(tabRaw as ContentTab) ? (tabRaw as ContentTab) : 'image';
+  const appRaw = params.get('app');
+  const selectedAppId = resolveStudioAppId(appRaw);
 
   let selectedImageTemplateId: number | null = null;
   let selectedVideoTemplateId: number | null = null;
   let selectedImageBrowserTab = 0;
 
   if (contentTab === 'image') {
-    selectedImageTemplateId = parsePositiveInt(params.get('imageTemplate'));
+    const imageId = parsePositiveInt(params.get('imageTemplate'));
+    selectedImageTemplateId =
+      imageId !== null && getImageTemplatesForApp(selectedAppId).some((c) => c.id === imageId)
+        ? imageId
+        : null;
     const frameRaw = params.get('frame');
     if (frameRaw !== null) {
       const frame = Number.parseInt(frameRaw, 10);
@@ -87,11 +113,16 @@ function readAppUrlState(): AppUrlState {
   }
 
   if (contentTab === 'video') {
-    selectedVideoTemplateId = parsePositiveInt(params.get('videoTemplate'));
+    const videoId = parsePositiveInt(params.get('videoTemplate'));
+    selectedVideoTemplateId =
+      videoId !== null && getVideoTemplatesForApp(selectedAppId).some((c) => c.id === videoId)
+        ? videoId
+        : null;
   }
 
   return {
     contentTab,
+    selectedAppId,
     selectedImageTemplateId,
     selectedVideoTemplateId,
     selectedImageBrowserTab,
@@ -103,6 +134,7 @@ function syncAppUrlState(state: AppUrlState) {
 
   const params = new URLSearchParams(window.location.search);
   params.set('tab', state.contentTab);
+  params.set('app', state.selectedAppId);
   params.delete('imageTemplate');
   params.delete('frame');
   params.delete('videoTemplate');
@@ -654,26 +686,6 @@ const INITIAL_CANVASES: CanvasData[] = [
   { id: 'end', text: '', backgroundColor: '#000000', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' },
 ];
 
-type VideoTemplateCard = {
-  id: number;
-  title: string;
-  subtitle: string;
-  coverSrc?: string;
-  videoSrc?: string;
-};
-
-const VIDEO_TEMPLATE_CARDS: VideoTemplateCard[] = [
-  {
-    id: 2,
-    title: 'Couples Nature',
-    subtitle: '',
-    coverSrc: '/video-templates/template-2-cover.jpg',
-    videoSrc: '/video-template-2/15402243_2160_3840_30fps.mp4',
-  },
-  { id: 3, title: 'Template 3', subtitle: '' },
-  { id: 4, title: 'Template 4', subtitle: '' },
-];
-
 const DAILY_TEMPLATE_TITLES_FUNNY = [
   "5 Impossible Questions To Tease Your Boyfriend Tonight",
   "5 Questions To Ask Your Sweet Heart Tonight",
@@ -783,6 +795,7 @@ export default function Home() {
   const [theme, setTheme] = useState<string>('');
   const [mode, setMode] = useState<'plain' | 'video'>('video');
   const [contentTab, setContentTab] = useState<ContentTab>('image');
+  const [selectedAppId, setSelectedAppId] = useState<StudioAppId>(DEFAULT_STUDIO_APP_ID);
   const [selectedImageTemplateId, setSelectedImageTemplateId] = useState<number | null>(null);
   const [selectedVideoTemplateId, setSelectedVideoTemplateId] = useState<number | null>(null);
   /** TikTok-style overlay on video templates (white fill, black stroke). */
@@ -861,16 +874,37 @@ export default function Home() {
   const firstCardTextValue = canvases.find((c) => c.id === '1')?.text || '';
   const prevFirstCardTextRef = useRef(firstCardTextValue);
 
+  const imageTemplateCards = getImageTemplatesForApp(selectedAppId);
+  const videoTemplateCards = getVideoTemplatesForApp(selectedAppId);
+  const isKawaiiImageTemplate = selectedAppId === 'spill-it' && selectedImageTemplateId === 1;
+  const isCouplesNatureVideoTemplate = selectedAppId === 'spill-it' && selectedVideoTemplateId === 2;
+  const isSpillItNotesVideoTemplate = selectedAppId === 'spill-it' && selectedVideoTemplateId === 3;
+  const usesPexelsVideoBackground = isCouplesNatureVideoTemplate || isSpillItNotesVideoTemplate;
+
+  const handleSelectedAppIdChange = (appId: StudioAppId) => {
+    if (appId === selectedAppId) return;
+    setSelectedAppId(appId);
+    setSelectedImageTemplateId(null);
+    setSelectedVideoTemplateId(null);
+    setSelectedImageBrowserTab(0);
+    setAutomateDailyResults(null);
+    setAutomateDailyRowPrompts(null);
+    setAutomateDailyRowQuestions(null);
+    setAutomateDailyTemplatePrompt(null);
+    setAutomateDailyTemplatePromptRaw(null);
+    setAutomateDailyTemplateReplacementText(null);
+    setAutomateDailyVideoTitle(null);
+    setAutomateDailyTitle(null);
+  };
+
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     const urlState = readAppUrlState();
     setContentTab(urlState.contentTab);
+    setSelectedAppId(urlState.selectedAppId);
     setSelectedImageTemplateId(urlState.selectedImageTemplateId);
-    const videoId = urlState.selectedVideoTemplateId;
-    setSelectedVideoTemplateId(
-      videoId !== null && VIDEO_TEMPLATE_CARDS.some((c) => c.id === videoId) ? videoId : null
-    );
+    setSelectedVideoTemplateId(urlState.selectedVideoTemplateId);
     setSelectedImageBrowserTab(urlState.selectedImageBrowserTab);
     setUrlReady(true);
   }, []);
@@ -879,17 +913,25 @@ export default function Home() {
     if (!urlReady) return;
     syncAppUrlState({
       contentTab,
+      selectedAppId,
       selectedImageTemplateId,
       selectedVideoTemplateId,
       selectedImageBrowserTab,
     });
-  }, [urlReady, contentTab, selectedImageTemplateId, selectedVideoTemplateId, selectedImageBrowserTab]);
+  }, [
+    urlReady,
+    contentTab,
+    selectedAppId,
+    selectedImageTemplateId,
+    selectedVideoTemplateId,
+    selectedImageBrowserTab,
+  ]);
 
   useEffect(() => {
-    if (selectedImageTemplateId === 1 && selectedImageBrowserTab > 6) {
+    if (isKawaiiImageTemplate && selectedImageBrowserTab > 6) {
       setSelectedImageBrowserTab(0);
     }
-  }, [selectedImageTemplateId, selectedImageBrowserTab]);
+  }, [isKawaiiImageTemplate, selectedImageBrowserTab]);
 
   const regenerateVideoTemplate2Title = () => {
     setVideoOverlayCaption((current) => pickRandomDailyFunnyTitle(current));
@@ -898,6 +940,15 @@ export default function Home() {
   const regenerateVideoTemplate2Content = () => {
     regenerateVideoTemplate2Title();
     setVideoTemplate2Questions(pickRandomFunnyQuestions(7));
+  };
+
+  const regenerateFabNotesTitle = () => {
+    setVideoOverlayCaption((current) => pickRandomDailyFunnyTitle(current));
+  };
+
+  const regenerateFabNotesContent = () => {
+    regenerateFabNotesTitle();
+    setVideoTemplate2Questions(pickRandomFunnyQuestions(5));
   };
 
   const updateVideoTemplate2Question = (index: number, value: string) => {
@@ -913,8 +964,10 @@ export default function Home() {
     setIsVideoTemplate2VideoLoading(true);
     setVideoTemplate2VideoError(null);
     try {
-      const query =
-        VIDEO_TEMPLATE2_PEXELS_QUERIES[Math.floor(Math.random() * VIDEO_TEMPLATE2_PEXELS_QUERIES.length)]!;
+      const queryPool = isSpillItNotesVideoTemplate
+        ? FAB_NOTES_PEXELS_QUERIES
+        : VIDEO_TEMPLATE2_PEXELS_QUERIES;
+      const query = queryPool[Math.floor(Math.random() * queryPool.length)]!;
       const page = 1 + Math.floor(Math.random() * 15);
       const res = await fetch(
         `/api/pexels/random-video?query=${encodeURIComponent(query)}&page=${page}`
@@ -933,15 +986,18 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if (selectedVideoTemplateId === 2) {
+    if (isCouplesNatureVideoTemplate) {
       regenerateVideoTemplate2Content();
+      void handleRegenerateVideoTemplate2Video();
+    } else if (isSpillItNotesVideoTemplate) {
+      regenerateFabNotesContent();
       void handleRegenerateVideoTemplate2Video();
     } else {
       setVideoTemplate2PexelsVideoSrc(null);
       setVideoTemplate2PexelsPosterSrc(null);
       setVideoTemplate2VideoError(null);
     }
-  }, [selectedVideoTemplateId]);
+  }, [isCouplesNatureVideoTemplate, isSpillItNotesVideoTemplate, selectedVideoTemplateId]);
 
   useEffect(() => {
     if (mode !== 'video') {
@@ -1178,6 +1234,73 @@ export default function Home() {
   const handleGenerateDailyTikTok = async () => {
     setIsGeneratingDailyTikTok(true);
     try {
+      if (selectedAppId === 'fab') {
+        setAutomateDailyTemplatePromptRaw(null);
+        setAutomateDailyTemplatePrompt(null);
+        setAutomateDailyTemplateReplacementText(null);
+
+        let selectedMessagesThisRun: string[] | null = null;
+
+        if (dailyGenIncludeQuestions) {
+          const colors = shuffle([...FAB_PAPER_COLORS]).slice(0, 5);
+          const messages = shuffle([...FAB_HEART_MESSAGES]).slice(0, 5);
+          // Pad if pools were somehow short (shouldn't happen with 20 each).
+          while (colors.length < 5) colors.push(pickRandom(FAB_PAPER_COLORS));
+          while (messages.length < 5) messages.push(pickRandom(FAB_HEART_MESSAGES));
+
+          const results = colors.map((color, i) =>
+            fillFabHeartPaperPrompt(color, messages[i]!)
+          );
+          selectedMessagesThisRun = messages;
+          // Store paper color in the "prompt" slot and affirmation in the "question" slot for retries.
+          setAutomateDailyResults(results);
+          setAutomateDailyRowPrompts(colors);
+          setAutomateDailyRowQuestions(messages);
+        }
+
+        const questionsForApi =
+          selectedMessagesThisRun && selectedMessagesThisRun.length === 5
+            ? selectedMessagesThisRun.join('\n')
+            : automateDailyRowQuestions && automateDailyRowQuestions.length === 5
+              ? automateDailyRowQuestions.join('\n')
+              : '';
+
+        if (dailyGenIncludeTitle && questionsForApi) {
+          try {
+            const videoTitleRes = await fetch('/api/openai/daily-video-title', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ questions: questionsForApi }),
+            });
+            const videoTitleData = await videoTitleRes.json();
+            if (videoTitleRes.ok && typeof videoTitleData?.text === 'string') {
+              setAutomateDailyVideoTitle(videoTitleData.text.trim());
+            }
+          } catch {
+            // keep previous title
+          }
+        }
+
+        if (dailyGenIncludeCaption && questionsForApi) {
+          try {
+            const captionRes = await fetch('/api/openai/daily-title', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ questions: questionsForApi }),
+            });
+            const captionData = await captionRes.json();
+            if (captionRes.ok && typeof captionData?.text === 'string') {
+              setAutomateDailyTitle(captionData.text.trim());
+            }
+          } catch {
+            // keep previous caption
+          }
+        }
+
+        setAutomateDailyIndex(0);
+        return;
+      }
+
       const questionPool =
         automateQuestionType === 'me_or_you'
           ? ME_OR_YOU_QUESTIONS
@@ -1406,6 +1529,46 @@ export default function Home() {
   };
 
   const handleRetryDailyItem = (index: number) => {
+    if (selectedAppId === 'fab') {
+      if (
+        !automateDailyRowPrompts ||
+        !automateDailyRowQuestions ||
+        automateDailyRowPrompts.length !== 5 ||
+        automateDailyRowQuestions.length !== 5
+      ) {
+        setAutomateDailyResults((prev) => {
+          if (!prev) return prev;
+          const next = [...prev];
+          next[index] = fillFabHeartPaperPrompt(
+            pickRandom(FAB_PAPER_COLORS),
+            pickRandom(FAB_HEART_MESSAGES)
+          );
+          return next;
+        });
+        return;
+      }
+      const usedColors = new Set(automateDailyRowPrompts.filter((_, i) => i !== index));
+      const usedMessages = new Set(automateDailyRowQuestions.filter((_, i) => i !== index));
+      const colorCandidates = FAB_PAPER_COLORS.filter((c) => !usedColors.has(c));
+      const messageCandidates = FAB_HEART_MESSAGES.filter((m) => !usedMessages.has(m));
+      const color = colorCandidates.length > 0 ? pickRandom(colorCandidates) : pickRandom(FAB_PAPER_COLORS);
+      const message =
+        messageCandidates.length > 0 ? pickRandom(messageCandidates) : pickRandom(FAB_HEART_MESSAGES);
+      const nextColors = [...automateDailyRowPrompts];
+      const nextMessages = [...automateDailyRowQuestions];
+      nextColors[index] = color;
+      nextMessages[index] = message;
+      setAutomateDailyRowPrompts(nextColors);
+      setAutomateDailyRowQuestions(nextMessages);
+      setAutomateDailyResults((prev) => {
+        if (!prev) return prev;
+        const next = [...prev];
+        next[index] = fillFabHeartPaperPrompt(color, message);
+        return next;
+      });
+      return;
+    }
+
     const questionPool =
       automateQuestionType === 'me_or_you'
         ? ME_OR_YOU_QUESTIONS
@@ -1461,6 +1624,25 @@ export default function Home() {
     ) {
       return;
     }
+
+    if (selectedAppId === 'fab') {
+      const currentMessage = automateDailyRowQuestions[index]!;
+      const usedColors = new Set(automateDailyRowPrompts.filter((_, i) => i !== index));
+      usedColors.add(automateDailyRowPrompts[index]!);
+      const colorCandidates = FAB_PAPER_COLORS.filter((c) => !usedColors.has(c));
+      const color = colorCandidates.length > 0 ? pickRandom(colorCandidates) : pickRandom(FAB_PAPER_COLORS);
+      const nextColors = [...automateDailyRowPrompts];
+      nextColors[index] = color;
+      setAutomateDailyRowPrompts(nextColors);
+      setAutomateDailyResults((prev) => {
+        if (!prev) return prev;
+        const next = [...prev];
+        next[index] = fillFabHeartPaperPrompt(color, currentMessage);
+        return next;
+      });
+      return;
+    }
+
     const currentQuestion = automateDailyRowQuestions[index]!;
     const usedPrompts = new Set(automateDailyRowPrompts.filter((_, i) => i !== index));
     usedPrompts.add(automateDailyRowPrompts[index]!);
@@ -1495,18 +1677,15 @@ export default function Home() {
     setAutomateDailyResults((prev) => {
       if (!prev) return prev;
       const next = [...prev];
-      next[index] = prompt.replace(/\{x\}/g, currentQuestion);
+      next[index] =
+        selectedAppId === 'fab'
+          ? fillFabHeartPaperPrompt(prompt, currentQuestion)
+          : prompt.replace(/\{x\}/g, currentQuestion);
       return next;
     });
   };
 
   const handleRetryDailyQuestionOnly = (index: number) => {
-    const questionPool =
-      automateQuestionType === 'me_or_you'
-        ? ME_OR_YOU_QUESTIONS
-        : automateQuestionType === 'flirty'
-          ? FLIRTY_QUESTIONS
-          : FUNNY_QUESTIONS;
     if (
       !automateDailyRowPrompts ||
       !automateDailyRowQuestions ||
@@ -1515,6 +1694,32 @@ export default function Home() {
     ) {
       return;
     }
+
+    if (selectedAppId === 'fab') {
+      const currentColor = automateDailyRowPrompts[index]!;
+      const usedMessages = new Set(automateDailyRowQuestions.filter((_, i) => i !== index));
+      usedMessages.add(automateDailyRowQuestions[index]!);
+      const messageCandidates = FAB_HEART_MESSAGES.filter((m) => !usedMessages.has(m));
+      const message =
+        messageCandidates.length > 0 ? pickRandom(messageCandidates) : pickRandom(FAB_HEART_MESSAGES);
+      const nextMessages = [...automateDailyRowQuestions];
+      nextMessages[index] = message;
+      setAutomateDailyRowQuestions(nextMessages);
+      setAutomateDailyResults((prev) => {
+        if (!prev) return prev;
+        const next = [...prev];
+        next[index] = fillFabHeartPaperPrompt(currentColor, message);
+        return next;
+      });
+      return;
+    }
+
+    const questionPool =
+      automateQuestionType === 'me_or_you'
+        ? ME_OR_YOU_QUESTIONS
+        : automateQuestionType === 'flirty'
+          ? FLIRTY_QUESTIONS
+          : FUNNY_QUESTIONS;
     const currentPrompt = automateDailyRowPrompts[index]!;
     const usedQuestions = new Set(automateDailyRowQuestions.filter((_, i) => i !== index));
     usedQuestions.add(automateDailyRowQuestions[index]!);
@@ -1548,7 +1753,10 @@ export default function Home() {
     setAutomateDailyResults((prev) => {
       if (!prev) return prev;
       const next = [...prev];
-      next[index] = currentPrompt.replace(/\{x\}/g, question);
+      next[index] =
+        selectedAppId === 'fab'
+          ? fillFabHeartPaperPrompt(currentPrompt, question)
+          : currentPrompt.replace(/\{x\}/g, question);
       return next;
     });
   };
@@ -1892,17 +2100,12 @@ export default function Home() {
     musicUsageConsent &&
     !(contentDisclosureEnabled && !isYourBrand && !isBrandedContent) &&
     !(contentDisclosureEnabled && isBrandedContent && postPrivacy === 'SELF_ONLY');
-  const imageTemplateCards = Array.from({ length: 3 }, (_, i) => ({
-    id: i === 0 ? 1 : i + 1,
-    title: i === 0 ? 'Kawaii' : `Template ${i + 1}`,
-    subtitle: '',
-  }));
-  const imageFrameTitleLine1 = 'Questions to ask your';
+const imageFrameTitleLine1 = 'Questions to ask your';
   const imageFrameTitleLine2 = 'boyfriend tonight <3';
   const imageFrameCtaText = 'Remember to like, save and share the fun!';
   const regenerateImageTemplateContent = (templateId?: number) => {
     const tid = templateId ?? selectedImageTemplateId;
-    const isKawaii = tid === 1;
+    const isKawaii = selectedAppId === 'spill-it' && tid === 1;
     setSelectedImageBrowserTab(0);
     const picked = [...FUNNY_QUESTIONS].sort(() => Math.random() - 0.5).slice(0, 5);
     setImageTabFunnyQuestions(picked);
@@ -1937,18 +2140,18 @@ export default function Home() {
   const imageTemplateTabCount = 7;
   const activeVideoTemplate =
     contentTab === 'video' && selectedVideoTemplateId !== null
-      ? VIDEO_TEMPLATE_CARDS.find((c) => c.id === selectedVideoTemplateId)
+      ? videoTemplateCards.find((c) => c.id === selectedVideoTemplateId)
       : undefined;
   const template2PlaybackVideoSrc =
-    selectedVideoTemplateId === 2
+    usesPexelsVideoBackground
       ? (videoTemplate2PexelsVideoSrc ?? activeVideoTemplate?.videoSrc ?? null)
       : (activeVideoTemplate?.videoSrc ?? null);
   const template2PlaybackPosterSrc =
-    selectedVideoTemplateId === 2
+    usesPexelsVideoBackground
       ? (videoTemplate2PexelsPosterSrc ?? activeVideoTemplate?.coverSrc)
       : activeVideoTemplate?.coverSrc;
   const template2ExportVideoSrc =
-    selectedVideoTemplateId === 2 && videoTemplate2PexelsVideoSrc
+    usesPexelsVideoBackground && videoTemplate2PexelsVideoSrc
       ? pexelsVideoProxySrc(videoTemplate2PexelsVideoSrc)
       : (activeVideoTemplate?.videoSrc ?? null);
 
@@ -2205,7 +2408,7 @@ export default function Home() {
       }
 
       const { entries } =
-        templateId === 1
+        selectedAppId === 'spill-it' && templateId === 1
           ? await generateImageFrameExportEntries({
               kawaiiNumSets: options?.kawaiiNumSets ?? 1,
               templateId,
@@ -2232,7 +2435,7 @@ export default function Home() {
   };
 
   const handleUploadCouplesNatureVideoToFolder = async () => {
-    if (selectedVideoTemplateId !== 2) return;
+    if (!isCouplesNatureVideoTemplate) return;
 
     setVideoExportError(null);
     setIsImageTemplateUploading(true);
@@ -2320,7 +2523,7 @@ export default function Home() {
   };
 
   const handleConfirmVideoDownload = async (count: number) => {
-    if (selectedVideoTemplateId !== 2) return;
+    if (!isCouplesNatureVideoTemplate) return;
 
     setVideoExportError(null);
     setIsVideoExporting(true);
@@ -2399,10 +2602,61 @@ export default function Home() {
 
   const handleDownloadVideoTemplate = async () => {
     if (!activeVideoTemplate || selectedVideoTemplateId === null) return;
-    if (selectedVideoTemplateId === 2) {
+    if (isCouplesNatureVideoTemplate) {
       setShowVideoDownloadModal(true);
       return;
     }
+
+    if (isSpillItNotesVideoTemplate) {
+      setVideoExportError(null);
+      const videoSrc = template2ExportVideoSrc ?? template2PlaybackVideoSrc;
+      if (!videoSrc) {
+        setVideoExportError('No video available to export. Wait for the background to load, then try again.');
+        return;
+      }
+      const title = videoOverlayCaption.trim() || pickRandomDailyFunnyTitle();
+      const questions =
+        videoTemplate2Questions.filter((q) => q.trim()).length > 0
+          ? videoTemplate2Questions.filter((q) => q.trim()).slice(0, 5)
+          : pickRandomFunnyQuestions(5);
+      setIsVideoExporting(true);
+      try {
+        const recordedBlob = await exportFabNotesVideo(
+          videoSrc,
+          title,
+          questions,
+          FAB_NOTES_MAX_DURATION_SEC
+        );
+        let blob = recordedBlob;
+        let extension = recordedBlob.type.includes('mp4') ? 'mp4' : 'webm';
+        if (!recordedBlob.type.includes('mp4')) {
+          try {
+            blob = await transcodeWebmToMp4(recordedBlob);
+            extension = 'mp4';
+          } catch (transcodeErr) {
+            console.warn(
+              'MP4 transcode unavailable (often Turbopack + ffmpeg.wasm). Downloading WebM instead.',
+              transcodeErr
+            );
+          }
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `iphone-notes-${new Date().toISOString().slice(0, 10)}.${extension}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.setTimeout(() => URL.revokeObjectURL(url), 2500);
+      } catch (e) {
+        console.error('Failed to export Fab Notes video:', e);
+        setVideoExportError(e instanceof Error ? e.message : 'Export failed');
+      } finally {
+        setIsVideoExporting(false);
+      }
+      return;
+    }
+
     setVideoExportError(null);
     const baseName =
       activeVideoTemplate.title
@@ -2414,17 +2668,17 @@ export default function Home() {
         const captionTrimmed = videoOverlayCaption.trim();
         const shouldBurnCaption =
           captionTrimmed ||
-          (selectedVideoTemplateId === 2 && videoTemplate2Questions.length > 0);
+          (isCouplesNatureVideoTemplate && videoTemplate2Questions.length > 0);
         if (shouldBurnCaption) {
           setIsVideoExporting(true);
           try {
             const exportSrc = template2ExportVideoSrc ?? template2PlaybackVideoSrc;
             const recordedBlob = await exportVideoWithCaptionOverlay(exportSrc, captionTrimmed, {
-              position: selectedVideoTemplateId === 2 ? 'top' : 'center',
-              style: selectedVideoTemplateId === 2 ? 'natural' : 'stroke',
-              numberedQuestions: selectedVideoTemplateId === 2 ? videoTemplate2Questions : undefined,
+              position: isCouplesNatureVideoTemplate ? 'top' : 'center',
+              style: isCouplesNatureVideoTemplate ? 'natural' : 'stroke',
+              numberedQuestions: isCouplesNatureVideoTemplate ? videoTemplate2Questions : undefined,
               maxDurationSec:
-                selectedVideoTemplateId === 2 ? VIDEO_TEMPLATE2_MAX_DURATION_SEC : undefined,
+                isCouplesNatureVideoTemplate ? VIDEO_TEMPLATE2_MAX_DURATION_SEC : undefined,
             });
             const blob =
               recordedBlob.type.includes('mp4') ? recordedBlob : await transcodeWebmToMp4(recordedBlob);
@@ -2480,6 +2734,8 @@ export default function Home() {
       <Sidebar
         contentTab={contentTab}
         onContentTabChange={setContentTab}
+        selectedAppId={selectedAppId}
+        onSelectedAppIdChange={handleSelectedAppIdChange}
         userInfo={userInfo}
         showUserDropdown={showUserDropdown}
         setShowUserDropdown={setShowUserDropdown}
@@ -2546,6 +2802,7 @@ export default function Home() {
                 setDailyGenIncludeCaption={setDailyGenIncludeCaption}
                 dailyGenIncludeCoverImage={dailyGenIncludeCoverImage}
                 setDailyGenIncludeCoverImage={setDailyGenIncludeCoverImage}
+                selectedAppId={selectedAppId}
               />
             )}
             {contentTab === 'prompt' && (
@@ -2577,13 +2834,17 @@ export default function Home() {
                 automateDailyPrompts={contentTab === 'prompt' ? automateDailyRowPrompts : undefined}
                 automateDailyQuestions={contentTab === 'prompt' ? automateDailyRowQuestions : undefined}
                 automateQuestionOptions={
-                  automateQuestionType === 'me_or_you'
-                    ? [...ME_OR_YOU_QUESTIONS]
-                    : automateQuestionType === 'flirty'
-                      ? [...FLIRTY_QUESTIONS]
-                      : [...FUNNY_QUESTIONS]
+                  selectedAppId === 'fab'
+                    ? [...FAB_HEART_MESSAGES]
+                    : automateQuestionType === 'me_or_you'
+                      ? [...ME_OR_YOU_QUESTIONS]
+                      : automateQuestionType === 'flirty'
+                        ? [...FLIRTY_QUESTIONS]
+                        : [...FUNNY_QUESTIONS]
                 }
-                automatePromptOptions={[...PROMPTS]}
+                automatePromptOptions={
+                  selectedAppId === 'fab' ? [...FAB_PAPER_COLORS] : [...PROMPTS]
+                }
                 automateTemplateQuestionOptions={[...templateTitlePool]}
                 onSetDailyQuestion={handleSetDailyQuestionAtIndex}
                 onRetryTemplatePrompt={handleRetryTemplatePrompt}
@@ -2621,9 +2882,13 @@ export default function Home() {
                   <>
                     <div className="mb-4">
                       <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Pick a template</h2>
-                      <p className="text-sm text-zinc-500 dark:text-zinc-400">Select one to start. Placeholder templates for now.</p>
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                        {imageTemplateCards.length === 0
+                          ? 'No image templates for this app yet.'
+                          : 'Select one to start.'}
+                      </p>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                       {imageTemplateCards.map((card) => (
                         <button
                           key={card.id}
@@ -2635,7 +2900,7 @@ export default function Home() {
                           className="group rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 p-2 md:p-3 text-left hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                         >
                           <div className="aspect-3/4 w-full rounded-lg mb-3 overflow-hidden">
-                            {card.id === 1 ? (
+                            {selectedAppId === 'spill-it' && card.id === 1 ? (
                               <div
                                 className="w-full h-full relative"
                                 style={{ backgroundColor: '#FEFEFE' }}
@@ -2675,7 +2940,7 @@ export default function Home() {
                         Template {selectedImageTemplateId}
                       </p>
                       <div className="order-2 ml-auto flex w-full sm:w-auto flex-col sm:flex-row gap-2 sm:items-center sm:justify-end">
-                        {selectedImageTemplateId === 1 ? (
+                        {isKawaiiImageTemplate ? (
                           <button
                             type="button"
                             onClick={() => regenerateImageTemplateContent(selectedImageTemplateId!)}
@@ -2720,7 +2985,7 @@ export default function Home() {
                             'Download'
                           )}
                         </button>
-                        {selectedImageTemplateId === 1 ? (
+                        {isKawaiiImageTemplate ? (
                           <button
                             type="button"
                             onClick={() =>
@@ -2868,10 +3133,14 @@ export default function Home() {
                   <>
                     <div className="mb-4">
                       <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Pick a template</h2>
-                      <p className="text-sm text-zinc-500 dark:text-zinc-400">Blank placeholders for now.</p>
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                        {videoTemplateCards.length === 0
+                          ? 'No video templates for this app yet.'
+                          : 'Select one to start.'}
+                      </p>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-                      {VIDEO_TEMPLATE_CARDS.map((card) => (
+                      {videoTemplateCards.map((card) => (
                         <button
                           key={card.id}
                           type="button"
@@ -2903,7 +3172,7 @@ export default function Home() {
                         {activeVideoTemplate?.title ?? `Template ${selectedVideoTemplateId}`}
                       </p>
                       <div className="order-2 ml-auto flex w-full sm:w-auto flex-col sm:flex-row gap-2">
-                        {selectedVideoTemplateId === 2 ? (
+                        {usesPexelsVideoBackground ? (
                           <button
                             type="button"
                             onClick={handleRegenerateVideoTemplate2Video}
@@ -2944,8 +3213,8 @@ export default function Home() {
                           type="button"
                           onClick={handleDownloadVideoTemplate}
                           disabled={
-                            (selectedVideoTemplateId === 2
-                              ? isVideoExporting
+                            (usesPexelsVideoBackground
+                              ? isVideoExporting || isVideoTemplate2VideoLoading || !template2PlaybackVideoSrc
                               : (!template2PlaybackVideoSrc && !activeVideoTemplate?.coverSrc) ||
                                 isVideoExporting)
                           }
@@ -2984,7 +3253,7 @@ export default function Home() {
                             'Download'
                           )}
                         </button>
-                        {selectedVideoTemplateId === 2 ? (
+                        {isCouplesNatureVideoTemplate ? (
                           <button
                             type="button"
                             onClick={() => void handleUploadCouplesNatureVideoToFolder()}
@@ -3031,19 +3300,25 @@ export default function Home() {
                       </p>
                     ) : null}
                     <div className="p-3 sm:p-4 md:p-6 w-full min-w-0 max-w-full box-border">
-                      {activeVideoTemplate?.videoSrc || template2PlaybackVideoSrc ? (
+                      {activeVideoTemplate?.videoSrc ||
+                      template2PlaybackVideoSrc ||
+                      usesPexelsVideoBackground ? (
                         <div className="flex flex-col md:flex-row items-start gap-4 min-w-0 w-full">
                           <div className="relative w-full max-w-sm mx-auto md:mx-0 aspect-9/16 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden bg-black min-w-0">
-                            <video
+                            {template2PlaybackVideoSrc ? (
+                              <video
                               key={template2PlaybackVideoSrc ?? undefined}
                               src={template2PlaybackVideoSrc || undefined}
                               controls
                               playsInline
                               onTimeUpdate={
-                                selectedVideoTemplateId === 2
+                                usesPexelsVideoBackground
                                   ? (e) => {
                                       const el = e.currentTarget;
-                                      if (el.currentTime >= VIDEO_TEMPLATE2_MAX_DURATION_SEC) {
+                                      const maxSec = isSpillItNotesVideoTemplate
+                                        ? FAB_NOTES_MAX_DURATION_SEC
+                                        : VIDEO_TEMPLATE2_MAX_DURATION_SEC;
+                                      if (el.currentTime >= maxSec) {
                                         el.currentTime = 0;
                                       }
                                     }
@@ -3051,21 +3326,33 @@ export default function Home() {
                               }
                               className="absolute inset-0 z-0 h-full w-full min-w-0 object-cover"
                               style={
-                                selectedVideoTemplateId === 2
+                                isCouplesNatureVideoTemplate
                                   ? { filter: COUPLES_NATURE_VIDEO_FILTER }
                                   : undefined
                               }
                               poster={template2PlaybackPosterSrc || undefined}
                             />
-                            {selectedVideoTemplateId === 2 ? (
+                            ) : (
+                              <div className="absolute inset-0 z-0 flex items-center justify-center bg-zinc-900">
+                                <p className="text-xs text-zinc-400">
+                                  {isVideoTemplate2VideoLoading ? 'Loading video…' : 'No video yet'}
+                                </p>
+                              </div>
+                            )}
+                            {isCouplesNatureVideoTemplate ? (
                               <div
                                 className="absolute inset-0 z-5 bg-black/40 pointer-events-none"
                                 aria-hidden
                               />
                             ) : null}
-                            {(videoOverlayCaption.trim() ||
-                              (selectedVideoTemplateId === 2 && videoTemplate2Questions.length > 0)) ? (
-                              selectedVideoTemplateId === 2 ? (
+                            {isSpillItNotesVideoTemplate ? (
+                              <FabNotesOverlay
+                                title={videoOverlayCaption}
+                                questions={videoTemplate2Questions}
+                              />
+                            ) : (videoOverlayCaption.trim() ||
+                              (isCouplesNatureVideoTemplate && videoTemplate2Questions.length > 0)) ? (
+                              isCouplesNatureVideoTemplate ? (
                                 <div className="absolute inset-x-0 top-[16%] z-10 flex flex-col items-center px-8 pointer-events-none sm:px-10">
                                   {videoOverlayCaption.trim() ? (
                                     <p
@@ -3123,13 +3410,19 @@ export default function Home() {
                             <div>
                               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                                 <label className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
-                                  {selectedVideoTemplateId === 2 ? 'Title text' : 'Frame text'}
+                                  {isCouplesNatureVideoTemplate || isSpillItNotesVideoTemplate
+                                    ? 'Title text'
+                                    : 'Frame text'}
                                 </label>
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    if (selectedVideoTemplateId === 2) {
+                                    if (isCouplesNatureVideoTemplate) {
                                       regenerateVideoTemplate2Title();
+                                      return;
+                                    }
+                                    if (isSpillItNotesVideoTemplate) {
+                                      regenerateFabNotesTitle();
                                       return;
                                     }
                                     const pool = [...FUNNY_QUESTIONS];
@@ -3142,7 +3435,9 @@ export default function Home() {
                                   }}
                                   className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                                 >
-                                  {selectedVideoTemplateId === 2 ? 'Retry' : 'Random question'}
+                                  {isCouplesNatureVideoTemplate || isSpillItNotesVideoTemplate
+                                    ? 'Retry'
+                                    : 'Random question'}
                                 </button>
                               </div>
                               <input
@@ -3153,13 +3448,28 @@ export default function Home() {
                                 className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-zinc-400"
                               />
                             </div>
-                            {selectedVideoTemplateId === 2 ? (
+                            {isCouplesNatureVideoTemplate || isSpillItNotesVideoTemplate ? (
                               <div>
-                                <label className="mb-2 block text-xs font-medium text-zinc-600 dark:text-zinc-300">
-                                  Questions
-                                </label>
+                                <div className="mb-2 flex items-center justify-between gap-2">
+                                  <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                                    Questions
+                                  </label>
+                                  {isSpillItNotesVideoTemplate ? (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setVideoTemplate2Questions(pickRandomFunnyQuestions(5))
+                                      }
+                                      className="text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                    >
+                                      Retry
+                                    </button>
+                                  ) : null}
+                                </div>
                                 <div className="space-y-2">
-                                  {Array.from({ length: 7 }, (_, i) => (
+                                  {Array.from(
+                                    { length: isSpillItNotesVideoTemplate ? 5 : 7 },
+                                    (_, i) => (
                                     <div key={i}>
                                       <label className="mb-1 block text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
                                         Q{i + 1}
@@ -3172,7 +3482,8 @@ export default function Home() {
                                         className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-zinc-400"
                                       />
                                     </div>
-                                  ))}
+                                  )
+                                  )}
                                 </div>
                               </div>
                             ) : null}

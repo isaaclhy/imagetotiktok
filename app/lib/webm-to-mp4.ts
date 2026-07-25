@@ -11,14 +11,21 @@ async function getFfmpeg(): Promise<FFmpeg> {
   if (!ffmpegLoadPromise) {
     ffmpegLoadPromise = (async () => {
       const ffmpeg = new FFmpeg();
-      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.10/dist/esm';
+      const coreBaseURL = 'https://unpkg.com/@ffmpeg/core@0.12.10/dist/esm';
+      const ffmpegBaseURL = 'https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm';
+      // Pass an absolute classWorkerURL so Turbopack does not try to analyze
+      // `new Worker(new URL(variable, import.meta.url))` inside @ffmpeg/ffmpeg.
       await ffmpeg.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        coreURL: await toBlobURL(`${coreBaseURL}/ffmpeg-core.js`, 'text/javascript'),
+        wasmURL: await toBlobURL(`${coreBaseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        classWorkerURL: await toBlobURL(`${ffmpegBaseURL}/worker.js`, 'text/javascript'),
       });
       ffmpegInstance = ffmpeg;
       return ffmpeg;
-    })();
+    })().catch((err) => {
+      ffmpegLoadPromise = null;
+      throw err;
+    });
   }
   return ffmpegLoadPromise;
 }

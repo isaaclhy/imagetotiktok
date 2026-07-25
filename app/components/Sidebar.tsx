@@ -2,10 +2,13 @@
 
 import { useEffect } from 'react';
 import { SettingsMenuPanel } from '@/app/components/SettingsMenuPanel';
+import { STUDIO_APPS, type StudioAppId } from '@/app/lib/apps';
 
 interface SidebarProps {
   contentTab: 'image' | 'video' | 'prompt' | 'automate';
   onContentTabChange: (tab: 'image' | 'video' | 'prompt' | 'automate') => void;
+  selectedAppId: StudioAppId;
+  onSelectedAppIdChange: (appId: StudioAppId) => void;
   userInfo: { display_name?: string; avatar_url?: string } | null;
   showUserDropdown: boolean;
   setShowUserDropdown: (v: boolean) => void;
@@ -17,6 +20,8 @@ interface SidebarProps {
 export function Sidebar({
   contentTab,
   onContentTabChange,
+  selectedAppId,
+  onSelectedAppIdChange,
   userInfo,
   showUserDropdown,
   setShowUserDropdown,
@@ -97,6 +102,18 @@ export function Sidebar({
       </div>
       <div className="flex-1 min-h-4" />
       <div className="flex-shrink-0 pt-3 border-t border-zinc-200 dark:border-zinc-700 flex flex-col gap-2 relative">
+        <select
+          value={selectedAppId}
+          onChange={(e) => onSelectedAppIdChange(e.target.value as StudioAppId)}
+          aria-label="App"
+          className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-2.5 py-2 text-sm font-medium text-black dark:text-zinc-50 outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
+        >
+          {STUDIO_APPS.map((app) => (
+            <option key={app.id} value={app.id}>
+              {app.label}
+            </option>
+          ))}
+        </select>
         {userInfo ? (
           <div className="flex items-center gap-2 min-w-0">
             <div className="relative min-w-0 flex-1">

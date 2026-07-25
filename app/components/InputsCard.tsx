@@ -72,6 +72,7 @@ interface InputsCardProps {
   setDailyGenIncludeCaption?: (v: boolean) => void;
   dailyGenIncludeCoverImage?: boolean;
   setDailyGenIncludeCoverImage?: (v: boolean) => void;
+  selectedAppId?: 'spill-it' | 'fab';
 }
 
 export function InputsCard(props: InputsCardProps) {
@@ -126,7 +127,10 @@ export function InputsCard(props: InputsCardProps) {
     setDailyGenIncludeCaption = () => {},
     dailyGenIncludeCoverImage = true,
     setDailyGenIncludeCoverImage = () => {},
+    selectedAppId = 'spill-it',
   } = props;
+
+  const isFabApp = selectedAppId === 'fab';
 
   const [automateCoverStyle, setAutomateCoverStyle] = useState<CoverImageStyle>('creative');
   const [videoTitle, setVideoTitle] = useState('');
@@ -400,6 +404,7 @@ export function InputsCard(props: InputsCardProps) {
           {contentTab === 'prompt' && (
             <div className="space-y-4">
               <div className="space-y-4">
+                  {!isFabApp ? (
                   <div className="max-w-[220px]">
                     <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Question type</label>
                     <select
@@ -412,10 +417,13 @@ export function InputsCard(props: InputsCardProps) {
                       <option value="me_or_you">Me or you</option>
                     </select>
                   </div>
+                  ) : null}
                   <div>
                     <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Generate</p>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
-                      Turn off to skip that part when you click Generate Daily TikTok. Title and caption need five questions (generate questions first or use a prior run).
+                      {isFabApp
+                        ? 'Turn off to skip that part when you click Generate Daily TikTok. Each run builds 5 heart-paper prompts with a random color and affirmation.'
+                        : 'Turn off to skip that part when you click Generate Daily TikTok. Title and caption need five questions (generate questions first or use a prior run).'}
                     </p>
                     <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 divide-y divide-zinc-200 dark:divide-zinc-700 overflow-hidden bg-zinc-50/80 dark:bg-zinc-800/40">
                       {(
@@ -432,8 +440,22 @@ export function InputsCard(props: InputsCardProps) {
                             setOn: setDailyGenIncludeCaption,
                             disabled: isFlirtyQuestionType,
                           },
-                          { label: 'Cover image', on: dailyGenIncludeCoverImage, setOn: setDailyGenIncludeCoverImage, disabled: false },
-                          { label: 'Questions', on: dailyGenIncludeQuestions, setOn: setDailyGenIncludeQuestions, disabled: false },
+                          ...(isFabApp
+                            ? []
+                            : [
+                                {
+                                  label: 'Cover image',
+                                  on: dailyGenIncludeCoverImage,
+                                  setOn: setDailyGenIncludeCoverImage,
+                                  disabled: false,
+                                },
+                              ]),
+                          {
+                            label: isFabApp ? 'Prompts' : 'Questions',
+                            on: dailyGenIncludeQuestions,
+                            setOn: setDailyGenIncludeQuestions,
+                            disabled: false,
+                          },
                         ] as const
                       ).map(({ label, on, setOn, disabled }) => (
                         <div key={label} className="flex items-center justify-between gap-3 px-3 py-2.5">
