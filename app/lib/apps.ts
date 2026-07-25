@@ -62,7 +62,12 @@ export const VIDEO_TEMPLATES_BY_APP: Record<StudioAppId, VideoTemplateCard[]> = 
       coverSrc: '/video-templates/template-2-cover.jpg',
       videoSrc: '/video-template-2/15402243_2160_3840_30fps.mp4',
     },
-    { id: 3, title: 'iPhone Notes', subtitle: '' },
+    {
+      id: 3,
+      title: 'iPhone Notes',
+      subtitle: '',
+      coverSrc: '/video-templates/iphone-notes-cover.png',
+    },
     { id: 4, title: 'Template 4', subtitle: '' },
   ],
   fab: [

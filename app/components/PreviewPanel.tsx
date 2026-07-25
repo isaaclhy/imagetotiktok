@@ -104,6 +104,8 @@ interface PreviewPanelProps {
   automateQuestionOptions?: string[];
   /** Available prompt options for selectors */
   automatePromptOptions?: string[];
+  /** Available prompt options for the cover / first template selector */
+  automateTemplatePromptOptions?: string[];
   /** Available template question/title options */
   automateTemplateQuestionOptions?: string[];
   /** Set a specific question for a slot */
@@ -164,6 +166,7 @@ export function PreviewPanel({
   automateDailyQuestions,
   automateQuestionOptions = [],
   automatePromptOptions = [],
+  automateTemplatePromptOptions,
   automateTemplateQuestionOptions = [],
   onSetDailyQuestion,
   onRetryTemplatePrompt,
@@ -469,7 +472,7 @@ export function PreviewPanel({
                       aria-label="Pick specific prompt for template"
                     >
                       <option value="">Pick prompt</option>
-                      {automatePromptOptions
+                      {(automateTemplatePromptOptions ?? automatePromptOptions)
                         .filter((p) => {
                           const used = new Set((automateDailyPrompts ?? []).filter(Boolean));
                           if (automateTemplatePromptRaw && p === automateTemplatePromptRaw) return true;

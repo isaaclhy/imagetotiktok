@@ -1,4 +1,24 @@
-import { FAB_NOTES_FOOTER, FAB_NOTES_MAX_DURATION_SEC } from '@/app/lib/fab-video';
+import {
+  FAB_NOTES_EXPORT_MAX_HEIGHT,
+  FAB_NOTES_EXPORT_MAX_WIDTH,
+  FAB_NOTES_EXPORT_VIDEO_BITRATE,
+  FAB_NOTES_FOOTER,
+  FAB_NOTES_MAX_DURATION_SEC,
+} from '@/app/lib/fab-video';
+
+/** Fit inside max box; keep even dims for H.264/VP encoders. */
+function exportCanvasSize(srcW: number, srcH: number): { w: number; h: number } {
+  const scale = Math.min(
+    1,
+    FAB_NOTES_EXPORT_MAX_WIDTH / srcW,
+    FAB_NOTES_EXPORT_MAX_HEIGHT / srcH
+  );
+  let w = Math.round(srcW * scale);
+  let h = Math.round(srcH * scale);
+  if (w % 2) w -= 1;
+  if (h % 2) h -= 1;
+  return { w: Math.max(2, w), h: Math.max(2, h) };
+}
 
 function pickMediaRecorderMime(): string | null {
   if (typeof MediaRecorder === 'undefined') return null;
@@ -340,15 +360,18 @@ export async function exportFabNotesVideo(
     video.addEventListener('error', () => reject(new Error('Failed to load video')), { once: true });
   });
 
-  const w = video.videoWidth;
-  const h = video.videoHeight;
-  if (w <= 0 || h <= 0) throw new Error('Invalid video dimensions');
+  const srcW = video.videoWidth;
+  const srcH = video.videoHeight;
+  if (srcW <= 0 || srcH <= 0) throw new Error('Invalid video dimensions');
 
+  const { w, h } = exportCanvasSize(srcW, srcH);
   const canvas = document.createElement('canvas');
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas not available');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
 
   const chunks: BlobPart[] = [];
 
@@ -401,7 +424,10 @@ export async function exportFabNotesVideo(
         // Canvas only — no original video audio.
         const outStream = canvas.captureStream(30);
 
-        recorder = new MediaRecorder(outStream, { mimeType: mime, videoBitsPerSecond: 2_500_000 });
+        recorder = new MediaRecorder(outStream, {
+          mimeType: mime,
+          videoBitsPerSecond: FAB_NOTES_EXPORT_VIDEO_BITRATE,
+        });
         recorder.ondataavailable = (e) => {
           if (e.data.size) chunks.push(e.data);
         };

@@ -45,18 +45,8 @@ export function getDefaultAutomateCategories(categories: string[]): string[] {
   return categories.filter((c) => couplesSet.has(c.toLowerCase().trim()));
 }
 
-/** Image prompts with {x} placeholder for dynamic text. */
-export const PROMPTS = [
-  'A baseball cap, a bit worn out but the cap is in red, the text "{x}" embroidered on it. the text should be in white and the text should occupy only the center 70% of the screen space, leave some padding on the side. No need to show the entire cap, the text should be in the center',
-  `First-person POV inside a bright modern coffee shop during daytime, a feminine woman's hand holding an iPhone while viewing an Instagram story. Natural daylight pours through large windows, creating soft bright lighting and realistic shadows. A few people are sitting and casually talking in the background, slightly blurred and out of focus so they add atmosphere without distracting from the main subject. The scene feels natural and candid, like a real smartphone photo. The hand has feminine features with slender fingers, natural nails, and realistic skin texture. The phone screen is very bright and visually striking, emitting a vivid saturated bright red glow that immediately draws attention while still looking like a real phone display. On the Instagram story is a solid bright red background with la  rge centered bold white text: "{x}" Shallow depth of field, photorealistic, realistic iPhone proportions, authentic coffee shop atmosphere, iPhone camera photo style, natural composition, no CGI appearance.`,
-  'First person POV, holding a white canvas with 2 hand marks from paint, one should be sky blue and one should be pink and on the canvas, it should also have the text "{x}". The text is facing you directly',
-  'Close up holding a piece of very very small torn paper, almost thumbnail size, on the paper it\'s written "{x}", it\'s like the text is typed using a type writer. Make it realistic. The text should be very clear on the piece of paper',
-  `A finished puzzle viewed straight-on from directly above, centered in the frame so the puzzle edges appear square and parallel to the image borders (no perspective tilt or angled view). On the puzzle, there's a cartoon style text and some cartoon on it, the text reads:
-
-"{x}"
-
-The text is facing the viewer directly. The camera is positioned perfectly perpendicular to the puzzle surface, creating a flat front-facing view with no skew, foreshortening, or rotation. High-resolution, realistic puzzle texture, sharp focus, clean composition, professional product photography.`,
-  `Ultra realistic candid photo of a real couple watching a projector movie late at night in a small apartment living room.
+/** Spill It Prompt-tab cover / first-template image prompts only. */
+export const PROMPT_PROJECTOR_COUPLE = `Ultra realistic candid photo of a real couple watching a projector movie late at night in a small apartment living room.
 
 Shot from behind the couch at eye level. We only see the backs of the couple. The woman is leaning on the man’s shoulder naturally.
 
@@ -74,7 +64,32 @@ Looks like a candid photo taken on a DSLR camera, not AI art, not a digital illu
 
 Realistic skin texture, realistic hair, natural posture, believable proportions, documentary photography style.
 
-No front-facing people, no fake cinematic lighting, no surrealism, no glossy surfaces, no perfect furniture, no extra text, no distorted letters, no watermark.`,
+No front-facing people, no fake cinematic lighting, no surrealism, no glossy surfaces, no perfect furniture, no extra text, no distorted letters, no watermark.`;
+
+export const PROMPT_POTTERY_PLATE =
+  'Girl holding a white pottery plate covering half of the face slightly smiling, on the plate it says "{x}"';
+
+export const PROMPT_CONDOM_WRAPPER_NYC =
+  'In a bright NYC coffee shop, a female hand holding a condom wrapper with the text "{x}" on it. Make it very realistic';
+
+export const SPILL_IT_TEMPLATE_COVER_PROMPTS = [
+  PROMPT_PROJECTOR_COUPLE,
+  PROMPT_POTTERY_PLATE,
+  PROMPT_CONDOM_WRAPPER_NYC,
+] as const;
+
+/** Image prompts with {x} placeholder for dynamic text. */
+export const PROMPTS = [
+  'A baseball cap, a bit worn out but the cap is in red, the text "{x}" embroidered on it. the text should be in white and the text should occupy only the center 70% of the screen space, leave some padding on the side. No need to show the entire cap, the text should be in the center',
+  `First-person POV inside a bright modern coffee shop during daytime, a feminine woman's hand holding an iPhone while viewing an Instagram story. Natural daylight pours through large windows, creating soft bright lighting and realistic shadows. A few people are sitting and casually talking in the background, slightly blurred and out of focus so they add atmosphere without distracting from the main subject. The scene feels natural and candid, like a real smartphone photo. The hand has feminine features with slender fingers, natural nails, and realistic skin texture. The phone screen is very bright and visually striking, emitting a vivid saturated bright red glow that immediately draws attention while still looking like a real phone display. On the Instagram story is a solid bright red background with la  rge centered bold white text: "{x}" Shallow depth of field, photorealistic, realistic iPhone proportions, authentic coffee shop atmosphere, iPhone camera photo style, natural composition, no CGI appearance.`,
+  'First person POV, holding a white canvas with 2 hand marks from paint, one should be sky blue and one should be pink and on the canvas, it should also have the text "{x}". The text is facing you directly',
+  'Close up holding a piece of very very small torn paper, almost thumbnail size, on the paper it\'s written "{x}", it\'s like the text is typed using a type writer. Make it realistic. The text should be very clear on the piece of paper',
+  `A finished puzzle viewed straight-on from directly above, centered in the frame so the puzzle edges appear square and parallel to the image borders (no perspective tilt or angled view). On the puzzle, there's a cartoon style text and some cartoon on it, the text reads:
+
+"{x}"
+
+The text is facing the viewer directly. The camera is positioned perfectly perpendicular to the puzzle surface, creating a flat front-facing view with no skew, foreshortening, or rotation. High-resolution, realistic puzzle texture, sharp focus, clean composition, professional product photography.`,
+  PROMPT_PROJECTOR_COUPLE,
   'Picking ice cream among a bunch of flavors in the shop and on one of the flavor cards, it says "{x}". The text should be zoomed in and facing straight to you',
   'First person POV, making a heart pottery for girlfriend and on the pottery has the text "{x}" painted on it. The pottery is white and the text should be red',
   'A couple looking at a piece of art in a museum. we can only see their back and the girl\'s head is leaning slightly on the guy\'s shoulder. The art has the text "{x}" the art is very cartoony',
@@ -82,7 +97,7 @@ No front-facing people, no fake cinematic lighting, no surrealism, no glossy sur
   'First person POV, on the tube, youre sitting across a person reading a book, on the book cover, it should be cartoon style and the title should be "{x}". zoom in on the text',
   'First person POV, playing billiard and the text "{x}" is written with white chalk on the billiard table. Make it realistic and the text should be written on the table',
   'First person POV, you\'re in a pottery painting class. The pottery is half painted, on it has the text "{x}" painted on it. Make it realistic. The text should be facing you straight. The text should be painted in a color where there\'s huge contrast to the pottery',
-  'Girl holding a white pottery plate covering half of the face slightly smiling, on the plate it says "{x}"',
+  PROMPT_POTTERY_PLATE,
   'First person POV, In a record store with a lot of records, one of the records say "{x}" on the record cover',
   'First person POV, youre making a cake, on the top of the cake has the words "{x}" written in frosting. The cake and the frosting should have contrasting color. The text should not be cursive',
   'First person POV, you\'re in a packed theatre holding a theatre leaflet about the show, on the leaflet has the text "{x}" printed on the leaflet',
@@ -94,7 +109,7 @@ No front-facing people, no fake cinematic lighting, no surrealism, no glossy sur
   'Walking in a college town along frat row, on one of the flags it says "{x}". The flag should be red. It should be a very snowy day, the flag should occupy most of the screen space and the text should be the main focus',
   'On a highway bridge, there\'s a clean white poster hanging down with the text "{x}" spray painted in red, with a heart spray painted at the bottom as well. The poster should occupy the center 70% of the image and is the main focus',
   'On a snowy street in New York City, there\'s a restaurant red metal sign in a heart shape, on it there\'s text "{x}" painted on it in white, it should be in the center of the image. Must be realistic',
-  'In a bright NYC coffee shop, a female hand holding a condom wrapper with the text "{x}" on it. Make it very realistic',
+  PROMPT_CONDOM_WRAPPER_NYC,
   'You\'re on a bus in NYC, it\'s a sunny day, on the back of the seat in front of you there\'s a sticker with black background and white text, the text says "{x}". The sticker is a bit worn off',
   'You\'re opening a fortune cookie in a restaurant and the paper is still a bit in the cookie, the message on the paper says "{x}". Make it realistic, the message should be in the center of the image. The message should be at least 60% of the screen width',
   `First person POV from an airplane seat, looking directly out the airplane window. On the window glass, handwritten with a thick black marker in large bold letters:

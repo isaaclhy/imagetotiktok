@@ -8,6 +8,7 @@ import { extractDominantColor } from '@/app/lib/canvas-utils';
 import {
   CARD_BG_FALLBACK_PALETTE,
   PROMPTS,
+  SPILL_IT_TEMPLATE_COVER_PROMPTS,
   FUNNY_QUESTIONS,
   FLIRTY_QUESTIONS,
   ME_OR_YOU_QUESTIONS,
@@ -1311,7 +1312,7 @@ export default function Home() {
       let selectedQuestionsThisRun: string[] | null = null;
 
       if (dailyGenIncludeQuestions) {
-        const needPrompts = dailyGenIncludeCoverImage ? 6 : 5;
+        const needPrompts = 5;
         const excluded = lastDailyPromptRunRef.current;
         let promptPool = PROMPTS.filter((p) => !excluded.has(p));
         if (promptPool.length < needPrompts) {
@@ -1320,12 +1321,13 @@ export default function Home() {
         const shuffledP = shuffle(promptPool);
         const selectedPrompts = shuffledP.slice(0, 5);
         rawTemplatePromptForCover = dailyGenIncludeCoverImage
-          ? shuffledP.length >= 6
-            ? shuffledP[5]!
-            : (() => {
-                const remaining = promptPool.filter((p) => !selectedPrompts.includes(p));
-                return remaining.length > 0 ? pickRandom(remaining) : pickRandom(PROMPTS);
-              })()
+          ? (() => {
+              const used = new Set(selectedPrompts);
+              const available = SPILL_IT_TEMPLATE_COVER_PROMPTS.filter((p) => !used.has(p));
+              return pickRandom(
+                available.length > 0 ? available : [...SPILL_IT_TEMPLATE_COVER_PROMPTS]
+              );
+            })()
           : null;
 
         const refSet = new Set<string>(selectedPrompts);
@@ -1344,8 +1346,8 @@ export default function Home() {
         }
       } else if (dailyGenIncludeCoverImage) {
         const excluded = lastDailyPromptRunRef.current;
-        let pool = PROMPTS.filter((p) => !excluded.has(p));
-        if (pool.length < 1) pool = [...PROMPTS];
+        let pool = SPILL_IT_TEMPLATE_COVER_PROMPTS.filter((p) => !excluded.has(p));
+        if (pool.length < 1) pool = [...SPILL_IT_TEMPLATE_COVER_PROMPTS];
         rawTemplatePromptForCover = pickRandom(shuffle(pool));
         setAutomateDailyTemplatePromptRaw(rawTemplatePromptForCover);
         lastDailyPromptRunRef.current = new Set([rawTemplatePromptForCover]);
@@ -1449,8 +1451,11 @@ export default function Home() {
   const handleGetRandomTemplatePrompt = () => {
     const used = new Set<string>(automateDailyRowPrompts ?? []);
     if (automateDailyTemplatePromptRaw) used.add(automateDailyTemplatePromptRaw);
-    const candidates = PROMPTS.filter((p) => !used.has(p));
-    const prompt = candidates.length > 0 ? pickRandom(candidates) : pickRandom(PROMPTS);
+    const candidates = SPILL_IT_TEMPLATE_COVER_PROMPTS.filter((p) => !used.has(p));
+    const prompt =
+      candidates.length > 0
+        ? pickRandom(candidates)
+        : pickRandom([...SPILL_IT_TEMPLATE_COVER_PROMPTS]);
     setAutomateDailyTemplatePromptRaw(prompt);
     setAutomateDailyTemplatePrompt(prompt);
     setAutomateDailyTemplateReplacementText(null);
@@ -1461,9 +1466,11 @@ export default function Home() {
     try {
       const usedPrompts = new Set<string>(automateDailyRowPrompts ?? []);
       if (automateDailyTemplatePromptRaw) usedPrompts.add(automateDailyTemplatePromptRaw);
-      const promptCandidates = PROMPTS.filter((p) => !usedPrompts.has(p));
+      const promptCandidates = SPILL_IT_TEMPLATE_COVER_PROMPTS.filter((p) => !usedPrompts.has(p));
       const rawTemplatePrompt =
-        promptCandidates.length > 0 ? pickRandom(promptCandidates) : pickRandom(PROMPTS);
+        promptCandidates.length > 0
+          ? pickRandom(promptCandidates)
+          : pickRandom([...SPILL_IT_TEMPLATE_COVER_PROMPTS]);
       setAutomateDailyTemplatePromptRaw(rawTemplatePrompt);
       const templateReplacement = pickTemplateHookTitle().trim();
       const templateWithXReplaced = rawTemplatePrompt.replace(/\{x\}/g, templateReplacement);
@@ -1481,8 +1488,11 @@ export default function Home() {
 
     const usedPrompts = new Set<string>(automateDailyRowPrompts ?? []);
     usedPrompts.add(raw);
-    const promptCandidates = PROMPTS.filter((p) => !usedPrompts.has(p));
-    const newPrompt = promptCandidates.length > 0 ? pickRandom(promptCandidates) : pickRandom(PROMPTS);
+    const promptCandidates = SPILL_IT_TEMPLATE_COVER_PROMPTS.filter((p) => !usedPrompts.has(p));
+    const newPrompt =
+      promptCandidates.length > 0
+        ? pickRandom(promptCandidates)
+        : pickRandom([...SPILL_IT_TEMPLATE_COVER_PROMPTS]);
     setAutomateDailyTemplatePromptRaw(newPrompt);
     setAutomateDailyTemplatePrompt(newPrompt.replace(/\{x\}/g, replacement));
   };
@@ -2845,6 +2855,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                 automatePromptOptions={
                   selectedAppId === 'fab' ? [...FAB_PAPER_COLORS] : [...PROMPTS]
                 }
+                automateTemplatePromptOptions={[...SPILL_IT_TEMPLATE_COVER_PROMPTS]}
                 automateTemplateQuestionOptions={[...templateTitlePool]}
                 onSetDailyQuestion={handleSetDailyQuestionAtIndex}
                 onRetryTemplatePrompt={handleRetryTemplatePrompt}
@@ -3311,6 +3322,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               src={template2PlaybackVideoSrc || undefined}
                               controls
                               playsInline
+                              muted={isSpillItNotesVideoTemplate}
                               onTimeUpdate={
                                 usesPexelsVideoBackground
                                   ? (e) => {
