@@ -46,9 +46,6 @@ export const IMAGE_TEMPLATES_BY_APP: Record<StudioAppId, ImageTemplateCard[]> = 
   ],
   fab: [
     { id: 1, title: 'Heart shaped paper', subtitle: '' },
-    { id: 2, title: 'Template 2', subtitle: '' },
-    { id: 3, title: 'Template 3', subtitle: '' },
-    { id: 4, title: 'Template 4', subtitle: '' },
   ],
 };
 
@@ -71,7 +68,7 @@ export const VIDEO_TEMPLATES_BY_APP: Record<StudioAppId, VideoTemplateCard[]> = 
     { id: 4, title: 'Template 4', subtitle: '' },
   ],
   fab: [
-    { id: 1, title: 'Template 1', subtitle: '' },
+    { id: 1, title: 'Affirmation montage', subtitle: '' },
     { id: 2, title: 'Template 2', subtitle: '' },
     { id: 3, title: 'Template 3', subtitle: '' },
     { id: 4, title: 'Template 4', subtitle: '' },

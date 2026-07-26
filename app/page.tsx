@@ -34,12 +34,32 @@ import {
   fillFabHeartPaperPrompt,
 } from '@/app/lib/fab-prompts';
 import {
+  FAB_AFFIRMATION_AMBIENT_SOUNDS,
+  FAB_AFFIRMATION_CLIP_COUNT,
+  FAB_AFFIRMATION_DEFAULT_AMBIENT,
+  FAB_AFFIRMATION_DEFAULT_TTS_PROVIDER,
+  FAB_AFFIRMATION_DEFAULT_VIDEO_STYLE,
+  FAB_AFFIRMATION_TEXT_COUNT,
+  FAB_AFFIRMATION_TTS_PROVIDERS,
+  FAB_AFFIRMATION_VIDEO_STYLES,
   FAB_NOTES_MAX_DURATION_SEC,
   FAB_NOTES_PEXELS_QUERIES,
+  resolveFabAffirmationAmbientSrc,
+  resolveFabAffirmationPexelsQuery,
+  type FabAmbientSoundId,
+  type FabMontageVideoStyleId,
+  type FabTtsProviderId,
 } from '@/app/lib/fab-video';
+import {
+  buildFabAffirmationSegments,
+  revokeFabAffirmationSegments,
+  type FabAffirmationAudioSegment,
+} from '@/app/lib/fab-tts';
 import { exportFabNotesVideo } from '@/app/lib/export-fab-notes-video';
+import { exportFabAffirmationMontage } from '@/app/lib/export-fab-affirmation-montage';
 import { Sidebar } from '@/app/components/Sidebar';
 import { FabNotesOverlay } from '@/app/components/FabNotesOverlay';
+import { FabMontagePreview } from '@/app/components/FabMontagePreview';
 import { InputsCard } from '@/app/components/InputsCard';
 import { PreviewPanel } from '@/app/components/PreviewPanel';
 import { DownloadModal } from '@/app/components/DownloadModal';
@@ -859,6 +879,22 @@ export default function Home() {
   const [videoTemplate2PexelsPosterSrc, setVideoTemplate2PexelsPosterSrc] = useState<string | null>(null);
   const [isVideoTemplate2VideoLoading, setIsVideoTemplate2VideoLoading] = useState(false);
   const [videoTemplate2VideoError, setVideoTemplate2VideoError] = useState<string | null>(null);
+  const [fabMontageVideoSrcs, setFabMontageVideoSrcs] = useState<string[]>([]);
+  const [fabMontageAffirmations, setFabMontageAffirmations] = useState<string[]>([]);
+  const [fabMontageSegments, setFabMontageSegments] = useState<FabAffirmationAudioSegment[]>([]);
+  const [reuseFabMontageVideos, setReuseFabMontageVideos] = useState(true);
+  const [fabMontageVideoStyle, setFabMontageVideoStyle] = useState<FabMontageVideoStyleId>(
+    FAB_AFFIRMATION_DEFAULT_VIDEO_STYLE
+  );
+  const [fabMontageTtsProvider, setFabMontageTtsProvider] = useState<FabTtsProviderId>(
+    FAB_AFFIRMATION_DEFAULT_TTS_PROVIDER
+  );
+  const [fabMontageAmbientId, setFabMontageAmbientId] = useState<FabAmbientSoundId>(
+    FAB_AFFIRMATION_DEFAULT_AMBIENT
+  );
+  const [isFabMontageLoading, setIsFabMontageLoading] = useState(false);
+  const [isFabMontageTtsLoading, setIsFabMontageTtsLoading] = useState(false);
+  const [fabMontageError, setFabMontageError] = useState<string | null>(null);
   const [isVideoExporting, setIsVideoExporting] = useState(false);
   const [showVideoDownloadModal, setShowVideoDownloadModal] = useState(false);
   const [videoDownloadCount, setVideoDownloadCount] = useState('1');
@@ -932,6 +968,7 @@ export default function Home() {
   const isKawaiiImageTemplate = selectedAppId === 'spill-it' && selectedImageTemplateId === 1;
   const isCouplesNatureVideoTemplate = selectedAppId === 'spill-it' && selectedVideoTemplateId === 2;
   const isSpillItNotesVideoTemplate = selectedAppId === 'spill-it' && selectedVideoTemplateId === 3;
+  const isFabAffirmationVideoTemplate = selectedAppId === 'fab' && selectedVideoTemplateId === 1;
   const usesPexelsVideoBackground = isCouplesNatureVideoTemplate || isSpillItNotesVideoTemplate;
 
   const handleSelectedAppIdChange = (appId: StudioAppId) => {
@@ -1039,6 +1076,73 @@ export default function Home() {
     }
   };
 
+  const pickFabMontageAffirmations = (): string[] =>
+    shuffleCopy([...FAB_HEART_MESSAGES]).slice(0, FAB_AFFIRMATION_TEXT_COUNT);
+
+  const refreshFabMontageTts = async (
+    texts: string[],
+    providerOverride?: FabTtsProviderId
+  ) => {
+    setIsFabMontageTtsLoading(true);
+    setFabMontageError(null);
+    try {
+      const next = await buildFabAffirmationSegments(
+        texts,
+        providerOverride ?? fabMontageTtsProvider
+      );
+      setFabMontageSegments((prev) => {
+        revokeFabAffirmationSegments(prev);
+        return next;
+      });
+    } catch (e) {
+      setFabMontageError(e instanceof Error ? e.message : 'Failed to generate voice');
+      setFabMontageSegments((prev) => {
+        revokeFabAffirmationSegments(prev);
+        return [];
+      });
+    } finally {
+      setIsFabMontageTtsLoading(false);
+    }
+  };
+
+  const fetchFabMontageVideos = async (
+    force = false,
+    styleOverride?: FabMontageVideoStyleId
+  ) => {
+    if (!force && reuseFabMontageVideos && fabMontageVideoSrcs.length >= FAB_AFFIRMATION_CLIP_COUNT) {
+      return;
+    }
+    const style = styleOverride ?? fabMontageVideoStyle;
+    setIsFabMontageLoading(true);
+    setFabMontageError(null);
+    try {
+      const urls: string[] = [];
+      for (let i = 0; i < FAB_AFFIRMATION_CLIP_COUNT; i++) {
+        const query = resolveFabAffirmationPexelsQuery(style);
+        const page = 1 + Math.floor(Math.random() * 15);
+        const res = await fetch(
+          `/api/pexels/random-video?query=${encodeURIComponent(query)}&page=${page}`
+        );
+        const data = (await res.json()) as { videoUrl?: string; error?: string };
+        if (!res.ok || !data.videoUrl) {
+          throw new Error(data.error || 'Failed to fetch video');
+        }
+        urls.push(data.videoUrl);
+      }
+      setFabMontageVideoSrcs(urls);
+    } catch (e) {
+      setFabMontageError(e instanceof Error ? e.message : 'Failed to fetch videos');
+    } finally {
+      setIsFabMontageLoading(false);
+    }
+  };
+
+  const regenerateFabMontageContent = () => {
+    const texts = pickFabMontageAffirmations();
+    setFabMontageAffirmations(texts);
+    void refreshFabMontageTts(texts);
+  };
+
   useEffect(() => {
     if (isCouplesNatureVideoTemplate) {
       regenerateVideoTemplate2Content();
@@ -1046,12 +1150,22 @@ export default function Home() {
     } else if (isSpillItNotesVideoTemplate) {
       regenerateFabNotesContent();
       void handleRegenerateVideoTemplate2Video();
+    } else if (isFabAffirmationVideoTemplate) {
+      regenerateFabMontageContent();
+      void fetchFabMontageVideos(false);
     } else {
       setVideoTemplate2PexelsVideoSrc(null);
       setVideoTemplate2PexelsPosterSrc(null);
       setVideoTemplate2VideoError(null);
     }
-  }, [isCouplesNatureVideoTemplate, isSpillItNotesVideoTemplate, selectedVideoTemplateId]);
+  }, [
+    isCouplesNatureVideoTemplate,
+    isSpillItNotesVideoTemplate,
+    isFabAffirmationVideoTemplate,
+    selectedVideoTemplateId,
+  ]);
+
+  // Cycle handled inside FabMontagePreview (keeps all clips mounted).
 
   useEffect(() => {
     if (mode !== 'video') {
@@ -2703,6 +2817,76 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       return;
     }
 
+    if (isFabAffirmationVideoTemplate) {
+      setVideoExportError(null);
+      if (fabMontageVideoSrcs.length < FAB_AFFIRMATION_CLIP_COUNT) {
+        setVideoExportError('No montage videos loaded. Turn off Reuse videos and regenerate, then try again.');
+        return;
+      }
+      const affirmations =
+        fabMontageAffirmations.filter((a) => a.trim()).length > 0
+          ? fabMontageAffirmations.filter((a) => a.trim()).slice(0, FAB_AFFIRMATION_TEXT_COUNT)
+          : pickFabMontageAffirmations();
+      setIsVideoExporting(true);
+      try {
+        const textsMatch =
+          fabMontageSegments.length === affirmations.length &&
+          fabMontageSegments.every(
+            (s, i) => s.text === affirmations[i] && s.provider === fabMontageTtsProvider
+          );
+        let segments = fabMontageSegments;
+        if (!textsMatch) {
+          segments = await buildFabAffirmationSegments(affirmations, fabMontageTtsProvider);
+          setFabMontageSegments((prev) => {
+            revokeFabAffirmationSegments(prev);
+            return segments;
+          });
+          setFabMontageAffirmations(affirmations);
+        }
+        if (segments.some((s) => s.provider === 'browser')) {
+          // Browser mode exports timed text with silent audio placeholders.
+          console.info(
+            '[fab-montage] Exporting with Browser (free) voice — download audio is silent; switch to ElevenLabs for real TTS in the file.'
+          );
+        }
+        const proxied = fabMontageVideoSrcs.map((src) => pexelsVideoProxySrc(src));
+        const ambientSrc = resolveFabAffirmationAmbientSrc(fabMontageAmbientId);
+        const recordedBlob = await exportFabAffirmationMontage(
+          proxied,
+          segments,
+          undefined,
+          ambientSrc
+        );
+        let blob = recordedBlob;
+        let extension = recordedBlob.type.includes('mp4') ? 'mp4' : 'webm';
+        if (!recordedBlob.type.includes('mp4')) {
+          try {
+            blob = await transcodeWebmToMp4(recordedBlob);
+            extension = 'mp4';
+          } catch (transcodeErr) {
+            console.warn(
+              'MP4 transcode unavailable (often Turbopack + ffmpeg.wasm). Downloading WebM instead.',
+              transcodeErr
+            );
+          }
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `fab-affirmation-${new Date().toISOString().slice(0, 10)}.${extension}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.setTimeout(() => URL.revokeObjectURL(url), 2500);
+      } catch (e) {
+        console.error('Failed to export Fab affirmation montage:', e);
+        setVideoExportError(e instanceof Error ? e.message : 'Export failed');
+      } finally {
+        setIsVideoExporting(false);
+      }
+      return;
+    }
+
     setVideoExportError(null);
     const baseName =
       activeVideoTemplate.title
@@ -3225,7 +3409,86 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                       <p className="order-3 w-full text-xs font-medium text-zinc-800 dark:text-zinc-200 sm:order-0 sm:w-auto sm:text-sm">
                         {activeVideoTemplate?.title ?? `Template ${selectedVideoTemplateId}`}
                       </p>
-                      <div className="order-2 ml-auto flex w-full sm:w-auto flex-col sm:flex-row gap-2">
+                      <div className="order-2 ml-auto flex w-full sm:w-auto flex-col sm:flex-row gap-2 sm:items-center">
+                        {isFabAffirmationVideoTemplate ? (
+                          <>
+                            <label className="inline-flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-300">
+                              <span className="sr-only sm:not-sr-only sm:inline">Style</span>
+                              <select
+                                value={fabMontageVideoStyle}
+                                onChange={(e) => {
+                                  const next = e.target.value as FabMontageVideoStyleId;
+                                  setFabMontageVideoStyle(next);
+                                  void fetchFabMontageVideos(true, next);
+                                }}
+                                disabled={isFabMontageLoading || isVideoExporting}
+                                className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2 py-1.5 sm:py-1 text-sm sm:text-xs text-zinc-800 dark:text-zinc-200 disabled:opacity-50"
+                              >
+                                {FAB_AFFIRMATION_VIDEO_STYLES.map((style) => (
+                                  <option key={style.id} value={style.id}>
+                                    {style.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <label className="inline-flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-300">
+                              <span className="sr-only sm:not-sr-only sm:inline">Voice</span>
+                              <select
+                                value={fabMontageTtsProvider}
+                                onChange={(e) => {
+                                  const next = e.target.value as FabTtsProviderId;
+                                  setFabMontageTtsProvider(next);
+                                  void refreshFabMontageTts(fabMontageAffirmations, next);
+                                }}
+                                disabled={isFabMontageTtsLoading || isVideoExporting}
+                                className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2 py-1.5 sm:py-1 text-sm sm:text-xs text-zinc-800 dark:text-zinc-200 disabled:opacity-50"
+                              >
+                                {FAB_AFFIRMATION_TTS_PROVIDERS.map((p) => (
+                                  <option key={p.id} value={p.id}>
+                                    {p.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <label className="inline-flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-300">
+                              <span className="sr-only sm:not-sr-only sm:inline">Sound</span>
+                              <select
+                                value={fabMontageAmbientId}
+                                onChange={(e) =>
+                                  setFabMontageAmbientId(e.target.value as FabAmbientSoundId)
+                                }
+                                disabled={isVideoExporting}
+                                className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2 py-1.5 sm:py-1 text-sm sm:text-xs text-zinc-800 dark:text-zinc-200 disabled:opacity-50"
+                              >
+                                {FAB_AFFIRMATION_AMBIENT_SOUNDS.map((s) => (
+                                  <option key={s.id} value={s.id}>
+                                    {s.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <label className="inline-flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-300 px-1">
+                              <input
+                                type="checkbox"
+                                checked={reuseFabMontageVideos}
+                                onChange={(e) => setReuseFabMontageVideos(e.target.checked)}
+                                className="rounded border-zinc-300 dark:border-zinc-600"
+                              />
+                              Reuse videos
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                regenerateFabMontageContent();
+                                void fetchFabMontageVideos(!reuseFabMontageVideos);
+                              }}
+                              disabled={isFabMontageLoading || isFabMontageTtsLoading || isVideoExporting}
+                              className="inline-flex w-full sm:w-auto items-center justify-center gap-2 text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {isFabMontageLoading ? 'Loading…' : 'Regenerate'}
+                            </button>
+                          </>
+                        ) : null}
                         {usesPexelsVideoBackground ? (
                           <button
                             type="button"
@@ -3267,10 +3530,16 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                           type="button"
                           onClick={handleDownloadVideoTemplate}
                           disabled={
-                            (usesPexelsVideoBackground
-                              ? isVideoExporting || isVideoTemplate2VideoLoading || !template2PlaybackVideoSrc
-                              : (!template2PlaybackVideoSrc && !activeVideoTemplate?.coverSrc) ||
-                                isVideoExporting)
+                            isFabAffirmationVideoTemplate
+                              ? isVideoExporting ||
+                                isFabMontageLoading ||
+                                isFabMontageTtsLoading ||
+                                fabMontageVideoSrcs.length < FAB_AFFIRMATION_CLIP_COUNT ||
+                                fabMontageSegments.length === 0
+                              : usesPexelsVideoBackground
+                                ? isVideoExporting || isVideoTemplate2VideoLoading || !template2PlaybackVideoSrc
+                                : (!template2PlaybackVideoSrc && !activeVideoTemplate?.coverSrc) ||
+                                  isVideoExporting
                           }
                           className="inline-flex w-full sm:w-auto items-center justify-center gap-2 text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
@@ -3348,13 +3617,76 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         ) : null}
                       </div>
                     </div>
-                    {videoExportError || videoTemplate2VideoError ? (
+                    {videoExportError || videoTemplate2VideoError || fabMontageError ? (
                       <p className="px-3 pb-2 text-xs text-red-600 dark:text-red-400 border-b border-zinc-200 dark:border-zinc-700">
-                        {videoExportError ?? videoTemplate2VideoError}
+                        {videoExportError ?? videoTemplate2VideoError ?? fabMontageError}
                       </p>
                     ) : null}
                     <div className="p-3 sm:p-4 md:p-6 w-full min-w-0 max-w-full box-border">
-                      {activeVideoTemplate?.videoSrc ||
+                      {isFabAffirmationVideoTemplate ? (
+                        <div className="flex flex-col md:flex-row items-start gap-4 min-w-0 w-full">
+                          <FabMontagePreview
+                            videoSrcs={fabMontageVideoSrcs}
+                            segments={fabMontageSegments}
+                            ambientSrc={resolveFabAffirmationAmbientSrc(fabMontageAmbientId)}
+                            isLoading={isFabMontageLoading}
+                            isTtsLoading={isFabMontageTtsLoading}
+                          />
+                          <div className="flex-1 min-w-0 w-full space-y-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                                Affirmations
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => void refreshFabMontageTts(fabMontageAffirmations)}
+                                  disabled={isFabMontageTtsLoading}
+                                  className="text-xs px-2 py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50"
+                                >
+                                  {isFabMontageTtsLoading ? 'Voice…' : 'Update voice'}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={regenerateFabMontageContent}
+                                  className="text-xs px-2 py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                >
+                                  Shuffle texts
+                                </button>
+                              </div>
+                            </div>
+                            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                              Background clips switch every 0.5s. Text stays until TTS finishes, then clears before the next line.
+                              {fabMontageTtsProvider === 'browser'
+                                ? ' Browser voice is free (system TTS). Downloads are silent until you switch to ElevenLabs.'
+                                : ' ElevenLabs uses your API credits.'}
+                              {reuseFabMontageVideos
+                                ? ' Reuse videos is on — Regenerate only reshuffles text unless you turn the switch off.'
+                                : ' Reuse videos is off — Regenerate fetches 5 new Pexels clips.'}
+                            </p>
+                            <ol className="space-y-2 list-none">
+                              {Array.from({ length: FAB_AFFIRMATION_TEXT_COUNT }, (_, i) => (
+                                <li key={i}>
+                                  <input
+                                    type="text"
+                                    value={fabMontageAffirmations[i] ?? ''}
+                                    onChange={(e) => {
+                                      const value = e.target.value;
+                                      setFabMontageAffirmations((prev) => {
+                                        const next = [...prev];
+                                        while (next.length < FAB_AFFIRMATION_TEXT_COUNT) next.push('');
+                                        next[i] = value;
+                                        return next;
+                                      });
+                                    }}
+                                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100"
+                                  />
+                                </li>
+                              ))}
+                            </ol>
+                          </div>
+                        </div>
+                      ) : activeVideoTemplate?.videoSrc ||
                       template2PlaybackVideoSrc ||
                       usesPexelsVideoBackground ? (
                         <div className="flex flex-col md:flex-row items-start gap-4 min-w-0 w-full">
