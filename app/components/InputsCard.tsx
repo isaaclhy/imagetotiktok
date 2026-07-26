@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { CanvasData, CreatorInfo } from '@/app/lib/types';
-import { COVER_IMAGE_PROMPTS, getDefaultAutomateCategories, type CoverImageStyle } from '@/app/lib/constants';
+import { COVER_IMAGE_PROMPTS, getDefaultAutomateCategories, type AutomateQuestionType, type CoverImageStyle } from '@/app/lib/constants';
 
 const DEFAULT_VIDEO_OVERLAY_LINES = [
   'Holding hands',
@@ -61,8 +61,8 @@ interface InputsCardProps {
   isAutoGenerating?: boolean;
   onGenerateDailyTikTok?: () => void | Promise<void>;
   isGeneratingDailyTikTok?: boolean;
-  automateQuestionType?: 'funny' | 'flirty' | 'me_or_you';
-  setAutomateQuestionType?: (v: 'funny' | 'flirty' | 'me_or_you') => void;
+  automateQuestionType?: AutomateQuestionType;
+  setAutomateQuestionType?: (v: AutomateQuestionType) => void;
   /** Daily TikTok: which sections to regenerate (Nana automate) */
   dailyGenIncludeQuestions?: boolean;
   setDailyGenIncludeQuestions?: (v: boolean) => void;
@@ -117,7 +117,7 @@ export function InputsCard(props: InputsCardProps) {
     isAutoGenerating = false,
     onGenerateDailyTikTok,
     isGeneratingDailyTikTok = false,
-    automateQuestionType = 'funny',
+    automateQuestionType = 'random',
     setAutomateQuestionType = () => {},
     dailyGenIncludeQuestions = true,
     setDailyGenIncludeQuestions = () => {},
@@ -203,15 +203,14 @@ export function InputsCard(props: InputsCardProps) {
     automateSelectedCategories.size === automateCategories.length && automateCategories.length > 0
       ? []
       : Array.from(automateSelectedCategories);
-  const isFlirtyQuestionType = automateQuestionType === 'flirty';
 
   if (contentTab === 'image') {
     return <div className="flex flex-col h-full min-h-0 bg-white dark:bg-zinc-900 rounded-2xl shadow-lg overflow-hidden" />;
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0 bg-white dark:bg-zinc-900 rounded-2xl shadow-lg overflow-hidden">
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 hide-scrollbar">
+    <div className="flex flex-col h-auto lg:h-full min-h-0 bg-white dark:bg-zinc-900 rounded-xl lg:rounded-2xl border border-zinc-200 dark:border-zinc-800 lg:border-0 lg:shadow-lg overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-visible lg:overflow-y-auto px-4 hide-scrollbar">
         <div className="flex flex-col gap-4 py-3">
           {contentTab === 'video' && (
             <div className="space-y-3">
@@ -409,12 +408,14 @@ export function InputsCard(props: InputsCardProps) {
                     <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Question type</label>
                     <select
                       value={automateQuestionType}
-                      onChange={(e) => setAutomateQuestionType(e.target.value as 'funny' | 'flirty' | 'me_or_you')}
+                      onChange={(e) => setAutomateQuestionType(e.target.value as AutomateQuestionType)}
                       className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] text-sm"
                     >
+                      <option value="random">Random</option>
                       <option value="funny">Funny</option>
                       <option value="flirty">Flirty</option>
                       <option value="me_or_you">Me or you</option>
+                      <option value="brave">Brave</option>
                     </select>
                   </div>
                   ) : null}
@@ -432,13 +433,13 @@ export function InputsCard(props: InputsCardProps) {
                             label: 'Title',
                             on: dailyGenIncludeTitle,
                             setOn: setDailyGenIncludeTitle,
-                            disabled: isFlirtyQuestionType,
+                            disabled: false,
                           },
                           {
                             label: 'Caption',
                             on: dailyGenIncludeCaption,
                             setOn: setDailyGenIncludeCaption,
-                            disabled: isFlirtyQuestionType,
+                            disabled: false,
                           },
                           ...(isFabApp
                             ? []
@@ -626,12 +627,12 @@ export function InputsCard(props: InputsCardProps) {
         </div>
       )}
       {contentTab === 'prompt' && (
-        <div className="flex-shrink-0 px-4 py-3 border-t border-zinc-200 dark:border-zinc-700">
+        <div className="shrink-0 px-4 py-3 border-t border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 fixed bottom-0 left-0 right-0 z-20 lg:static lg:z-auto pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:pb-3">
           <button
             type="button"
             onClick={onGenerateDailyTikTok}
-            disabled={isGeneratingDailyTikTok}
-            className="w-full py-3 px-4 rounded-lg bg-black hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isGeneratingDailyTikTok || !onGenerateDailyTikTok}
+            className="w-full max-w-7xl mx-auto py-3.5 px-4 rounded-xl bg-black hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
           >
             {isGeneratingDailyTikTok ? (
               <>

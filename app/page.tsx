@@ -12,10 +12,14 @@ import {
   FUNNY_QUESTIONS,
   FLIRTY_QUESTIONS,
   ME_OR_YOU_QUESTIONS,
+  BRAVE_QUESTIONS,
   KAWAII_DRIVE_FOLDER_ID,
   COUPLES_NATURE_DRIVE_FOLDER_ID,
   COUPLES_NATURE_VIDEO_FILTER,
   VIDEO_TEMPLATE2_PEXELS_QUERIES,
+  CONCRETE_QUESTION_TYPES,
+  type AutomateQuestionType,
+  type ConcreteQuestionType,
 } from '@/app/lib/constants';
 import {
   DEFAULT_STUDIO_APP_ID,
@@ -756,7 +760,56 @@ const DAILY_TEMPLATE_TITLES_FLIRTY = [
   '5 Questions To Heat Up Your Night Together',
   '5 Flirty Questions To Make Him Fold First',
   '5 Questions To Ask Your Boyfriend After Dark',
+  '5 low key flirty questions for your boyfriend',
 ] as const;
+
+const DAILY_TEMPLATE_TITLES_BRAVE = [
+  'Brave questions to ask your boyfriend',
+  '5 brave questions to ask your boyfriend',
+  '5 incredibly uncomfortable questions to ask your partner',
+  'Brave questions to ask in your relationship',
+  '5 uncomfortable but healthy questions to ask your partner',
+  "Things I want to know but don't wanna ask",
+  '5 uncomfy but healthy questions to ask him',
+  '5 questions to ask your boyfriend',
+  '5 questions every boyfriend should be able to answer',
+] as const;
+
+function questionPoolForType(type: ConcreteQuestionType): readonly string[] {
+  if (type === 'me_or_you') return ME_OR_YOU_QUESTIONS;
+  if (type === 'flirty') return FLIRTY_QUESTIONS;
+  if (type === 'brave') return BRAVE_QUESTIONS;
+  return FUNNY_QUESTIONS;
+}
+
+function templateTitlePoolForType(type: ConcreteQuestionType): readonly string[] {
+  if (type === 'flirty') return DAILY_TEMPLATE_TITLES_FLIRTY;
+  if (type === 'brave') return DAILY_TEMPLATE_TITLES_BRAVE;
+  // funny + me_or_you share the funny title pool
+  return DAILY_TEMPLATE_TITLES_FUNNY;
+}
+
+function resolveQuestionType(type: AutomateQuestionType): ConcreteQuestionType {
+  if (type !== 'random') return type;
+  return CONCRETE_QUESTION_TYPES[Math.floor(Math.random() * CONCRETE_QUESTION_TYPES.length)]!;
+}
+
+function allQuestionPools(): string[] {
+  return [
+    ...FUNNY_QUESTIONS,
+    ...FLIRTY_QUESTIONS,
+    ...ME_OR_YOU_QUESTIONS,
+    ...BRAVE_QUESTIONS,
+  ];
+}
+
+function allTemplateTitlePools(): string[] {
+  return [
+    ...DAILY_TEMPLATE_TITLES_FUNNY,
+    ...DAILY_TEMPLATE_TITLES_FLIRTY,
+    ...DAILY_TEMPLATE_TITLES_BRAVE,
+  ];
+}
 
 export default function Home() {
   const [canvases, setCanvases] = useState<CanvasData[]>(INITIAL_CANVASES);
@@ -851,21 +904,20 @@ export default function Home() {
   const [isRetryingTemplateQuestion, setIsRetryingTemplateQuestion] = useState(false);
   const [isRetryingDailyVideoTitle, setIsRetryingDailyVideoTitle] = useState(false);
   const [isRetryingDailyCaption, setIsRetryingDailyCaption] = useState(false);
-  const [automateQuestionType, setAutomateQuestionType] = useState<'funny' | 'flirty' | 'me_or_you'>('funny');
+  const [automateQuestionType, setAutomateQuestionType] = useState<AutomateQuestionType>('random');
+  /** Concrete category used for the latest Daily TikTok run (especially when Random is selected). */
+  const [automateResolvedQuestionType, setAutomateResolvedQuestionType] =
+    useState<ConcreteQuestionType | null>(null);
   const [dailyGenIncludeQuestions, setDailyGenIncludeQuestions] = useState(true);
   const [dailyGenIncludeTitle, setDailyGenIncludeTitle] = useState(true);
   const [dailyGenIncludeCaption, setDailyGenIncludeCaption] = useState(true);
   /** Template hook prompt (image prompt with {x}); labeled “cover image” in the UI */
   const [dailyGenIncludeCoverImage, setDailyGenIncludeCoverImage] = useState(true);
 
-  useEffect(() => {
-    if (automateQuestionType !== 'flirty') return;
-    setDailyGenIncludeTitle(false);
-    setDailyGenIncludeCaption(false);
-  }, [automateQuestionType]);
-
   /** Prompt strings from the previous Daily TikTok run — excluded next time so back-to-back runs rarely repeat */
   const lastDailyPromptRunRef = useRef<Set<string>>(new Set());
+  /** Concrete type used for the current/last Daily TikTok run (when UI type is Random). */
+  const activeQuestionTypeRef = useRef<ConcreteQuestionType>('funny');
 
   const isUpdatingFromUserInput = useRef(false);
   const isSyncingFromCanvas = useRef(false);
@@ -891,6 +943,7 @@ export default function Home() {
     setAutomateDailyResults(null);
     setAutomateDailyRowPrompts(null);
     setAutomateDailyRowQuestions(null);
+    setAutomateResolvedQuestionType(null);
     setAutomateDailyTemplatePrompt(null);
     setAutomateDailyTemplatePromptRaw(null);
     setAutomateDailyTemplateReplacementText(null);
@@ -1228,14 +1281,27 @@ export default function Home() {
   };
 
   const pickRandom = <T,>(arr: readonly T[]): T => arr[randomIndex(arr.length)]!;
+  const activeConcreteQuestionType = (): ConcreteQuestionType =>
+    automateQuestionType === 'random' ? activeQuestionTypeRef.current : automateQuestionType;
+
   const templateTitlePool =
-    automateQuestionType === 'flirty' ? DAILY_TEMPLATE_TITLES_FLIRTY : DAILY_TEMPLATE_TITLES_FUNNY;
-  const pickTemplateHookTitle = (): string => pickRandom(templateTitlePool);
+    automateQuestionType === 'random'
+      ? allTemplateTitlePools()
+      : [...templateTitlePoolForType(automateQuestionType)];
+  const pickTemplateHookTitle = (type?: ConcreteQuestionType): string => {
+    const pool = type
+      ? templateTitlePoolForType(type)
+      : automateQuestionType === 'random'
+        ? templateTitlePoolForType(activeQuestionTypeRef.current)
+        : templateTitlePoolForType(automateQuestionType);
+    return pickRandom([...pool]);
+  };
 
   const handleGenerateDailyTikTok = async () => {
     setIsGeneratingDailyTikTok(true);
     try {
       if (selectedAppId === 'fab') {
+        setAutomateResolvedQuestionType(null);
         setAutomateDailyTemplatePromptRaw(null);
         setAutomateDailyTemplatePrompt(null);
         setAutomateDailyTemplateReplacementText(null);
@@ -1266,35 +1332,24 @@ export default function Home() {
               ? automateDailyRowQuestions.join('\n')
               : '';
 
-        if (dailyGenIncludeTitle && questionsForApi) {
+        if ((dailyGenIncludeTitle || dailyGenIncludeCaption) && questionsForApi) {
           try {
-            const videoTitleRes = await fetch('/api/openai/daily-video-title', {
+            const copyRes = await fetch('/api/openai/daily-video-title', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ questions: questionsForApi }),
             });
-            const videoTitleData = await videoTitleRes.json();
-            if (videoTitleRes.ok && typeof videoTitleData?.text === 'string') {
-              setAutomateDailyVideoTitle(videoTitleData.text.trim());
+            const copyData = await copyRes.json();
+            if (copyRes.ok) {
+              if (dailyGenIncludeTitle && typeof copyData?.title === 'string') {
+                setAutomateDailyVideoTitle(copyData.title.trim());
+              }
+              if (dailyGenIncludeCaption && typeof copyData?.description === 'string') {
+                setAutomateDailyTitle(copyData.description.trim());
+              }
             }
           } catch {
-            // keep previous title
-          }
-        }
-
-        if (dailyGenIncludeCaption && questionsForApi) {
-          try {
-            const captionRes = await fetch('/api/openai/daily-title', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ questions: questionsForApi }),
-            });
-            const captionData = await captionRes.json();
-            if (captionRes.ok && typeof captionData?.text === 'string') {
-              setAutomateDailyTitle(captionData.text.trim());
-            }
-          } catch {
-            // keep previous caption
+            // keep previous title/caption
           }
         }
 
@@ -1302,12 +1357,10 @@ export default function Home() {
         return;
       }
 
-      const questionPool =
-        automateQuestionType === 'me_or_you'
-          ? ME_OR_YOU_QUESTIONS
-          : automateQuestionType === 'flirty'
-            ? FLIRTY_QUESTIONS
-            : FUNNY_QUESTIONS;
+      const resolvedType = resolveQuestionType(automateQuestionType);
+      activeQuestionTypeRef.current = resolvedType;
+      setAutomateResolvedQuestionType(resolvedType);
+      const questionPool = questionPoolForType(resolvedType);
       let rawTemplatePromptForCover: string | null = null;
       let selectedQuestionsThisRun: string[] | null = null;
 
@@ -1334,7 +1387,7 @@ export default function Home() {
         if (rawTemplatePromptForCover) refSet.add(rawTemplatePromptForCover);
         lastDailyPromptRunRef.current = refSet;
 
-        const qShuffled = shuffle(questionPool);
+        const qShuffled = shuffle([...questionPool]);
         const selectedQuestions = qShuffled.slice(0, 5);
         selectedQuestionsThisRun = selectedQuestions;
         const results = selectedPrompts.map((p, i) => p.replace(/\{x\}/g, selectedQuestions[i]!));
@@ -1355,7 +1408,7 @@ export default function Home() {
 
       // Show cover as soon as prompt is ready (don't wait for title/caption APIs).
       if (dailyGenIncludeCoverImage && rawTemplatePromptForCover) {
-        const templateReplacement = pickTemplateHookTitle().trim();
+        const templateReplacement = pickTemplateHookTitle(resolvedType).trim();
         const templateWithXReplaced = rawTemplatePromptForCover.replace(/\{x\}/g, templateReplacement);
         setAutomateDailyTemplateReplacementText(templateReplacement);
         setAutomateDailyTemplatePrompt(templateWithXReplaced);
@@ -1368,35 +1421,24 @@ export default function Home() {
             ? automateDailyRowQuestions.join('\n')
             : '';
 
-      if (dailyGenIncludeTitle && questionsForApi) {
+      if ((dailyGenIncludeTitle || dailyGenIncludeCaption) && questionsForApi) {
         try {
-          const videoTitleRes = await fetch('/api/openai/daily-video-title', {
+          const copyRes = await fetch('/api/openai/daily-video-title', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ questions: questionsForApi }),
           });
-          const videoTitleData = await videoTitleRes.json();
-          if (videoTitleRes.ok && typeof videoTitleData?.text === 'string') {
-            setAutomateDailyVideoTitle(videoTitleData.text.trim());
+          const copyData = await copyRes.json();
+          if (copyRes.ok) {
+            if (dailyGenIncludeTitle && typeof copyData?.title === 'string') {
+              setAutomateDailyVideoTitle(copyData.title.trim());
+            }
+            if (dailyGenIncludeCaption && typeof copyData?.description === 'string') {
+              setAutomateDailyTitle(copyData.description.trim());
+            }
           }
         } catch {
-          // keep previous title
-        }
-      }
-
-      if (dailyGenIncludeCaption && questionsForApi) {
-        try {
-          const captionRes = await fetch('/api/openai/daily-title', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ questions: questionsForApi }),
-          });
-          const captionData = await captionRes.json();
-          if (captionRes.ok && typeof captionData?.text === 'string') {
-            setAutomateDailyTitle(captionData.text.trim());
-          }
-        } catch {
-          // keep previous caption
+          // keep previous title/caption
         }
       }
 
@@ -1417,7 +1459,9 @@ export default function Home() {
         body: JSON.stringify({ questions: questionsForApi }),
       });
       const videoTitleData = await videoTitleRes.json();
-      if (videoTitleRes.ok && typeof videoTitleData?.text === 'string') {
+      if (videoTitleRes.ok && typeof videoTitleData?.title === 'string') {
+        setAutomateDailyVideoTitle(videoTitleData.title.trim());
+      } else if (videoTitleRes.ok && typeof videoTitleData?.text === 'string') {
         setAutomateDailyVideoTitle(videoTitleData.text.trim());
       }
     } catch {
@@ -1438,7 +1482,9 @@ export default function Home() {
         body: JSON.stringify({ questions: questionsForApi }),
       });
       const captionData = await captionRes.json();
-      if (captionRes.ok && typeof captionData?.text === 'string') {
+      if (captionRes.ok && typeof captionData?.description === 'string') {
+        setAutomateDailyTitle(captionData.description.trim());
+      } else if (captionRes.ok && typeof captionData?.text === 'string') {
         setAutomateDailyTitle(captionData.text.trim());
       }
     } catch {
@@ -1579,12 +1625,7 @@ export default function Home() {
       return;
     }
 
-    const questionPool =
-      automateQuestionType === 'me_or_you'
-        ? ME_OR_YOU_QUESTIONS
-        : automateQuestionType === 'flirty'
-          ? FLIRTY_QUESTIONS
-          : FUNNY_QUESTIONS;
+    const questionPool = questionPoolForType(activeConcreteQuestionType());
     if (
       !automateDailyRowPrompts ||
       !automateDailyRowQuestions ||
@@ -1724,12 +1765,7 @@ export default function Home() {
       return;
     }
 
-    const questionPool =
-      automateQuestionType === 'me_or_you'
-        ? ME_OR_YOU_QUESTIONS
-        : automateQuestionType === 'flirty'
-          ? FLIRTY_QUESTIONS
-          : FUNNY_QUESTIONS;
+    const questionPool = questionPoolForType(activeConcreteQuestionType());
     const currentPrompt = automateDailyRowPrompts[index]!;
     const usedQuestions = new Set(automateDailyRowQuestions.filter((_, i) => i !== index));
     usedQuestions.add(automateDailyRowQuestions[index]!);
@@ -2740,7 +2776,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
   };
 
   return (
-    <div className="h-screen overflow-hidden overflow-x-hidden bg-zinc-50 font-sans dark:bg-black flex">
+    <div className="h-dvh overflow-hidden overflow-x-hidden bg-zinc-50 font-sans dark:bg-black flex flex-col lg:flex-row">
       <Sidebar
         contentTab={contentTab}
         onContentTabChange={setContentTab}
@@ -2753,11 +2789,17 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         setShowSettingsMenu={setShowSettingsMenu}
         onLogout={handleLogout}
       />
-      <div className="flex-1 flex flex-col min-w-0 h-screen ml-56 overflow-y-auto overflow-x-hidden">
+      <div
+        className={`flex-1 flex flex-col min-w-0 min-h-0 lg:h-dvh ml-0 lg:ml-56 overflow-x-hidden pt-14 lg:pt-0 ${
+          contentTab === 'prompt' ? 'pb-[4.75rem] lg:pb-0' : ''
+        }`}
+      >
         <div className="max-w-7xl mx-auto w-full min-w-0 flex flex-col flex-1 min-h-0">
           <div
-            className={`grid grid-cols-1 gap-4 flex-1 min-h-0 min-w-0 px-3 pb-3 pt-0 overflow-x-hidden overflow-y-hidden ${
-              contentTab === 'prompt' ? 'lg:grid-cols-[320px_minmax(0,1fr)]' : 'lg:grid-cols-[400px_minmax(0,1fr)]'
+            className={`grid grid-cols-1 gap-3 sm:gap-4 flex-1 min-h-0 min-w-0 px-3 pb-3 pt-3 lg:pt-0 overflow-x-hidden ${
+              contentTab === 'prompt'
+                ? 'overflow-y-auto lg:overflow-y-hidden lg:grid-cols-[320px_minmax(0,1fr)] lg:items-stretch'
+                : 'overflow-y-auto lg:overflow-y-hidden lg:grid-cols-[400px_minmax(0,1fr)]'
             }`}
           >
             {contentTab === 'prompt' && (
@@ -2846,17 +2888,18 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                 automateQuestionOptions={
                   selectedAppId === 'fab'
                     ? [...FAB_HEART_MESSAGES]
-                    : automateQuestionType === 'me_or_you'
-                      ? [...ME_OR_YOU_QUESTIONS]
-                      : automateQuestionType === 'flirty'
-                        ? [...FLIRTY_QUESTIONS]
-                        : [...FUNNY_QUESTIONS]
+                    : automateQuestionType === 'random'
+                      ? allQuestionPools()
+                      : [...questionPoolForType(automateQuestionType)]
                 }
                 automatePromptOptions={
                   selectedAppId === 'fab' ? [...FAB_PAPER_COLORS] : [...PROMPTS]
                 }
                 automateTemplatePromptOptions={[...SPILL_IT_TEMPLATE_COVER_PROMPTS]}
                 automateTemplateQuestionOptions={[...templateTitlePool]}
+                automateResolvedQuestionType={
+                  contentTab === 'prompt' ? automateResolvedQuestionType : null
+                }
                 onSetDailyQuestion={handleSetDailyQuestionAtIndex}
                 onRetryTemplatePrompt={handleRetryTemplatePrompt}
                 isRetryingTemplatePrompt={isRetryingTemplatePrompt}
@@ -2881,14 +2924,14 @@ const imageFrameTitleLine1 = 'Questions to ask your';
               />
             )}
             {contentTab === 'automate' && (
-              <div className="lg:col-span-2 h-full min-h-0 min-w-0 p-6 flex items-center justify-center">
+              <div className="lg:col-span-2 h-auto lg:h-full min-h-0 min-w-0 p-6 flex items-center justify-center">
                 <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center max-w-md">
                   Batch automation tools will live here. Connect Google Drive in Settings (gear icon) to sync uploads to your phone.
                 </p>
               </div>
             )}
             {contentTab === 'image' && (
-              <div className="lg:col-span-2 h-full min-h-0 min-w-0 max-w-full overflow-y-auto overflow-x-hidden p-1">
+              <div className="lg:col-span-2 h-auto lg:h-full min-h-0 min-w-0 max-w-full overflow-y-auto overflow-x-hidden p-1">
                 {selectedImageTemplateId === null ? (
                   <>
                     <div className="mb-4">
@@ -3139,7 +3182,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
               </div>
             )}
             {contentTab === 'video' && (
-              <div className="lg:col-span-2 h-full min-h-0 min-w-0 max-w-full overflow-y-auto overflow-x-hidden p-1">
+              <div className="lg:col-span-2 h-auto lg:h-full min-h-0 min-w-0 max-w-full overflow-y-auto overflow-x-hidden p-1">
                 {selectedVideoTemplateId === null ? (
                   <>
                     <div className="mb-4">

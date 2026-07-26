@@ -54,7 +54,7 @@ export function SettingsMenuPanel({ onClose, initialTab = 'drive' }: SettingsMen
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} aria-hidden />
       <div
-        className="absolute left-full bottom-0 ml-2 z-50 w-[min(340px,calc(100vw-15rem))] rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-xl overflow-hidden flex flex-col max-h-[min(85vh,640px)]"
+        className="fixed z-50 inset-x-3 top-16 bottom-3 sm:inset-x-auto sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[min(340px,calc(100vw-2rem))] lg:absolute lg:inset-auto lg:left-full lg:bottom-0 lg:top-auto lg:translate-x-0 lg:translate-y-0 lg:ml-2 lg:w-[min(340px,calc(100vw-15rem))] rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-xl overflow-hidden flex flex-col max-h-[min(85vh,640px)]"
         role="dialog"
         aria-label="Settings"
       >

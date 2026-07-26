@@ -3,7 +3,7 @@
 import { useMemo, useState, useCallback } from 'react';
 import type { CanvasData } from '@/app/lib/types';
 import { wrapTextToLines, getComplementaryColor } from '@/app/lib/canvas-utils';
-import { ROMANTIC_IMAGE_FILTER } from '@/app/lib/constants';
+import { ROMANTIC_IMAGE_FILTER, type ConcreteQuestionType } from '@/app/lib/constants';
 import { downloadDataUrl, extensionForMimeType } from '@/app/lib/download-data-url';
 
 function GenerateImageIcon({ className }: { className?: string }) {
@@ -108,6 +108,8 @@ interface PreviewPanelProps {
   automateTemplatePromptOptions?: string[];
   /** Available template question/title options */
   automateTemplateQuestionOptions?: string[];
+  /** Concrete question category used for the latest run */
+  automateResolvedQuestionType?: ConcreteQuestionType | null;
   /** Set a specific question for a slot */
   onSetDailyQuestion?: (index: number, question: string) => void;
   /** Retry template prompt - new prompt + new API text for {x} */
@@ -168,6 +170,7 @@ export function PreviewPanel({
   automatePromptOptions = [],
   automateTemplatePromptOptions,
   automateTemplateQuestionOptions = [],
+  automateResolvedQuestionType = null,
   onSetDailyQuestion,
   onRetryTemplatePrompt,
   isRetryingTemplatePrompt = false,
@@ -189,6 +192,16 @@ export function PreviewPanel({
   const showAutomateDaily = automateDailyResults && automateDailyResults.length > 0;
   const showCanvasCards = !isAutomateNanaMode;
   const templateActionsBusy = isRetryingTemplatePrompt || isRetryingTemplateQuestion;
+  const resolvedCategoryLabel =
+    automateResolvedQuestionType === 'me_or_you'
+      ? 'Me or you'
+      : automateResolvedQuestionType === 'flirty'
+        ? 'Flirty'
+        : automateResolvedQuestionType === 'brave'
+          ? 'Brave'
+          : automateResolvedQuestionType === 'funny'
+            ? 'Funny'
+            : null;
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [questionSelectValueByIndex, setQuestionSelectValueByIndex] = useState<Record<number, string>>({});
   const [templateQuestionSelectValue, setTemplateQuestionSelectValue] = useState('');
@@ -307,11 +320,23 @@ export function PreviewPanel({
   }, [mounted, backgroundColor, imageSize, currentCanvas.textSize, textSize, currentCanvasId, firstCard.textColor, firstCard.text, currentCanvas.textColor, currentCanvas.text, mode, videoBackgroundUrl]);
 
   return (
-    <div className="flex flex-col p-4 bg-white dark:bg-zinc-900 rounded-2xl shadow-lg h-full max-h-screen overflow-hidden">
-      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3 flex-shrink-0">Preview</label>
-      <div className="flex-1 flex items-center justify-center min-h-0 mb-3 p-2 w-full overflow-hidden" style={{ position: 'relative', contain: 'layout style paint' }}>
+    <div className="flex flex-col h-auto lg:h-full lg:max-h-screen p-3 sm:p-4 bg-white dark:bg-zinc-900 rounded-xl lg:rounded-2xl border border-zinc-200 dark:border-zinc-800 lg:border-0 lg:shadow-lg overflow-visible lg:overflow-hidden">
+      <div className="mb-3 shrink-0 flex items-center justify-between gap-2">
+        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          {isAutomateNanaMode ? 'Results' : 'Preview'}
+        </label>
+        {isAutomateNanaMode && resolvedCategoryLabel ? (
+          <span className="inline-flex items-center rounded-full border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 px-2.5 py-0.5 text-xs font-medium text-zinc-700 dark:text-zinc-200">
+            {resolvedCategoryLabel}
+          </span>
+        ) : null}
+      </div>
+      <div
+        className="flex-1 flex items-stretch lg:items-center justify-center min-h-0 mb-0 lg:mb-3 p-0 lg:p-2 w-full overflow-visible lg:overflow-hidden"
+        style={{ position: 'relative', contain: 'layout style paint' }}
+      >
         {((showAutomateDaily && automateDailyResults) || (isAutomateNanaMode && (automateDailyVideoTitle || automateDailyTitle || automateDailyTemplatePrompt))) ? (
-          <div className="w-full h-full flex flex-col gap-3 overflow-auto pr-1">
+          <div className="w-full h-auto lg:h-full flex flex-col gap-3 overflow-visible lg:overflow-auto pr-0 lg:pr-1">
             {generateImageError && (
               <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">
                 {generateImageError}
@@ -650,9 +675,9 @@ export function PreviewPanel({
             ))}
           </div>
         ) : isAutomateNanaMode ? (
-          <div className="w-full h-full flex items-center justify-center rounded-lg border-2 border-dashed border-zinc-300 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-800/50 p-6">
+          <div className="w-full min-h-[160px] lg:h-full flex items-center justify-center rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-800/50 p-6">
             <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center">
-              Click Generate Daily TikTok to see prompts
+              Tap Generate Daily TikTok to see prompts
             </p>
           </div>
         ) : (
