@@ -242,6 +242,27 @@ function pickRandomFunnyQuestions(count: number): string[] {
   return shuffleCopy([...FUNNY_QUESTIONS]).slice(0, count);
 }
 
+function pickRandomMixedQuestions(count: number): string[] {
+  return shuffleCopy(allQuestionPools()).slice(0, count);
+}
+
+function pickQuestionsForType(type: AutomateQuestionType, count: number): string[] {
+  if (type === 'random') return pickRandomMixedQuestions(count);
+  return shuffleCopy([...questionPoolForType(type)]).slice(0, count);
+}
+
+function pickTitleForType(type: AutomateQuestionType, exclude?: string): string {
+  if (type === 'random') return pickRandomMixedTitle(exclude);
+  const pool = [...templateTitlePoolForType(type)];
+  if (pool.length === 0) return '';
+  if (pool.length === 1) return pool[0]!;
+  let next = pool[Math.floor(Math.random() * pool.length)]!;
+  if (exclude && next === exclude) {
+    next = pool.find((t) => t !== exclude) ?? next;
+  }
+  return next;
+}
+
 type TikTokCaptionLayout = {
   lines: string[];
   fontSize: number;
@@ -534,21 +555,25 @@ async function exportVideoWithCaptionOverlay(
   const video = document.createElement('video');
   video.crossOrigin = 'anonymous';
   video.playsInline = true;
+  video.muted = true;
   video.setAttribute('playsinline', '');
+  video.setAttribute('webkit-playsinline', '');
   video.preload = 'auto';
   video.src = videoSrc;
 
   await new Promise<void>((resolve, reject) => {
-    video.addEventListener(
-      'loadeddata',
-      () => resolve(),
-      { once: true }
-    );
-    video.addEventListener(
-      'error',
-      () => reject(new Error('Failed to load video')),
-      { once: true }
-    );
+    const fail = () => reject(new Error('Failed to load video'));
+    video.addEventListener('error', fail, { once: true });
+    const ready = () => {
+      video.removeEventListener('error', fail);
+      resolve();
+    };
+    // iOS Safari may not fire loadeddata until playback starts (muted).
+    video.addEventListener('loadeddata', ready, { once: true });
+    video.addEventListener('canplay', ready, { once: true });
+    void video.play().catch(() => {
+      // Autoplay can still fail; loadeddata/canplay may still arrive.
+    });
   });
 
   const w = video.videoWidth;
@@ -831,6 +856,17 @@ function allTemplateTitlePools(): string[] {
   ];
 }
 
+function pickRandomMixedTitle(exclude?: string): string {
+  const pool = allTemplateTitlePools();
+  if (pool.length === 0) return '';
+  if (pool.length === 1) return pool[0]!;
+  let next = pool[Math.floor(Math.random() * pool.length)]!;
+  if (exclude && next === exclude) {
+    next = pool.find((t) => t !== exclude) ?? next;
+  }
+  return next;
+}
+
 export default function Home() {
   const [canvases, setCanvases] = useState<CanvasData[]>(INITIAL_CANVASES);
   const [currentCanvasId, setCurrentCanvasId] = useState<string>('1');
@@ -875,6 +911,11 @@ export default function Home() {
   /** TikTok-style overlay on video templates (white fill, black stroke). */
   const [videoOverlayCaption, setVideoOverlayCaption] = useState('Your text here');
   const [videoTemplate2Questions, setVideoTemplate2Questions] = useState<string[]>([]);
+  const [videoTemplate2QuestionType, setVideoTemplate2QuestionType] =
+    useState<AutomateQuestionType>('random');
+  const [videoTemplate2Description, setVideoTemplate2Description] = useState('');
+  const [isGeneratingVideoTemplate2Description, setIsGeneratingVideoTemplate2Description] =
+    useState(false);
   const [videoTemplate2PexelsVideoSrc, setVideoTemplate2PexelsVideoSrc] = useState<string | null>(null);
   const [videoTemplate2PexelsPosterSrc, setVideoTemplate2PexelsPosterSrc] = useState<string | null>(null);
   const [isVideoTemplate2VideoLoading, setIsVideoTemplate2VideoLoading] = useState(false);
@@ -1025,21 +1066,82 @@ export default function Home() {
   }, [isKawaiiImageTemplate, selectedImageBrowserTab]);
 
   const regenerateVideoTemplate2Title = () => {
-    setVideoOverlayCaption((current) => pickRandomDailyFunnyTitle(current));
+    setVideoOverlayCaption((current) => pickTitleForType(videoTemplate2QuestionType, current));
   };
 
   const regenerateVideoTemplate2Content = () => {
     regenerateVideoTemplate2Title();
-    setVideoTemplate2Questions(pickRandomFunnyQuestions(7));
+    setVideoTemplate2Questions(pickQuestionsForType(videoTemplate2QuestionType, 7));
   };
 
   const regenerateFabNotesTitle = () => {
-    setVideoOverlayCaption((current) => pickRandomDailyFunnyTitle(current));
+    setVideoOverlayCaption((current) => pickTitleForType(videoTemplate2QuestionType, current));
   };
 
   const regenerateFabNotesContent = () => {
     regenerateFabNotesTitle();
-    setVideoTemplate2Questions(pickRandomFunnyQuestions(5));
+    setVideoTemplate2Questions(pickQuestionsForType(videoTemplate2QuestionType, 5));
+  };
+
+  const applyVideoTemplate2QuestionType = (type: AutomateQuestionType) => {
+    setVideoTemplate2QuestionType(type);
+    setVideoOverlayCaption((current) => pickTitleForType(type, current));
+    setVideoTemplate2Questions(
+      pickQuestionsForType(type, isSpillItNotesVideoTemplate ? 5 : 7)
+    );
+  };
+
+  const VIDEO_TEMPLATE2_TYPE_CYCLE: AutomateQuestionType[] = [
+    'random',
+    ...CONCRETE_QUESTION_TYPES,
+  ];
+
+  const regenerateVideoTemplate2Type = () => {
+    const idx = VIDEO_TEMPLATE2_TYPE_CYCLE.indexOf(videoTemplate2QuestionType);
+    const next =
+      VIDEO_TEMPLATE2_TYPE_CYCLE[(idx + 1) % VIDEO_TEMPLATE2_TYPE_CYCLE.length] ?? 'random';
+    applyVideoTemplate2QuestionType(next);
+  };
+
+  const handleGenerateVideoTemplate2Description = async () => {
+    const questions = videoTemplate2Questions.map((q) => q.trim()).filter(Boolean);
+    if (questions.length === 0) {
+      setVideoExportError('Add some questions first, then generate a description.');
+      return;
+    }
+    setVideoExportError(null);
+    setIsGeneratingVideoTemplate2Description(true);
+    try {
+      const type = resolveQuestionType(videoTemplate2QuestionType);
+      const res = await fetch('/api/openai/daily-title', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          questions: questions.join('\n'),
+          type,
+        }),
+      });
+      const data = (await res.json()) as {
+        description?: string;
+        text?: string;
+        error?: string;
+      };
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to generate description');
+      }
+      const description =
+        (typeof data.description === 'string' && data.description.trim()) ||
+        (typeof data.text === 'string' && data.text.trim()) ||
+        '';
+      if (!description) {
+        throw new Error('No description returned');
+      }
+      setVideoTemplate2Description(description);
+    } catch (e) {
+      setVideoExportError(e instanceof Error ? e.message : 'Failed to generate description');
+    } finally {
+      setIsGeneratingVideoTemplate2Description(false);
+    }
   };
 
   const updateVideoTemplate2Question = (index: number, value: string) => {
@@ -1451,7 +1553,7 @@ export default function Home() {
             const copyRes = await fetch('/api/openai/daily-video-title', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ questions: questionsForApi }),
+              body: JSON.stringify({ questions: questionsForApi, type: 'funny' }),
             });
             const copyData = await copyRes.json();
             if (copyRes.ok) {
@@ -1540,7 +1642,7 @@ export default function Home() {
           const copyRes = await fetch('/api/openai/daily-video-title', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ questions: questionsForApi }),
+            body: JSON.stringify({ questions: questionsForApi, type: resolvedType }),
           });
           const copyData = await copyRes.json();
           if (copyRes.ok) {
@@ -1570,7 +1672,10 @@ export default function Home() {
       const videoTitleRes = await fetch('/api/openai/daily-video-title', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questions: questionsForApi }),
+        body: JSON.stringify({
+          questions: questionsForApi,
+          type: activeConcreteQuestionType(),
+        }),
       });
       const videoTitleData = await videoTitleRes.json();
       if (videoTitleRes.ok && typeof videoTitleData?.title === 'string') {
@@ -1593,7 +1698,10 @@ export default function Home() {
       const captionRes = await fetch('/api/openai/daily-title', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questions: questionsForApi }),
+        body: JSON.stringify({
+          questions: questionsForApi,
+          type: activeConcreteQuestionType(),
+        }),
       });
       const captionData = await captionRes.json();
       if (captionRes.ok && typeof captionData?.description === 'string') {
@@ -3490,41 +3598,51 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                           </>
                         ) : null}
                         {usesPexelsVideoBackground ? (
-                          <button
-                            type="button"
-                            onClick={handleRegenerateVideoTemplate2Video}
-                            disabled={isVideoTemplate2VideoLoading || isVideoExporting}
-                            className="inline-flex w-full sm:w-auto items-center justify-center gap-2 text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {isVideoTemplate2VideoLoading ? (
-                              <>
-                                <svg
-                                  className="h-4 w-4 shrink-0 animate-spin"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  aria-hidden
-                                >
-                                  <circle
-                                    className="opacity-25"
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    strokeWidth="4"
-                                  />
-                                  <path
-                                    className="opacity-75"
-                                    fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                  />
-                                </svg>
-                                <span>Loading…</span>
-                              </>
-                            ) : (
-                              'Regenerate video'
-                            )}
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              onClick={handleRegenerateVideoTemplate2Video}
+                              disabled={isVideoTemplate2VideoLoading || isVideoExporting}
+                              className="inline-flex w-full sm:w-auto items-center justify-center gap-2 text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {isVideoTemplate2VideoLoading ? (
+                                <>
+                                  <svg
+                                    className="h-4 w-4 shrink-0 animate-spin"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    aria-hidden
+                                  >
+                                    <circle
+                                      className="opacity-25"
+                                      cx="12"
+                                      cy="12"
+                                      r="10"
+                                      stroke="currentColor"
+                                      strokeWidth="4"
+                                    />
+                                    <path
+                                      className="opacity-75"
+                                      fill="currentColor"
+                                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                    />
+                                  </svg>
+                                  <span>Loading…</span>
+                                </>
+                              ) : (
+                                'Regenerate video'
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={regenerateVideoTemplate2Type}
+                              disabled={isVideoExporting}
+                              className="inline-flex w-full sm:w-auto items-center justify-center gap-2 text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              Regenerate type
+                            </button>
+                          </>
                         ) : null}
                         <button
                           type="button"
@@ -3801,31 +3919,51 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                     ? 'Title text'
                                     : 'Frame text'}
                                 </label>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (isCouplesNatureVideoTemplate) {
-                                      regenerateVideoTemplate2Title();
-                                      return;
-                                    }
-                                    if (isSpillItNotesVideoTemplate) {
-                                      regenerateFabNotesTitle();
-                                      return;
-                                    }
-                                    const pool = [...FUNNY_QUESTIONS];
-                                    const current = videoOverlayCaption;
-                                    let next = pool[Math.floor(Math.random() * pool.length)] ?? current;
-                                    if (pool.length > 1 && next === current) {
-                                      next = pool.find((q) => q !== current) ?? next;
-                                    }
-                                    setVideoOverlayCaption(next);
-                                  }}
-                                  className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                                >
-                                  {isCouplesNatureVideoTemplate || isSpillItNotesVideoTemplate
-                                    ? 'Retry'
-                                    : 'Random question'}
-                                </button>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  {isCouplesNatureVideoTemplate || isSpillItNotesVideoTemplate ? (
+                                    <select
+                                      value={videoTemplate2QuestionType}
+                                      onChange={(e) =>
+                                        applyVideoTemplate2QuestionType(
+                                          e.target.value as AutomateQuestionType
+                                        )
+                                      }
+                                      className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2 py-1.5 sm:py-1 text-sm sm:text-xs text-zinc-800 dark:text-zinc-200"
+                                      aria-label="Question type"
+                                    >
+                                      <option value="random">Random</option>
+                                      <option value="funny">Funny</option>
+                                      <option value="flirty">Flirty</option>
+                                      <option value="me_or_you">Me or you</option>
+                                      <option value="brave">Brave</option>
+                                    </select>
+                                  ) : null}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (isCouplesNatureVideoTemplate) {
+                                        regenerateVideoTemplate2Title();
+                                        return;
+                                      }
+                                      if (isSpillItNotesVideoTemplate) {
+                                        regenerateFabNotesTitle();
+                                        return;
+                                      }
+                                      const pool = [...FUNNY_QUESTIONS];
+                                      const current = videoOverlayCaption;
+                                      let next = pool[Math.floor(Math.random() * pool.length)] ?? current;
+                                      if (pool.length > 1 && next === current) {
+                                        next = pool.find((q) => q !== current) ?? next;
+                                      }
+                                      setVideoOverlayCaption(next);
+                                    }}
+                                    className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                  >
+                                    {isCouplesNatureVideoTemplate || isSpillItNotesVideoTemplate
+                                      ? 'Retry'
+                                      : 'Random question'}
+                                  </button>
+                                </div>
                               </div>
                               <input
                                 type="text"
@@ -3841,11 +3979,16 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-300">
                                     Questions
                                   </label>
-                                  {isSpillItNotesVideoTemplate ? (
+                                  {isCouplesNatureVideoTemplate || isSpillItNotesVideoTemplate ? (
                                     <button
                                       type="button"
                                       onClick={() =>
-                                        setVideoTemplate2Questions(pickRandomFunnyQuestions(5))
+                                        setVideoTemplate2Questions(
+                                          pickQuestionsForType(
+                                            videoTemplate2QuestionType,
+                                            isSpillItNotesVideoTemplate ? 5 : 7
+                                          )
+                                        )
                                       }
                                       className="text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                                     >
@@ -3872,6 +4015,35 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   )
                                   )}
                                 </div>
+                              </div>
+                            ) : null}
+                            {isCouplesNatureVideoTemplate || isSpillItNotesVideoTemplate ? (
+                              <div>
+                                <div className="mb-2 flex items-center justify-between gap-2">
+                                  <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                                    Description
+                                  </label>
+                                  <button
+                                    type="button"
+                                    onClick={() => void handleGenerateVideoTemplate2Description()}
+                                    disabled={
+                                      isGeneratingVideoTemplate2Description ||
+                                      videoTemplate2Questions.every((q) => !q.trim())
+                                    }
+                                    className="text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {isGeneratingVideoTemplate2Description
+                                      ? 'Generating…'
+                                      : 'Generate description'}
+                                  </button>
+                                </div>
+                                <textarea
+                                  value={videoTemplate2Description}
+                                  onChange={(e) => setVideoTemplate2Description(e.target.value)}
+                                  placeholder="TikTok caption / description will appear here…"
+                                  rows={5}
+                                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-zinc-400 resize-y min-h-[6rem]"
+                                />
                               </div>
                             ) : null}
                           </div>

@@ -2,12 +2,33 @@ import OpenAI from 'openai';
 
 /** Combined Spill It title + caption prompt (OpenAI platform). */
 export const DAILY_COPY_PROMPT_ID = 'pmpt_6a6643bfe330819583ea4028ebac1b7b0071dd49edc1d12e';
-export const DAILY_COPY_PROMPT_VERSION = '3';
+export const DAILY_COPY_PROMPT_VERSION = '4';
+
+export type DailyCopyQuestionType = 'funny' | 'flirty' | 'me_or_you' | 'brave';
 
 export type DailyCopyResult = {
   title: string;
   description: string;
   raw: string;
+};
+
+const TYPE_LABEL: Record<DailyCopyQuestionType, string> = {
+  funny: 'Funny',
+  flirty: 'Flirty',
+  me_or_you: 'Me or you',
+  brave: 'Brave',
+};
+
+/** Extra tone hints sent with the questions so the stored prompt can adapt per type. */
+const TYPE_GUIDANCE: Record<DailyCopyQuestionType, string> = {
+  funny:
+    'Playful, chaotic, light ragebait humor. Awkward / funny boyfriend questions. Curious and slightly confrontational, never mean.',
+  flirty:
+    'Spicy, teasing, romantic tension. Temptation and flirty energy — never NSFW-explicit, never crude.',
+  me_or_you:
+    'Competitive couples comparison. "Me or you" / who would win energy. Playful rivalry, not cruelty.',
+  brave:
+    'Deep, uncomfortable-but-healthy honesty. Brave / vulnerable relationship questions. Serious curiosity, not cruelty.',
 };
 
 function extractOutputText(res: {
@@ -47,17 +68,34 @@ export function parseDailyCopy(raw: string): DailyCopyResult {
   };
 }
 
-export async function generateDailyCopy(questions: string): Promise<DailyCopyResult> {
+export function isDailyCopyQuestionType(value: unknown): value is DailyCopyQuestionType {
+  return value === 'funny' || value === 'flirty' || value === 'me_or_you' || value === 'brave';
+}
+
+/**
+ * Generate title + caption for Spill It daily TikTok.
+ * OpenAI prompt variables: {{type}}, {{type_label}}, {{type_guidance}}, {{questions}}
+ */
+export async function generateDailyCopy(
+  questions: string,
+  type: DailyCopyQuestionType = 'funny'
+): Promise<DailyCopyResult> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error('Missing OPENAI_API_KEY');
 
   const client = new OpenAI({ apiKey });
+
   const response = await client.responses.create({
     prompt: {
       id: DAILY_COPY_PROMPT_ID,
       version: DAILY_COPY_PROMPT_VERSION,
+      variables: {
+        type,
+        type_label: TYPE_LABEL[type],
+        type_guidance: TYPE_GUIDANCE[type],
+        questions,
+      },
     },
-    input: `Questions:\n${questions}`,
   });
 
   const outputText = extractOutputText(
