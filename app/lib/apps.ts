@@ -40,7 +40,7 @@ export function resolveStudioAppId(value: string | null | undefined): StudioAppI
 /** Image templates available for each app (IDs are scoped per app). */
 export const IMAGE_TEMPLATES_BY_APP: Record<StudioAppId, ImageTemplateCard[]> = {
   'spill-it': [
-    { id: 1, title: 'Kawaii', subtitle: '' },
+    { id: 1, title: 'Template 1', subtitle: '' },
     { id: 2, title: 'Template 2', subtitle: '' },
     { id: 3, title: 'Template 3', subtitle: '' },
   ],

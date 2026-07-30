@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter, Open_Sans } from "next/font/google";
+import { Geist, Geist_Mono, Inter, Nunito, Open_Sans } from "next/font/google";
 import "@fontsource/tiktok-sans/latin-700.css";
 import "@fontsource/tiktok-sans/latin-900.css";
 import "@fontsource/tiktok-sans/latin-ext-700.css";
@@ -10,6 +10,12 @@ const openSans = Open_Sans({
   variable: "--font-open-sans",
   subsets: ["latin"],
   weight: ["400", "600", "700"],
+});
+
+const nunito = Nunito({
+  variable: "--font-nunito",
+  subsets: ["latin"],
+  weight: ["600", "700", "800"],
 });
 
 const geistSans = Geist({
@@ -41,7 +47,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${openSans.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${openSans.variable} ${nunito.variable} antialiased`}
       >
         {children}
       </body>

@@ -21,6 +21,37 @@ export const CARD_BG_FALLBACK_PALETTE = [
   '#3d3d5c',
 ];
 
+/** Pastel backgrounds for Spill It Image Template 2 (carousel). Mid-tone so white text stays readable. */
+export const IMAGE_TEMPLATE2_PASTEL_COLORS = [
+  '#D48A9C', // dusty rose
+  '#A48BC4', // muted lilac
+  '#7AADD0', // soft blue
+  '#78B898', // sage green
+  '#D4B45E', // muted gold
+  '#D49A88', // terracotta blush
+  '#68B8B4', // teal mist
+  '#A088C0', // soft plum
+  '#D09A78', // warm peach
+  '#7AA0C8', // slate blue
+  '#B888A8', // mauve
+  '#8AA878', // olive mint
+] as const;
+
+export const IMAGE_TEMPLATE2_APP_FOOTER = 'Spill It - Couples Questions';
+
+/** Coral squiggle under the highlighted cover title word (Breeze-ad style). */
+export const IMAGE_TEMPLATE2_SQUIGGLE_COLOR = '#FF7A9A';
+
+export const IMAGE_TEMPLATE2_TYPE_LABELS: Record<
+  'funny' | 'flirty' | 'me_or_you' | 'brave',
+  string
+> = {
+  funny: 'Funny Questions',
+  flirty: 'Flirty Questions',
+  me_or_you: 'Me or You',
+  brave: 'Brave Questions',
+};
+
 /** Cover image prompt IDs for automate flow. Keys are display names. */
 export const COVER_IMAGE_PROMPTS = {
   boards: 'pmpt_6991006af1cc8195a60c91937fc07b7100c73c923d7ad252',

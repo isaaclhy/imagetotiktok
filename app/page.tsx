@@ -18,6 +18,10 @@ import {
   COUPLES_NATURE_VIDEO_FILTER,
   VIDEO_TEMPLATE2_PEXELS_QUERIES,
   CONCRETE_QUESTION_TYPES,
+  IMAGE_TEMPLATE2_PASTEL_COLORS,
+  IMAGE_TEMPLATE2_APP_FOOTER,
+  IMAGE_TEMPLATE2_TYPE_LABELS,
+  IMAGE_TEMPLATE2_SQUIGGLE_COLOR,
   type AutomateQuestionType,
   type ConcreteQuestionType,
 } from '@/app/lib/constants';
@@ -33,6 +37,7 @@ import {
   FAB_PAPER_COLORS,
   fillFabHeartPaperPrompt,
 } from '@/app/lib/fab-prompts';
+import { drawTitleSquiggle, splitTitleAroundHighlight } from '@/app/lib/highlight-word';
 import {
   FAB_AFFIRMATION_AMBIENT_SOUNDS,
   FAB_AFFIRMATION_CLIP_COUNT,
@@ -946,8 +951,11 @@ export default function Home() {
   const [isImageTemplateUploading, setIsImageTemplateUploading] = useState(false);
   const [videoExportError, setVideoExportError] = useState<string | null>(null);
   const [selectedImageBrowserTab, setSelectedImageBrowserTab] = useState(0);
-  const imageTabFrameBg = '#FEFEFE';
+  const [imageTabFrameBg, setImageTabFrameBg] = useState('#FEFEFE');
+  const [imageTabPastelBgs, setImageTabPastelBgs] = useState<string[]>([]);
+  const [imageTabTypeLabel, setImageTabTypeLabel] = useState('Funny Questions');
   const kawaiiCtaImageSrc = '/dog-images/kawaii-cta-tab.png';
+  const pastelCtaImageSrc = '/image-templates/template-2-cta.jpg';
   /** Kawaii image-tab frame: export is 1080×1440; keep preview text in the same ballpark via Tailwind below. */
   const imageFrameExportFontPx = 54;
   const imageFrameExportWrappedLineHeightPx = 70;
@@ -955,9 +963,24 @@ export default function Home() {
   const imageFrameExportFontFamily = '"Comic Sans MS", "Marker Felt", "Chalkboard SE", "Trebuchet MS", sans-serif';
   const imageFrameExportTextColor = '#2f2a31';
   const imageFrameExportGlowColor = 'rgba(255, 255, 255, 0.9)';
+  const pastelCarouselTextColor = '#FFFFFF';
+  /** Rounded geometric sans — free stand-in for Omnes (Breeze brand font). */
+  const pastelCarouselFontFamily =
+    'var(--font-nunito), Nunito, ui-rounded, system-ui, sans-serif';
+  /** Canvas can't resolve CSS variables — use the real family name for export. */
+  const pastelCarouselExportFontFamily = 'Nunito, ui-rounded, system-ui, sans-serif';
   const [imageTabFunnyQuestions, setImageTabFunnyQuestions] = useState<string[]>([]);
   const [imageTabTexts, setImageTabTexts] = useState<string[]>([]);
   const [imageTabSources, setImageTabSources] = useState<string[]>([]);
+  const [imageTemplate2QuestionType, setImageTemplate2QuestionType] =
+    useState<AutomateQuestionType>('random');
+  const [imageTemplate2Description, setImageTemplate2Description] = useState('');
+  const [isGeneratingImageTemplate2Description, setIsGeneratingImageTemplate2Description] =
+    useState(false);
+  const [imageTemplate2Error, setImageTemplate2Error] = useState<string | null>(null);
+  const [imageTemplate2HighlightWord, setImageTemplate2HighlightWord] = useState<string | null>(
+    null
+  );
   const [dogImagePool, setDogImagePool] = useState<string[]>([]);
   const [videoBackgroundUrl, setVideoBackgroundUrl] = useState<string | null>(null);
   const [videoThumbnailUrl, setVideoThumbnailUrl] = useState<string | null>(null);
@@ -1007,6 +1030,8 @@ export default function Home() {
   const imageTemplateCards = getImageTemplatesForApp(selectedAppId);
   const videoTemplateCards = getVideoTemplatesForApp(selectedAppId);
   const isKawaiiImageTemplate = selectedAppId === 'spill-it' && selectedImageTemplateId === 1;
+  const isPastelCarouselImageTemplate =
+    selectedAppId === 'spill-it' && selectedImageTemplateId === 2;
   const isCouplesNatureVideoTemplate = selectedAppId === 'spill-it' && selectedVideoTemplateId === 2;
   const isSpillItNotesVideoTemplate = selectedAppId === 'spill-it' && selectedVideoTemplateId === 3;
   const isFabAffirmationVideoTemplate = selectedAppId === 'fab' && selectedVideoTemplateId === 1;
@@ -1060,10 +1085,10 @@ export default function Home() {
   ]);
 
   useEffect(() => {
-    if (isKawaiiImageTemplate && selectedImageBrowserTab > 6) {
+    if ((isKawaiiImageTemplate || isPastelCarouselImageTemplate) && selectedImageBrowserTab > 6) {
       setSelectedImageBrowserTab(0);
     }
-  }, [isKawaiiImageTemplate, selectedImageBrowserTab]);
+  }, [isKawaiiImageTemplate, isPastelCarouselImageTemplate, selectedImageBrowserTab]);
 
   const regenerateVideoTemplate2Title = () => {
     setVideoOverlayCaption((current) => pickTitleForType(videoTemplate2QuestionType, current));
@@ -1101,6 +1126,76 @@ export default function Home() {
     const next =
       VIDEO_TEMPLATE2_TYPE_CYCLE[(idx + 1) % VIDEO_TEMPLATE2_TYPE_CYCLE.length] ?? 'random';
     applyVideoTemplate2QuestionType(next);
+  };
+
+  const applyImageTemplate2QuestionType = (type: AutomateQuestionType) => {
+    setImageTemplate2QuestionType(type);
+    const resolved = resolveQuestionType(type);
+    const title = pickTitleForType(type);
+    const questions = pickQuestionsForType(type, 5);
+    setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[resolved]);
+    setImageTabFunnyQuestions(questions);
+    setImageTabTexts([title, ...questions, 'Remember to like, save and share the fun!']);
+  };
+
+  const regenerateImageTemplate2Type = () => {
+    const idx = VIDEO_TEMPLATE2_TYPE_CYCLE.indexOf(imageTemplate2QuestionType);
+    const next =
+      VIDEO_TEMPLATE2_TYPE_CYCLE[(idx + 1) % VIDEO_TEMPLATE2_TYPE_CYCLE.length] ?? 'random';
+    applyImageTemplate2QuestionType(next);
+  };
+
+  const regenerateImageTemplate2Colors = () => {
+    const pastelPool = shuffleCopy([...IMAGE_TEMPLATE2_PASTEL_COLORS]);
+    const pastels = Array.from({ length: 6 }, (_, i) => pastelPool[i % pastelPool.length]!);
+    setImageTabPastelBgs(pastels);
+    setImageTabFrameBg(
+      pastels[Math.min(selectedImageBrowserTab, pastels.length - 1)] ?? pastels[0]!
+    );
+  };
+
+  const handleGenerateImageTemplate2Description = async () => {
+    const questions = imageTabTexts
+      .slice(1, 6)
+      .map((q) => q.trim())
+      .filter(Boolean);
+    if (questions.length === 0) {
+      setImageTemplate2Error('Add some questions first, then generate a description.');
+      return;
+    }
+    setImageTemplate2Error(null);
+    setIsGeneratingImageTemplate2Description(true);
+    try {
+      const type = resolveQuestionType(imageTemplate2QuestionType);
+      const res = await fetch('/api/openai/daily-title', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          questions: questions.join('\n'),
+          type,
+        }),
+      });
+      const data = (await res.json()) as {
+        description?: string;
+        text?: string;
+        error?: string;
+      };
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to generate description');
+      }
+      const description =
+        (typeof data.description === 'string' && data.description.trim()) ||
+        (typeof data.text === 'string' && data.text.trim()) ||
+        '';
+      if (!description) {
+        throw new Error('No description returned');
+      }
+      setImageTemplate2Description(description);
+    } catch (e) {
+      setImageTemplate2Error(e instanceof Error ? e.message : 'Failed to generate description');
+    } finally {
+      setIsGeneratingImageTemplate2Description(false);
+    }
   };
 
   const handleGenerateVideoTemplate2Description = async () => {
@@ -2371,12 +2466,38 @@ export default function Home() {
 const imageFrameTitleLine1 = 'Questions to ask your';
   const imageFrameTitleLine2 = 'boyfriend tonight <3';
   const imageFrameCtaText = 'Remember to like, save and share the fun!';
-  const regenerateImageTemplateContent = (templateId?: number) => {
+  const regenerateImageTemplateContent = (
+    templateId?: number,
+    options?: { resetTab?: boolean }
+  ) => {
     const tid = templateId ?? selectedImageTemplateId;
     const isKawaii = selectedAppId === 'spill-it' && tid === 1;
-    setSelectedImageBrowserTab(0);
+    const isPastel = selectedAppId === 'spill-it' && tid === 2;
+    if (options?.resetTab !== false) {
+      setSelectedImageBrowserTab(0);
+    }
+
+    if (isPastel) {
+      const type = resolveQuestionType(imageTemplate2QuestionType);
+      const title = pickTitleForType(imageTemplate2QuestionType);
+      const questions = pickQuestionsForType(imageTemplate2QuestionType, 5);
+      const pastelPool = shuffleCopy([...IMAGE_TEMPLATE2_PASTEL_COLORS]);
+      // One distinct pastel per cover + question slide (CTA is full-bleed).
+      const pastels = Array.from({ length: 6 }, (_, i) => pastelPool[i % pastelPool.length]!);
+      setImageTabPastelBgs(pastels);
+      setImageTabFrameBg(pastels[0]!);
+      setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[type]);
+      setImageTabFunnyQuestions(questions);
+      setImageTabTexts([title, ...questions, imageFrameCtaText]);
+      setImageTabSources(['', '', '', '', '', '', pastelCtaImageSrc]);
+      return;
+    }
+
     const picked = [...FUNNY_QUESTIONS].sort(() => Math.random() - 0.5).slice(0, 5);
     setImageTabFunnyQuestions(picked);
+    setImageTabFrameBg('#FEFEFE');
+    setImageTabPastelBgs([]);
+    setImageTabTypeLabel('Funny Questions');
     if (isKawaii) {
       setImageTabTexts([`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked, imageFrameCtaText]);
       const dogSources = dogImagePool.length ? pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 6) : [];
@@ -2390,22 +2511,85 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     tabIndex === 0
       ? `${imageFrameTitleLine1}\n${imageFrameTitleLine2}`
       : tabIndex >= 1 && tabIndex <= 5
-        ? imageTabFunnyQuestions[tabIndex - 1] || '...'
+        ? imageTabFunnyQuestions[tabIndex - 1] || ''
         : imageFrameCtaText;
   const getImageFrameTextForTab = (tabIndex: number): string =>
     imageTabTexts[tabIndex] ?? getDefaultImageFrameTextForTab(tabIndex);
   const getImageSourceForTab = (tabIndex: number): string =>
     imageTabSources[tabIndex] ??
     (dogImagePool.length ? dogImagePool[tabIndex % dogImagePool.length]! : '');
+
+  // URL restores the selected template on refresh, but tab texts live only in memory.
+  // Fill them once when empty so question slides don't show blank/`...` placeholders.
+  useEffect(() => {
+    if (!urlReady) return;
+    if (contentTab !== 'image' || selectedImageTemplateId === null) return;
+    if (imageTabTexts.length > 0) return;
+    regenerateImageTemplateContent(selectedImageTemplateId, { resetTab: false });
+  }, [urlReady, contentTab, selectedImageTemplateId, imageTabTexts.length]);
+
+  // Ask ChatGPT which title word to underline (curiosity hook) for Image Template 2 cover.
+  useEffect(() => {
+    if (!isPastelCarouselImageTemplate) {
+      setImageTemplate2HighlightWord(null);
+      return;
+    }
+    const title = (imageTabTexts[0] ?? '').trim();
+    if (!title) {
+      setImageTemplate2HighlightWord(null);
+      return;
+    }
+
+    setImageTemplate2HighlightWord(null);
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const res = await fetch('/api/openai/highlight-word', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title }),
+            signal: controller.signal,
+          });
+          const data = (await res.json()) as { word?: string; error?: string };
+          if (!res.ok || typeof data.word !== 'string' || !data.word.trim()) {
+            return;
+          }
+          setImageTemplate2HighlightWord(data.word.trim());
+        } catch (e) {
+          if (e instanceof DOMException && e.name === 'AbortError') return;
+        }
+      })();
+    }, 350);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [isPastelCarouselImageTemplate, imageTabTexts[0]]);
+
   const imageFrameTextForActiveTab = getImageFrameTextForTab(selectedImageBrowserTab);
+  const imageTemplate2TitleHighlightParts =
+    isPastelCarouselImageTemplate && selectedImageBrowserTab === 0
+      ? splitTitleAroundHighlight(imageFrameTextForActiveTab, imageTemplate2HighlightWord)
+      : null;
   const isCtaTabSelected = selectedImageBrowserTab === 6;
   const isFullBleedImageTabSelected = isCtaTabSelected;
   const imageSourceForActiveTab = isCtaTabSelected
-    ? kawaiiCtaImageSrc
+    ? isPastelCarouselImageTemplate
+      ? pastelCtaImageSrc
+      : kawaiiCtaImageSrc
     : getImageSourceForTab(selectedImageBrowserTab);
   const imageTabLabelForActiveTab =
     selectedImageBrowserTab === 0 ? 'Cover' : selectedImageBrowserTab <= 5 ? `Q${selectedImageBrowserTab}` : 'CTA';
   const imageTemplateTabCount = 7;
+  const pastelProgressRatio = (selectedImageBrowserTab + 1) / imageTemplateTabCount;
+  const activeImageFrameBg = isPastelCarouselImageTemplate
+    ? (imageTabPastelBgs[selectedImageBrowserTab] ??
+      IMAGE_TEMPLATE2_PASTEL_COLORS[
+        selectedImageBrowserTab % IMAGE_TEMPLATE2_PASTEL_COLORS.length
+      ]!)
+    : imageTabFrameBg;
   const activeVideoTemplate =
     contentTab === 'video' && selectedVideoTemplateId !== null
       ? videoTemplateCards.find((c) => c.id === selectedVideoTemplateId)
@@ -2445,8 +2629,125 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         imageTabSources[i] ??
         (dogImagePool.length ? dogImagePool[i % dogImagePool.length]! : '');
 
+      const isPastelExport = exportTemplateId === 2;
       const isFullBleedTab = tabIndex === 6;
-      const source = isFullBleedTab ? kawaiiCtaImageSrc : sourceForTab(tabIndex);
+      const frameWidth = 1080;
+      const frameHeight = 1440;
+
+      const wrapLines = (
+        ctx: CanvasRenderingContext2D,
+        text: string,
+        maxWidth: number
+      ): string[] => {
+        const words = text.trim().split(/\s+/).filter(Boolean);
+        if (words.length === 0) return [];
+        const lines: string[] = [];
+        let current = words[0]!;
+        for (let i = 1; i < words.length; i++) {
+          const next = `${current} ${words[i]}`;
+          if (ctx.measureText(next).width <= maxWidth) current = next;
+          else {
+            lines.push(current);
+            current = words[i]!;
+          }
+        }
+        if (current) lines.push(current);
+        return lines;
+      };
+
+      const canvas = document.createElement('canvas');
+      canvas.width = frameWidth;
+      canvas.height = frameHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas context unavailable');
+
+      if (isPastelExport && !isFullBleedTab) {
+        const slideBg =
+          imageTabPastelBgs[tabIndex] ??
+          IMAGE_TEMPLATE2_PASTEL_COLORS[tabIndex % IMAGE_TEMPLATE2_PASTEL_COLORS.length]!;
+        ctx.fillStyle = slideBg;
+        ctx.fillRect(0, 0, frameWidth, frameHeight);
+
+        const progress = (tabIndex + 1) / 7;
+        const barX = frameWidth * 0.08;
+        const barW = frameWidth * 0.84;
+        const barY = frameHeight * 0.14;
+        const barH = Math.max(8, Math.round(frameHeight * 0.007));
+
+        ctx.fillStyle = 'rgba(255,255,255,0.95)';
+        ctx.font = `700 ${Math.round(frameHeight * 0.032)}px ${pastelCarouselExportFontFamily}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(imageTabTypeLabel, frameWidth / 2, barY - frameHeight * 0.018);
+
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        ctx.fillRect(barX, barY, barW, barH);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(barX, barY, barW * progress, barH);
+
+        const centerText = textForTab(tabIndex);
+        // Match preview visual weight (~text-xl on max-w-sm ≈ 5.2% of width; bump for TikTok readability).
+        const fontSize = Math.round(frameWidth * (tabIndex === 0 ? 0.058 : 0.05));
+        try {
+          await document.fonts.load(`800 ${fontSize}px Nunito`);
+          await document.fonts.load(`700 ${fontSize}px Nunito`);
+        } catch {
+          /* font may already be ready */
+        }
+        ctx.font = `800 ${fontSize}px ${pastelCarouselExportFontFamily}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = pastelCarouselTextColor;
+        const maxTextWidth = frameWidth * 0.8;
+        const lines = wrapLines(ctx, centerText.replace(/\n/g, ' '), maxTextWidth);
+        const highlight =
+          tabIndex === 0 ? imageTemplate2HighlightWord?.trim().toLowerCase() ?? '' : '';
+        // Extra leading on cover when a squiggle is drawn so it clears the next line.
+        const lineHeight = fontSize * (highlight ? 1.72 : 1.22);
+        const blockH = lines.length * lineHeight;
+        let y = frameHeight / 2 - blockH / 2 + lineHeight / 2;
+        for (const line of lines) {
+          ctx.fillText(line, frameWidth / 2, y);
+          if (highlight) {
+            const idx = line.toLowerCase().indexOf(highlight);
+            if (idx >= 0) {
+              const before = line.slice(0, idx);
+              const word = line.slice(idx, idx + highlight.length);
+              const lineWidth = ctx.measureText(line).width;
+              const lineStartX = frameWidth / 2 - lineWidth / 2;
+              const beforeW = ctx.measureText(before).width;
+              const wordW = ctx.measureText(word).width;
+              drawTitleSquiggle(
+                ctx,
+                lineStartX + beforeW,
+                y + fontSize * 0.58,
+                wordW,
+                IMAGE_TEMPLATE2_SQUIGGLE_COLOR,
+                Math.max(8, Math.round(fontSize * 0.14))
+              );
+            }
+          }
+          y += lineHeight;
+        }
+
+        ctx.font = `700 ${Math.round(frameHeight * 0.03)}px ${pastelCarouselExportFontFamily}`;
+        ctx.fillStyle = 'rgba(255,255,255,0.95)';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(IMAGE_TEMPLATE2_APP_FOOTER, frameWidth / 2, frameHeight * 0.9);
+
+        return await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error('Failed to create image blob'));
+          }, 'image/png');
+        });
+      }
+
+      const source = isFullBleedTab
+        ? isPastelExport
+          ? pastelCtaImageSrc
+          : kawaiiCtaImageSrc
+        : sourceForTab(tabIndex);
       if (!source.trim()) {
         throw new Error('Missing image URL (dog images may still be loading).');
       }
@@ -2463,11 +2764,6 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         el.onerror = () => reject(new Error(`Failed to load image: ${source.slice(0, 80)}`));
         el.src = source;
       });
-      const canvas = document.createElement('canvas');
-      canvas.width = frameWidth;
-      canvas.height = frameHeight;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Canvas context unavailable');
 
       ctx.fillStyle = imageTabFrameBg;
       ctx.fillRect(0, 0, frameWidth, frameHeight);
@@ -2506,18 +2802,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       ctx.shadowBlur = 14;
       ctx.font = `bold ${imageFrameExportFontPx}px ${imageFrameExportFontFamily}`;
       const drawWrapped = (text: string, yStart: number, maxWidth: number, lineHeight: number) => {
-        const words = text.trim().split(/\s+/);
-        const lines: string[] = [];
-        let current = words[0] ?? '';
-        for (let i = 1; i < words.length; i++) {
-          const next = `${current} ${words[i]}`;
-          if (ctx.measureText(next).width <= maxWidth) current = next;
-          else {
-            lines.push(current);
-            current = words[i] ?? '';
-          }
-        }
-        if (current) lines.push(current);
+        const lines = wrapLines(ctx, text, maxWidth);
         lines.forEach((line, idx) => ctx.fillText(line, frameWidth / 2, yStart + idx * lineHeight));
       };
       if (tabIndex >= 1 && tabIndex <= 6) {
@@ -3286,7 +3571,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         Template {selectedImageTemplateId}
                       </p>
                       <div className="order-2 ml-auto flex w-full sm:w-auto flex-col sm:flex-row gap-2 sm:items-center sm:justify-end">
-                        {isKawaiiImageTemplate ? (
+                        {isKawaiiImageTemplate || isPastelCarouselImageTemplate ? (
                           <button
                             type="button"
                             onClick={() => regenerateImageTemplateContent(selectedImageTemplateId!)}
@@ -3295,6 +3580,26 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                           >
                             Retry
                           </button>
+                        ) : null}
+                        {isPastelCarouselImageTemplate ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={regenerateImageTemplate2Type}
+                              disabled={isImageTemplateDownloading || isImageTemplateUploading}
+                              className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              Regenerate type
+                            </button>
+                            <button
+                              type="button"
+                              onClick={regenerateImageTemplate2Colors}
+                              disabled={isImageTemplateDownloading || isImageTemplateUploading}
+                              className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              Change color
+                            </button>
+                          </>
                         ) : null}
                         <button
                           type="button"
@@ -3395,7 +3700,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                       <div className="flex flex-col md:flex-row items-start gap-4 min-w-0 w-full">
                         <div
                           className="relative w-full max-w-sm mx-auto md:mx-0 aspect-3/4 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden min-w-0"
-                          style={{ backgroundColor: imageTabFrameBg }}
+                          style={{ backgroundColor: activeImageFrameBg }}
                         >
                           {isFullBleedImageTabSelected ? (
                             imageSourceForActiveTab ? (
@@ -3405,6 +3710,62 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 className="w-full h-full object-cover"
                               />
                             ) : null
+                          ) : isPastelCarouselImageTemplate ? (
+                            <>
+                              <div className="absolute inset-x-[8%] top-[14%] z-10">
+                                <p
+                                  className="mb-2 text-center text-[11px] sm:text-xs font-bold tracking-wide text-white"
+                                  style={{ fontFamily: pastelCarouselFontFamily }}
+                                >
+                                  {imageTabTypeLabel}
+                                </p>
+                                <div className="h-1.5 w-full rounded-full bg-white/35 overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full bg-white transition-[width] duration-200"
+                                    style={{ width: `${pastelProgressRatio * 100}%` }}
+                                  />
+                                </div>
+                              </div>
+                              <p
+                                className="absolute left-1/2 top-1/2 z-10 w-[80%] -translate-x-1/2 -translate-y-1/2 text-center text-base sm:text-lg md:text-xl font-extrabold leading-snug text-white wrap-break-word"
+                                style={{
+                                  fontFamily: pastelCarouselFontFamily,
+                                }}
+                              >
+                                {imageTemplate2TitleHighlightParts ? (
+                                  <>
+                                    {imageTemplate2TitleHighlightParts.before}
+                                    <span className="relative inline-block px-[0.02em] pb-[0.55em]">
+                                      {imageTemplate2TitleHighlightParts.word}
+                                      <svg
+                                        className="pointer-events-none absolute left-[-2%] right-[-2%] bottom-0 h-[0.95em] w-[104%] overflow-visible"
+                                        viewBox="0 0 100 36"
+                                        preserveAspectRatio="none"
+                                        aria-hidden
+                                      >
+                                        <path
+                                          d="M2 20 Q 14 4 26 24 Q 38 4 50 22 Q 62 6 74 24 Q 86 5 98 18"
+                                          fill="none"
+                                          stroke={IMAGE_TEMPLATE2_SQUIGGLE_COLOR}
+                                          strokeWidth="4.5"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                        />
+                                      </svg>
+                                    </span>
+                                    {imageTemplate2TitleHighlightParts.after}
+                                  </>
+                                ) : (
+                                  imageFrameTextForActiveTab
+                                )}
+                              </p>
+                              <p
+                                className="absolute inset-x-[8%] bottom-[9%] z-10 text-center text-[11px] sm:text-xs font-bold text-white/95"
+                                style={{ fontFamily: pastelCarouselFontFamily }}
+                              >
+                                {IMAGE_TEMPLATE2_APP_FOOTER}
+                              </p>
+                            </>
                           ) : (
                             <>
                               <p
@@ -3428,40 +3789,148 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             </>
                           )}
                         </div>
-                        {!isFullBleedImageTabSelected ? (
-                          <div className="w-full md:w-80 md:self-start">
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
-                              <label className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
-                                Frame text
-                              </label>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const pool = [...FUNNY_QUESTIONS];
-                                  const current = imageFrameTextForActiveTab;
-                                  let nextQuestion = pool[Math.floor(Math.random() * pool.length)] || current;
-                                  if (pool.length > 1 && nextQuestion === current) {
-                                    nextQuestion = pool.find((q) => q !== current) || nextQuestion;
-                                  }
+                        {!isFullBleedImageTabSelected || isPastelCarouselImageTemplate ? (
+                          <div className="w-full md:w-80 md:self-start space-y-4">
+                            {!isFullBleedImageTabSelected ? (
+                            <div>
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                                <label className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                                  Frame text
+                                </label>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  {isPastelCarouselImageTemplate ? (
+                                    <select
+                                      value={imageTemplate2QuestionType}
+                                      onChange={(e) =>
+                                        applyImageTemplate2QuestionType(
+                                          e.target.value as AutomateQuestionType
+                                        )
+                                      }
+                                      className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2 py-1.5 sm:py-1 text-sm sm:text-xs text-zinc-800 dark:text-zinc-200"
+                                      aria-label="Question type"
+                                    >
+                                      <option value="random">Random</option>
+                                      <option value="funny">Funny</option>
+                                      <option value="flirty">Flirty</option>
+                                      <option value="me_or_you">Me or you</option>
+                                      <option value="brave">Brave</option>
+                                    </select>
+                                  ) : null}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (isPastelCarouselImageTemplate) {
+                                        if (selectedImageBrowserTab === 0) {
+                                          const nextTitle = pickTitleForType(
+                                            imageTemplate2QuestionType,
+                                            imageFrameTextForActiveTab
+                                          );
+                                          const next = [...imageTabTexts];
+                                          next[0] = nextTitle;
+                                          setImageTabTexts(next);
+                                          return;
+                                        }
+                                        const pool = questionPoolForType(
+                                          resolveQuestionType(imageTemplate2QuestionType)
+                                        );
+                                        const current = imageFrameTextForActiveTab;
+                                        let nextQuestion =
+                                          pool[Math.floor(Math.random() * pool.length)] || current;
+                                        if (pool.length > 1 && nextQuestion === current) {
+                                          nextQuestion =
+                                            pool.find((q) => q !== current) || nextQuestion;
+                                        }
+                                        const next = [...imageTabTexts];
+                                        next[selectedImageBrowserTab] = nextQuestion;
+                                        if (
+                                          selectedImageBrowserTab >= 1 &&
+                                          selectedImageBrowserTab <= 5
+                                        ) {
+                                          const qs = [...imageTabFunnyQuestions];
+                                          qs[selectedImageBrowserTab - 1] = nextQuestion;
+                                          setImageTabFunnyQuestions(qs);
+                                        }
+                                        setImageTabTexts(next);
+                                        return;
+                                      }
+                                      const pool = [...FUNNY_QUESTIONS];
+                                      const current = imageFrameTextForActiveTab;
+                                      let nextQuestion =
+                                        pool[Math.floor(Math.random() * pool.length)] || current;
+                                      if (pool.length > 1 && nextQuestion === current) {
+                                        nextQuestion =
+                                          pool.find((q) => q !== current) || nextQuestion;
+                                      }
+                                      const next = [...imageTabTexts];
+                                      next[selectedImageBrowserTab] = nextQuestion;
+                                      setImageTabTexts(next);
+                                    }}
+                                    className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                  >
+                                    {isPastelCarouselImageTemplate ? 'Retry' : 'Random question'}
+                                  </button>
+                                </div>
+                              </div>
+                              <input
+                                type="text"
+                                value={imageFrameTextForActiveTab}
+                                onChange={(e) => {
                                   const next = [...imageTabTexts];
-                                  next[selectedImageBrowserTab] = nextQuestion;
+                                  next[selectedImageBrowserTab] = e.target.value;
                                   setImageTabTexts(next);
                                 }}
-                                className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                              >
-                                Random question
-                              </button>
+                                className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-zinc-400"
+                              />
                             </div>
-                            <input
-                              type="text"
-                              value={imageFrameTextForActiveTab}
-                              onChange={(e) => {
-                                const next = [...imageTabTexts];
-                                next[selectedImageBrowserTab] = e.target.value;
-                                setImageTabTexts(next);
-                              }}
-                              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-zinc-400"
-                            />
+                            ) : null}
+                            {isPastelCarouselImageTemplate ? (
+                              <div>
+                                <div className="mb-2 flex items-center justify-between gap-2">
+                                  <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                                    Description
+                                  </label>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleGenerateImageTemplate2Description()}
+                                      disabled={
+                                        isGeneratingImageTemplate2Description ||
+                                        imageTabTexts.slice(1, 6).every((q) => !q.trim())
+                                      }
+                                      className="text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      {isGeneratingImageTemplate2Description
+                                        ? 'Generating…'
+                                        : 'Generate description'}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const text = imageTemplate2Description.trim();
+                                        if (!text) return;
+                                        void navigator.clipboard.writeText(text).catch(() => {});
+                                      }}
+                                      disabled={!imageTemplate2Description.trim()}
+                                      className="text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      Copy
+                                    </button>
+                                  </div>
+                                </div>
+                                <textarea
+                                  value={imageTemplate2Description}
+                                  onChange={(e) => setImageTemplate2Description(e.target.value)}
+                                  placeholder="TikTok caption / description will appear here…"
+                                  rows={5}
+                                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-zinc-400 resize-y min-h-[6rem]"
+                                />
+                                {imageTemplate2Error ? (
+                                  <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                                    {imageTemplate2Error}
+                                  </p>
+                                ) : null}
+                              </div>
+                            ) : null}
                           </div>
                         ) : null}
                       </div>
@@ -4023,19 +4492,33 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-300">
                                     Description
                                   </label>
-                                  <button
-                                    type="button"
-                                    onClick={() => void handleGenerateVideoTemplate2Description()}
-                                    disabled={
-                                      isGeneratingVideoTemplate2Description ||
-                                      videoTemplate2Questions.every((q) => !q.trim())
-                                    }
-                                    className="text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    {isGeneratingVideoTemplate2Description
-                                      ? 'Generating…'
-                                      : 'Generate description'}
-                                  </button>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleGenerateVideoTemplate2Description()}
+                                      disabled={
+                                        isGeneratingVideoTemplate2Description ||
+                                        videoTemplate2Questions.every((q) => !q.trim())
+                                      }
+                                      className="text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      {isGeneratingVideoTemplate2Description
+                                        ? 'Generating…'
+                                        : 'Generate description'}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const text = videoTemplate2Description.trim();
+                                        if (!text) return;
+                                        void navigator.clipboard.writeText(text).catch(() => {});
+                                      }}
+                                      disabled={!videoTemplate2Description.trim()}
+                                      className="text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      Copy
+                                    </button>
+                                  </div>
                                 </div>
                                 <textarea
                                   value={videoTemplate2Description}
