@@ -35,12 +35,29 @@ export const IMAGE_TEMPLATE2_PASTEL_COLORS = [
   '#7AA0C8', // slate blue
   '#B888A8', // mauve
   '#8AA878', // olive mint
+  '#C978A0', // berry pink
+  '#8B9AD4', // periwinkle
+  '#5FB8C8', // aqua
+  '#9BC478', // soft lime
+  '#E0A868', // apricot
+  '#C88A78', // coral clay
+  '#78A8C0', // powder blue
+  '#B878B0', // orchid
+  '#C8A078', // sand
+  '#6898B8', // denim soft
+  '#A87898', // dusty berry
+  '#88B890', // seafoam
+  '#D498B0', // blush orchid
+  '#9890C8', // lavender blue
+  '#58A8A0', // jade
+  '#C8B070', // honey
+  '#B89078', // warm taupe
+  '#7088B8', // steel blue
+  '#C07090', // raspberry
+  '#90C0A8', // mint fog
 ] as const;
 
 export const IMAGE_TEMPLATE2_APP_FOOTER = 'Spill It - Couples Questions';
-
-/** Coral squiggle under the highlighted cover title word (Breeze-ad style). */
-export const IMAGE_TEMPLATE2_SQUIGGLE_COLOR = '#FF7A9A';
 
 export const IMAGE_TEMPLATE2_TYPE_LABELS: Record<
   'funny' | 'flirty' | 'me_or_you' | 'brave',

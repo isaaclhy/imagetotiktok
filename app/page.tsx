@@ -21,7 +21,6 @@ import {
   IMAGE_TEMPLATE2_PASTEL_COLORS,
   IMAGE_TEMPLATE2_APP_FOOTER,
   IMAGE_TEMPLATE2_TYPE_LABELS,
-  IMAGE_TEMPLATE2_SQUIGGLE_COLOR,
   type AutomateQuestionType,
   type ConcreteQuestionType,
 } from '@/app/lib/constants';
@@ -37,7 +36,11 @@ import {
   FAB_PAPER_COLORS,
   fillFabHeartPaperPrompt,
 } from '@/app/lib/fab-prompts';
-import { drawTitleSquiggle, splitTitleAroundHighlight } from '@/app/lib/highlight-word';
+import {
+  drawTitleSquiggle,
+  splitTitleAroundHighlight,
+  squiggleColorForBackground,
+} from '@/app/lib/highlight-word';
 import {
   FAB_AFFIRMATION_AMBIENT_SOUNDS,
   FAB_AFFIRMATION_CLIP_COUNT,
@@ -2590,6 +2593,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         selectedImageBrowserTab % IMAGE_TEMPLATE2_PASTEL_COLORS.length
       ]!)
     : imageTabFrameBg;
+  const imageTemplate2SquiggleColor = squiggleColorForBackground(activeImageFrameBg);
   const activeVideoTemplate =
     contentTab === 'video' && selectedVideoTemplateId !== null
       ? videoTemplateCards.find((c) => c.id === selectedVideoTemplateId)
@@ -2671,7 +2675,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         const progress = (tabIndex + 1) / 7;
         const barX = frameWidth * 0.08;
         const barW = frameWidth * 0.84;
-        const barY = frameHeight * 0.14;
+        const barY = frameHeight * 0.21;
         const barH = Math.max(8, Math.round(frameHeight * 0.007));
 
         ctx.fillStyle = 'rgba(255,255,255,0.95)';
@@ -2703,7 +2707,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         const highlight =
           tabIndex === 0 ? imageTemplate2HighlightWord?.trim().toLowerCase() ?? '' : '';
         // Extra leading on cover when a squiggle is drawn so it clears the next line.
-        const lineHeight = fontSize * (highlight ? 1.72 : 1.22);
+        const lineHeight = fontSize * (highlight ? 1.95 : 1.22);
         const blockH = lines.length * lineHeight;
         let y = frameHeight / 2 - blockH / 2 + lineHeight / 2;
         for (const line of lines) {
@@ -2717,13 +2721,16 @@ const imageFrameTitleLine1 = 'Questions to ask your';
               const lineStartX = frameWidth / 2 - lineWidth / 2;
               const beforeW = ctx.measureText(before).width;
               const wordW = ctx.measureText(word).width;
+              const strokeW = Math.max(14, Math.round(fontSize * 0.26));
               drawTitleSquiggle(
                 ctx,
                 lineStartX + beforeW,
-                y + fontSize * 0.58,
+                // Clear descenders with a modest gap; +stroke/2 so thick stroke doesn't bleed into glyphs.
+                y + fontSize * 0.55 + strokeW / 2,
                 wordW,
-                IMAGE_TEMPLATE2_SQUIGGLE_COLOR,
-                Math.max(8, Math.round(fontSize * 0.14))
+                squiggleColorForBackground(slideBg),
+                strokeW,
+                fontSize * 0.36
               );
             }
           }
@@ -3712,7 +3719,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             ) : null
                           ) : isPastelCarouselImageTemplate ? (
                             <>
-                              <div className="absolute inset-x-[8%] top-[14%] z-10">
+                              <div className="absolute inset-x-[8%] top-[21%] z-10">
                                 <p
                                   className="mb-2 text-center text-[11px] sm:text-xs font-bold tracking-wide text-white"
                                   style={{ fontFamily: pastelCarouselFontFamily }}
@@ -3735,19 +3742,19 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 {imageTemplate2TitleHighlightParts ? (
                                   <>
                                     {imageTemplate2TitleHighlightParts.before}
-                                    <span className="relative inline-block px-[0.02em] pb-[0.55em]">
+                                    <span className="relative inline-block px-[0.02em] pb-[0.5em]">
                                       {imageTemplate2TitleHighlightParts.word}
                                       <svg
-                                        className="pointer-events-none absolute left-[-2%] right-[-2%] bottom-0 h-[0.95em] w-[104%] overflow-visible"
-                                        viewBox="0 0 100 36"
+                                        className="pointer-events-none absolute left-[-2%] right-[-2%] bottom-0 h-[0.48em] w-[104%]"
+                                        viewBox="0 0 100 28"
                                         preserveAspectRatio="none"
                                         aria-hidden
                                       >
                                         <path
-                                          d="M2 20 Q 14 4 26 24 Q 38 4 50 22 Q 62 6 74 24 Q 86 5 98 18"
+                                          d="M3 15 Q 15 3 27 19 Q 39 3 51 17 Q 63 4 75 19 Q 87 4 97 14"
                                           fill="none"
-                                          stroke={IMAGE_TEMPLATE2_SQUIGGLE_COLOR}
-                                          strokeWidth="4.5"
+                                          stroke={imageTemplate2SquiggleColor}
+                                          strokeWidth="9"
                                           strokeLinecap="round"
                                           strokeLinejoin="round"
                                         />

@@ -335,6 +335,8 @@ export function drawFabNotesCardOnCanvas(
 
 /**
  * Re-encodes a Pexels (or other) video with a static Notes card stamped on every frame.
+ * Prefetches the source to a blob so recording isn't fighting a streaming proxy, caches
+ * the Notes overlay once, and draws on video frame callbacks when available.
  */
 export async function exportFabNotesVideo(
   videoSrc: string,
@@ -348,113 +350,197 @@ export async function exportFabNotesVideo(
   const mime = pickMediaRecorderMime();
   if (!mime) throw new Error('No supported video recording format in this browser');
 
+  // Prefetch fully before recording — export URLs often go through /api/pexels/video-proxy,
+  // and streaming mid-encode is the main stutter source.
+  const response = await fetch(videoSrc);
+  if (!response.ok) {
+    throw new Error(`Failed to download video (${response.status})`);
+  }
+  const sourceBlob = await response.blob();
+  const objectUrl = URL.createObjectURL(sourceBlob);
+
   const video = document.createElement('video');
   video.crossOrigin = 'anonymous';
   video.playsInline = true;
   video.setAttribute('playsinline', '');
   video.preload = 'auto';
-  video.src = videoSrc;
+  video.muted = true;
+  video.src = objectUrl;
 
-  await new Promise<void>((resolve, reject) => {
-    video.addEventListener('loadeddata', () => resolve(), { once: true });
-    video.addEventListener('error', () => reject(new Error('Failed to load video')), { once: true });
-  });
-
-  const srcW = video.videoWidth;
-  const srcH = video.videoHeight;
-  if (srcW <= 0 || srcH <= 0) throw new Error('Invalid video dimensions');
-
-  const { w, h } = exportCanvasSize(srcW, srcH);
-  const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Canvas not available');
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-
-  const chunks: BlobPart[] = [];
-
-  await new Promise<void>((resolve, reject) => {
-    let rafId = 0;
-    let recorder: MediaRecorder | null = null;
-    let finished = false;
-
-    const stopDrawing = () => {
-      if (rafId) cancelAnimationFrame(rafId);
-      rafId = 0;
-    };
-
-    const finishRecording = () => {
-      if (finished) return;
-      finished = true;
-      stopDrawing();
-      video.pause();
-      window.setTimeout(() => {
-        try {
-          if (recorder && recorder.state === 'recording') recorder.stop();
-        } catch {
-          reject(new Error('Failed to finish recording'));
-        }
-      }, 400);
-    };
-
-    const reachedMaxDuration = () => video.currentTime >= maxDurationSec - 0.05;
-
-    const draw = () => {
-      if (video.ended || reachedMaxDuration()) {
-        if (reachedMaxDuration()) finishRecording();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      let settled = false;
+      const done = () => {
+        if (settled) return;
+        settled = true;
+        resolve();
+      };
+      video.addEventListener('error', () => reject(new Error('Failed to load video')), {
+        once: true,
+      });
+      if (video.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
+        done();
         return;
       }
-      if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-        ctx.drawImage(video, 0, 0, w, h);
-        drawFabNotesCardOnCanvas(ctx, w, h, title, questions);
-      }
-      if (!video.ended && !reachedMaxDuration()) rafId = requestAnimationFrame(draw);
-    };
+      video.addEventListener('canplaythrough', done, { once: true });
+      // Fallback if canplaythrough never fires on some browsers with blob URLs.
+      video.addEventListener(
+        'loadeddata',
+        () => {
+          window.setTimeout(done, 250);
+        },
+        { once: true }
+      );
+    });
 
-    video.addEventListener('ended', finishRecording, { once: true });
+    const srcW = video.videoWidth;
+    const srcH = video.videoHeight;
+    if (srcW <= 0 || srcH <= 0) throw new Error('Invalid video dimensions');
 
-    const run = async () => {
-      try {
-        video.pause();
-        video.currentTime = 0;
-        video.muted = true;
+    const { w, h } = exportCanvasSize(srcW, srcH);
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas not available');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
-        // Canvas only — no original video audio.
-        const outStream = canvas.captureStream(30);
+    // Notes card is static — paint once and blit each frame.
+    const overlay = document.createElement('canvas');
+    overlay.width = w;
+    overlay.height = h;
+    const overlayCtx = overlay.getContext('2d');
+    if (!overlayCtx) throw new Error('Overlay canvas not available');
+    drawFabNotesCardOnCanvas(overlayCtx, w, h, title, questions);
 
-        recorder = new MediaRecorder(outStream, {
-          mimeType: mime,
-          videoBitsPerSecond: FAB_NOTES_EXPORT_VIDEO_BITRATE,
-        });
-        recorder.ondataavailable = (e) => {
-          if (e.data.size) chunks.push(e.data);
-        };
-        recorder.onerror = () => {
-          stopDrawing();
-          video.pause();
-          reject(new Error('Recording failed'));
-        };
-        recorder.onstop = () => {
-          stopDrawing();
-          video.pause();
-          resolve();
-        };
+    const chunks: BlobPart[] = [];
 
-        recorder.start(200);
-        await video.play();
-        draw();
-      } catch (e) {
+    await new Promise<void>((resolve, reject) => {
+      let rafId = 0;
+      let vfcHandle = 0;
+      let recorder: MediaRecorder | null = null;
+      let finished = false;
+      const useVideoFrameCallback =
+        typeof video.requestVideoFrameCallback === 'function';
+
+      const stopDrawing = () => {
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = 0;
+        if (
+          vfcHandle &&
+          typeof video.cancelVideoFrameCallback === 'function'
+        ) {
+          video.cancelVideoFrameCallback(vfcHandle);
+        }
+        vfcHandle = 0;
+      };
+
+      const paintFrame = () => {
+        if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+          ctx.drawImage(video, 0, 0, w, h);
+        }
+        ctx.drawImage(overlay, 0, 0);
+      };
+
+      const finishRecording = () => {
+        if (finished) return;
+        finished = true;
         stopDrawing();
         video.pause();
-        reject(e instanceof Error ? e : new Error(String(e)));
-      }
-    };
+        window.setTimeout(() => {
+          try {
+            if (recorder && recorder.state === 'recording') recorder.stop();
+          } catch {
+            reject(new Error('Failed to finish recording'));
+          }
+        }, 400);
+      };
 
-    void run();
-  });
+      const reachedMaxDuration = () => video.currentTime >= maxDurationSec - 0.05;
 
-  if (chunks.length === 0) throw new Error('No video data was recorded');
-  return new Blob(chunks, { type: mime.includes('mp4') ? 'video/mp4' : 'video/webm' });
+      const scheduleNext = () => {
+        if (finished || video.ended || reachedMaxDuration()) {
+          if (reachedMaxDuration() || video.ended) finishRecording();
+          return;
+        }
+        if (useVideoFrameCallback) {
+          vfcHandle = video.requestVideoFrameCallback(() => {
+            paintFrame();
+            scheduleNext();
+          });
+        } else {
+          rafId = requestAnimationFrame(() => {
+            paintFrame();
+            scheduleNext();
+          });
+        }
+      };
+
+      video.addEventListener('ended', finishRecording, { once: true });
+
+      const run = async () => {
+        try {
+          video.pause();
+          video.muted = true;
+          await new Promise<void>((res, rej) => {
+            const onSeeked = () => {
+              cleanup();
+              res();
+            };
+            const onError = () => {
+              cleanup();
+              rej(new Error('Failed to seek video'));
+            };
+            const cleanup = () => {
+              video.removeEventListener('seeked', onSeeked);
+              video.removeEventListener('error', onError);
+            };
+            video.addEventListener('seeked', onSeeked, { once: true });
+            video.addEventListener('error', onError, { once: true });
+            video.currentTime = 0;
+          });
+
+          // Prime first frame before MediaRecorder starts.
+          paintFrame();
+
+          const outStream = canvas.captureStream(30);
+          recorder = new MediaRecorder(outStream, {
+            mimeType: mime,
+            videoBitsPerSecond: FAB_NOTES_EXPORT_VIDEO_BITRATE,
+          });
+          recorder.ondataavailable = (e) => {
+            if (e.data.size) chunks.push(e.data);
+          };
+          recorder.onerror = () => {
+            stopDrawing();
+            video.pause();
+            reject(new Error('Recording failed'));
+          };
+          recorder.onstop = () => {
+            stopDrawing();
+            video.pause();
+            resolve();
+          };
+
+          recorder.start(200);
+          await video.play();
+          scheduleNext();
+        } catch (e) {
+          stopDrawing();
+          video.pause();
+          reject(e instanceof Error ? e : new Error(String(e)));
+        }
+      };
+
+      void run();
+    });
+
+    if (chunks.length === 0) throw new Error('No video data was recorded');
+    return new Blob(chunks, { type: mime.includes('mp4') ? 'video/mp4' : 'video/webm' });
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+    video.removeAttribute('src');
+    video.load();
+  }
 }

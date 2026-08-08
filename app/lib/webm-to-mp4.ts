@@ -39,6 +39,10 @@ export async function transcodeWebmToMp4(webm: Blob): Promise<Blob> {
   await ffmpeg.exec([
     '-i',
     inputName,
+    '-r',
+    '30',
+    '-fps_mode',
+    'cfr',
     '-c:v',
     'libx264',
     '-preset',
