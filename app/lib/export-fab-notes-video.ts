@@ -437,11 +437,30 @@ export async function exportFabNotesVideo(
       };
 
       const paintFrame = () => {
-        if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+        // Keep the previous video frame if decode briefly stalls — never wipe to black.
+        if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && video.videoWidth > 0) {
           ctx.drawImage(video, 0, 0, w, h);
         }
         ctx.drawImage(overlay, 0, 0);
       };
+
+      const waitForDecodedFrame = () =>
+        new Promise<void>((res) => {
+          if (useVideoFrameCallback) {
+            vfcHandle = video.requestVideoFrameCallback(() => {
+              vfcHandle = 0;
+              res();
+            });
+            return;
+          }
+          // Double-rAF is a common fallback when the video is already playing.
+          rafId = requestAnimationFrame(() => {
+            rafId = requestAnimationFrame(() => {
+              rafId = 0;
+              res();
+            });
+          });
+        });
 
       const finishRecording = () => {
         if (finished) return;
@@ -498,10 +517,18 @@ export async function exportFabNotesVideo(
             };
             video.addEventListener('seeked', onSeeked, { once: true });
             video.addEventListener('error', onError, { once: true });
+            // Some browsers skip seeked when already at 0.
+            if (video.currentTime === 0) {
+              cleanup();
+              res();
+              return;
+            }
             video.currentTime = 0;
           });
 
-          // Prime first frame before MediaRecorder starts.
+          // Play first — drawing a paused/seeked video often yields a black canvas frame.
+          await video.play();
+          await waitForDecodedFrame();
           paintFrame();
 
           const outStream = canvas.captureStream(30);
@@ -523,8 +550,10 @@ export async function exportFabNotesVideo(
             resolve();
           };
 
-          recorder.start(200);
-          await video.play();
+          // Prime the capture stream with a real frame, then start recording.
+          paintFrame();
+          recorder.start(100);
+          paintFrame();
           scheduleNext();
         } catch (e) {
           stopDrawing();

@@ -847,6 +847,14 @@ function resolveQuestionType(type: AutomateQuestionType): ConcreteQuestionType {
   return CONCRETE_QUESTION_TYPES[Math.floor(Math.random() * CONCRETE_QUESTION_TYPES.length)]!;
 }
 
+/** Keep Retry / description aligned with the type label currently shown on the slide. */
+function concreteTypeFromImageLabel(label: string): ConcreteQuestionType {
+  const entry = (
+    Object.entries(IMAGE_TEMPLATE2_TYPE_LABELS) as [ConcreteQuestionType, string][]
+  ).find(([, value]) => value === label);
+  return entry?.[0] ?? 'funny';
+}
+
 function allQuestionPools(): string[] {
   return [
     ...FUNNY_QUESTIONS,
@@ -1133,9 +1141,10 @@ export default function Home() {
 
   const applyImageTemplate2QuestionType = (type: AutomateQuestionType) => {
     setImageTemplate2QuestionType(type);
+    // Resolve Random once so label, title, and questions all share the same type.
     const resolved = resolveQuestionType(type);
-    const title = pickTitleForType(type);
-    const questions = pickQuestionsForType(type, 5);
+    const title = pickTitleForType(resolved);
+    const questions = pickQuestionsForType(resolved, 5);
     setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[resolved]);
     setImageTabFunnyQuestions(questions);
     setImageTabTexts([title, ...questions, 'Remember to like, save and share the fun!']);
@@ -1169,7 +1178,10 @@ export default function Home() {
     setImageTemplate2Error(null);
     setIsGeneratingImageTemplate2Description(true);
     try {
-      const type = resolveQuestionType(imageTemplate2QuestionType);
+      const type =
+        imageTemplate2QuestionType === 'random'
+          ? concreteTypeFromImageLabel(imageTabTypeLabel)
+          : resolveQuestionType(imageTemplate2QuestionType);
       const res = await fetch('/api/openai/daily-title', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2481,9 +2493,10 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     }
 
     if (isPastel) {
+      // Resolve Random once so label, title, and questions all share the same type.
       const type = resolveQuestionType(imageTemplate2QuestionType);
-      const title = pickTitleForType(imageTemplate2QuestionType);
-      const questions = pickQuestionsForType(imageTemplate2QuestionType, 5);
+      const title = pickTitleForType(type);
+      const questions = pickQuestionsForType(type, 5);
       const pastelPool = shuffleCopy([...IMAGE_TEMPLATE2_PASTEL_COLORS]);
       // One distinct pastel per cover + question slide (CTA is full-bleed).
       const pastels = Array.from({ length: 6 }, (_, i) => pastelPool[i % pastelPool.length]!);
@@ -3827,9 +3840,13 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                     type="button"
                                     onClick={() => {
                                       if (isPastelCarouselImageTemplate) {
+                                        const contentType =
+                                          imageTemplate2QuestionType === 'random'
+                                            ? concreteTypeFromImageLabel(imageTabTypeLabel)
+                                            : imageTemplate2QuestionType;
                                         if (selectedImageBrowserTab === 0) {
                                           const nextTitle = pickTitleForType(
-                                            imageTemplate2QuestionType,
+                                            contentType,
                                             imageFrameTextForActiveTab
                                           );
                                           const next = [...imageTabTexts];
@@ -3837,9 +3854,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                           setImageTabTexts(next);
                                           return;
                                         }
-                                        const pool = questionPoolForType(
-                                          resolveQuestionType(imageTemplate2QuestionType)
-                                        );
+                                        const pool = questionPoolForType(contentType);
                                         const current = imageFrameTextForActiveTab;
                                         let nextQuestion =
                                           pool[Math.floor(Math.random() * pool.length)] || current;
