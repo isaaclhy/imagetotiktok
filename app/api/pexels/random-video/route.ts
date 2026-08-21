@@ -15,22 +15,38 @@ type PexelsVideo = {
   video_files: PexelsVideoFile[];
 };
 
-function pickPortraitMp4Url(files: PexelsVideoFile[]): string | null {
+/**
+ * Prefer a portrait MP4 near `preferHeight` (default 1080).
+ * Tallest-first often picks 2160p, which stutters during realtime canvas export.
+ */
+function pickPortraitMp4Url(
+  files: PexelsVideoFile[],
+  preferHeight = 1080
+): string | null {
   const mp4s = files.filter((f) => f.file_type === 'video/mp4' && f.link);
   if (!mp4s.length) return null;
 
   const portrait = mp4s.filter((f) => f.height >= f.width);
   const pool = portrait.length ? portrait : mp4s;
-  pool.sort((a, b) => b.height - a.height);
 
-  const top = pool.slice(0, 3);
-  return top[Math.floor(Math.random() * top.length)]!.link;
+  const score = (f: PexelsVideoFile) => {
+    const delta = Math.abs(f.height - preferHeight);
+    // Soft penalty for going far above the target (UHD decode is expensive).
+    const oversize = f.height > preferHeight * 1.25 ? (f.height - preferHeight) * 0.5 : 0;
+    // Prefer "hd" labeled files slightly when heights are close.
+    const qualityBonus = f.quality === 'hd' ? -40 : f.quality === 'sd' ? 20 : 0;
+    return delta + oversize + qualityBonus;
+  };
+
+  pool.sort((a, b) => score(a) - score(b));
+  return pool[0]?.link ?? null;
 }
 
 /**
  * GET /api/pexels/random-video
  * Fetches a random portrait Pexels video (MP4).
- * Query params: ?query=sunrise+couples (optional), ?page=1 (optional).
+ * Query params: ?query=sunrise+couples (optional), ?page=1 (optional),
+ *               ?preferHeight=1080 (optional target height).
  * Returns { videoUrl, thumbnailUrl } or error.
  * Requires PIXELS_API_KEY in env.
  */
@@ -45,6 +61,10 @@ export async function GET(request: NextRequest) {
     const query = searchParams.get('query') || 'sunrise couples';
     const pageParam = searchParams.get('page');
     const page = pageParam ? Math.max(1, parseInt(pageParam, 10) || 1) : 1 + Math.floor(Math.random() * 15);
+    const preferHeightRaw = searchParams.get('preferHeight');
+    const preferHeight = preferHeightRaw
+      ? Math.max(480, Math.min(2160, parseInt(preferHeightRaw, 10) || 1080))
+      : 1080;
 
     const url = new URL('https://api.pexels.com/v1/videos/search');
     url.searchParams.set('query', query);
@@ -72,7 +92,7 @@ export async function GET(request: NextRequest) {
 
     const shuffled = [...videos].sort(() => Math.random() - 0.5);
     for (const video of shuffled) {
-      const videoUrl = pickPortraitMp4Url(video.video_files ?? []);
+      const videoUrl = pickPortraitMp4Url(video.video_files ?? [], preferHeight);
       if (videoUrl) {
         return NextResponse.json({
           videoUrl,

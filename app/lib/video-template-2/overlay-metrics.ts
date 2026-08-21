@@ -12,21 +12,22 @@ export const VIDEO_TEMPLATE2_SEARCH_FOOTER_LINES = [
 ] as const;
 
 export function videoTemplate2TitleFontSizePx(frameH: number): number {
-  return Math.max(40, Math.floor(frameH * 0.024));
+  // Purely proportional — large absolute floors (e.g. 40) blew up on ~1080p Pexels clips.
+  return Math.max(12, Math.floor(frameH * 0.024));
 }
 
 export function videoTemplate2QuestionFontSizePx(frameH: number): number {
-  return Math.max(25, Math.floor(frameH * 0.014));
+  return Math.max(10, Math.floor(frameH * 0.014));
 }
 
 export function videoTemplate2FooterFontSizePx(frameH: number): number {
-  return Math.max(22, Math.floor(frameH * 0.0125));
+  return Math.max(9, Math.floor(frameH * 0.0125));
 }
 
 export function videoTemplate2SectionGapPx(frameH: number): number {
-  return Math.max(20, Math.floor(frameH * 0.04));
+  return Math.max(8, Math.floor(frameH * 0.04));
 }
 
 export function videoTemplate2TitleListGapPx(frameH: number): number {
-  return Math.max(14, Math.floor(frameH * 0.032));
+  return Math.max(6, Math.floor(frameH * 0.032));
 }

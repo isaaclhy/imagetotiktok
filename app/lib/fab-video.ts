@@ -15,8 +15,8 @@ export const FAB_NOTES_MAX_DURATION_SEC = 9;
 export const FAB_NOTES_EXPORT_MAX_WIDTH = 1080;
 export const FAB_NOTES_EXPORT_MAX_HEIGHT = 1920;
 
-/** ~10 Mbps — crisp 1080p30 with sharp Notes / affirmation text overlays. */
-export const FAB_NOTES_EXPORT_VIDEO_BITRATE = 10_000_000;
+/** ~8 Mbps — stable 1080p30 encode without dropping frames as often as 10 Mbps. */
+export const FAB_NOTES_EXPORT_VIDEO_BITRATE = 8_000_000;
 
 /** Fab affirmation montage (video template 1). */
 export const FAB_AFFIRMATION_PEXELS_QUERIES = [

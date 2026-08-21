@@ -415,25 +415,18 @@ export async function exportFabNotesVideo(
     drawFabNotesCardOnCanvas(overlayCtx, w, h, title, questions);
 
     const chunks: BlobPart[] = [];
+    const EXPORT_FPS = 30;
+    const FRAME_MS = 1000 / EXPORT_FPS;
 
     await new Promise<void>((resolve, reject) => {
       let rafId = 0;
-      let vfcHandle = 0;
       let recorder: MediaRecorder | null = null;
       let finished = false;
-      const useVideoFrameCallback =
-        typeof video.requestVideoFrameCallback === 'function';
+      let captureTrack: MediaStreamTrack | null = null;
 
       const stopDrawing = () => {
         if (rafId) cancelAnimationFrame(rafId);
         rafId = 0;
-        if (
-          vfcHandle &&
-          typeof video.cancelVideoFrameCallback === 'function'
-        ) {
-          video.cancelVideoFrameCallback(vfcHandle);
-        }
-        vfcHandle = 0;
       };
 
       const paintFrame = () => {
@@ -442,18 +435,17 @@ export async function exportFabNotesVideo(
           ctx.drawImage(video, 0, 0, w, h);
         }
         ctx.drawImage(overlay, 0, 0);
+        // Push an explicit frame into the capture stream when supported (Chrome).
+        const track = captureTrack as MediaStreamTrack & { requestFrame?: () => void };
+        track?.requestFrame?.();
       };
 
       const waitForDecodedFrame = () =>
         new Promise<void>((res) => {
-          if (useVideoFrameCallback) {
-            vfcHandle = video.requestVideoFrameCallback(() => {
-              vfcHandle = 0;
-              res();
-            });
+          if (typeof video.requestVideoFrameCallback === 'function') {
+            video.requestVideoFrameCallback(() => res());
             return;
           }
-          // Double-rAF is a common fallback when the video is already playing.
           rafId = requestAnimationFrame(() => {
             rafId = requestAnimationFrame(() => {
               rafId = 0;
@@ -477,24 +469,6 @@ export async function exportFabNotesVideo(
       };
 
       const reachedMaxDuration = () => video.currentTime >= maxDurationSec - 0.05;
-
-      const scheduleNext = () => {
-        if (finished || video.ended || reachedMaxDuration()) {
-          if (reachedMaxDuration() || video.ended) finishRecording();
-          return;
-        }
-        if (useVideoFrameCallback) {
-          vfcHandle = video.requestVideoFrameCallback(() => {
-            paintFrame();
-            scheduleNext();
-          });
-        } else {
-          rafId = requestAnimationFrame(() => {
-            paintFrame();
-            scheduleNext();
-          });
-        }
-      };
 
       video.addEventListener('ended', finishRecording, { once: true });
 
@@ -531,7 +505,17 @@ export async function exportFabNotesVideo(
           await waitForDecodedFrame();
           paintFrame();
 
-          const outStream = canvas.captureStream(30);
+          // Prefer manual requestFrame pacing when available; else fixed 30fps capture.
+          const probeStream = canvas.captureStream(0);
+          const probeTrack = probeStream.getVideoTracks()[0] as
+            | (MediaStreamTrack & { requestFrame?: () => void })
+            | undefined;
+          const supportsRequestFrame = typeof probeTrack?.requestFrame === 'function';
+          probeStream.getTracks().forEach((t) => t.stop());
+
+          const outStream = canvas.captureStream(supportsRequestFrame ? 0 : EXPORT_FPS);
+          captureTrack = outStream.getVideoTracks()[0] ?? null;
+
           recorder = new MediaRecorder(outStream, {
             mimeType: mime,
             videoBitsPerSecond: FAB_NOTES_EXPORT_VIDEO_BITRATE,
@@ -550,11 +534,31 @@ export async function exportFabNotesVideo(
             resolve();
           };
 
-          // Prime the capture stream with a real frame, then start recording.
+          // Steady wall-clock 30fps paints — avoids VFC/source-fps judder vs captureStream.
+          let nextFrameAt = performance.now();
+          const tick = (now: number) => {
+            if (finished) return;
+            if (video.ended || reachedMaxDuration()) {
+              paintFrame();
+              finishRecording();
+              return;
+            }
+            if (now >= nextFrameAt) {
+              paintFrame();
+              nextFrameAt += FRAME_MS;
+              // If we fell behind (tab throttle / GC), skip ahead instead of bursting frames.
+              if (now > nextFrameAt + FRAME_MS * 2) {
+                nextFrameAt = now + FRAME_MS;
+              }
+            }
+            rafId = requestAnimationFrame(tick);
+          };
+
           paintFrame();
           recorder.start(100);
           paintFrame();
-          scheduleNext();
+          nextFrameAt = performance.now() + FRAME_MS;
+          rafId = requestAnimationFrame(tick);
         } catch (e) {
           stopDrawing();
           video.pause();

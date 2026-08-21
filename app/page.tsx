@@ -96,7 +96,7 @@ async function fetchRandomPexelsVideoUrlForExport(): Promise<string> {
     VIDEO_TEMPLATE2_PEXELS_QUERIES[Math.floor(Math.random() * VIDEO_TEMPLATE2_PEXELS_QUERIES.length)]!;
   const page = 1 + Math.floor(Math.random() * 15);
   const res = await fetch(
-    `/api/pexels/random-video?query=${encodeURIComponent(query)}&page=${page}`
+    `/api/pexels/random-video?query=${encodeURIComponent(query)}&page=${page}&preferHeight=1080`
   );
   const data = (await res.json()) as { videoUrl?: string; error?: string };
   if (!res.ok || !data.videoUrl) {
@@ -209,24 +209,25 @@ function template2CoverFontSizePx(frameW: number): number {
 
 /** Video template 2 overlay sizes — scale with frame height so export matches preview proportions. */
 function videoTemplate2TitleFontSizePx(frameH: number): number {
-  return Math.max(40, Math.floor(frameH * 0.024));
+  // Purely proportional — large absolute floors (e.g. 40) blew up on ~1080p Pexels clips.
+  return Math.max(12, Math.floor(frameH * 0.024));
 }
 
 function videoTemplate2QuestionFontSizePx(frameH: number): number {
-  return Math.max(25, Math.floor(frameH * 0.014));
+  return Math.max(10, Math.floor(frameH * 0.014));
 }
 
 function videoTemplate2FooterFontSizePx(frameH: number): number {
-  return Math.max(22, Math.floor(frameH * 0.0125));
+  return Math.max(9, Math.floor(frameH * 0.0125));
 }
 
 function videoTemplate2SectionGapPx(frameH: number): number {
-  return Math.max(20, Math.floor(frameH * 0.04));
+  return Math.max(8, Math.floor(frameH * 0.04));
 }
 
 /** Gap between title and question list (smaller than list-to-footer gap). */
 function videoTemplate2TitleListGapPx(frameH: number): number {
-  return Math.max(14, Math.floor(frameH * 0.032));
+  return Math.max(6, Math.floor(frameH * 0.032));
 }
 
 const VIDEO_TEMPLATE2_TITLE_TOP_RATIO = 0.16;
@@ -1273,7 +1274,7 @@ export default function Home() {
       const query = queryPool[Math.floor(Math.random() * queryPool.length)]!;
       const page = 1 + Math.floor(Math.random() * 15);
       const res = await fetch(
-        `/api/pexels/random-video?query=${encodeURIComponent(query)}&page=${page}`
+        `/api/pexels/random-video?query=${encodeURIComponent(query)}&page=${page}&preferHeight=1080`
       );
       const data = (await res.json()) as { videoUrl?: string; thumbnailUrl?: string | null; error?: string };
       if (!res.ok || !data.videoUrl) {
