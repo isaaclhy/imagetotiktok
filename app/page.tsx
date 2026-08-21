@@ -561,6 +561,15 @@ async function exportVideoWithCaptionOverlay(
   const mime = pickMediaRecorderMime();
   if (!mime) throw new Error('No supported video recording format in this browser');
 
+  // Prefetch fully before recording — proxy streaming mid-encode often ends early
+  // (short ~1s files) or stutters when Range buffers stall.
+  const response = await fetch(videoSrc);
+  if (!response.ok) {
+    throw new Error(`Failed to download video (${response.status})`);
+  }
+  const sourceBlob = await response.blob();
+  const objectUrl = URL.createObjectURL(sourceBlob);
+
   const video = document.createElement('video');
   video.crossOrigin = 'anonymous';
   video.playsInline = true;
@@ -568,163 +577,230 @@ async function exportVideoWithCaptionOverlay(
   video.setAttribute('playsinline', '');
   video.setAttribute('webkit-playsinline', '');
   video.preload = 'auto';
-  video.src = videoSrc;
+  video.src = objectUrl;
 
-  await new Promise<void>((resolve, reject) => {
-    const fail = () => reject(new Error('Failed to load video'));
-    video.addEventListener('error', fail, { once: true });
-    const ready = () => {
-      video.removeEventListener('error', fail);
-      resolve();
-    };
-    // iOS Safari may not fire loadeddata until playback starts (muted).
-    video.addEventListener('loadeddata', ready, { once: true });
-    video.addEventListener('canplay', ready, { once: true });
-    void video.play().catch(() => {
-      // Autoplay can still fail; loadeddata/canplay may still arrive.
-    });
-  });
-
-  const w = video.videoWidth;
-  const h = video.videoHeight;
-  if (w <= 0 || h <= 0) throw new Error('Invalid video dimensions');
-
-  const captionFontSize =
-    captionStyle === 'natural' ? videoTemplate2TitleFontSizePx(h) : videoCaptionFontSizePx(w);
-  const questionFontSize = videoTemplate2QuestionFontSizePx(h);
-  const footerFontSize = videoTemplate2FooterFontSizePx(h);
-  const captionFontWeight = captionStyle === 'natural' ? TEMPLATE2_COVER_FONT_WEIGHT : 900;
-  if (typeof document !== 'undefined' && document.fonts?.load) {
-    try {
-      await document.fonts.load(`${captionFontWeight} ${captionFontSize}px "TikTok Sans"`);
-      if (numberedQuestions.length > 0) {
-        await document.fonts.load(`${captionFontWeight} ${questionFontSize}px "TikTok Sans"`);
-        await document.fonts.load(`${captionFontWeight} ${footerFontSize}px "TikTok Sans"`);
-      }
-    } catch {
-      /* fall back to system font if load fails */
-    }
-  }
-
-  const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Canvas not available');
-
-  const chunks: BlobPart[] = [];
-
-  await new Promise<void>((resolve, reject) => {
-    let rafId = 0;
-    let recorder: MediaRecorder | null = null;
-    let finished = false;
-
-    const stopDrawing = () => {
-      if (rafId) cancelAnimationFrame(rafId);
-      rafId = 0;
-    };
-
-    const finishRecording = () => {
-      if (finished) return;
-      finished = true;
-      stopDrawing();
-      video.pause();
-      window.setTimeout(() => {
-        try {
-          if (recorder && recorder.state === 'recording') recorder.stop();
-        } catch {
-          reject(new Error('Failed to finish recording'));
-        }
-      }, 400);
-    };
-
-    const reachedMaxDuration = () =>
-      maxDurationSec !== undefined && video.currentTime >= maxDurationSec - 0.05;
-
-    const draw = () => {
-      if (video.ended || reachedMaxDuration()) {
-        if (reachedMaxDuration()) finishRecording();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      let settled = false;
+      const done = () => {
+        if (settled) return;
+        settled = true;
+        resolve();
+      };
+      video.addEventListener('error', () => reject(new Error('Failed to load video')), {
+        once: true,
+      });
+      if (video.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
+        done();
         return;
       }
-      if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-        const useMagicalGrade = captionStyle === 'natural' && numberedQuestions.length > 0;
-        if (useMagicalGrade) {
-          ctx.filter = COUPLES_NATURE_VIDEO_FILTER;
-        }
-        ctx.drawImage(video, 0, 0, w, h);
-        if (useMagicalGrade) {
-          ctx.filter = 'none';
-        }
-        if (captionStyle === 'natural' && numberedQuestions.length > 0) {
-          drawVideoTemplate2DimOverlay(ctx, w, h);
-          drawVideoTemplate2OverlayOnCanvas(ctx, w, h, caption, numberedQuestions);
-        } else if (captionStyle === 'natural') {
-          drawVideoTemplate2DimOverlay(ctx, w, h);
-          drawNaturalWhiteCaptionOnCanvas(ctx, w, h, caption, {
-            position: captionPosition,
-            fontSizePx: videoTemplate2TitleFontSizePx(h),
-          });
-        } else {
-          drawTikTokCaptionOnCanvas(ctx, w, h, caption, { position: captionPosition });
-        }
-      }
-      if (!video.ended && !reachedMaxDuration()) rafId = requestAnimationFrame(draw);
-    };
+      video.addEventListener('canplaythrough', done, { once: true });
+      video.addEventListener(
+        'loadeddata',
+        () => {
+          window.setTimeout(done, 250);
+        },
+        { once: true }
+      );
+    });
 
-    video.addEventListener('ended', finishRecording, { once: true });
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+    if (w <= 0 || h <= 0) throw new Error('Invalid video dimensions');
 
-    const run = async () => {
+    const captionFontSize =
+      captionStyle === 'natural' ? videoTemplate2TitleFontSizePx(h) : videoCaptionFontSizePx(w);
+    const questionFontSize = videoTemplate2QuestionFontSizePx(h);
+    const footerFontSize = videoTemplate2FooterFontSizePx(h);
+    const captionFontWeight = captionStyle === 'natural' ? TEMPLATE2_COVER_FONT_WEIGHT : 900;
+    if (typeof document !== 'undefined' && document.fonts?.load) {
       try {
-        video.pause();
-        video.currentTime = 0;
-        video.muted = false;
-
-        const canvasStream = canvas.captureStream(30);
-        const videoWithCapture = video as HTMLVideoElement & { captureStream?: () => MediaStream };
-        if (typeof videoWithCapture.captureStream !== 'function') {
-          throw new Error('Video captureStream is not supported in this browser');
+        await document.fonts.load(`${captionFontWeight} ${captionFontSize}px "TikTok Sans"`);
+        if (numberedQuestions.length > 0) {
+          await document.fonts.load(`${captionFontWeight} ${questionFontSize}px "TikTok Sans"`);
+          await document.fonts.load(`${captionFontWeight} ${footerFontSize}px "TikTok Sans"`);
         }
-        const videoAudioStream = videoWithCapture.captureStream();
-        const outStream = new MediaStream();
-        canvasStream.getVideoTracks().forEach((t: MediaStreamTrack) => outStream.addTrack(t));
-        videoAudioStream.getAudioTracks().forEach((t: MediaStreamTrack) => outStream.addTrack(t));
+      } catch {
+        /* fall back to system font if load fails */
+      }
+    }
 
-        recorder = new MediaRecorder(outStream, { mimeType: mime, videoBitsPerSecond: 2_500_000 });
-        recorder.ondataavailable = (e) => {
-          if (e.data.size) chunks.push(e.data);
-        };
-        recorder.onerror = () => {
-          stopDrawing();
-          video.pause();
-          reject(new Error('Recording failed'));
-        };
-        recorder.onstop = () => {
-          stopDrawing();
-          video.pause();
-          resolve();
-        };
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas not available');
 
-        recorder.start(200);
-        try {
-          await video.play();
-        } catch {
-          video.muted = true;
-          await video.play();
+    const chunks: BlobPart[] = [];
+    const EXPORT_FPS = 30;
+    const FRAME_MS = 1000 / EXPORT_FPS;
+
+    await new Promise<void>((resolve, reject) => {
+      let rafId = 0;
+      let recorder: MediaRecorder | null = null;
+      let finished = false;
+      let captureTrack: MediaStreamTrack | null = null;
+
+      const stopDrawing = () => {
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = 0;
+      };
+
+      const paintFrame = () => {
+        if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && video.videoWidth > 0) {
+          const useMagicalGrade = captionStyle === 'natural' && numberedQuestions.length > 0;
+          if (useMagicalGrade) {
+            ctx.filter = COUPLES_NATURE_VIDEO_FILTER;
+          }
+          ctx.drawImage(video, 0, 0, w, h);
+          if (useMagicalGrade) {
+            ctx.filter = 'none';
+          }
+          if (captionStyle === 'natural' && numberedQuestions.length > 0) {
+            drawVideoTemplate2DimOverlay(ctx, w, h);
+            drawVideoTemplate2OverlayOnCanvas(ctx, w, h, caption, numberedQuestions);
+          } else if (captionStyle === 'natural') {
+            drawVideoTemplate2DimOverlay(ctx, w, h);
+            drawNaturalWhiteCaptionOnCanvas(ctx, w, h, caption, {
+              position: captionPosition,
+              fontSizePx: videoTemplate2TitleFontSizePx(h),
+            });
+          } else {
+            drawTikTokCaptionOnCanvas(ctx, w, h, caption, { position: captionPosition });
+          }
         }
-        draw();
-      } catch (e) {
+        const track = captureTrack as MediaStreamTrack & { requestFrame?: () => void };
+        track?.requestFrame?.();
+      };
+
+      const finishRecording = () => {
+        if (finished) return;
+        finished = true;
         stopDrawing();
         video.pause();
-        reject(e instanceof Error ? e : new Error(String(e)));
-      }
-    };
+        window.setTimeout(() => {
+          try {
+            if (recorder && recorder.state === 'recording') recorder.stop();
+          } catch {
+            reject(new Error('Failed to finish recording'));
+          }
+        }, 400);
+      };
 
-    void run();
-  });
+      const reachedMaxDuration = () =>
+        maxDurationSec !== undefined && video.currentTime >= maxDurationSec - 0.05;
 
-  if (chunks.length === 0) throw new Error('No video data was recorded');
+      video.addEventListener('ended', finishRecording, { once: true });
 
-  return new Blob(chunks, { type: mime.includes('mp4') ? 'video/mp4' : 'video/webm' });
+      const run = async () => {
+        try {
+          video.pause();
+          await new Promise<void>((res, rej) => {
+            const onSeeked = () => {
+              cleanup();
+              res();
+            };
+            const onError = () => {
+              cleanup();
+              rej(new Error('Failed to seek video'));
+            };
+            const cleanup = () => {
+              video.removeEventListener('seeked', onSeeked);
+              video.removeEventListener('error', onError);
+            };
+            video.addEventListener('seeked', onSeeked, { once: true });
+            video.addEventListener('error', onError, { once: true });
+            if (video.currentTime === 0) {
+              cleanup();
+              res();
+              return;
+            }
+            video.currentTime = 0;
+          });
+
+          video.muted = false;
+          try {
+            await video.play();
+          } catch {
+            video.muted = true;
+            await video.play();
+          }
+
+          const probeStream = canvas.captureStream(0);
+          const probeTrack = probeStream.getVideoTracks()[0] as
+            | (MediaStreamTrack & { requestFrame?: () => void })
+            | undefined;
+          const supportsRequestFrame = typeof probeTrack?.requestFrame === 'function';
+          probeStream.getTracks().forEach((t) => t.stop());
+
+          const canvasStream = canvas.captureStream(supportsRequestFrame ? 0 : EXPORT_FPS);
+          captureTrack = canvasStream.getVideoTracks()[0] ?? null;
+
+          const videoWithCapture = video as HTMLVideoElement & { captureStream?: () => MediaStream };
+          if (typeof videoWithCapture.captureStream !== 'function') {
+            throw new Error('Video captureStream is not supported in this browser');
+          }
+          const videoAudioStream = videoWithCapture.captureStream();
+          const outStream = new MediaStream();
+          canvasStream.getVideoTracks().forEach((t: MediaStreamTrack) => outStream.addTrack(t));
+          videoAudioStream.getAudioTracks().forEach((t: MediaStreamTrack) => outStream.addTrack(t));
+
+          recorder = new MediaRecorder(outStream, { mimeType: mime, videoBitsPerSecond: 2_500_000 });
+          recorder.ondataavailable = (e) => {
+            if (e.data.size) chunks.push(e.data);
+          };
+          recorder.onerror = () => {
+            stopDrawing();
+            video.pause();
+            reject(new Error('Recording failed'));
+          };
+          recorder.onstop = () => {
+            stopDrawing();
+            video.pause();
+            resolve();
+          };
+
+          let nextFrameAt = performance.now();
+          const tick = (now: number) => {
+            if (finished) return;
+            if (video.ended || reachedMaxDuration()) {
+              paintFrame();
+              finishRecording();
+              return;
+            }
+            if (now >= nextFrameAt) {
+              paintFrame();
+              nextFrameAt += FRAME_MS;
+              if (now > nextFrameAt + FRAME_MS * 2) {
+                nextFrameAt = now + FRAME_MS;
+              }
+            }
+            rafId = requestAnimationFrame(tick);
+          };
+
+          paintFrame();
+          recorder.start(100);
+          paintFrame();
+          nextFrameAt = performance.now() + FRAME_MS;
+          rafId = requestAnimationFrame(tick);
+        } catch (e) {
+          stopDrawing();
+          video.pause();
+          reject(e instanceof Error ? e : new Error(String(e)));
+        }
+      };
+
+      void run();
+    });
+
+    if (chunks.length === 0) throw new Error('No video data was recorded');
+
+    return new Blob(chunks, { type: mime.includes('mp4') ? 'video/mp4' : 'video/webm' });
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+    video.removeAttribute('src');
+    video.load();
+  }
 }
 
 /** Draws `count` images without replacement within each shuffled pass over `pool`; reshuffles only after every file has been used once. With ≥7 assets, all `count` picks are distinct. */

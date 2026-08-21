@@ -456,7 +456,6 @@ export const COUPLES_NATURE_DRIVE_FOLDER_ID = '1wStPbE2B6QytCh0yKbf7sNMzePwfP9PN
 /** Pexels search queries for video template 2 background regeneration. */
 export const VIDEO_TEMPLATE2_PEXELS_QUERIES = [
   'sunrise couples',
-  'couple nature',
   'couple sunset',
   'sunrise beach',
   'sunset beach',
