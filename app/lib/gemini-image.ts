@@ -17,12 +17,17 @@ function getClient(): GoogleGenAI {
   return new GoogleGenAI({ apiKey });
 }
 
-export function imageGenerateConfig() {
+export type GeminiImageConfigOverrides = {
+  aspectRatio?: string;
+  imageSize?: '512' | '1K' | '2K' | '4K';
+};
+
+export function imageGenerateConfig(overrides?: GeminiImageConfigOverrides) {
   return {
     responseModalities: [Modality.TEXT, Modality.IMAGE],
     imageConfig: {
-      aspectRatio: GEMINI_IMAGE_ASPECT_RATIO,
-      imageSize: GEMINI_IMAGE_SIZE,
+      aspectRatio: overrides?.aspectRatio ?? GEMINI_IMAGE_ASPECT_RATIO,
+      imageSize: overrides?.imageSize ?? GEMINI_IMAGE_SIZE,
     },
   };
 }
@@ -48,7 +53,7 @@ export function toDataUrl(result: GeminiImageResult): string {
 export type GenerateGeminiImageOptions = {
   /** Defaults to GEMINI_IMAGE_MODEL unless overridden. */
   model?: string;
-};
+} & GeminiImageConfigOverrides;
 
 /** Standard (non-batch) single image — use for one-off retries. */
 export async function generateGeminiImageSync(
@@ -59,7 +64,7 @@ export async function generateGeminiImageSync(
   const response = await ai.models.generateContent({
     model: options?.model ?? GEMINI_IMAGE_MODEL,
     contents: prompt,
-    config: imageGenerateConfig(),
+    config: imageGenerateConfig(options),
   });
   return extractImageFromResponse(response);
 }

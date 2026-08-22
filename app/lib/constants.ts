@@ -57,6 +57,12 @@ export const IMAGE_TEMPLATE2_PASTEL_COLORS = [
   '#90C0A8', // mint fog
 ] as const;
 
+/** Cover slide background — matches template-2-cover.jpg picker thumbnail. */
+export const IMAGE_TEMPLATE2_COVER_BACKGROUND = IMAGE_TEMPLATE2_PASTEL_COLORS[0];
+
+/** Default off while testing — skips highlight-word API and cover squiggle when false. */
+export const IMAGE_TEMPLATE2_COVER_SQUIGGLE_ENABLED_DEFAULT = false;
+
 export const IMAGE_TEMPLATE2_APP_FOOTER = 'Spill It - Couples Questions';
 
 export const IMAGE_TEMPLATE2_TYPE_LABELS: Record<
@@ -67,6 +73,17 @@ export const IMAGE_TEMPLATE2_TYPE_LABELS: Record<
   flirty: 'Flirty Questions',
   me_or_you: 'Me or You',
   brave: 'Brave Questions',
+};
+
+/** Lowercase TikTok labels for Image Template 3 cover (question type line). */
+export const IMAGE_TEMPLATE3_TYPE_PILL_LABELS: Record<
+  'funny' | 'flirty' | 'me_or_you' | 'brave',
+  string
+> = {
+  funny: 'funny questions',
+  flirty: 'flirty questions',
+  me_or_you: 'me or you',
+  brave: 'brave questions',
 };
 
 /** Cover image prompt IDs for automate flow. Keys are display names. */

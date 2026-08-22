@@ -19,11 +19,26 @@ import {
   VIDEO_TEMPLATE2_PEXELS_QUERIES,
   CONCRETE_QUESTION_TYPES,
   IMAGE_TEMPLATE2_PASTEL_COLORS,
+  IMAGE_TEMPLATE2_COVER_BACKGROUND,
+  IMAGE_TEMPLATE2_COVER_SQUIGGLE_ENABLED_DEFAULT,
   IMAGE_TEMPLATE2_APP_FOOTER,
   IMAGE_TEMPLATE2_TYPE_LABELS,
+  IMAGE_TEMPLATE3_TYPE_PILL_LABELS,
   type AutomateQuestionType,
   type ConcreteQuestionType,
 } from '@/app/lib/constants';
+import {
+  drawImageTemplate3CoverOverlay,
+} from '@/app/lib/image-template-3-cover-overlay';
+import { ImageTemplate3CoverOverlay } from '@/app/components/ImageTemplate3CoverOverlay';
+import {
+  drawImageTemplate2CoverSlide,
+  IMAGE_TEMPLATE2_COVER_LETTER_SPACING,
+  IMAGE_TEMPLATE2_COVER_LINE_HEIGHT_MULT,
+  IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO,
+  IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT,
+} from '@/app/lib/image-template-2-cover';
+import { imageTemplate3CoverDisplaySrc } from '@/app/lib/image-template-3-cover';
 import {
   DEFAULT_STUDIO_APP_ID,
   getImageTemplatesForApp,
@@ -37,7 +52,6 @@ import {
   fillFabHeartPaperPrompt,
 } from '@/app/lib/fab-prompts';
 import {
-  drawTitleSquiggle,
   splitTitleAroundHighlight,
   squiggleColorForBackground,
 } from '@/app/lib/highlight-word';
@@ -825,12 +839,12 @@ const DAILY_TEMPLATE_TITLES_FUNNY = [
   "5 Impossible Questions To Tease Your Boyfriend Tonight",
   "5 Questions To Ask Your Sweet Heart Tonight",
   "5 Fun Questions To Gaslight Your Boyfriend Tonight",
-  "Does he pass the good boyfriend test?",
+  "Does He Pass The Good Boyfriend Test?",
   "5 Questions To Test How Well Trained Your Boyfriend Is",
   "5 Impossible Questions To Test Your Boyfriend Tonight",
   "5 Questions Every Boyfriend Must Answer Tonight If He Loves You",
   "5 Questions To Test If Your Boyfriend Is The One",
-  "5 Impossible QuestionS To Test If Your Boyfriend Is Husband Material",
+  "5 Impossible Questions To Test If Your Boyfriend Is Husband Material",
   "5 Questions For Internation Rage Bait Boyfriend Day",
   "5 Questions To Ask Your Boyfriend When He's Busy Or Tired",
   '5 Questions Every Girlfriends Should Ask Their Boyfriend',
@@ -847,7 +861,7 @@ const DAILY_TEMPLATE_TITLES_FUNNY = [
   '5 Cute Questions Every Boyfriend Must Answer Tonight',
   '5 Questions Every Boyfriend Gets Wrong',
   'Does Your Boyfriend Pass The Jealousy Test?',
-  'Does Your boyfriend Pass The Loyalty Test?',
+  'Does Your Boyfriend Pass The Loyalty Test?',
   '5 Cute Questions To Fall In Love With Your Boyfriend',
   '5 Questions A Good Boyfriend Should Get Right',
   '5 Cute Questions All Boyfriends Must Answer Tonight',
@@ -890,19 +904,19 @@ const DAILY_TEMPLATE_TITLES_FLIRTY = [
   '5 Questions To Heat Up Your Night Together',
   '5 Flirty Questions To Make Him Fold First',
   '5 Questions To Ask Your Boyfriend After Dark',
-  '5 low key flirty questions for your boyfriend',
+  '5 Low Key Flirty Questions For Your Boyfriend',
 ] as const;
 
 const DAILY_TEMPLATE_TITLES_BRAVE = [
-  'Brave questions to ask your boyfriend',
-  '5 brave questions to ask your boyfriend',
-  '5 incredibly uncomfortable questions to ask your partner',
-  'Brave questions to ask in your relationship',
-  '5 uncomfortable but healthy questions to ask your partner',
-  "Things I want to know but don't wanna ask",
-  '5 uncomfy but healthy questions to ask him',
-  '5 questions to ask your boyfriend',
-  '5 questions every boyfriend should be able to answer',
+  'Brave Questions To Ask Your Boyfriend',
+  '5 Brave Questions To Ask Your Boyfriend',
+  '5 Incredibly Uncomfortable Questions To Ask Your Partner',
+  'Brave Questions To Ask In Your Relationship',
+  '5 Uncomfortable But Healthy Questions To Ask Your Partner',
+  "Things I Want To Know But Don't Wanna Ask",
+  '5 Uncomfy But Healthy Questions To Ask Him',
+  '5 Questions To Ask Your Boyfriend',
+  '5 Questions Every Boyfriend Should Be Able To Answer',
 ] as const;
 
 function questionPoolForType(type: ConcreteQuestionType): readonly string[] {
@@ -1062,6 +1076,8 @@ export default function Home() {
   const [imageTabSources, setImageTabSources] = useState<string[]>([]);
   const [imageTemplate2QuestionType, setImageTemplate2QuestionType] =
     useState<AutomateQuestionType>('random');
+  const [imageTemplate3QuestionType, setImageTemplate3QuestionType] =
+    useState<AutomateQuestionType>('random');
   const [imageTemplate2Description, setImageTemplate2Description] = useState('');
   const [isGeneratingImageTemplate2Description, setIsGeneratingImageTemplate2Description] =
     useState(false);
@@ -1069,6 +1085,11 @@ export default function Home() {
   const [imageTemplate2HighlightWord, setImageTemplate2HighlightWord] = useState<string | null>(
     null
   );
+  const [imageTemplate2CoverSquiggleEnabled, setImageTemplate2CoverSquiggleEnabled] = useState(
+    IMAGE_TEMPLATE2_COVER_SQUIGGLE_ENABLED_DEFAULT
+  );
+  const [isImageTemplate3CoverLoading, setIsImageTemplate3CoverLoading] = useState(false);
+  const [imageTemplate3CoverError, setImageTemplate3CoverError] = useState<string | null>(null);
   const [dogImagePool, setDogImagePool] = useState<string[]>([]);
   const [videoBackgroundUrl, setVideoBackgroundUrl] = useState<string | null>(null);
   const [videoThumbnailUrl, setVideoThumbnailUrl] = useState<string | null>(null);
@@ -1120,6 +1141,8 @@ export default function Home() {
   const isKawaiiImageTemplate = selectedAppId === 'spill-it' && selectedImageTemplateId === 1;
   const isPastelCarouselImageTemplate =
     selectedAppId === 'spill-it' && selectedImageTemplateId === 2;
+  const isTikTokReactionImageTemplate =
+    selectedAppId === 'spill-it' && selectedImageTemplateId === 3;
   const isCouplesNatureVideoTemplate = selectedAppId === 'spill-it' && selectedVideoTemplateId === 2;
   const isSpillItNotesVideoTemplate = selectedAppId === 'spill-it' && selectedVideoTemplateId === 3;
   const isFabAffirmationVideoTemplate = selectedAppId === 'fab' && selectedVideoTemplateId === 1;
@@ -1176,7 +1199,15 @@ export default function Home() {
     if ((isKawaiiImageTemplate || isPastelCarouselImageTemplate) && selectedImageBrowserTab > 6) {
       setSelectedImageBrowserTab(0);
     }
-  }, [isKawaiiImageTemplate, isPastelCarouselImageTemplate, selectedImageBrowserTab]);
+    if (isTikTokReactionImageTemplate && selectedImageBrowserTab > 0) {
+      setSelectedImageBrowserTab(0);
+    }
+  }, [
+    isKawaiiImageTemplate,
+    isPastelCarouselImageTemplate,
+    isTikTokReactionImageTemplate,
+    selectedImageBrowserTab,
+  ]);
 
   const regenerateVideoTemplate2Title = () => {
     setVideoOverlayCaption((current) => pickTitleForType(videoTemplate2QuestionType, current));
@@ -1227,6 +1258,22 @@ export default function Home() {
     setImageTabTexts([title, ...questions, 'Remember to like, save and share the fun!']);
   };
 
+  const applyImageTemplate3QuestionType = (type: AutomateQuestionType) => {
+    setImageTemplate3QuestionType(type);
+    const resolved = resolveQuestionType(type);
+    const title = pickTitleForType(resolved);
+    setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[resolved]);
+    setImageTabTexts([title]);
+  };
+
+  const imageTemplate3TypePillLabel = (): string => {
+    const type: ConcreteQuestionType =
+      imageTemplate3QuestionType === 'random'
+        ? concreteTypeFromImageLabel(imageTabTypeLabel)
+        : imageTemplate3QuestionType;
+    return IMAGE_TEMPLATE3_TYPE_PILL_LABELS[type];
+  };
+
   const regenerateImageTemplate2Type = () => {
     const idx = VIDEO_TEMPLATE2_TYPE_CYCLE.indexOf(imageTemplate2QuestionType);
     const next =
@@ -1236,11 +1283,39 @@ export default function Home() {
 
   const regenerateImageTemplate2Colors = () => {
     const pastelPool = shuffleCopy([...IMAGE_TEMPLATE2_PASTEL_COLORS]);
-    const pastels = Array.from({ length: 6 }, (_, i) => pastelPool[i % pastelPool.length]!);
+    const pastels = Array.from({ length: 6 }, (_, i) =>
+      i === 0 ? IMAGE_TEMPLATE2_COVER_BACKGROUND : pastelPool[i % pastelPool.length]!
+    );
     setImageTabPastelBgs(pastels);
     setImageTabFrameBg(
       pastels[Math.min(selectedImageBrowserTab, pastels.length - 1)] ?? pastels[0]!
     );
+  };
+
+  const fetchImageTemplate3Cover = async (): Promise<string> => {
+    const res = await fetch('/api/gemini/template-3-cover', { method: 'POST' });
+    const data = (await res.json()) as { imageUrl?: string; error?: string };
+    if (!res.ok || !data.imageUrl) {
+      throw new Error(data.error || 'Failed to generate cover image');
+    }
+    return data.imageUrl;
+  };
+
+  const regenerateImageTemplate3Cover = async () => {
+    setIsImageTemplate3CoverLoading(true);
+    setImageTemplate3CoverError(null);
+    try {
+      const coverUrl = await fetchImageTemplate3Cover();
+      setImageTabSources((prev) => {
+        const next = [...prev];
+        next[0] = coverUrl;
+        return next;
+      });
+    } catch (e) {
+      setImageTemplate3CoverError(e instanceof Error ? e.message : 'Failed to generate cover');
+    } finally {
+      setIsImageTemplate3CoverLoading(false);
+    }
   };
 
   const handleGenerateImageTemplate2Description = async () => {
@@ -2565,6 +2640,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     const tid = templateId ?? selectedImageTemplateId;
     const isKawaii = selectedAppId === 'spill-it' && tid === 1;
     const isPastel = selectedAppId === 'spill-it' && tid === 2;
+    const isTikTokReaction = selectedAppId === 'spill-it' && tid === 3;
     if (options?.resetTab !== false) {
       setSelectedImageBrowserTab(0);
     }
@@ -2575,8 +2651,10 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       const title = pickTitleForType(type);
       const questions = pickQuestionsForType(type, 5);
       const pastelPool = shuffleCopy([...IMAGE_TEMPLATE2_PASTEL_COLORS]);
-      // One distinct pastel per cover + question slide (CTA is full-bleed).
-      const pastels = Array.from({ length: 6 }, (_, i) => pastelPool[i % pastelPool.length]!);
+      // One distinct pastel per question slide; cover uses fixed picker-style dusty rose.
+      const pastels = Array.from({ length: 6 }, (_, i) =>
+        i === 0 ? IMAGE_TEMPLATE2_COVER_BACKGROUND : pastelPool[i % pastelPool.length]!
+      );
       setImageTabPastelBgs(pastels);
       setImageTabFrameBg(pastels[0]!);
       setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[type]);
@@ -2595,6 +2673,13 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       setImageTabTexts([`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked, imageFrameCtaText]);
       const dogSources = dogImagePool.length ? pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 6) : [];
       setImageTabSources([...dogSources, kawaiiCtaImageSrc]);
+    } else if (isTikTokReaction) {
+      setImageTemplate3CoverError(null);
+      const type = resolveQuestionType(imageTemplate3QuestionType);
+      const title = pickTitleForType(type);
+      setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[type]);
+      setImageTabTexts([title]);
+      setImageTabSources(['']);
     } else {
       setImageTabTexts([`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked, imageFrameCtaText]);
       setImageTabSources(dogImagePool.length ? pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 7) : []);
@@ -2611,6 +2696,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
   const getImageSourceForTab = (tabIndex: number): string =>
     imageTabSources[tabIndex] ??
     (dogImagePool.length ? dogImagePool[tabIndex % dogImagePool.length]! : '');
+  const imageTemplate3CoverSrc = (imageTabSources[0] ?? '').trim();
+  const imageTemplate3CoverReady = imageTemplate3CoverSrc.length > 0;
+  const imageTemplate3CoverPreviewSrc = imageTemplate3CoverDisplaySrc(imageTemplate3CoverSrc);
 
   // URL restores the selected template on refresh, but tab texts live only in memory.
   // Fill them once when empty so question slides don't show blank/`...` placeholders.
@@ -2624,6 +2712,10 @@ const imageFrameTitleLine1 = 'Questions to ask your';
   // Ask ChatGPT which title word to underline (curiosity hook) for Image Template 2 cover.
   useEffect(() => {
     if (!isPastelCarouselImageTemplate) {
+      setImageTemplate2HighlightWord(null);
+      return;
+    }
+    if (!imageTemplate2CoverSquiggleEnabled) {
       setImageTemplate2HighlightWord(null);
       return;
     }
@@ -2659,11 +2751,13 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       controller.abort();
       window.clearTimeout(timer);
     };
-  }, [isPastelCarouselImageTemplate, imageTabTexts[0]]);
+  }, [isPastelCarouselImageTemplate, imageTemplate2CoverSquiggleEnabled, imageTabTexts[0]]);
 
   const imageFrameTextForActiveTab = getImageFrameTextForTab(selectedImageBrowserTab);
   const imageTemplate2TitleHighlightParts =
-    isPastelCarouselImageTemplate && selectedImageBrowserTab === 0
+    isPastelCarouselImageTemplate &&
+    selectedImageBrowserTab === 0 &&
+    imageTemplate2CoverSquiggleEnabled
       ? splitTitleAroundHighlight(imageFrameTextForActiveTab, imageTemplate2HighlightWord)
       : null;
   const isCtaTabSelected = selectedImageBrowserTab === 6;
@@ -2675,7 +2769,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     : getImageSourceForTab(selectedImageBrowserTab);
   const imageTabLabelForActiveTab =
     selectedImageBrowserTab === 0 ? 'Cover' : selectedImageBrowserTab <= 5 ? `Q${selectedImageBrowserTab}` : 'CTA';
-  const imageTemplateTabCount = 7;
+  const imageTemplateTabCount = isTikTokReactionImageTemplate ? 1 : 7;
   const pastelProgressRatio = (selectedImageBrowserTab + 1) / imageTemplateTabCount;
   const activeImageFrameBg = isPastelCarouselImageTemplate
     ? (imageTabPastelBgs[selectedImageBrowserTab] ??
@@ -2724,6 +2818,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         (dogImagePool.length ? dogImagePool[i % dogImagePool.length]! : '');
 
       const isPastelExport = exportTemplateId === 2;
+      const isTemplate3CoverExport = exportTemplateId === 3 && tabIndex === 0;
       const isFullBleedTab = tabIndex === 6;
       const frameWidth = 1080;
       const frameHeight = 1440;
@@ -2758,7 +2853,38 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       if (isPastelExport && !isFullBleedTab) {
         const slideBg =
           imageTabPastelBgs[tabIndex] ??
-          IMAGE_TEMPLATE2_PASTEL_COLORS[tabIndex % IMAGE_TEMPLATE2_PASTEL_COLORS.length]!;
+          (tabIndex === 0
+            ? IMAGE_TEMPLATE2_COVER_BACKGROUND
+            : IMAGE_TEMPLATE2_PASTEL_COLORS[tabIndex % IMAGE_TEMPLATE2_PASTEL_COLORS.length]!);
+
+        if (tabIndex === 0) {
+          try {
+            await document.fonts.load(
+              `${IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT} ${Math.round(frameWidth * IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO)}px Nunito`
+            );
+          } catch {
+            /* font may already be ready */
+          }
+          drawImageTemplate2CoverSlide(ctx, frameWidth, frameHeight, {
+            backgroundColor: slideBg,
+            title: textForTab(tabIndex),
+            highlightWord: imageTemplate2CoverSquiggleEnabled
+              ? imageTemplate2HighlightWord
+              : null,
+            fontFamily: pastelCarouselExportFontFamily,
+            textColor: pastelCarouselTextColor,
+            typeLabel: imageTabTypeLabel,
+            progress: 1 / 7,
+            footer: IMAGE_TEMPLATE2_APP_FOOTER,
+          });
+          return await new Promise<Blob>((resolve, reject) => {
+            canvas.toBlob((blob) => {
+              if (blob) resolve(blob);
+              else reject(new Error('Failed to create image blob'));
+            }, 'image/png');
+          });
+        }
+
         ctx.fillStyle = slideBg;
         ctx.fillRect(0, 0, frameWidth, frameHeight);
 
@@ -2780,8 +2906,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         ctx.fillRect(barX, barY, barW * progress, barH);
 
         const centerText = textForTab(tabIndex);
-        // Match preview visual weight (~text-xl on max-w-sm ≈ 5.2% of width; bump for TikTok readability).
-        const fontSize = Math.round(frameWidth * (tabIndex === 0 ? 0.058 : 0.05));
+        const fontSize = Math.round(frameWidth * 0.05);
         try {
           await document.fonts.load(`800 ${fontSize}px Nunito`);
           await document.fonts.load(`700 ${fontSize}px Nunito`);
@@ -2794,36 +2919,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         ctx.fillStyle = pastelCarouselTextColor;
         const maxTextWidth = frameWidth * 0.8;
         const lines = wrapLines(ctx, centerText.replace(/\n/g, ' '), maxTextWidth);
-        const highlight =
-          tabIndex === 0 ? imageTemplate2HighlightWord?.trim().toLowerCase() ?? '' : '';
-        // Extra leading on cover when a squiggle is drawn so it clears the next line.
-        const lineHeight = fontSize * (highlight ? 1.95 : 1.22);
+        const lineHeight = fontSize * 1.22;
         const blockH = lines.length * lineHeight;
         let y = frameHeight / 2 - blockH / 2 + lineHeight / 2;
         for (const line of lines) {
           ctx.fillText(line, frameWidth / 2, y);
-          if (highlight) {
-            const idx = line.toLowerCase().indexOf(highlight);
-            if (idx >= 0) {
-              const before = line.slice(0, idx);
-              const word = line.slice(idx, idx + highlight.length);
-              const lineWidth = ctx.measureText(line).width;
-              const lineStartX = frameWidth / 2 - lineWidth / 2;
-              const beforeW = ctx.measureText(before).width;
-              const wordW = ctx.measureText(word).width;
-              const strokeW = Math.max(14, Math.round(fontSize * 0.26));
-              drawTitleSquiggle(
-                ctx,
-                lineStartX + beforeW,
-                // Clear descenders with a modest gap; +stroke/2 so thick stroke doesn't bleed into glyphs.
-                y + fontSize * 0.55 + strokeW / 2,
-                wordW,
-                squiggleColorForBackground(slideBg),
-                strokeW,
-                fontSize * 0.36
-              );
-            }
-          }
           y += lineHeight;
         }
 
@@ -2832,6 +2932,44 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         ctx.textBaseline = 'bottom';
         ctx.fillText(IMAGE_TEMPLATE2_APP_FOOTER, frameWidth / 2, frameHeight * 0.9);
 
+        return await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error('Failed to create image blob'));
+          }, 'image/png');
+        });
+      }
+
+      if (isTemplate3CoverExport) {
+        const coverSource = imageTemplate3CoverDisplaySrc(sourceForTab(0));
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, frameWidth, frameHeight);
+        const coverImg = await new Promise<HTMLImageElement>((resolve, reject) => {
+            const el = new Image();
+            el.crossOrigin = 'anonymous';
+            el.onload = () => {
+              if (el.naturalWidth < 1 || el.naturalHeight < 1) {
+                reject(new Error('Invalid image dimensions'));
+                return;
+              }
+              resolve(el);
+            };
+            el.onerror = () => reject(new Error(`Failed to load image: ${coverSource.slice(0, 80)}`));
+            el.src = coverSource;
+          });
+        const coverScale = Math.max(frameWidth / coverImg.width, frameHeight / coverImg.height);
+        const coverW = coverImg.width * coverScale;
+        const coverH = coverImg.height * coverScale;
+        const coverX = (frameWidth - coverW) / 2;
+        const coverY = (frameHeight - coverH) / 2;
+        ctx.drawImage(coverImg, coverX, coverY, coverW, coverH);
+        drawImageTemplate3CoverOverlay(
+          ctx,
+          frameWidth,
+          frameHeight,
+          textForTab(0),
+          imageTemplate3TypePillLabel()
+        );
         return await new Promise<Blob>((resolve, reject) => {
           canvas.toBlob((blob) => {
             if (blob) resolve(blob);
@@ -2970,7 +3108,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       return { entries, isKawaiiTemplate, kawaiiNumSets: KAWAII_DOWNLOAD_NUM_SETS };
     }
 
-    for (let tabIndex = 0; tabIndex < 7; tabIndex++) {
+    const exportTabCount = exportTemplateId === 3 ? 1 : 7;
+
+    for (let tabIndex = 0; tabIndex < exportTabCount; tabIndex++) {
       const blob = await renderFrameBlob(tabIndex, null);
       const tabName = tabIndex === 0 ? 'cover' : tabIndex <= 5 ? `q${tabIndex}` : 'cta';
       entries.push({ path: `template-${exportTemplateId}-${tabName}.png`, blob });
@@ -3627,8 +3767,14 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                           }}
                           className="group rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 p-2 md:p-3 text-left hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                         >
-                          <div className="aspect-3/4 w-full rounded-lg mb-3 overflow-hidden">
-                            {selectedAppId === 'spill-it' && card.id === 1 ? (
+                          <div className="aspect-3/4 w-full rounded-lg mb-3 overflow-hidden bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-600/80">
+                            {card.coverSrc ? (
+                              <img
+                                src={card.coverSrc}
+                                alt={`${card.title} preview`}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : selectedAppId === 'spill-it' && card.id === 1 ? (
                               <div
                                 className="w-full h-full relative"
                                 style={{ backgroundColor: '#FEFEFE' }}
@@ -3668,14 +3814,46 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         Template {selectedImageTemplateId}
                       </p>
                       <div className="order-2 ml-auto flex w-full sm:w-auto flex-col sm:flex-row gap-2 sm:items-center sm:justify-end">
-                        {isKawaiiImageTemplate || isPastelCarouselImageTemplate ? (
+                        {isKawaiiImageTemplate || isPastelCarouselImageTemplate || isTikTokReactionImageTemplate ? (
                           <button
                             type="button"
                             onClick={() => regenerateImageTemplateContent(selectedImageTemplateId!)}
-                            disabled={isImageTemplateDownloading || isImageTemplateUploading}
+                            disabled={
+                              isImageTemplateDownloading ||
+                              isImageTemplateUploading ||
+                              isImageTemplate3CoverLoading
+                            }
                             className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             Retry
+                          </button>
+                        ) : null}
+                        {isTikTokReactionImageTemplate && !imageTemplate3CoverReady ? (
+                          <button
+                            type="button"
+                            onClick={() => void regenerateImageTemplate3Cover()}
+                            disabled={
+                              isImageTemplateDownloading ||
+                              isImageTemplateUploading ||
+                              isImageTemplate3CoverLoading
+                            }
+                            className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                          >
+                            {isImageTemplate3CoverLoading ? 'Generating cover…' : 'Start'}
+                          </button>
+                        ) : null}
+                        {isTikTokReactionImageTemplate && imageTemplate3CoverReady ? (
+                          <button
+                            type="button"
+                            onClick={() => void regenerateImageTemplate3Cover()}
+                            disabled={
+                              isImageTemplateDownloading ||
+                              isImageTemplateUploading ||
+                              isImageTemplate3CoverLoading
+                            }
+                            className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isImageTemplate3CoverLoading ? 'Generating cover…' : 'Regenerate cover'}
                           </button>
                         ) : null}
                         {isPastelCarouselImageTemplate ? (
@@ -3683,7 +3861,12 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             <button
                               type="button"
                               onClick={regenerateImageTemplate2Type}
-                              disabled={isImageTemplateDownloading || isImageTemplateUploading}
+                              disabled={
+                            isImageTemplateDownloading ||
+                            isImageTemplateUploading ||
+                            isImageTemplate3CoverLoading ||
+                            (isTikTokReactionImageTemplate && !imageTemplate3CoverReady)
+                          }
                               className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               Regenerate type
@@ -3691,7 +3874,12 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             <button
                               type="button"
                               onClick={regenerateImageTemplate2Colors}
-                              disabled={isImageTemplateDownloading || isImageTemplateUploading}
+                              disabled={
+                            isImageTemplateDownloading ||
+                            isImageTemplateUploading ||
+                            isImageTemplate3CoverLoading ||
+                            (isTikTokReactionImageTemplate && !imageTemplate3CoverReady)
+                          }
                               className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               Change color
@@ -3701,7 +3889,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         <button
                           type="button"
                           onClick={handleDownloadImageFrame}
-                          disabled={isImageTemplateDownloading || isImageTemplateUploading}
+                          disabled={
+                            isImageTemplateDownloading ||
+                            isImageTemplateUploading ||
+                            isImageTemplate3CoverLoading
+                          }
                           className="inline-flex w-full sm:w-auto items-center justify-center gap-2 text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {isImageTemplateDownloading ? (
@@ -3742,7 +3934,12 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 KAWAII_DRIVE_FOLDER_ID
                               )
                             }
-                            disabled={isImageTemplateDownloading || isImageTemplateUploading}
+                            disabled={
+                            isImageTemplateDownloading ||
+                            isImageTemplateUploading ||
+                            isImageTemplate3CoverLoading ||
+                            (isTikTokReactionImageTemplate && !imageTemplate3CoverReady)
+                          }
                             className="inline-flex w-full sm:w-auto items-center justify-center gap-2 text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {isImageTemplateUploading ? (
@@ -3777,6 +3974,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         ) : null}
                       </div>
                     </div>
+                    {!isTikTokReactionImageTemplate ? (
                     <div className="flex gap-1 p-2 border-b border-zinc-200 dark:border-zinc-700 overflow-x-auto min-w-0 max-w-full">
                       {Array.from({ length: imageTemplateTabCount }, (_, i) => (
                         <button
@@ -3793,11 +3991,17 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         </button>
                       ))}
                     </div>
+                    ) : null}
                     <div className="p-3 sm:p-4 md:p-6 w-full min-w-0 max-w-full box-border">
                       <div className="flex flex-col md:flex-row items-start gap-4 min-w-0 w-full">
                         <div
-                          className="relative w-full max-w-sm mx-auto md:mx-0 aspect-3/4 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden min-w-0"
-                          style={{ backgroundColor: activeImageFrameBg }}
+                          className="@container relative w-full max-w-sm mx-auto md:mx-0 aspect-3/4 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden min-w-0"
+                          style={{
+                            backgroundColor:
+                              isTikTokReactionImageTemplate && selectedImageBrowserTab === 0
+                                ? '#000000'
+                                : activeImageFrameBg,
+                          }}
                         >
                           {isFullBleedImageTabSelected ? (
                             imageSourceForActiveTab ? (
@@ -3808,7 +4012,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               />
                             ) : null
                           ) : isPastelCarouselImageTemplate ? (
-                            <>
+                            selectedImageBrowserTab === 0 ? (
+                              <>
                               <div className="absolute inset-x-[8%] top-[21%] z-10">
                                 <p
                                   className="mb-2 text-center text-[11px] sm:text-xs font-bold tracking-wide text-white"
@@ -3823,12 +4028,17 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   />
                                 </div>
                               </div>
-                              <p
-                                className="absolute left-1/2 top-1/2 z-10 w-[80%] -translate-x-1/2 -translate-y-1/2 text-center text-base sm:text-lg md:text-xl font-extrabold leading-snug text-white wrap-break-word"
-                                style={{
-                                  fontFamily: pastelCarouselFontFamily,
-                                }}
-                              >
+                              <div className="absolute inset-0 z-10 flex items-center justify-center px-[10%] pointer-events-none">
+                                <p
+                                  className="w-full text-center text-white wrap-break-word"
+                                  style={{
+                                    fontFamily: pastelCarouselFontFamily,
+                                    fontSize: `${IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO * 100}cqw`,
+                                    fontWeight: IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT,
+                                    letterSpacing: IMAGE_TEMPLATE2_COVER_LETTER_SPACING,
+                                    lineHeight: IMAGE_TEMPLATE2_COVER_LINE_HEIGHT_MULT,
+                                  }}
+                                >
                                 {imageTemplate2TitleHighlightParts ? (
                                   <>
                                     {imageTemplate2TitleHighlightParts.before}
@@ -3855,6 +4065,38 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 ) : (
                                   imageFrameTextForActiveTab
                                 )}
+                                </p>
+                              </div>
+                              <p
+                                className="absolute inset-x-[8%] bottom-[9%] z-10 text-center text-[11px] sm:text-xs font-bold text-white/95"
+                                style={{ fontFamily: pastelCarouselFontFamily }}
+                              >
+                                {IMAGE_TEMPLATE2_APP_FOOTER}
+                              </p>
+                              </>
+                            ) : (
+                            <>
+                              <div className="absolute inset-x-[8%] top-[21%] z-10">
+                                <p
+                                  className="mb-2 text-center text-[11px] sm:text-xs font-bold tracking-wide text-white"
+                                  style={{ fontFamily: pastelCarouselFontFamily }}
+                                >
+                                  {imageTabTypeLabel}
+                                </p>
+                                <div className="h-1.5 w-full rounded-full bg-white/35 overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full bg-white transition-[width] duration-200"
+                                    style={{ width: `${pastelProgressRatio * 100}%` }}
+                                  />
+                                </div>
+                              </div>
+                              <p
+                                className="absolute left-1/2 top-1/2 z-10 w-[80%] -translate-x-1/2 -translate-y-1/2 text-center text-base sm:text-lg md:text-xl font-extrabold leading-snug text-white wrap-break-word"
+                                style={{
+                                  fontFamily: pastelCarouselFontFamily,
+                                }}
+                              >
+                                {imageFrameTextForActiveTab}
                               </p>
                               <p
                                 className="absolute inset-x-[8%] bottom-[9%] z-10 text-center text-[11px] sm:text-xs font-bold text-white/95"
@@ -3862,6 +4104,19 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               >
                                 {IMAGE_TEMPLATE2_APP_FOOTER}
                               </p>
+                            </>
+                            )
+                          ) : isTikTokReactionImageTemplate && selectedImageBrowserTab === 0 ? (
+                            <>
+                              <img
+                                src={imageTemplate3CoverPreviewSrc}
+                                alt="Cover preview"
+                                className="absolute inset-0 z-0 h-full w-full object-cover"
+                              />
+                              <ImageTemplate3CoverOverlay
+                                title={imageFrameTextForActiveTab}
+                                typeLabel={imageTemplate3TypePillLabel()}
+                              />
                             </>
                           ) : (
                             <>
@@ -3890,18 +4145,35 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                           <div className="w-full md:w-80 md:self-start space-y-4">
                             {!isFullBleedImageTabSelected ? (
                             <div>
+                              {isTikTokReactionImageTemplate &&
+                              selectedImageBrowserTab === 0 &&
+                              !imageTemplate3CoverReady ? (
+                                <p className="mb-3 text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                                  {isImageTemplate3CoverLoading
+                                    ? 'Generating cover with Nano Banana 2…'
+                                    : 'Click Start in the toolbar to generate a TikTok reaction cover (Nano Banana 2, 1K, 9:16).'}
+                                </p>
+                              ) : null}
                               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                                 <label className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
                                   Frame text
                                 </label>
                                 <div className="flex flex-wrap items-center gap-2">
-                                  {isPastelCarouselImageTemplate ? (
+                                  {isPastelCarouselImageTemplate || isTikTokReactionImageTemplate ? (
                                     <select
-                                      value={imageTemplate2QuestionType}
+                                      value={
+                                        isTikTokReactionImageTemplate
+                                          ? imageTemplate3QuestionType
+                                          : imageTemplate2QuestionType
+                                      }
                                       onChange={(e) =>
-                                        applyImageTemplate2QuestionType(
-                                          e.target.value as AutomateQuestionType
-                                        )
+                                        isTikTokReactionImageTemplate
+                                          ? applyImageTemplate3QuestionType(
+                                              e.target.value as AutomateQuestionType
+                                            )
+                                          : applyImageTemplate2QuestionType(
+                                              e.target.value as AutomateQuestionType
+                                            )
                                       }
                                       className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2 py-1.5 sm:py-1 text-sm sm:text-xs text-zinc-800 dark:text-zinc-200"
                                       aria-label="Question type"
@@ -3916,6 +4188,18 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   <button
                                     type="button"
                                     onClick={() => {
+                                      if (isTikTokReactionImageTemplate) {
+                                        const contentType =
+                                          imageTemplate3QuestionType === 'random'
+                                            ? concreteTypeFromImageLabel(imageTabTypeLabel)
+                                            : imageTemplate3QuestionType;
+                                        const nextTitle = pickTitleForType(
+                                          contentType,
+                                          imageFrameTextForActiveTab
+                                        );
+                                        setImageTabTexts([nextTitle]);
+                                        return;
+                                      }
                                       if (isPastelCarouselImageTemplate) {
                                         const contentType =
                                           imageTemplate2QuestionType === 'random'
@@ -3966,7 +4250,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                     }}
                                     className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                                   >
-                                    {isPastelCarouselImageTemplate ? 'Retry' : 'Random question'}
+                                    {isPastelCarouselImageTemplate || isTikTokReactionImageTemplate
+                                      ? 'Retry'
+                                      : 'Random question'}
                                   </button>
                                 </div>
                               </div>
@@ -3980,6 +4266,24 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 }}
                                 className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-zinc-400"
                               />
+                              {isPastelCarouselImageTemplate && selectedImageBrowserTab === 0 ? (
+                                <label className="mt-3 flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer select-none">
+                                  <input
+                                    type="checkbox"
+                                    checked={imageTemplate2CoverSquiggleEnabled}
+                                    onChange={(e) =>
+                                      setImageTemplate2CoverSquiggleEnabled(e.target.checked)
+                                    }
+                                    className="rounded border-zinc-300 dark:border-zinc-600"
+                                  />
+                                  Cover squiggle (uses AI to pick highlight word)
+                                </label>
+                              ) : null}
+                              {isTikTokReactionImageTemplate && imageTemplate3CoverError ? (
+                                <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                                  {imageTemplate3CoverError}
+                                </p>
+                              ) : null}
                             </div>
                             ) : null}
                             {isPastelCarouselImageTemplate ? (
@@ -4033,9 +4337,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                           </div>
                         ) : null}
                       </div>
+                      {!isTikTokReactionImageTemplate ? (
                       <p className="mt-4 text-center text-sm text-zinc-600 dark:text-zinc-300">
                         {imageTabLabelForActiveTab}
                       </p>
+                      ) : null}
                     </div>
                   </div>
                 )}

@@ -15,7 +15,7 @@ const openSans = Open_Sans({
 const nunito = Nunito({
   variable: "--font-nunito",
   subsets: ["latin"],
-  weight: ["600", "700", "800"],
+  weight: ["600", "700", "800", "900"],
 });
 
 const geistSans = Geist({

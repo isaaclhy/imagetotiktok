@@ -9,6 +9,7 @@ export type ImageTemplateCard = {
   id: number;
   title: string;
   subtitle: string;
+  coverSrc?: string;
 };
 
 export type VideoTemplateCard = {
@@ -41,7 +42,12 @@ export function resolveStudioAppId(value: string | null | undefined): StudioAppI
 export const IMAGE_TEMPLATES_BY_APP: Record<StudioAppId, ImageTemplateCard[]> = {
   'spill-it': [
     { id: 1, title: 'Template 1', subtitle: '' },
-    { id: 2, title: 'Template 2', subtitle: '' },
+    {
+      id: 2,
+      title: 'Template 2',
+      subtitle: '',
+      coverSrc: '/image-templates/template-2-cover.jpg',
+    },
     { id: 3, title: 'Template 3', subtitle: '' },
   ],
   fab: [
