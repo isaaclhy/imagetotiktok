@@ -31,6 +31,7 @@ import {
   drawImageTemplate3CoverOverlay,
 } from '@/app/lib/image-template-3-cover-overlay';
 import { ImageTemplate3CoverOverlay } from '@/app/components/ImageTemplate3CoverOverlay';
+import { ImageTemplate3ImessageBubble } from '@/app/components/ImageTemplate3ImessageBubble';
 import {
   drawImageTemplate2CoverSlide,
   IMAGE_TEMPLATE2_COVER_LETTER_SPACING,
@@ -39,6 +40,7 @@ import {
   IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT,
 } from '@/app/lib/image-template-2-cover';
 import { imageTemplate3CoverDisplaySrc } from '@/app/lib/image-template-3-cover';
+import { drawImageTemplate3ImessageSlide } from '@/app/lib/image-template-3-imessage';
 import {
   DEFAULT_STUDIO_APP_ID,
   getImageTemplatesForApp,
@@ -750,14 +752,42 @@ async function exportVideoWithCaptionOverlay(
           const canvasStream = canvas.captureStream(supportsRequestFrame ? 0 : EXPORT_FPS);
           captureTrack = canvasStream.getVideoTracks()[0] ?? null;
 
-          const videoWithCapture = video as HTMLVideoElement & { captureStream?: () => MediaStream };
-          if (typeof videoWithCapture.captureStream !== 'function') {
-            throw new Error('Video captureStream is not supported in this browser');
-          }
-          const videoAudioStream = videoWithCapture.captureStream();
           const outStream = new MediaStream();
           canvasStream.getVideoTracks().forEach((t: MediaStreamTrack) => outStream.addTrack(t));
-          videoAudioStream.getAudioTracks().forEach((t: MediaStreamTrack) => outStream.addTrack(t));
+
+          // Prefer capturing source audio when the browser supports it (incl. Safari prefix).
+          // If unavailable, fall back to Notes-style canvas-only export (silent).
+          const videoCapture =
+            (
+              video as HTMLVideoElement & {
+                captureStream?: (frameRate?: number) => MediaStream;
+                webkitCaptureStream?: (frameRate?: number) => MediaStream;
+                mozCaptureStream?: (frameRate?: number) => MediaStream;
+              }
+            ).captureStream ??
+            (
+              video as HTMLVideoElement & {
+                webkitCaptureStream?: (frameRate?: number) => MediaStream;
+              }
+            ).webkitCaptureStream ??
+            (
+              video as HTMLVideoElement & {
+                mozCaptureStream?: (frameRate?: number) => MediaStream;
+              }
+            ).mozCaptureStream;
+
+          if (typeof videoCapture === 'function') {
+            try {
+              // Unmute so captured audio isn't silent when possible.
+              video.muted = false;
+              const videoAudioStream = videoCapture.call(video);
+              videoAudioStream
+                .getAudioTracks()
+                .forEach((t: MediaStreamTrack) => outStream.addTrack(t));
+            } catch {
+              /* canvas-only fallback */
+            }
+          }
 
           recorder = new MediaRecorder(outStream, { mimeType: mime, videoBitsPerSecond: 2_500_000 });
           recorder.ondataavailable = (e) => {
@@ -1090,6 +1120,18 @@ export default function Home() {
   );
   const [isImageTemplate3CoverLoading, setIsImageTemplate3CoverLoading] = useState(false);
   const [imageTemplate3CoverError, setImageTemplate3CoverError] = useState<string | null>(null);
+  const [imageTemplate3Replies, setImageTemplate3Replies] = useState<string[][]>([
+    [],
+    [],
+    [],
+    [],
+    [],
+  ]);
+  const [imageTemplate3RepliesLoading, setImageTemplate3RepliesLoading] = useState(false);
+  const [imageTemplate3ReplyLoadingIndex, setImageTemplate3ReplyLoadingIndex] = useState<
+    number | null
+  >(null);
+  const [imageTemplate3ReplyError, setImageTemplate3ReplyError] = useState<string | null>(null);
   const [dogImagePool, setDogImagePool] = useState<string[]>([]);
   const [videoBackgroundUrl, setVideoBackgroundUrl] = useState<string | null>(null);
   const [videoThumbnailUrl, setVideoThumbnailUrl] = useState<string | null>(null);
@@ -1196,10 +1238,12 @@ export default function Home() {
   ]);
 
   useEffect(() => {
-    if ((isKawaiiImageTemplate || isPastelCarouselImageTemplate) && selectedImageBrowserTab > 6) {
-      setSelectedImageBrowserTab(0);
-    }
-    if (isTikTokReactionImageTemplate && selectedImageBrowserTab > 0) {
+    if (
+      (isKawaiiImageTemplate ||
+        isPastelCarouselImageTemplate ||
+        isTikTokReactionImageTemplate) &&
+      selectedImageBrowserTab > 6
+    ) {
       setSelectedImageBrowserTab(0);
     }
   }, [
@@ -1262,8 +1306,77 @@ export default function Home() {
     setImageTemplate3QuestionType(type);
     const resolved = resolveQuestionType(type);
     const title = pickTitleForType(resolved);
+    const questions = pickQuestionsForType(resolved, 5);
     setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[resolved]);
-    setImageTabTexts([title]);
+    setImageTabFunnyQuestions(questions);
+    setImageTabTexts([title, ...questions, 'Remember to like, save and share the fun!']);
+    void refreshImageTemplate3Replies(questions);
+  };
+
+  const fetchImageTemplate3ImessageReply = async (question: string): Promise<string[]> => {
+    const res = await fetch('/api/openai/imessage-reply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question }),
+    });
+    const data = (await res.json()) as { replies?: string[]; reply?: string; error?: string };
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to generate boyfriend reply');
+    }
+    if (Array.isArray(data.replies) && data.replies.length > 0) {
+      return data.replies
+        .filter((r): r is string => typeof r === 'string')
+        .map((r) => r.trim())
+        .filter(Boolean);
+    }
+    // Back-compat if an older response shape slips through
+    if (typeof data.reply === 'string' && data.reply.trim()) {
+      return [data.reply.trim()];
+    }
+    throw new Error(data.error || 'Failed to generate boyfriend reply');
+  };
+
+  const refreshImageTemplate3Replies = async (questions: string[]) => {
+    setImageTemplate3RepliesLoading(true);
+    setImageTemplate3ReplyLoadingIndex(null);
+    setImageTemplate3ReplyError(null);
+    try {
+      const replies = await Promise.all(
+        questions.map(async (q) => {
+          const trimmed = q.trim();
+          if (!trimmed) return [] as string[];
+          return fetchImageTemplate3ImessageReply(trimmed);
+        })
+      );
+      setImageTemplate3Replies(Array.from({ length: 5 }, (_, i) => replies[i] ?? []));
+    } catch (e) {
+      setImageTemplate3ReplyError(
+        e instanceof Error ? e.message : 'Failed to generate boyfriend replies'
+      );
+    } finally {
+      setImageTemplate3RepliesLoading(false);
+    }
+  };
+
+  const refreshImageTemplate3ReplyAt = async (questionIndex: number, question: string) => {
+    const trimmed = question.trim();
+    if (!trimmed || questionIndex < 0 || questionIndex > 4) return;
+    setImageTemplate3ReplyLoadingIndex(questionIndex);
+    setImageTemplate3ReplyError(null);
+    try {
+      const replies = await fetchImageTemplate3ImessageReply(trimmed);
+      setImageTemplate3Replies((prev) => {
+        const next = [...prev];
+        next[questionIndex] = replies;
+        return next;
+      });
+    } catch (e) {
+      setImageTemplate3ReplyError(
+        e instanceof Error ? e.message : 'Failed to generate boyfriend reply'
+      );
+    } finally {
+      setImageTemplate3ReplyLoadingIndex(null);
+    }
   };
 
   const imageTemplate3TypePillLabel = (): string => {
@@ -1307,7 +1420,10 @@ export default function Home() {
     try {
       const coverUrl = await fetchImageTemplate3Cover();
       setImageTabSources((prev) => {
-        const next = [...prev];
+        const next =
+          prev.length >= 7
+            ? [...prev]
+            : ['', '', '', '', '', '', pastelCtaImageSrc];
         next[0] = coverUrl;
         return next;
       });
@@ -2675,11 +2791,16 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       setImageTabSources([...dogSources, kawaiiCtaImageSrc]);
     } else if (isTikTokReaction) {
       setImageTemplate3CoverError(null);
+      setImageTemplate3ReplyError(null);
       const type = resolveQuestionType(imageTemplate3QuestionType);
       const title = pickTitleForType(type);
+      const questions = pickQuestionsForType(type, 5);
       setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[type]);
-      setImageTabTexts([title]);
-      setImageTabSources(['']);
+      setImageTabFunnyQuestions(questions);
+      setImageTabTexts([title, ...questions, imageFrameCtaText]);
+      // Cover empty until Start; Q1–Q5 are iMessage (no dog art); CTA matches Template 2.
+      setImageTabSources(['', '', '', '', '', '', pastelCtaImageSrc]);
+      void refreshImageTemplate3Replies(questions);
     } else {
       setImageTabTexts([`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked, imageFrameCtaText]);
       setImageTabSources(dogImagePool.length ? pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 7) : []);
@@ -2763,13 +2884,13 @@ const imageFrameTitleLine1 = 'Questions to ask your';
   const isCtaTabSelected = selectedImageBrowserTab === 6;
   const isFullBleedImageTabSelected = isCtaTabSelected;
   const imageSourceForActiveTab = isCtaTabSelected
-    ? isPastelCarouselImageTemplate
+    ? isPastelCarouselImageTemplate || isTikTokReactionImageTemplate
       ? pastelCtaImageSrc
       : kawaiiCtaImageSrc
     : getImageSourceForTab(selectedImageBrowserTab);
   const imageTabLabelForActiveTab =
     selectedImageBrowserTab === 0 ? 'Cover' : selectedImageBrowserTab <= 5 ? `Q${selectedImageBrowserTab}` : 'CTA';
-  const imageTemplateTabCount = isTikTokReactionImageTemplate ? 1 : 7;
+  const imageTemplateTabCount = 7;
   const pastelProgressRatio = (selectedImageBrowserTab + 1) / imageTemplateTabCount;
   const activeImageFrameBg = isPastelCarouselImageTemplate
     ? (imageTabPastelBgs[selectedImageBrowserTab] ??
@@ -2978,8 +3099,26 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         });
       }
 
+      const isTemplate3QuestionExport =
+        exportTemplateId === 3 && tabIndex >= 1 && tabIndex <= 5;
+      if (isTemplate3QuestionExport) {
+        drawImageTemplate3ImessageSlide(
+          ctx,
+          frameWidth,
+          frameHeight,
+          textForTab(tabIndex),
+          imageTemplate3Replies[tabIndex - 1] ?? []
+        );
+        return await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error('Failed to create image blob'));
+          }, 'image/png');
+        });
+      }
+
       const source = isFullBleedTab
-        ? isPastelExport
+        ? isPastelExport || exportTemplateId === 3
           ? pastelCtaImageSrc
           : kawaiiCtaImageSrc
         : sourceForTab(tabIndex);
@@ -3108,7 +3247,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       return { entries, isKawaiiTemplate, kawaiiNumSets: KAWAII_DOWNLOAD_NUM_SETS };
     }
 
-    const exportTabCount = exportTemplateId === 3 ? 1 : 7;
+    const exportTabCount = 7;
 
     for (let tabIndex = 0; tabIndex < exportTabCount; tabIndex++) {
       const blob = await renderFrameBlob(tabIndex, null);
@@ -3974,7 +4113,6 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         ) : null}
                       </div>
                     </div>
-                    {!isTikTokReactionImageTemplate ? (
                     <div className="flex gap-1 p-2 border-b border-zinc-200 dark:border-zinc-700 overflow-x-auto min-w-0 max-w-full">
                       {Array.from({ length: imageTemplateTabCount }, (_, i) => (
                         <button
@@ -3991,14 +4129,15 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         </button>
                       ))}
                     </div>
-                    ) : null}
                     <div className="p-3 sm:p-4 md:p-6 w-full min-w-0 max-w-full box-border">
                       <div className="flex flex-col md:flex-row items-start gap-4 min-w-0 w-full">
                         <div
                           className="@container relative w-full max-w-sm mx-auto md:mx-0 aspect-3/4 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden min-w-0"
                           style={{
                             backgroundColor:
-                              isTikTokReactionImageTemplate && selectedImageBrowserTab === 0
+                              isTikTokReactionImageTemplate &&
+                              (selectedImageBrowserTab === 0 ||
+                                (selectedImageBrowserTab >= 1 && selectedImageBrowserTab <= 5))
                                 ? '#000000'
                                 : activeImageFrameBg,
                           }}
@@ -4118,6 +4257,20 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 typeLabel={imageTemplate3TypePillLabel()}
                               />
                             </>
+                          ) : isTikTokReactionImageTemplate &&
+                            selectedImageBrowserTab >= 1 &&
+                            selectedImageBrowserTab <= 5 ? (
+                            <ImageTemplate3ImessageBubble
+                              question={imageFrameTextForActiveTab}
+                              replies={
+                                imageTemplate3Replies[selectedImageBrowserTab - 1] ?? []
+                              }
+                              replyLoading={
+                                imageTemplate3RepliesLoading ||
+                                imageTemplate3ReplyLoadingIndex ===
+                                  selectedImageBrowserTab - 1
+                              }
+                            />
                           ) : (
                             <>
                               <p
@@ -4193,11 +4346,36 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                           imageTemplate3QuestionType === 'random'
                                             ? concreteTypeFromImageLabel(imageTabTypeLabel)
                                             : imageTemplate3QuestionType;
-                                        const nextTitle = pickTitleForType(
-                                          contentType,
-                                          imageFrameTextForActiveTab
-                                        );
-                                        setImageTabTexts([nextTitle]);
+                                        if (selectedImageBrowserTab === 0) {
+                                          const nextTitle = pickTitleForType(
+                                            contentType,
+                                            imageFrameTextForActiveTab
+                                          );
+                                          const next = [...imageTabTexts];
+                                          next[0] = nextTitle;
+                                          setImageTabTexts(next);
+                                          return;
+                                        }
+                                        if (selectedImageBrowserTab >= 1 && selectedImageBrowserTab <= 5) {
+                                          const pool = questionPoolForType(contentType);
+                                          const current = imageFrameTextForActiveTab;
+                                          let nextQuestion =
+                                            pool[Math.floor(Math.random() * pool.length)] || current;
+                                          if (pool.length > 1 && nextQuestion === current) {
+                                            nextQuestion =
+                                              pool.find((q) => q !== current) || nextQuestion;
+                                          }
+                                          const next = [...imageTabTexts];
+                                          next[selectedImageBrowserTab] = nextQuestion;
+                                          const qs = [...imageTabFunnyQuestions];
+                                          qs[selectedImageBrowserTab - 1] = nextQuestion;
+                                          setImageTabFunnyQuestions(qs);
+                                          setImageTabTexts(next);
+                                          void refreshImageTemplate3ReplyAt(
+                                            selectedImageBrowserTab - 1,
+                                            nextQuestion
+                                          );
+                                        }
                                         return;
                                       }
                                       if (isPastelCarouselImageTemplate) {
@@ -4284,6 +4462,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   {imageTemplate3CoverError}
                                 </p>
                               ) : null}
+                              {isTikTokReactionImageTemplate && imageTemplate3ReplyError ? (
+                                <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                                  {imageTemplate3ReplyError}
+                                </p>
+                              ) : null}
                             </div>
                             ) : null}
                             {isPastelCarouselImageTemplate ? (
@@ -4337,11 +4520,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                           </div>
                         ) : null}
                       </div>
-                      {!isTikTokReactionImageTemplate ? (
                       <p className="mt-4 text-center text-sm text-zinc-600 dark:text-zinc-300">
                         {imageTabLabelForActiveTab}
                       </p>
-                      ) : null}
                     </div>
                   </div>
                 )}
