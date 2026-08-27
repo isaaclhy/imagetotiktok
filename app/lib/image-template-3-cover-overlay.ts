@@ -19,11 +19,11 @@ export const IMAGE_TEMPLATE3_COVER_TITLE_FONT_WEIGHT = 600;
 export const IMAGE_TEMPLATE3_COVER_TYPE_LABEL_FONT_WEIGHT = 500;
 
 export function imageTemplate3CoverTitleFontSizePx(frameWidth: number): number {
-  return Math.max(36, Math.round(frameWidth * 0.066));
+  return Math.max(28, Math.round(frameWidth * 0.052));
 }
 
 export function imageTemplate3CoverTypeLabelFontSizePx(frameWidth: number): number {
-  return Math.max(22, Math.round(frameWidth * 0.038));
+  return Math.max(18, Math.round(frameWidth * 0.03));
 }
 
 export function imageTemplate3TypePillLabel(type: ConcreteQuestionType): string {

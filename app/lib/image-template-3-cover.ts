@@ -376,17 +376,92 @@ No distant subject.
 
 **PRIORITY: Her face must be extremely close to the camera and occupy at least two-thirds of the frame, while her goofy posture remains visible enough to clearly communicate that she is intentionally being silly.**`;
 
+/** Asian bedroom shocked-reaction variant — Nano Banana 2, Template 3 cover. */
+export const IMAGE_TEMPLATE3_COVER_PROMPT_ASIAN_BEDROOM_SHOCKED = `Create a photorealistic vertical 9:16 image that looks like a **random frame from a real TikTok creator's video**, captured on an iPhone front-facing camera.
+
+A young adult Asian woman is sitting casually in her bedroom and looking directly into the front camera. She has a **genuinely shocked, "wait, WHAT?!" reaction**, with her eyes noticeably widened and eyebrows raised, while naturally covering her mouth with one hand. Her reaction should feel spontaneous and authentic, similar to a creator reacting to something surprising while filming a TikTok.
+
+The woman should be **very close to the camera**, with her head and upper body filling most of the frame. Her face should be large and prominent, like typical TikTok talking-head content. Use a natural iPhone front-camera perspective with subtle wide-angle distortion.
+
+### Composition
+
+Do NOT create a carefully composed portrait.
+
+The framing should feel **casual, slightly imperfect and accidental**, as if this exact frame was captured halfway through recording a TikTok. The woman should be **slightly off-center**, not perfectly aligned in the middle. Her shoulders can be unevenly positioned and part of her body can be cropped by the edges of the frame.
+
+She should be looking directly at the camera lens. Keep the camera approximately at face level, with a normal handheld-phone perspective.
+
+### Environment
+
+Place her in a **realistic lived-in bedroom**, similar to a young person's bedroom. Include subtle everyday details in the background such as a bed, bedding, shelves, clothes, posters, books or other ordinary bedroom objects.
+
+The room should be naturally dim but still bright enough to clearly see her face. Use ordinary indoor bedroom lighting rather than dramatic cinematic lighting.
+
+### Appearance
+
+Natural Asian facial features, realistic skin texture, natural hair, minimal everyday makeup, realistic proportions and subtle imperfections.
+
+She should look like a **real everyday TikTok creator**, not a model, actress, influencer photoshoot or professional advertisement.
+
+Avoid overly perfect skin, beauty-retouched features, cinematic lighting, dramatic photography, studio photography or a polished influencer aesthetic.
+
+### Overall visual style
+
+The final image should resemble a **still frame from an authentic viral TikTok slideshow/video**, where the creator is talking directly to the viewer and making an exaggerated but believable facial reaction.
+
+Think:
+
+* casual TikTok creator
+* iPhone front camera
+* bedroom talking-head video
+* close-up face
+* direct eye contact
+* spontaneous reaction
+* slightly imperfect framing
+* ordinary indoor lighting
+* realistic smartphone image quality
+* authentic UGC
+* expressive but believable
+
+**The image should NOT look like a professional selfie or photoshoot. It should look like someone simply paused a real TikTok video at the perfect reaction moment.**
+
+### Strict exclusions
+
+No camera UI.
+No iPhone interface.
+No status bar.
+No TikTok interface.
+No buttons or icons.
+No text.
+No captions.
+No subtitles.
+No watermark.
+No borders.
+No graphics.
+No beauty filter.
+No studio lighting.
+No cinematic composition.
+No perfectly centered portrait.
+No perfectly symmetrical framing.
+No professional photography.
+No fashion photography.
+No stock-photo aesthetic.`;
+
 const IMAGE_TEMPLATE3_COVER_VARIANTS = [
   { variant: 'shocked' as const, prompt: IMAGE_TEMPLATE3_COVER_PROMPT_SHOCKED },
   { variant: 'playful' as const, prompt: IMAGE_TEMPLATE3_COVER_PROMPT_PLAYFUL },
   { variant: 'goofy' as const, prompt: IMAGE_TEMPLATE3_COVER_PROMPT_GOOFY },
+  {
+    variant: 'asian_bedroom_shocked' as const,
+    prompt: IMAGE_TEMPLATE3_COVER_PROMPT_ASIAN_BEDROOM_SHOCKED,
+  },
 ] as const;
 
 export const IMAGE_TEMPLATE3_COVER_PROMPTS = IMAGE_TEMPLATE3_COVER_VARIANTS.map((v) => v.prompt);
 
 export type ImageTemplate3CoverPromptVariant = (typeof IMAGE_TEMPLATE3_COVER_VARIANTS)[number]['variant'];
 
-/** Randomly picks one of three cover prompts on each generation. */
+/** Randomly picks one of four cover prompts on each generation. */
 export function pickRandomImageTemplate3CoverPrompt(): {
   prompt: string;
   variant: ImageTemplate3CoverPromptVariant;
