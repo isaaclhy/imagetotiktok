@@ -480,3 +480,443 @@ export const VIDEO_TEMPLATE2_PEXELS_QUERIES = [
   'mountains',
   'waves'
 ] as const;
+
+/** Pexels search queries for Nighty Particle video background. */
+export const NIGHTY_PARTICLE_PEXELS_QUERIES = [
+  'particle simulation',
+  'particle wave',
+] as const;
+
+/** Pexels background scenes for Nighty Rain template. */
+export type NightyRainVideoId = 'rain' | 'ocean';
+
+export type NightyRainVideoOption = {
+  id: NightyRainVideoId;
+  label: string;
+  pexelsQuery: string;
+};
+
+export const NIGHTY_RAIN_VIDEO_OPTIONS: NightyRainVideoOption[] = [
+  {
+    id: 'rain',
+    label: 'Rain',
+    pexelsQuery: 'night rain trees',
+  },
+  {
+    id: 'ocean',
+    label: 'Ocean',
+    pexelsQuery: 'ocean',
+  },
+];
+
+export const NIGHTY_RAIN_DEFAULT_VIDEO: NightyRainVideoId = 'rain';
+
+export function nightyRainVideoOption(id: NightyRainVideoId): NightyRainVideoOption {
+  return (
+    NIGHTY_RAIN_VIDEO_OPTIONS.find((v) => v.id === id) ?? NIGHTY_RAIN_VIDEO_OPTIONS[0]!
+  );
+}
+
+/** @deprecated Prefer nightyRainVideoOption(id).pexelsQuery */
+export const NIGHTY_RAIN_PEXELS_QUERIES = ['night rain trees'] as const;
+
+export const NIGHTY_RAIN_CAPTION = 'The only sound you need to fall asleep';
+export const NIGHTY_RAIN_CAPTION_SUBLINE = 'Nighty - Sleep and Sound';
+
+/**
+ * Cinematic Rain atmosphere — lighter mist so the footage stays visible.
+ */
+export const NIGHTY_RAIN_MIST_WASH = 'rgba(18, 28, 48, 0.18)';
+export const NIGHTY_RAIN_MIST_TOP =
+  'linear-gradient(to bottom, rgba(12, 22, 42, 0.28) 0%, rgba(30, 50, 80, 0.1) 28%, rgba(40, 70, 100, 0) 50%)';
+export const NIGHTY_RAIN_MIST_BOTTOM =
+  'linear-gradient(to top, rgba(8, 14, 28, 0.3) 0%, rgba(25, 45, 75, 0.12) 35%, rgba(50, 80, 110, 0) 65%)';
+export const NIGHTY_RAIN_MIST_VIGNETTE =
+  'radial-gradient(ellipse 72% 68% at 50% 42%, rgba(10, 16, 32, 0) 0%, rgba(10, 18, 36, 0.12) 45%, rgba(4, 8, 18, 0.4) 100%)';
+export const NIGHTY_RAIN_MIST_BLOOM =
+  'radial-gradient(ellipse 55% 45% at 50% 46%, rgba(120, 150, 190, 0.08) 0%, rgba(90, 120, 160, 0.03) 40%, rgba(60, 90, 130, 0) 70%)';
+export const NIGHTY_RAIN_MIST_TEAL =
+  'linear-gradient(160deg, rgba(40, 90, 120, 0.1) 0%, rgba(20, 40, 70, 0) 45%, rgba(60, 40, 90, 0.05) 100%)';
+
+/** @deprecated Prefer mist layers / drawNightyRainMistOverlay. */
+export const NIGHTY_RAIN_DIM_OVERLAY = NIGHTY_RAIN_MIST_WASH;
+
+export const NIGHTY_RAIN_MAX_DURATION_SEC = 10;
+
+export const NIGHTY_RAIN_EXPORT_WIDTH = 1080;
+export const NIGHTY_RAIN_EXPORT_HEIGHT = 1920;
+export const NIGHTY_RAIN_EXPORT_VIDEO_BITRATE = 10_000_000;
+/** Steadier encode than 30fps when decoding HD Pexels + canvas. */
+export const NIGHTY_RAIN_EXPORT_FPS = 24;
+
+export const NIGHTY_RAIN_CAPTION_SIZE_RATIO = 0.034;
+/** Brand footer line — smaller than the main caption. */
+export const NIGHTY_RAIN_SUBLINE_SIZE_RATIO = 0.022;
+export const NIGHTY_RAIN_CAPTION_MAX_WIDTH_RATIO = 0.72;
+export const NIGHTY_RAIN_CAPTION_FONT_WEIGHT = 500;
+/** Vertical position of brand subline (from top of frame). */
+export const NIGHTY_RAIN_SUBLINE_Y_RATIO = 0.75;
+/** Rain caption fill — clean white, no shadow. */
+export const NIGHTY_RAIN_CAPTION_COLOR = '#ffffff';
+
+/** Background rain beds for Rain preview + export. */
+export type NightyRainSoundId =
+  | 'light-rain'
+  | 'heavy-rain'
+  | 'rain-on-trees'
+  | 'rain-on-window'
+  | 'rain-on-roof'
+  | 'roaring-waves'
+  | 'wave-on-rock'
+  | 'wave-on-shore'
+  | 'wave-on-lava-rock'
+  | 'calm-waves'
+  | 'small-waves';
+
+export type NightyRainSoundKind = 'rain' | 'waves';
+
+export type NightyRainSoundOption = {
+  id: NightyRainSoundId;
+  label: string;
+  audioSrc: string;
+  kind: NightyRainSoundKind;
+};
+
+export const NIGHTY_RAIN_SOUND_OPTIONS: NightyRainSoundOption[] = [
+  {
+    id: 'light-rain',
+    label: 'Light rain',
+    audioSrc: '/nighty-rain/light-rain.mp3',
+    kind: 'rain',
+  },
+  {
+    id: 'heavy-rain',
+    label: 'Heavy rain',
+    audioSrc: '/nighty-rain/heavy-rain.mp3',
+    kind: 'rain',
+  },
+  {
+    id: 'rain-on-trees',
+    label: 'Rain on trees',
+    audioSrc: '/nighty-rain/rain-on-trees.mp3',
+    kind: 'rain',
+  },
+  {
+    id: 'rain-on-window',
+    label: 'Rain on window',
+    audioSrc: '/nighty-rain/rain-on-window.mp3',
+    kind: 'rain',
+  },
+  {
+    id: 'rain-on-roof',
+    label: 'Rain on roof',
+    audioSrc: '/nighty-rain/rain-on-roof.mp3',
+    kind: 'rain',
+  },
+  {
+    id: 'calm-waves',
+    label: 'Calm waves',
+    audioSrc: '/nighty-rain/calm-waves.mp3',
+    kind: 'waves',
+  },
+  {
+    id: 'small-waves',
+    label: 'Small waves',
+    audioSrc: '/nighty-rain/small-waves.mp3',
+    kind: 'waves',
+  },
+  {
+    id: 'roaring-waves',
+    label: 'Roaring waves',
+    audioSrc: '/nighty-rain/roaring-waves.mp3',
+    kind: 'waves',
+  },
+  {
+    id: 'wave-on-rock',
+    label: 'Wave on rock',
+    audioSrc: '/nighty-rain/wave-on-rock.mp3',
+    kind: 'waves',
+  },
+  {
+    id: 'wave-on-shore',
+    label: 'Wave on shore',
+    audioSrc: '/nighty-rain/wave-on-shore.mp3',
+    kind: 'waves',
+  },
+  {
+    id: 'wave-on-lava-rock',
+    label: 'Wave on lava rock',
+    audioSrc: '/nighty-rain/wave-on-lava-rock.mp3',
+    kind: 'waves',
+  },
+];
+
+/** Default bed for Rain video (matches default video id). */
+export const NIGHTY_RAIN_DEFAULT_SOUND: NightyRainSoundId = 'light-rain';
+export const NIGHTY_RAIN_DEFAULT_OCEAN_SOUND: NightyRainSoundId = 'calm-waves';
+
+export function nightyRainSoundOption(id: NightyRainSoundId): NightyRainSoundOption {
+  return (
+    NIGHTY_RAIN_SOUND_OPTIONS.find((s) => s.id === id) ?? NIGHTY_RAIN_SOUND_OPTIONS[0]!
+  );
+}
+
+export function nightyRainSoundKindForVideo(
+  videoId: NightyRainVideoId
+): NightyRainSoundKind {
+  return videoId === 'ocean' ? 'waves' : 'rain';
+}
+
+export function nightyRainSoundsForVideo(
+  videoId: NightyRainVideoId
+): NightyRainSoundOption[] {
+  const kind = nightyRainSoundKindForVideo(videoId);
+  return NIGHTY_RAIN_SOUND_OPTIONS.filter((s) => s.kind === kind);
+}
+
+export function nightyRainDefaultSoundForVideo(
+  videoId: NightyRainVideoId
+): NightyRainSoundId {
+  return videoId === 'ocean'
+    ? NIGHTY_RAIN_DEFAULT_OCEAN_SOUND
+    : NIGHTY_RAIN_DEFAULT_SOUND;
+}
+
+export function nightyRainAudioSrc(soundId: NightyRainSoundId): string {
+  return nightyRainSoundOption(soundId).audioSrc;
+}
+
+/**
+ * Local test clip — skip Pexels while iterating on caption animation.
+ * File lives at public/nighty-particle/test-background.mp4 (gitignored; large).
+ */
+export const NIGHTY_PARTICLE_USE_TEST_VIDEO = true;
+export const NIGHTY_PARTICLE_TEST_VIDEO_SRC = '/nighty-particle/test-background.mp4';
+
+/** Export canvas — fixed 9:16 so landscape sources are center-cropped. */
+export const NIGHTY_PARTICLE_EXPORT_WIDTH = 1080;
+export const NIGHTY_PARTICLE_EXPORT_HEIGHT = 1920;
+/** ~8 Mbps — stable 1080p30 encode (4K realtime capture is too laggy). */
+export const NIGHTY_PARTICLE_EXPORT_VIDEO_BITRATE = 8_000_000;
+
+/** Primary white line — fades in first. */
+export const NIGHTY_PARTICLE_LINE1 = 'Having trouble sleeping?';
+
+/** Secondary accent line — fades in below line 1. */
+export const NIGHTY_PARTICLE_LINE2 = 'try Triangle waves';
+
+export const NIGHTY_PARTICLE_LINE2_COLOR = '#FF6BB5';
+
+/** Wave bed options for Particle (caption copy + background audio). */
+export type NightyParticleWaveId = 'triangle' | 'square' | 'gamma';
+
+export type NightyParticleWaveOption = {
+  id: NightyParticleWaveId;
+  label: string;
+  /** Accent line for beat 1 (“try …”). */
+  line2: string;
+  audioSrc: string;
+};
+
+export const NIGHTY_PARTICLE_WAVE_OPTIONS: NightyParticleWaveOption[] = [
+  {
+    id: 'triangle',
+    label: 'Triangle wave',
+    line2: 'try Triangle waves',
+    audioSrc: '/nighty-particle/triangle-wave.mp3',
+  },
+  {
+    id: 'square',
+    label: 'Square wave',
+    line2: 'try square waves',
+    audioSrc: '/nighty-particle/square-wave.mp3',
+  },
+  {
+    id: 'gamma',
+    label: '35Hz Gamma waves',
+    line2: 'Try 35Hz Gamma waves',
+    audioSrc: '/nighty-particle/gamma-35hz.mp3',
+  },
+];
+
+export const NIGHTY_PARTICLE_DEFAULT_WAVE: NightyParticleWaveId = 'triangle';
+
+export function nightyParticleWaveOption(
+  id: NightyParticleWaveId
+): NightyParticleWaveOption {
+  return (
+    NIGHTY_PARTICLE_WAVE_OPTIONS.find((w) => w.id === id) ??
+    NIGHTY_PARTICLE_WAVE_OPTIONS[0]!
+  );
+}
+
+export function nightyParticleAudioSrc(waveId: NightyParticleWaveId): string {
+  return nightyParticleWaveOption(waveId).audioSrc;
+}
+
+/** @deprecated Prefer nightyParticleAudioSrc(waveId). */
+export const NIGHTY_PARTICLE_AUDIO_SRC = nightyParticleAudioSrc(
+  NIGHTY_PARTICLE_DEFAULT_WAVE
+);
+
+/** Accent pinks for Particle captions — distinct hues (not near-identical shades). */
+export const NIGHTY_PARTICLE_ACCENT_COLORS = [
+  '#FF2D95', // hot magenta pink
+  '#FF6BB5', // soft bubblegum
+  '#FF1493', // deep neon pink
+  '#F472B6', // rose
+  '#FF5C8A', // coral pink
+  '#E879F9', // orchid / pink-violet
+  '#FF9ECF', // light candy pink
+  '#DB2777', // raspberry
+  '#FB7185', // salmon rose
+  '#C026D3', // fuchsia
+  '#FDA4AF', // blush
+  '#FF0080', // electric pink
+] as const;
+
+export function pickNightyParticleAccentColor(exclude?: string): string {
+  const pool =
+    exclude && NIGHTY_PARTICLE_ACCENT_COLORS.length > 1
+      ? NIGHTY_PARTICLE_ACCENT_COLORS.filter((c) => c.toLowerCase() !== exclude.toLowerCase())
+      : [...NIGHTY_PARTICLE_ACCENT_COLORS];
+  return pool[Math.floor(Math.random() * pool.length)] ?? NIGHTY_PARTICLE_LINE2_COLOR;
+}
+
+/** Second beat — white line after first pair fades out. */
+export const NIGHTY_PARTICLE_LINE3 =
+  "It's a pure tone that emits soft deep frequencies.";
+
+/** Second beat — accent line below line 3. */
+export const NIGHTY_PARTICLE_LINE4 =
+  'Many find it helps them to relax, focus and sleep soundly.';
+
+/** Third beat — white line after second pair fades out. */
+export const NIGHTY_PARTICLE_LINE5 = 'Listen to it for 30 seconds.';
+
+/** Third beat — accent line below line 5. */
+export const NIGHTY_PARTICLE_LINE6 = 'See what it does to you';
+
+/** Final CTA — three lines; middle brand line is accent color. */
+export const NIGHTY_PARTICLE_LINE7 = 'Check out';
+export const NIGHTY_PARTICLE_LINE8 = 'Nighty - Sleep and Sound';
+export const NIGHTY_PARTICLE_LINE9 = 'for more calming sounds';
+
+/** @deprecated Use NIGHTY_PARTICLE_LINE1 / LINE2. Kept for any leftover references. */
+export const NIGHTY_PARTICLE_CAPTION = NIGHTY_PARTICLE_LINE1;
+
+/** Horizontal padding each side (≥20%) → text uses at most 60% of frame width. */
+export const NIGHTY_PARTICLE_CONTENT_MAX_WIDTH_RATIO = 0.6;
+
+/** Caption size relative to frame width (smaller than default TikTok overlays). */
+export const NIGHTY_PARTICLE_CAPTION_SIZE_RATIO = 0.038;
+
+/** Inter-style geometric sans — matches Endel / clean sleep-content overlays. */
+export const NIGHTY_PARTICLE_CAPTION_FONT_WEIGHT = 500;
+
+export const NIGHTY_PARTICLE_FONT_STACK =
+  'var(--font-inter), Inter, system-ui, -apple-system, sans-serif';
+
+/** Canvas `font` family (CSS variables are not resolved in canvas). */
+export const NIGHTY_PARTICLE_CANVAS_FONT_STACK = 'Inter, system-ui, -apple-system, sans-serif';
+
+/**
+ * Caption animation timeline (seconds).
+ * Phase 1–3: white → wait gap → pink → hold → fade out
+ * Phase 4: CTA block → hold → fade out
+ */
+export type NightyParticleTiming = {
+  fadeInSec: number;
+  fadeOutSec: number;
+  /** Pause after white line before pink line in each phase. */
+  gapAfterWhiteSec: number;
+  phase1HoldSec: number;
+  phase2HoldSec: number;
+  phase3HoldSec: number;
+  phase4HoldSec: number;
+  /** Short beat of empty frame between phases. */
+  betweenPhasesSec: number;
+};
+
+export const NIGHTY_PARTICLE_TIMING: NightyParticleTiming = {
+  fadeInSec: 0.7,
+  fadeOutSec: 0.8,
+  gapAfterWhiteSec: 2,
+  phase1HoldSec: 3,
+  phase2HoldSec: 3,
+  phase3HoldSec: 3,
+  phase4HoldSec: 5,
+  betweenPhasesSec: 0.25,
+};
+
+export type NightyParticleLines = {
+  line1: string;
+  line2: string;
+  line3: string;
+  line4: string;
+  line5: string;
+  line6: string;
+  line7: string;
+  line8: string;
+  line9: string;
+};
+
+export const NIGHTY_PARTICLE_DEFAULT_LINES: NightyParticleLines = {
+  line1: NIGHTY_PARTICLE_LINE1,
+  line2: NIGHTY_PARTICLE_LINE2,
+  line3: NIGHTY_PARTICLE_LINE3,
+  line4: NIGHTY_PARTICLE_LINE4,
+  line5: NIGHTY_PARTICLE_LINE5,
+  line6: NIGHTY_PARTICLE_LINE6,
+  line7: NIGHTY_PARTICLE_LINE7,
+  line8: NIGHTY_PARTICLE_LINE8,
+  line9: NIGHTY_PARTICLE_LINE9,
+};
+
+function nightyParticlePhaseDurationSec(
+  timing: NightyParticleTiming,
+  holdSec: number
+): number {
+  return (
+    timing.fadeInSec +
+    timing.gapAfterWhiteSec +
+    timing.fadeInSec +
+    holdSec +
+    timing.fadeOutSec
+  );
+}
+
+function nightyParticleCtaDurationSec(
+  timing: NightyParticleTiming,
+  holdSec: number
+): number {
+  // Three lines fade in one after another (fade + gap + fade + gap + fade), then hold, then fade out.
+  return (
+    timing.fadeInSec +
+    timing.gapAfterWhiteSec +
+    timing.fadeInSec +
+    timing.gapAfterWhiteSec +
+    timing.fadeInSec +
+    holdSec +
+    timing.fadeOutSec
+  );
+}
+
+/** Preview / export loop length for the given timing. */
+export function nightyParticleMaxDurationSec(timing: NightyParticleTiming): number {
+  return (
+    nightyParticlePhaseDurationSec(timing, timing.phase1HoldSec) +
+    timing.betweenPhasesSec +
+    nightyParticlePhaseDurationSec(timing, timing.phase2HoldSec) +
+    timing.betweenPhasesSec +
+    nightyParticlePhaseDurationSec(timing, timing.phase3HoldSec) +
+    timing.betweenPhasesSec +
+    nightyParticleCtaDurationSec(timing, timing.phase4HoldSec) +
+    0.5
+  );
+}
+
+/** @deprecated Prefer nightyParticleMaxDurationSec(timing). */
+export const NIGHTY_PARTICLE_MAX_DURATION_SEC = nightyParticleMaxDurationSec(
+  NIGHTY_PARTICLE_TIMING
+);

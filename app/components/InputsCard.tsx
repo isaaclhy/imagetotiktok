@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import type { CanvasData, CreatorInfo } from '@/app/lib/types';
 import { COVER_IMAGE_PROMPTS, getDefaultAutomateCategories, type AutomateQuestionType, type CoverImageStyle } from '@/app/lib/constants';
+import type { StudioAppId } from '@/app/lib/apps';
 
 const DEFAULT_VIDEO_OVERLAY_LINES = [
   'Holding hands',
@@ -72,7 +73,7 @@ interface InputsCardProps {
   setDailyGenIncludeCaption?: (v: boolean) => void;
   dailyGenIncludeCoverImage?: boolean;
   setDailyGenIncludeCoverImage?: (v: boolean) => void;
-  selectedAppId?: 'spill-it' | 'fab';
+  selectedAppId?: StudioAppId;
 }
 
 export function InputsCard(props: InputsCardProps) {

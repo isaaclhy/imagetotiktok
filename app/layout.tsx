@@ -1,9 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter, Nunito, Open_Sans } from "next/font/google";
-import "@fontsource/tiktok-sans/latin-700.css";
-import "@fontsource/tiktok-sans/latin-900.css";
-import "@fontsource/tiktok-sans/latin-ext-700.css";
-import "@fontsource/tiktok-sans/latin-ext-900.css";
 import "./globals.css";
 
 const openSans = Open_Sans({
@@ -31,7 +27,7 @@ const geistMono = Geist_Mono({
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "600", "700"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {

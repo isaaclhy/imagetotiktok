@@ -1,4 +1,4 @@
-export type StudioAppId = 'spill-it' | 'fab';
+export type StudioAppId = 'spill-it' | 'fab' | 'nighty';
 
 export type StudioApp = {
   id: StudioAppId;
@@ -23,6 +23,7 @@ export type VideoTemplateCard = {
 export const STUDIO_APPS: readonly StudioApp[] = [
   { id: 'spill-it', label: 'Spill It' },
   { id: 'fab', label: 'Fab' },
+  { id: 'nighty', label: 'Nighty' },
 ] as const;
 
 export const DEFAULT_STUDIO_APP_ID: StudioAppId = 'spill-it';
@@ -58,6 +59,7 @@ export const IMAGE_TEMPLATES_BY_APP: Record<StudioAppId, ImageTemplateCard[]> = 
   fab: [
     { id: 1, title: 'Heart shaped paper', subtitle: '' },
   ],
+  nighty: [],
 };
 
 /** Video templates available for each app (IDs are scoped per app). */
@@ -83,6 +85,10 @@ export const VIDEO_TEMPLATES_BY_APP: Record<StudioAppId, VideoTemplateCard[]> = 
     { id: 2, title: 'Template 2', subtitle: '' },
     { id: 3, title: 'Template 3', subtitle: '' },
     { id: 4, title: 'Template 4', subtitle: '' },
+  ],
+  nighty: [
+    { id: 1, title: 'Particle', subtitle: '' },
+    { id: 2, title: 'Rain', subtitle: '' },
   ],
 };
 

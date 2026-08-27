@@ -22,8 +22,7 @@ function ensureTikTokSansFont(): void {
   fontRegistered = true;
 
   const candidates = [
-    'node_modules/@fontsource/tiktok-sans/files/tiktok-sans-latin-700-normal.woff',
-    'node_modules/@fontsource/tiktok-sans/files/tiktok-sans-latin-700-normal.woff2',
+    'public/fonts/tiktok-sans/TikTokSans-700.ttf',
   ];
 
   for (const rel of candidates) {
