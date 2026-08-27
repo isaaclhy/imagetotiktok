@@ -12,6 +12,8 @@ import {
 type ImageTemplate3ImessageBubbleProps = {
   question: string;
   replies?: string[] | null;
+  /** Shown under the outgoing bubble. */
+  deliveryStatus?: 'Delivered' | 'Read';
   replyLoading?: boolean;
 };
 
@@ -19,6 +21,7 @@ type ImageTemplate3ImessageBubbleProps = {
 export function ImageTemplate3ImessageBubble({
   question,
   replies,
+  deliveryStatus = 'Delivered',
   replyLoading = false,
 }: ImageTemplate3ImessageBubbleProps) {
   const text = question.trim();
@@ -60,7 +63,7 @@ export function ImageTemplate3ImessageBubble({
                 fontFamily: IMAGE_TEMPLATE3_IMESSAGE_FONT_STACK,
               }}
             >
-              Delivered
+              {deliveryStatus}
             </span>
           </div>
         ) : null}

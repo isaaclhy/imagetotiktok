@@ -1127,10 +1127,11 @@ export default function Home() {
     [],
     [],
   ]);
+  /** Q index (0–4) that is “Read” with no boyfriend reply; null until Start. */
+  const [imageTemplate3ReadOnlyIndex, setImageTemplate3ReadOnlyIndex] = useState<number | null>(
+    null
+  );
   const [imageTemplate3RepliesLoading, setImageTemplate3RepliesLoading] = useState(false);
-  const [imageTemplate3ReplyLoadingIndex, setImageTemplate3ReplyLoadingIndex] = useState<
-    number | null
-  >(null);
   const [imageTemplate3ReplyError, setImageTemplate3ReplyError] = useState<string | null>(null);
   const [dogImagePool, setDogImagePool] = useState<string[]>([]);
   const [videoBackgroundUrl, setVideoBackgroundUrl] = useState<string | null>(null);
@@ -1310,7 +1311,10 @@ export default function Home() {
     setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[resolved]);
     setImageTabFunnyQuestions(questions);
     setImageTabTexts([title, ...questions, 'Remember to like, save and share the fun!']);
-    void refreshImageTemplate3Replies(questions);
+    // Replies generate only on Start (with the cover) to save API cost.
+    setImageTemplate3Replies([[], [], [], [], []]);
+    setImageTemplate3ReadOnlyIndex(null);
+    setImageTemplate3ReplyError(null);
   };
 
   const fetchImageTemplate3ImessageReply = async (question: string): Promise<string[]> => {
@@ -1338,44 +1342,26 @@ export default function Home() {
 
   const refreshImageTemplate3Replies = async (questions: string[]) => {
     setImageTemplate3RepliesLoading(true);
-    setImageTemplate3ReplyLoadingIndex(null);
     setImageTemplate3ReplyError(null);
     try {
+      // One random Q is “Read / no reply” — skip OpenAI for that slot to save cost.
+      const skipIndex = Math.floor(Math.random() * Math.min(5, Math.max(1, questions.length)));
       const replies = await Promise.all(
-        questions.map(async (q) => {
+        questions.map(async (q, i) => {
+          if (i === skipIndex) return [] as string[];
           const trimmed = q.trim();
           if (!trimmed) return [] as string[];
           return fetchImageTemplate3ImessageReply(trimmed);
         })
       );
       setImageTemplate3Replies(Array.from({ length: 5 }, (_, i) => replies[i] ?? []));
+      setImageTemplate3ReadOnlyIndex(skipIndex);
     } catch (e) {
       setImageTemplate3ReplyError(
         e instanceof Error ? e.message : 'Failed to generate boyfriend replies'
       );
     } finally {
       setImageTemplate3RepliesLoading(false);
-    }
-  };
-
-  const refreshImageTemplate3ReplyAt = async (questionIndex: number, question: string) => {
-    const trimmed = question.trim();
-    if (!trimmed || questionIndex < 0 || questionIndex > 4) return;
-    setImageTemplate3ReplyLoadingIndex(questionIndex);
-    setImageTemplate3ReplyError(null);
-    try {
-      const replies = await fetchImageTemplate3ImessageReply(trimmed);
-      setImageTemplate3Replies((prev) => {
-        const next = [...prev];
-        next[questionIndex] = replies;
-        return next;
-      });
-    } catch (e) {
-      setImageTemplate3ReplyError(
-        e instanceof Error ? e.message : 'Failed to generate boyfriend reply'
-      );
-    } finally {
-      setImageTemplate3ReplyLoadingIndex(null);
     }
   };
 
@@ -1417,8 +1403,13 @@ export default function Home() {
   const regenerateImageTemplate3Cover = async () => {
     setIsImageTemplate3CoverLoading(true);
     setImageTemplate3CoverError(null);
+    setImageTemplate3ReplyError(null);
+    const questions = imageTabTexts.slice(1, 6).map((q) => (q ?? '').trim());
     try {
-      const coverUrl = await fetchImageTemplate3Cover();
+      const [coverUrl] = await Promise.all([
+        fetchImageTemplate3Cover(),
+        refreshImageTemplate3Replies(questions),
+      ]);
       setImageTabSources((prev) => {
         const next =
           prev.length >= 7
@@ -1446,10 +1437,13 @@ export default function Home() {
     setImageTemplate2Error(null);
     setIsGeneratingImageTemplate2Description(true);
     try {
+      const questionType = isTikTokReactionImageTemplate
+        ? imageTemplate3QuestionType
+        : imageTemplate2QuestionType;
       const type =
-        imageTemplate2QuestionType === 'random'
+        questionType === 'random'
           ? concreteTypeFromImageLabel(imageTabTypeLabel)
-          : resolveQuestionType(imageTemplate2QuestionType);
+          : resolveQuestionType(questionType);
       const res = await fetch('/api/openai/daily-title', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2798,9 +2792,10 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[type]);
       setImageTabFunnyQuestions(questions);
       setImageTabTexts([title, ...questions, imageFrameCtaText]);
-      // Cover empty until Start; Q1–Q5 are iMessage (no dog art); CTA matches Template 2.
+      // Cover + replies empty until Start; Q1–Q5 are iMessage (no dog art); CTA matches Template 2.
       setImageTabSources(['', '', '', '', '', '', pastelCtaImageSrc]);
-      void refreshImageTemplate3Replies(questions);
+      setImageTemplate3Replies([[], [], [], [], []]);
+      setImageTemplate3ReadOnlyIndex(null);
     } else {
       setImageTabTexts([`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked, imageFrameCtaText]);
       setImageTabSources(dogImagePool.length ? pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 7) : []);
@@ -3107,7 +3102,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           frameWidth,
           frameHeight,
           textForTab(tabIndex),
-          imageTemplate3Replies[tabIndex - 1] ?? []
+          imageTemplate3Replies[tabIndex - 1] ?? [],
+          imageTemplate3ReadOnlyIndex === tabIndex - 1 ? 'Read' : 'Delivered'
         );
         return await new Promise<Blob>((resolve, reject) => {
           canvas.toBlob((blob) => {
@@ -3953,7 +3949,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         Template {selectedImageTemplateId}
                       </p>
                       <div className="order-2 ml-auto flex w-full sm:w-auto flex-col sm:flex-row gap-2 sm:items-center sm:justify-end">
-                        {isKawaiiImageTemplate || isPastelCarouselImageTemplate || isTikTokReactionImageTemplate ? (
+                        {isKawaiiImageTemplate || isPastelCarouselImageTemplate ? (
                           <button
                             type="button"
                             onClick={() => regenerateImageTemplateContent(selectedImageTemplateId!)}
@@ -3974,11 +3970,14 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             disabled={
                               isImageTemplateDownloading ||
                               isImageTemplateUploading ||
-                              isImageTemplate3CoverLoading
+                              isImageTemplate3CoverLoading ||
+                              imageTemplate3RepliesLoading
                             }
                             className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md bg-zinc-900 text-white hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
                           >
-                            {isImageTemplate3CoverLoading ? 'Generating cover…' : 'Start'}
+                            {isImageTemplate3CoverLoading || imageTemplate3RepliesLoading
+                              ? 'Generating…'
+                              : 'Start'}
                           </button>
                         ) : null}
                         {isTikTokReactionImageTemplate && imageTemplate3CoverReady ? (
@@ -3988,11 +3987,14 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             disabled={
                               isImageTemplateDownloading ||
                               isImageTemplateUploading ||
-                              isImageTemplate3CoverLoading
+                              isImageTemplate3CoverLoading ||
+                              imageTemplate3RepliesLoading
                             }
                             className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {isImageTemplate3CoverLoading ? 'Generating cover…' : 'Regenerate cover'}
+                            {isImageTemplate3CoverLoading || imageTemplate3RepliesLoading
+                              ? 'Generating…'
+                              : 'Regenerate cover & replies'}
                           </button>
                         ) : null}
                         {isPastelCarouselImageTemplate ? (
@@ -4265,11 +4267,12 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               replies={
                                 imageTemplate3Replies[selectedImageBrowserTab - 1] ?? []
                               }
-                              replyLoading={
-                                imageTemplate3RepliesLoading ||
-                                imageTemplate3ReplyLoadingIndex ===
-                                  selectedImageBrowserTab - 1
+                              deliveryStatus={
+                                imageTemplate3ReadOnlyIndex === selectedImageBrowserTab - 1
+                                  ? 'Read'
+                                  : 'Delivered'
                               }
+                              replyLoading={imageTemplate3RepliesLoading}
                             />
                           ) : (
                             <>
@@ -4294,39 +4297,103 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             </>
                           )}
                         </div>
-                        {!isFullBleedImageTabSelected || isPastelCarouselImageTemplate ? (
+                        {!isFullBleedImageTabSelected ||
+                        isPastelCarouselImageTemplate ||
+                        isTikTokReactionImageTemplate ? (
                           <div className="w-full md:w-80 md:self-start space-y-4">
                             {!isFullBleedImageTabSelected ? (
                             <div>
-                              {isTikTokReactionImageTemplate &&
-                              selectedImageBrowserTab === 0 &&
-                              !imageTemplate3CoverReady ? (
-                                <p className="mb-3 text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                                  {isImageTemplate3CoverLoading
-                                    ? 'Generating cover with Nano Banana 2…'
-                                    : 'Click Start in the toolbar to generate a TikTok reaction cover (Nano Banana 2, 1K, 9:16).'}
-                                </p>
-                              ) : null}
+                              {isTikTokReactionImageTemplate ? (
+                                <>
+                                  <div className="mb-3">
+                                    <label className="mb-2 block text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                                      Question type
+                                    </label>
+                                    <div className="flex items-center gap-2">
+                                      <select
+                                        value={imageTemplate3QuestionType}
+                                        onChange={(e) =>
+                                          applyImageTemplate3QuestionType(
+                                            e.target.value as AutomateQuestionType
+                                          )
+                                        }
+                                        disabled={
+                                          isImageTemplate3CoverLoading ||
+                                          imageTemplate3RepliesLoading
+                                        }
+                                        className="min-w-0 flex-1 rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-800 dark:text-zinc-200 disabled:opacity-50"
+                                        aria-label="Question type"
+                                      >
+                                        <option value="random">Random</option>
+                                        <option value="funny">Funny</option>
+                                        <option value="flirty">Flirty</option>
+                                        <option value="me_or_you">Me or you</option>
+                                        <option value="brave">Brave</option>
+                                      </select>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          regenerateImageTemplateContent(selectedImageTemplateId!)
+                                        }
+                                        disabled={
+                                          isImageTemplateDownloading ||
+                                          isImageTemplateUploading ||
+                                          isImageTemplate3CoverLoading ||
+                                          imageTemplate3RepliesLoading
+                                        }
+                                        className="shrink-0 text-sm px-3 py-2 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                      >
+                                        Retry
+                                      </button>
+                                    </div>
+                                    <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                                      Sets the cover title and all Q1–Q5 questions. Click Start to
+                                      generate the cover image and boyfriend replies.
+                                    </p>
+                                  </div>
+                                  {selectedImageBrowserTab === 0 && !imageTemplate3CoverReady ? (
+                                    <p className="mb-3 text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                                      {isImageTemplate3CoverLoading || imageTemplate3RepliesLoading
+                                        ? 'Generating cover + boyfriend replies…'
+                                        : 'Click Start in the toolbar to generate the cover and Q1–Q5 boyfriend replies.'}
+                                    </p>
+                                  ) : null}
+                                  {selectedImageBrowserTab >= 1 &&
+                                  selectedImageBrowserTab <= 5 &&
+                                  !imageTemplate3CoverReady &&
+                                  !(imageTemplate3Replies[selectedImageBrowserTab - 1]?.length >
+                                    0) ? (
+                                    <p className="mb-3 text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                                      {imageTemplate3RepliesLoading
+                                        ? 'Generating boyfriend replies…'
+                                        : 'Boyfriend replies generate when you click Start (with the cover).'}
+                                    </p>
+                                  ) : null}
+                                  {imageTemplate3CoverError ? (
+                                    <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                                      {imageTemplate3CoverError}
+                                    </p>
+                                  ) : null}
+                                  {imageTemplate3ReplyError ? (
+                                    <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                                      {imageTemplate3ReplyError}
+                                    </p>
+                                  ) : null}
+                                </>
+                              ) : (
+                                <>
                               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                                 <label className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
                                   Frame text
                                 </label>
                                 <div className="flex flex-wrap items-center gap-2">
-                                  {isPastelCarouselImageTemplate || isTikTokReactionImageTemplate ? (
+                                  {isPastelCarouselImageTemplate ? (
                                     <select
-                                      value={
-                                        isTikTokReactionImageTemplate
-                                          ? imageTemplate3QuestionType
-                                          : imageTemplate2QuestionType
-                                      }
+                                      value={imageTemplate2QuestionType}
                                       onChange={(e) =>
-                                        isTikTokReactionImageTemplate
-                                          ? applyImageTemplate3QuestionType(
-                                              e.target.value as AutomateQuestionType
-                                            )
-                                          : applyImageTemplate2QuestionType(
-                                              e.target.value as AutomateQuestionType
-                                            )
+                                        applyImageTemplate2QuestionType(
+                                          e.target.value as AutomateQuestionType
+                                        )
                                       }
                                       className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2 py-1.5 sm:py-1 text-sm sm:text-xs text-zinc-800 dark:text-zinc-200"
                                       aria-label="Question type"
@@ -4341,43 +4408,6 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      if (isTikTokReactionImageTemplate) {
-                                        const contentType =
-                                          imageTemplate3QuestionType === 'random'
-                                            ? concreteTypeFromImageLabel(imageTabTypeLabel)
-                                            : imageTemplate3QuestionType;
-                                        if (selectedImageBrowserTab === 0) {
-                                          const nextTitle = pickTitleForType(
-                                            contentType,
-                                            imageFrameTextForActiveTab
-                                          );
-                                          const next = [...imageTabTexts];
-                                          next[0] = nextTitle;
-                                          setImageTabTexts(next);
-                                          return;
-                                        }
-                                        if (selectedImageBrowserTab >= 1 && selectedImageBrowserTab <= 5) {
-                                          const pool = questionPoolForType(contentType);
-                                          const current = imageFrameTextForActiveTab;
-                                          let nextQuestion =
-                                            pool[Math.floor(Math.random() * pool.length)] || current;
-                                          if (pool.length > 1 && nextQuestion === current) {
-                                            nextQuestion =
-                                              pool.find((q) => q !== current) || nextQuestion;
-                                          }
-                                          const next = [...imageTabTexts];
-                                          next[selectedImageBrowserTab] = nextQuestion;
-                                          const qs = [...imageTabFunnyQuestions];
-                                          qs[selectedImageBrowserTab - 1] = nextQuestion;
-                                          setImageTabFunnyQuestions(qs);
-                                          setImageTabTexts(next);
-                                          void refreshImageTemplate3ReplyAt(
-                                            selectedImageBrowserTab - 1,
-                                            nextQuestion
-                                          );
-                                        }
-                                        return;
-                                      }
                                       if (isPastelCarouselImageTemplate) {
                                         const contentType =
                                           imageTemplate2QuestionType === 'random'
@@ -4428,7 +4458,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                     }}
                                     className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                                   >
-                                    {isPastelCarouselImageTemplate || isTikTokReactionImageTemplate
+                                    {isPastelCarouselImageTemplate
                                       ? 'Retry'
                                       : 'Random question'}
                                   </button>
@@ -4457,19 +4487,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   Cover squiggle (uses AI to pick highlight word)
                                 </label>
                               ) : null}
-                              {isTikTokReactionImageTemplate && imageTemplate3CoverError ? (
-                                <p className="mt-2 text-xs text-red-600 dark:text-red-400">
-                                  {imageTemplate3CoverError}
-                                </p>
-                              ) : null}
-                              {isTikTokReactionImageTemplate && imageTemplate3ReplyError ? (
-                                <p className="mt-2 text-xs text-red-600 dark:text-red-400">
-                                  {imageTemplate3ReplyError}
-                                </p>
-                              ) : null}
+                                </>
+                              )}
                             </div>
                             ) : null}
-                            {isPastelCarouselImageTemplate ? (
+                            {isPastelCarouselImageTemplate || isTikTokReactionImageTemplate ? (
                               <div>
                                 <div className="mb-2 flex items-center justify-between gap-2">
                                   <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-300">

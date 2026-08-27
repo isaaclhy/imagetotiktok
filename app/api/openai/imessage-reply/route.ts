@@ -4,7 +4,7 @@ import OpenAI from 'openai';
 /** OpenAI platform prompt — boyfriend iMessage reply for Template 3 Q slides. */
 export const IMAGE_TEMPLATE3_IMESSAGE_REPLY_PROMPT_ID =
   'pmpt_6a8e02fcd72c819080051190992a3af30db8ba75675944e2';
-export const IMAGE_TEMPLATE3_IMESSAGE_REPLY_PROMPT_VERSION = '2';
+export const IMAGE_TEMPLATE3_IMESSAGE_REPLY_PROMPT_VERSION = '3';
 
 /**
  * POST /api/openai/imessage-reply

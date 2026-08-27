@@ -183,7 +183,8 @@ export function drawImageTemplate3ImessageSlide(
   frameWidth: number,
   frameHeight: number,
   question: string,
-  replies?: string[] | string | null
+  replies?: string[] | string | null,
+  deliveryStatus: 'Delivered' | 'Read' = 'Delivered'
 ) {
   ctx.fillStyle = IMAGE_TEMPLATE3_IMESSAGE_BG;
   ctx.fillRect(0, 0, frameWidth, frameHeight);
@@ -243,7 +244,7 @@ export function drawImageTemplate3ImessageSlide(
     ctx.textAlign = 'right';
     ctx.textBaseline = 'top';
     ctx.fillText(
-      'Delivered',
+      deliveryStatus,
       frameWidth - marginX,
       bubbleY + qMetrics.bubbleH + deliveredGap
     );
