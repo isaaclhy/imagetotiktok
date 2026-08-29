@@ -149,6 +149,7 @@ import { DownloadModal } from '@/app/components/DownloadModal';
 import { VideoDownloadModal } from '@/app/components/VideoDownloadModal';
 import { Toast } from '@/app/components/Toast';
 import { transcodeWebmToMp4 } from '@/app/lib/webm-to-mp4';
+import { INSTAGRAM_CAROUSEL_MAX } from '@/app/lib/instagram';
 
 type ContentTab = 'image' | 'video' | 'prompt' | 'automate';
 
@@ -1554,6 +1555,9 @@ export default function Home() {
   );
   const [isImageTemplateDownloading, setIsImageTemplateDownloading] = useState(false);
   const [isImageTemplateUploading, setIsImageTemplateUploading] = useState(false);
+  const [instagramAccount, setInstagramAccount] = useState<{ username: string } | null>(null);
+  const [instagramError, setInstagramError] = useState<string | null>(null);
+  const [isInstagramPosting, setIsInstagramPosting] = useState(false);
   const [videoExportError, setVideoExportError] = useState<string | null>(null);
   const [selectedImageBrowserTab, setSelectedImageBrowserTab] = useState(0);
   const [imageTabFrameBg, setImageTabFrameBg] = useState('#FEFEFE');
@@ -2428,6 +2432,29 @@ export default function Home() {
       checkAuth();
       window.history.replaceState({}, '', window.location.pathname);
     }
+  }, []);
+
+  // Instagram uses an env token (no OAuth round-trip) — just verify it works.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/instagram/auth-check');
+        const data = (await res.json()) as {
+          connected?: boolean;
+          user?: { username: string };
+          error?: string;
+        };
+        if (cancelled) return;
+        setInstagramAccount(data.connected && data.user ? data.user : null);
+        setInstagramError(data.error ?? null);
+      } catch {
+        if (!cancelled) setInstagramAccount(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleAddCanvas = () => {
@@ -3909,6 +3936,41 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     }
   };
 
+  /** Posts the current image template's tabs as one Instagram carousel. */
+  const handlePostImageTemplateToInstagram = async () => {
+    if (!instagramAccount) {
+      alert(
+        instagramError ||
+          'Instagram is not connected. Add INSTAGRAM_ACCESS_TOKEN and INSTAGRAM_USER_ID to .env.local.'
+      );
+      return;
+    }
+    const caption = window.prompt('Instagram caption', imageTabTexts[0] ?? '');
+    if (caption === null) return;
+
+    setIsInstagramPosting(true);
+    try {
+      const { entries } = await generateImageFrameExportEntries();
+      // Carousels cap at 10 slides; the templates render 7.
+      const slides = entries.slice(0, INSTAGRAM_CAROUSEL_MAX);
+      const formData = new FormData();
+      formData.append('caption', caption);
+      for (const [i, { blob }] of slides.entries()) {
+        formData.append('files', blob, `slide-${i + 1}.png`);
+      }
+
+      const res = await fetch('/api/instagram/post', { method: 'POST', body: formData });
+      const data = (await res.json()) as { permalink?: string; error?: string };
+      if (!res.ok) throw new Error(data.error || 'Failed to post to Instagram');
+      alert(data.permalink ? `Posted to Instagram:\n${data.permalink}` : 'Posted to Instagram.');
+    } catch (e) {
+      console.error('Failed to post to Instagram:', e);
+      alert(e instanceof Error ? e.message : 'Failed to post to Instagram');
+    } finally {
+      setIsInstagramPosting(false);
+    }
+  };
+
   const handleUploadImageTemplateToFolder = async (
     templateId: number,
     folderIds: string | readonly string[],
@@ -4759,6 +4821,53 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             </>
                           ) : (
                             'Download'
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handlePostImageTemplateToInstagram()}
+                          disabled={
+                            !instagramAccount ||
+                            isInstagramPosting ||
+                            isImageTemplateDownloading ||
+                            isImageTemplateUploading ||
+                            isImageTemplate3CoverLoading ||
+                            (isTikTokReactionImageTemplate && !imageTemplate3CoverReady)
+                          }
+                          title={
+                            instagramAccount
+                              ? `Post carousel as @${instagramAccount.username}`
+                              : instagramError ?? 'Instagram not configured'
+                          }
+                          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isInstagramPosting ? (
+                            <>
+                              <svg
+                                className="h-4 w-4 shrink-0 animate-spin"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                aria-hidden
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                />
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                />
+                              </svg>
+                              <span>Posting…</span>
+                            </>
+                          ) : (
+                            'Post to Instagram'
                           )}
                         </button>
                         {isKawaiiImageTemplate ? (

@@ -96,60 +96,50 @@ function contrastRatio(a: string, b: string): number {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-/**
- * Fun, high-chroma accents for the title squiggle. Computing a complement
- * mathematically produced muddy near-black or washed-out results, so we pick
- * from a curated vivid set instead.
- */
-const SQUIGGLE_ACCENTS = [
-  '#FFE84D', // bright yellow
-  '#8CFF3D', // lime
-  '#25F4EE', // cyan
-  '#3DFFB0', // spring mint
-  '#FF3B77', // hot pink
-  '#FF2D55', // red pink
-  '#FF7A29', // orange
-  '#B44DFF', // electric purple
-] as const;
-
-/** Shortest distance between two hues on the 0–1 wheel (max 0.5). */
-function hueDistance(a: number, b: number): number {
-  const d = Math.abs(a - b) % 1;
-  return Math.min(d, 1 - d);
+function hslToHex(h: number, s: number, l: number): string {
+  const hue2rgb = (p: number, q: number, t: number) => {
+    let tt = t;
+    if (tt < 0) tt += 1;
+    if (tt > 1) tt -= 1;
+    if (tt < 1 / 6) return p + (q - p) * 6 * tt;
+    if (tt < 1 / 2) return q;
+    if (tt < 2 / 3) return p + (q - p) * (2 / 3 - tt) * 6;
+    return p;
+  };
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  const toHex = (v: number) =>
+    Math.round(Math.min(1, Math.max(0, v)) * 255)
+      .toString(16)
+      .padStart(2, '0');
+  return `#${toHex(hue2rgb(p, q, h + 1 / 3))}${toHex(hue2rgb(p, q, h))}${toHex(
+    hue2rgb(p, q, h - 1 / 3)
+  )}`;
 }
 
+/** Analogous hue offset — close enough to harmonise, far enough to read as a swipe. */
+const HIGHLIGHT_HUE_SHIFT = 0.055;
+/** Marker band carries dark text, so keep it light and softly saturated. */
+const HIGHLIGHT_SATURATION = 0.72;
+const HIGHLIGHT_LIGHTNESS = 0.78;
+/** Neutral backgrounds have no hue to riff on — fall back to a warm cream. */
+const HIGHLIGHT_NEUTRAL_FALLBACK = '#F5E6A8';
+
 /**
- * Vivid accent for the title squiggle, chosen from the background so it always
- * pops. Scores candidates on hue separation plus luminance contrast.
+ * Marker color derived from the slide background: same family, nudged around
+ * the wheel and lifted in tone. Maximising contrast (the old approach) gave
+ * neon-on-pastel, which read as loud rather than designed.
  */
 export function squiggleColorForBackground(backgroundHex: string): string {
   const rgb = hexToRgb(backgroundHex);
-  if (!rgb) return SQUIGGLE_ACCENTS[0];
+  if (!rgb) return HIGHLIGHT_NEUTRAL_FALLBACK;
   const [bgHue, bgSat] = rgbToHsl(rgb.r, rgb.g, rgb.b);
+  if (bgSat < 0.08) return HIGHLIGHT_NEUTRAL_FALLBACK;
 
-  // Equal-brightness pairs (e.g. mid red on mid teal) vibrate instead of
-  // popping, so only consider accents with real luminance separation.
-  const MIN_CONTRAST = 1.8;
-  const eligible = SQUIGGLE_ACCENTS.filter(
-    (accent) => contrastRatio(accent, backgroundHex) >= MIN_CONTRAST
-  );
-  const pool = eligible.length > 0 ? eligible : SQUIGGLE_ACCENTS;
-
-  let best = pool[0] as string;
-  let bestScore = -Infinity;
-  for (const accent of pool) {
-    const accentRgb = hexToRgb(accent)!;
-    const [accentHue] = rgbToHsl(accentRgb.r, accentRgb.g, accentRgb.b);
-    // Greyish backgrounds have no meaningful hue — judge on contrast alone.
-    const hueScore = bgSat < 0.08 ? 0 : hueDistance(bgHue, accentHue) / 0.5;
-    const contrastScore = Math.min(contrastRatio(accent, backgroundHex), 4) / 4;
-    const score = hueScore + contrastScore * 0.4;
-    if (score > bestScore) {
-      bestScore = score;
-      best = accent;
-    }
-  }
-  return best;
+  // Shift toward the warm side of the background hue — warmer neighbours read
+  // as highlighter ink, cooler ones tend to look like a misprint.
+  const hue = (bgHue + HIGHLIGHT_HUE_SHIFT + 1) % 1;
+  return hslToHex(hue, HIGHLIGHT_SATURATION, HIGHLIGHT_LIGHTNESS);
 }
 
 /**
