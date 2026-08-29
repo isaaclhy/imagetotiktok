@@ -948,6 +948,7 @@ async function exportVideoWithCaptionOverlay(
       let recorder: MediaRecorder | null = null;
       let finished = false;
       let captureTrack: MediaStreamTrack | null = null;
+      let reportCaptureRate: (() => void) | null = null;
 
       const stopDrawing = () => {
         if (rafId) cancelAnimationFrame(rafId);
@@ -1249,6 +1250,7 @@ async function exportVideoWithCaptionOverlay(
             stopDrawing();
             stopParticleBedAudio?.();
             video.pause();
+            reportCaptureRate?.();
             resolve();
           };
 
@@ -1258,6 +1260,20 @@ async function exportVideoWithCaptionOverlay(
               : null;
           let recordStartedAt = performance.now();
           let nextFrameAt = performance.now();
+          // Painting slower than EXPORT_FPS forces the CFR transcode to duplicate
+          // frames, which reads as judder once a platform re-encodes the upload.
+          let paintedFrames = 0;
+          reportCaptureRate = () => {
+            const seconds = (performance.now() - recordStartedAt) / 1000;
+            if (seconds <= 0) return;
+            const achieved = paintedFrames / seconds;
+            const label = `[export] ${achieved.toFixed(1)}fps painted (target ${EXPORT_FPS}) at ${w}x${h}`;
+            if (achieved < EXPORT_FPS * 0.9) {
+              console.warn(`${label} — dropped frames will cause choppy playback after re-encode.`);
+            } else {
+              console.info(label);
+            }
+          };
           const tick = (now: number) => {
             if (finished) return;
             if (particleDurationMs !== null) {
@@ -1274,6 +1290,7 @@ async function exportVideoWithCaptionOverlay(
             }
             if (now >= nextFrameAt) {
               paintFrame();
+              paintedFrames += 1;
               nextFrameAt += FRAME_MS;
               if (now > nextFrameAt + FRAME_MS * 2) {
                 nextFrameAt = now + FRAME_MS;
@@ -4208,6 +4225,161 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     }
   };
 
+  /**
+   * Renders the active video template to a single file. Shared by the download
+   * button and the Instagram Reel post, so both always ship identical output.
+   * Throws on failure; callers own the exporting/error UI state.
+   */
+  const buildVideoTemplateExport = async (): Promise<{
+    blob: Blob;
+    extension: 'mp4' | 'webm';
+    baseName: string;
+  } | null> => {
+    if (!activeVideoTemplate || selectedVideoTemplateId === null) return null;
+
+    const today = new Date().toISOString().slice(0, 10);
+    const requireVideoSrc = () => {
+      const src = template2ExportVideoSrc ?? template2PlaybackVideoSrc;
+      if (!src) {
+        throw new Error('No video available to export. Wait for the background to load, then try again.');
+      }
+      return src;
+    };
+    /** Safari records MP4 directly; Chrome gives WebM and needs ffmpeg.wasm. */
+    const toMp4 = async (
+      recorded: Blob,
+      { allowWebmFallback = false }: { allowWebmFallback?: boolean } = {}
+    ): Promise<{ blob: Blob; extension: 'mp4' | 'webm' }> => {
+      if (recorded.type.includes('mp4')) return { blob: recorded, extension: 'mp4' };
+      if (!allowWebmFallback) return { blob: await transcodeWebmToMp4(recorded), extension: 'mp4' };
+      try {
+        return { blob: await transcodeWebmToMp4(recorded), extension: 'mp4' };
+      } catch (transcodeErr) {
+        console.warn(
+          'MP4 transcode unavailable (often Turbopack + ffmpeg.wasm). Falling back to WebM.',
+          transcodeErr
+        );
+        return { blob: recorded, extension: 'webm' };
+      }
+    };
+
+    if (isSpillItNotesVideoTemplate) {
+      const videoSrc = requireVideoSrc();
+      const title = videoOverlayCaption.trim() || pickRandomDailyFunnyTitle();
+      const questions =
+        videoTemplate2Questions.filter((q) => q.trim()).length > 0
+          ? videoTemplate2Questions.filter((q) => q.trim()).slice(0, 5)
+          : pickRandomFunnyQuestions(5);
+      const recorded = await exportFabNotesVideo(
+        videoSrc,
+        title,
+        questions,
+        FAB_NOTES_MAX_DURATION_SEC
+      );
+      return { ...(await toMp4(recorded, { allowWebmFallback: true })), baseName: `iphone-notes-${today}` };
+    }
+
+    if (isNightyParticleVideoTemplate) {
+      const videoSrc = requireVideoSrc();
+      const recorded = await exportVideoWithCaptionOverlay(videoSrc, nightyParticleLines.line1, {
+        particleAnimated: true,
+        particleContent: {
+          lines: nightyParticleLines,
+          timing: nightyParticleTiming,
+          accentColor: nightyParticleAccentColor,
+        },
+        particleAudioSrc: nightyParticleBedAudioSrc,
+        maxDurationSec: nightyParticleMaxDuration,
+      });
+      return { ...(await toMp4(recorded)), baseName: `nighty-particle-${today}` };
+    }
+
+    if (isNightyRainVideoTemplate) {
+      const videoSrc = requireVideoSrc();
+      const caption = videoOverlayCaption.trim() || NIGHTY_RAIN_CAPTION;
+      const recorded = await exportVideoWithCaptionOverlay(videoSrc, caption, {
+        rainTemplate: true,
+        rainAudioSrc: nightyRainBedAudioSrc,
+        rainSubline: nightyRainSubline.trim() || NIGHTY_RAIN_CAPTION_SUBLINE,
+        maxDurationSec: NIGHTY_RAIN_MAX_DURATION_SEC,
+        maxWidthRatio: NIGHTY_RAIN_CAPTION_MAX_WIDTH_RATIO,
+      });
+      return { ...(await toMp4(recorded)), baseName: `nighty-rain-${today}` };
+    }
+
+    if (isFabAffirmationVideoTemplate) {
+      if (fabMontageVideoSrcs.length < FAB_AFFIRMATION_CLIP_COUNT) {
+        throw new Error('No montage videos loaded. Turn off Reuse videos and regenerate, then try again.');
+      }
+      const affirmations =
+        fabMontageAffirmations.filter((a) => a.trim()).length > 0
+          ? fabMontageAffirmations.filter((a) => a.trim()).slice(0, FAB_AFFIRMATION_TEXT_COUNT)
+          : pickFabMontageAffirmations();
+      const textsMatch =
+        fabMontageSegments.length === affirmations.length &&
+        fabMontageSegments.every(
+          (s, i) => s.text === affirmations[i] && s.provider === fabMontageTtsProvider
+        );
+      let segments = fabMontageSegments;
+      if (!textsMatch) {
+        segments = await buildFabAffirmationSegments(affirmations, fabMontageTtsProvider);
+        setFabMontageSegments((prev) => {
+          revokeFabAffirmationSegments(prev);
+          return segments;
+        });
+        setFabMontageAffirmations(affirmations);
+      }
+      if (segments.some((s) => s.provider === 'browser')) {
+        // Browser mode exports timed text with silent audio placeholders.
+        console.info(
+          '[fab-montage] Exporting with Browser (free) voice — download audio is silent; switch to ElevenLabs for real TTS in the file.'
+        );
+      }
+      const proxied = fabMontageVideoSrcs.map((src) => pexelsVideoProxySrc(src));
+      const ambientSrc = resolveFabAffirmationAmbientSrc(fabMontageAmbientId);
+      const recorded = await exportFabAffirmationMontage(proxied, segments, undefined, ambientSrc);
+      return {
+        ...(await toMp4(recorded, { allowWebmFallback: true })),
+        baseName: `fab-affirmation-${today}`,
+      };
+    }
+
+    const baseName =
+      activeVideoTemplate.title
+        .replace(/[^\w\d-]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .toLowerCase() || `template-${selectedVideoTemplateId}`;
+
+    if (isCouplesNatureVideoTemplate) {
+      const videoSrc = requireVideoSrc();
+      const title = videoOverlayCaption.trim() || pickRandomDailyFunnyTitle();
+      const questions =
+        videoTemplate2Questions.length > 0 ? videoTemplate2Questions : pickRandomFunnyQuestions(7);
+      const recorded = await exportVideoWithCaptionOverlay(videoSrc, title, {
+        position: 'top',
+        style: 'natural',
+        numberedQuestions: questions,
+        maxDurationSec: VIDEO_TEMPLATE2_MAX_DURATION_SEC,
+      });
+      return { ...(await toMp4(recorded)), baseName: `${baseName}-caption` };
+    }
+
+    if (!template2PlaybackVideoSrc) return null;
+
+    const captionTrimmed = videoOverlayCaption.trim();
+    if (captionTrimmed) {
+      const recorded = await exportVideoWithCaptionOverlay(requireVideoSrc(), captionTrimmed, {
+        position: 'center',
+        style: 'stroke',
+      });
+      return { ...(await toMp4(recorded)), baseName: `${baseName}-caption` };
+    }
+
+    const res = await fetch(template2ExportVideoSrc ?? template2PlaybackVideoSrc);
+    if (!res.ok) throw new Error('Failed to fetch video');
+    return { blob: await res.blob(), extension: 'mp4', baseName };
+  };
+
   const handleDownloadVideoTemplate = async () => {
     if (!activeVideoTemplate || selectedVideoTemplateId === null) return;
     if (isCouplesNatureVideoTemplate) {
@@ -4215,269 +4387,79 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       return;
     }
 
-    if (isSpillItNotesVideoTemplate) {
-      setVideoExportError(null);
-      const videoSrc = template2ExportVideoSrc ?? template2PlaybackVideoSrc;
-      if (!videoSrc) {
-        setVideoExportError('No video available to export. Wait for the background to load, then try again.');
-        return;
-      }
-      const title = videoOverlayCaption.trim() || pickRandomDailyFunnyTitle();
-      const questions =
-        videoTemplate2Questions.filter((q) => q.trim()).length > 0
-          ? videoTemplate2Questions.filter((q) => q.trim()).slice(0, 5)
-          : pickRandomFunnyQuestions(5);
-      setIsVideoExporting(true);
-      try {
-        const recordedBlob = await exportFabNotesVideo(
-          videoSrc,
-          title,
-          questions,
-          FAB_NOTES_MAX_DURATION_SEC
-        );
-        let blob = recordedBlob;
-        let extension = recordedBlob.type.includes('mp4') ? 'mp4' : 'webm';
-        if (!recordedBlob.type.includes('mp4')) {
-          try {
-            blob = await transcodeWebmToMp4(recordedBlob);
-            extension = 'mp4';
-          } catch (transcodeErr) {
-            console.warn(
-              'MP4 transcode unavailable (often Turbopack + ffmpeg.wasm). Downloading WebM instead.',
-              transcodeErr
-            );
-          }
-        }
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `iphone-notes-${new Date().toISOString().slice(0, 10)}.${extension}`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.setTimeout(() => URL.revokeObjectURL(url), 2500);
-      } catch (e) {
-        console.error('Failed to export Fab Notes video:', e);
-        setVideoExportError(e instanceof Error ? e.message : 'Export failed');
-      } finally {
-        setIsVideoExporting(false);
-      }
-      return;
-    }
-
-    if (isNightyParticleVideoTemplate) {
-      setVideoExportError(null);
-      const videoSrc = template2ExportVideoSrc ?? template2PlaybackVideoSrc;
-      if (!videoSrc) {
-        setVideoExportError('No video available to export. Wait for the background to load, then try again.');
-        return;
-      }
-      setIsVideoExporting(true);
-      try {
-        const recordedBlob = await exportVideoWithCaptionOverlay(videoSrc, nightyParticleLines.line1, {
-          particleAnimated: true,
-          particleContent: {
-            lines: nightyParticleLines,
-            timing: nightyParticleTiming,
-            accentColor: nightyParticleAccentColor,
-          },
-          particleAudioSrc: nightyParticleBedAudioSrc,
-          maxDurationSec: nightyParticleMaxDuration,
-        });
-        const blob =
-          recordedBlob.type.includes('mp4') ? recordedBlob : await transcodeWebmToMp4(recordedBlob);
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `nighty-particle-${new Date().toISOString().slice(0, 10)}.mp4`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.setTimeout(() => URL.revokeObjectURL(url), 2500);
-      } catch (e) {
-        console.error('Failed to export Nighty Particle video:', e);
-        setVideoExportError(e instanceof Error ? e.message : 'Export failed');
-      } finally {
-        setIsVideoExporting(false);
-      }
-      return;
-    }
-
-    if (isNightyRainVideoTemplate) {
-      setVideoExportError(null);
-      const videoSrc = template2ExportVideoSrc ?? template2PlaybackVideoSrc;
-      if (!videoSrc) {
-        setVideoExportError('No video available to export. Wait for the background to load, then try again.');
-        return;
-      }
-      setIsVideoExporting(true);
-      try {
-        const caption = videoOverlayCaption.trim() || NIGHTY_RAIN_CAPTION;
-        const recordedBlob = await exportVideoWithCaptionOverlay(videoSrc, caption, {
-          rainTemplate: true,
-          rainAudioSrc: nightyRainBedAudioSrc,
-          rainSubline: nightyRainSubline.trim() || NIGHTY_RAIN_CAPTION_SUBLINE,
-          maxDurationSec: NIGHTY_RAIN_MAX_DURATION_SEC,
-          maxWidthRatio: NIGHTY_RAIN_CAPTION_MAX_WIDTH_RATIO,
-        });
-        const blob =
-          recordedBlob.type.includes('mp4') ? recordedBlob : await transcodeWebmToMp4(recordedBlob);
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `nighty-rain-${new Date().toISOString().slice(0, 10)}.mp4`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.setTimeout(() => URL.revokeObjectURL(url), 2500);
-      } catch (e) {
-        console.error('Failed to export Nighty Rain video:', e);
-        setVideoExportError(e instanceof Error ? e.message : 'Export failed');
-      } finally {
-        setIsVideoExporting(false);
-      }
-      return;
-    }
-
-    if (isFabAffirmationVideoTemplate) {
-      setVideoExportError(null);
-      if (fabMontageVideoSrcs.length < FAB_AFFIRMATION_CLIP_COUNT) {
-        setVideoExportError('No montage videos loaded. Turn off Reuse videos and regenerate, then try again.');
-        return;
-      }
-      const affirmations =
-        fabMontageAffirmations.filter((a) => a.trim()).length > 0
-          ? fabMontageAffirmations.filter((a) => a.trim()).slice(0, FAB_AFFIRMATION_TEXT_COUNT)
-          : pickFabMontageAffirmations();
-      setIsVideoExporting(true);
-      try {
-        const textsMatch =
-          fabMontageSegments.length === affirmations.length &&
-          fabMontageSegments.every(
-            (s, i) => s.text === affirmations[i] && s.provider === fabMontageTtsProvider
-          );
-        let segments = fabMontageSegments;
-        if (!textsMatch) {
-          segments = await buildFabAffirmationSegments(affirmations, fabMontageTtsProvider);
-          setFabMontageSegments((prev) => {
-            revokeFabAffirmationSegments(prev);
-            return segments;
-          });
-          setFabMontageAffirmations(affirmations);
-        }
-        if (segments.some((s) => s.provider === 'browser')) {
-          // Browser mode exports timed text with silent audio placeholders.
-          console.info(
-            '[fab-montage] Exporting with Browser (free) voice — download audio is silent; switch to ElevenLabs for real TTS in the file.'
-          );
-        }
-        const proxied = fabMontageVideoSrcs.map((src) => pexelsVideoProxySrc(src));
-        const ambientSrc = resolveFabAffirmationAmbientSrc(fabMontageAmbientId);
-        const recordedBlob = await exportFabAffirmationMontage(
-          proxied,
-          segments,
-          undefined,
-          ambientSrc
-        );
-        let blob = recordedBlob;
-        let extension = recordedBlob.type.includes('mp4') ? 'mp4' : 'webm';
-        if (!recordedBlob.type.includes('mp4')) {
-          try {
-            blob = await transcodeWebmToMp4(recordedBlob);
-            extension = 'mp4';
-          } catch (transcodeErr) {
-            console.warn(
-              'MP4 transcode unavailable (often Turbopack + ffmpeg.wasm). Downloading WebM instead.',
-              transcodeErr
-            );
-          }
-        }
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `fab-affirmation-${new Date().toISOString().slice(0, 10)}.${extension}`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.setTimeout(() => URL.revokeObjectURL(url), 2500);
-      } catch (e) {
-        console.error('Failed to export Fab affirmation montage:', e);
-        setVideoExportError(e instanceof Error ? e.message : 'Export failed');
-      } finally {
-        setIsVideoExporting(false);
-      }
-      return;
-    }
-
     setVideoExportError(null);
-    const baseName =
-      activeVideoTemplate.title
-        .replace(/[^\w\d-]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .toLowerCase() || `template-${selectedVideoTemplateId}`;
+    const triggerDownload = (blob: Blob, filename: string) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.setTimeout(() => URL.revokeObjectURL(url), 2500);
+    };
+
+    setIsVideoExporting(true);
     try {
-      if (template2PlaybackVideoSrc) {
-        const captionTrimmed = videoOverlayCaption.trim();
-        const shouldBurnCaption =
-          captionTrimmed ||
-          (isCouplesNatureVideoTemplate && videoTemplate2Questions.length > 0);
-        if (shouldBurnCaption) {
-          setIsVideoExporting(true);
-          try {
-            const exportSrc = template2ExportVideoSrc ?? template2PlaybackVideoSrc;
-            const recordedBlob = await exportVideoWithCaptionOverlay(exportSrc, captionTrimmed, {
-              position: isCouplesNatureVideoTemplate ? 'top' : 'center',
-              style: isCouplesNatureVideoTemplate ? 'natural' : 'stroke',
-              numberedQuestions: isCouplesNatureVideoTemplate ? videoTemplate2Questions : undefined,
-              maxDurationSec:
-                isCouplesNatureVideoTemplate ? VIDEO_TEMPLATE2_MAX_DURATION_SEC : undefined,
-            });
-            const blob =
-              recordedBlob.type.includes('mp4') ? recordedBlob : await transcodeWebmToMp4(recordedBlob);
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${baseName}-caption.mp4`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.setTimeout(() => URL.revokeObjectURL(url), 2500);
-          } finally {
-            setIsVideoExporting(false);
-          }
-          return;
-        }
-        const mainVideoSrc = template2ExportVideoSrc ?? template2PlaybackVideoSrc;
-        const res = await fetch(mainVideoSrc);
-        if (!res.ok) throw new Error('Failed to fetch video');
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${baseName}.mp4`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.setTimeout(() => URL.revokeObjectURL(url), 2500);
+      const result = await buildVideoTemplateExport();
+      if (result) {
+        triggerDownload(result.blob, `${result.baseName}.${result.extension}`);
         return;
       }
       if (activeVideoTemplate.coverSrc) {
+        const baseName =
+          activeVideoTemplate.title
+            .replace(/[^\w\d-]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .toLowerCase() || `template-${selectedVideoTemplateId}`;
         const res = await fetch(activeVideoTemplate.coverSrc);
         if (!res.ok) throw new Error('Failed to fetch cover image');
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${baseName}.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.setTimeout(() => URL.revokeObjectURL(url), 2500);
+        triggerDownload(await res.blob(), `${baseName}.png`);
       }
     } catch (e) {
       console.error('Failed to download video template:', e);
-      const msg = e instanceof Error ? e.message : 'Download failed';
+      setVideoExportError(e instanceof Error ? e.message : 'Download failed');
+    } finally {
+      setIsVideoExporting(false);
+    }
+  };
+
+  /** Posts the current video template to Instagram as a Reel. */
+  const handlePostVideoTemplateToInstagram = async () => {
+    if (!instagramAccount) {
+      alert(
+        instagramError ||
+          'Instagram is not connected. Add INSTAGRAM_ACCESS_TOKEN and INSTAGRAM_USER_ID to .env.local.'
+      );
+      return;
+    }
+    const caption = window.prompt('Instagram caption', videoOverlayCaption.trim());
+    if (caption === null) return;
+
+    setVideoExportError(null);
+    setIsInstagramPosting(true);
+    try {
+      const result = await buildVideoTemplateExport();
+      if (!result) throw new Error('No video available to post. Generate a video first.');
+      if (result.extension !== 'mp4') {
+        throw new Error('Instagram only accepts MP4 Reels, and the MP4 transcode failed. Try again in Safari.');
+      }
+
+      const formData = new FormData();
+      formData.append('caption', caption);
+      formData.append('files', result.blob, `${result.baseName}.mp4`);
+
+      const res = await fetch('/api/instagram/post', { method: 'POST', body: formData });
+      const data = (await res.json()) as { permalink?: string; error?: string };
+      if (!res.ok) throw new Error(data.error || 'Failed to post to Instagram');
+      alert(data.permalink ? `Posted to Instagram:\n${data.permalink}` : 'Posted to Instagram.');
+    } catch (e) {
+      console.error('Failed to post Reel to Instagram:', e);
+      const msg = e instanceof Error ? e.message : 'Failed to post to Instagram';
       setVideoExportError(msg);
+      alert(msg);
+    } finally {
+      setIsInstagramPosting(false);
     }
   };
 
@@ -5547,6 +5529,57 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             </>
                           ) : (
                             'Download'
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handlePostVideoTemplateToInstagram()}
+                          disabled={
+                            !instagramAccount ||
+                            isInstagramPosting ||
+                            isVideoExporting ||
+                            isVideoTemplate2VideoLoading ||
+                            (isFabAffirmationVideoTemplate
+                              ? isFabMontageLoading ||
+                                isFabMontageTtsLoading ||
+                                fabMontageVideoSrcs.length < FAB_AFFIRMATION_CLIP_COUNT ||
+                                fabMontageSegments.length === 0
+                              : !template2PlaybackVideoSrc)
+                          }
+                          title={
+                            instagramAccount
+                              ? `Post Reel as @${instagramAccount.username}`
+                              : instagramError ?? 'Instagram not configured'
+                          }
+                          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isInstagramPosting ? (
+                            <>
+                              <svg
+                                className="h-4 w-4 shrink-0 animate-spin"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                aria-hidden
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                />
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                />
+                              </svg>
+                              <span>Posting…</span>
+                            </>
+                          ) : (
+                            'Post to Instagram'
                           )}
                         </button>
                         {isCouplesNatureVideoTemplate ? (
