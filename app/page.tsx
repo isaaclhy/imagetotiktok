@@ -107,6 +107,8 @@ import {
 import {
   splitTitleAroundHighlight,
   squiggleColorForBackground,
+  TITLE_HIGHLIGHT_TEXT_COLOR,
+  TITLE_HIGHLIGHT_TILT_RAD,
 } from '@/app/lib/highlight-word';
 import {
   FAB_AFFIRMATION_AMBIENT_SOUNDS,
@@ -160,6 +162,12 @@ type AppUrlState = {
 
 const CONTENT_TABS: ContentTab[] = ['image', 'video', 'prompt', 'automate'];
 
+/**
+ * Portrait target height. 1080 used to score closest to a 540x960 rendition,
+ * so exports were recorded well under 1080x1920 and TikTok upscaled them.
+ */
+const PEXELS_PREFER_HEIGHT = 1920;
+
 function pexelsVideoProxySrc(directUrl: string): string {
   // Local / relative assets don't need the Pexels proxy.
   if (directUrl.startsWith('/') || !/^https?:\/\//i.test(directUrl)) {
@@ -173,7 +181,7 @@ async function fetchRandomPexelsVideoUrlForExport(): Promise<string> {
     VIDEO_TEMPLATE2_PEXELS_QUERIES[Math.floor(Math.random() * VIDEO_TEMPLATE2_PEXELS_QUERIES.length)]!;
   const page = 1 + Math.floor(Math.random() * 15);
   const res = await fetch(
-    `/api/pexels/random-video?query=${encodeURIComponent(query)}&page=${page}&preferHeight=1080`
+    `/api/pexels/random-video?query=${encodeURIComponent(query)}&page=${page}&preferHeight=${PEXELS_PREFER_HEIGHT}`
   );
   const data = (await res.json()) as { videoUrl?: string; error?: string };
   if (!res.ok || !data.videoUrl) {
@@ -772,18 +780,13 @@ function pickMediaRecorderMime(): string {
  * Chrome records WebM; Safari may record MP4 directly. WebM is transcoded to MP4 on download.
  */
 function nightyParticleCanvasFontStack(): string {
-  if (typeof document === 'undefined') return NIGHTY_PARTICLE_CANVAS_FONT_STACK;
-  const fromVar = getComputedStyle(document.documentElement)
-    .getPropertyValue('--font-inter')
-    .trim();
-  if (fromVar) return `${fromVar}, system-ui, -apple-system, sans-serif`;
   return NIGHTY_PARTICLE_CANVAS_FONT_STACK;
 }
 
 function nightyParticleCanvasFontFamilyName(): string {
   const stack = nightyParticleCanvasFontStack();
   const primary = stack.split(',')[0]?.trim().replace(/^["']|["']$/g, '');
-  return primary || 'Inter';
+  return primary || 'TikTok Sans';
 }
 
 async function exportVideoWithCaptionOverlay(
@@ -824,7 +827,6 @@ async function exportVideoWithCaptionOverlay(
     : rainTemplate
       ? rainAudioSrc
       : undefined;
-  const forcePortrait916 = particleAnimated || rainTemplate;
   if (typeof MediaRecorder === 'undefined') throw new Error('MediaRecorder is not supported in this browser');
 
   const mime = pickMediaRecorderMime();
@@ -877,17 +879,10 @@ async function exportVideoWithCaptionOverlay(
     const srcH = video.videoHeight;
     if (srcW <= 0 || srcH <= 0) throw new Error('Invalid video dimensions');
 
-    // Particle / Rain: always export 9:16 @ 1080x1920 (center-crop landscape sources).
-    const w = forcePortrait916
-      ? rainTemplate
-        ? NIGHTY_RAIN_EXPORT_WIDTH
-        : NIGHTY_PARTICLE_EXPORT_WIDTH
-      : srcW;
-    const h = forcePortrait916
-      ? rainTemplate
-        ? NIGHTY_RAIN_EXPORT_HEIGHT
-        : NIGHTY_PARTICLE_EXPORT_HEIGHT
-      : srcH;
+    // Always export 9:16 @ 1080x1920 so TikTok never has to upscale a smaller
+    // Pexels rendition (center-crops anything that isn't already portrait).
+    const w = rainTemplate ? NIGHTY_RAIN_EXPORT_WIDTH : NIGHTY_PARTICLE_EXPORT_WIDTH;
+    const h = rainTemplate ? NIGHTY_RAIN_EXPORT_HEIGHT : NIGHTY_PARTICLE_EXPORT_HEIGHT;
 
     const isParticleCaption = particleAnimated;
     const captionFontSize = isParticleCaption
@@ -992,12 +987,8 @@ async function exportVideoWithCaptionOverlay(
           if (useMagicalGrade) {
             ctx.filter = COUPLES_NATURE_VIDEO_FILTER;
           }
-          if (forcePortrait916) {
-            if (!coverReady) updateCoverCrop();
-            ctx.drawImage(video, coverSx, coverSy, coverSw, coverSh, 0, 0, w, h);
-          } else {
-            ctx.drawImage(video, 0, 0, w, h);
-          }
+          if (!coverReady) updateCoverCrop();
+          ctx.drawImage(video, coverSx, coverSy, coverSw, coverSh, 0, 0, w, h);
           if (useMagicalGrade) {
             ctx.filter = 'none';
           }
@@ -1242,7 +1233,7 @@ async function exportVideoWithCaptionOverlay(
               ? NIGHTY_PARTICLE_EXPORT_VIDEO_BITRATE
               : rainTemplate
                 ? NIGHTY_RAIN_EXPORT_VIDEO_BITRATE
-              : 2_500_000,
+              : 12_000_000,
           });
           recorder.ondataavailable = (e) => {
             if (e.data.size) chunks.push(e.data);
@@ -1344,37 +1335,24 @@ const DAILY_TEMPLATE_TITLES_FUNNY = [
   "Does He Pass The Good Boyfriend Test?",
   "5 Questions To Test How Well Trained Your Boyfriend Is",
   "5 Impossible Questions To Test Your Boyfriend Tonight",
-  "5 Questions Every Boyfriend Must Answer Tonight If He Loves You",
-  "5 Questions To Test If Your Boyfriend Is The One",
-  "5 Impossible Questions To Test If Your Boyfriend Is Husband Material",
-  "5 Questions For Internation Rage Bait Boyfriend Day",
   "5 Questions To Ask Your Boyfriend When He's Busy Or Tired",
-  '5 Questions Every Girlfriends Should Ask Their Boyfriend',
-  '5 Questions To Make Your Boyfriend Take A Deep Breath',
-  '5 Risky Questions To Ask Your Boyfriend Tonight',
   '5 Dumb Questions To Ragebait Your Boyfriend Tonight',
+  "5 Impossible Questions To Ragebait Your Boyfriend Tonight",
+  "Questions To Tease Your Boyfriend Tonight",
+  "Super Dumb Questions To Tease Your Boyfriend Tonight",
+  "Super Dumb Questions To Ragebait Your Boyfriend Tonight",
+  "Super Dumb Questions To Gaslight Your Boyfriend Tonight",
   '5 Fun Questions To Tease Your Boyfriend Tonight',
-  '5 Cute Questions To Ask Your Boyfriend Before Moving In Together',
   '5 Dumb Questions To Ask Your Boyfriend Tonight',
-  '5 Dumb Questions To Ask Your Boyfriend To Make Sure He Loves You',
   '5 Ragebait Questions To Ask Your Boyfriend Tonight',
-  '5 Fun Questions To See How Much Does Your Boyfriend Loves You',
   '5 Simple Question To Test Your Boyfriend Tonight',
-  '5 Cute Questions Every Boyfriend Must Answer Tonight',
-  '5 Questions Every Boyfriend Gets Wrong',
-  'Does Your Boyfriend Pass The Jealousy Test?',
-  'Does Your Boyfriend Pass The Loyalty Test?',
-  '5 Cute Questions To Fall In Love With Your Boyfriend',
-  '5 Questions A Good Boyfriend Should Get Right',
-  '5 Cute Questions All Boyfriends Must Answer Tonight',
-  '5 Questions Every Boyfriend Must Answer Tonight If They Love You',
-  "5 Very Important Questions Your Boyfriend Need To Answer Tonight",
+  '5 Questions Your Boyfriend Will Get Wrong',
+  '5 Questions To Tell How Dumb Your Boyfriend Is',
+  'Questions To Tell If Your Boyfriend Loves You',
   '5 Niche Conversation Starters To Keep The Spark Alive',
-  '5 Fun Questions To Check How Much Does He Love You',
   '5 Fun Questions To Ragebait Your Boo',
-  'Does He Pass The Boyfriend Test',
-  '5 Impossible Questions To Ask Your Boyfriend Tonight',
   '5 Dumb Questions To Annoy Your Boyfriend',
+  'Super Dumb Questions To Ragebait Your Boyfriend Tonight',
   '5 Cute Questions To Fall In Love With You Boyfriend Again',
 ] as const;
 
@@ -1582,7 +1560,7 @@ export default function Home() {
   const [imageTabPastelBgs, setImageTabPastelBgs] = useState<string[]>([]);
   const [imageTabTypeLabel, setImageTabTypeLabel] = useState('Funny Questions');
   const kawaiiCtaImageSrc = '/dog-images/kawaii-cta-tab-v2.png';
-  const pastelCtaImageSrc = '/image-templates/template-2-cta.jpg';
+  const pastelCtaImageSrc = '/image-templates/template-2-cta-v2.png';
   /** Kawaii image-tab frame: export is 1080×1440; keep preview text in the same ballpark via Tailwind below. */
   const imageFrameExportFontPx = 54;
   const imageFrameExportWrappedLineHeightPx = 70;
@@ -1591,11 +1569,8 @@ export default function Home() {
   const imageFrameExportTextColor = '#2f2a31';
   const imageFrameExportGlowColor = 'rgba(255, 255, 255, 0.9)';
   const pastelCarouselTextColor = '#FFFFFF';
-  /** Rounded geometric sans — free stand-in for Omnes (Breeze brand font). */
-  const pastelCarouselFontFamily =
-    'var(--font-nunito), Nunito, ui-rounded, system-ui, sans-serif';
-  /** Canvas can't resolve CSS variables — use the real family name for export. */
-  const pastelCarouselExportFontFamily = 'Nunito, ui-rounded, system-ui, sans-serif';
+  const pastelCarouselFontFamily = TIKTOK_SANS_STACK;
+  const pastelCarouselExportFontFamily = TIKTOK_SANS_STACK;
   const [imageTabFunnyQuestions, setImageTabFunnyQuestions] = useState<string[]>([]);
   const [imageTabTexts, setImageTabTexts] = useState<string[]>([]);
   const [imageTabSources, setImageTabSources] = useState<string[]>([]);
@@ -2048,7 +2023,7 @@ export default function Home() {
           })();
       const page = 1 + Math.floor(Math.random() * 15);
       const res = await fetch(
-        `/api/pexels/random-video?query=${encodeURIComponent(query)}&page=${page}&preferHeight=1080`
+        `/api/pexels/random-video?query=${encodeURIComponent(query)}&page=${page}&preferHeight=${PEXELS_PREFER_HEIGHT}`
       );
       const data = (await res.json()) as { videoUrl?: string; thumbnailUrl?: string | null; error?: string };
       if (!res.ok || !data.videoUrl) {
@@ -3605,7 +3580,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         if (tabIndex === 0) {
           try {
             await document.fonts.load(
-              `${IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT} ${Math.round(frameWidth * IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO)}px Nunito`
+              `${IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT} ${Math.round(frameWidth * IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO)}px "TikTok Sans"`
             );
           } catch {
             /* font may already be ready */
@@ -3618,9 +3593,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
               : null,
             fontFamily: pastelCarouselExportFontFamily,
             textColor: pastelCarouselTextColor,
-            typeLabel: imageTabTypeLabel,
             progress: 1 / 7,
-            footer: IMAGE_TEMPLATE2_APP_FOOTER,
+            footer: '',
+            showProgress: false,
           });
           return await new Promise<Blob>((resolve, reject) => {
             canvas.toBlob((blob) => {
@@ -3653,8 +3628,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         const centerText = textForTab(tabIndex);
         const fontSize = Math.round(frameWidth * 0.05);
         try {
-          await document.fonts.load(`800 ${fontSize}px Nunito`);
-          await document.fonts.load(`700 ${fontSize}px Nunito`);
+          await document.fonts.load(`800 ${fontSize}px "TikTok Sans"`);
+          await document.fonts.load(`700 ${fontSize}px "TikTok Sans"`);
         } catch {
           /* font may already be ready */
         }
@@ -3662,7 +3637,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = pastelCarouselTextColor;
-        const maxTextWidth = frameWidth * 0.8;
+        const maxTextWidth = frameWidth * 0.6;
         const lines = wrapLines(ctx, centerText.replace(/\n/g, ' '), maxTextWidth);
         const lineHeight = fontSize * 1.22;
         const blockH = lines.length * lineHeight;
@@ -4875,21 +4850,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                           ) : isPastelCarouselImageTemplate ? (
                             selectedImageBrowserTab === 0 ? (
                               <>
-                              <div className="absolute inset-x-[8%] top-[21%] z-10">
-                                <p
-                                  className="mb-2 text-center text-[11px] sm:text-xs font-bold tracking-wide text-white"
-                                  style={{ fontFamily: pastelCarouselFontFamily }}
-                                >
-                                  {imageTabTypeLabel}
-                                </p>
-                                <div className="h-1.5 w-full rounded-full bg-white/35 overflow-hidden">
-                                  <div
-                                    className="h-full rounded-full bg-white transition-[width] duration-200"
-                                    style={{ width: `${pastelProgressRatio * 100}%` }}
-                                  />
-                                </div>
-                              </div>
-                              <div className="absolute inset-0 z-10 flex items-center justify-center px-[10%] pointer-events-none">
+                              <div className="absolute inset-0 z-10 flex items-center justify-center px-[20%] pointer-events-none">
                                 <p
                                   className="w-full text-center text-white wrap-break-word"
                                   style={{
@@ -4903,23 +4864,15 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 {imageTemplate2TitleHighlightParts ? (
                                   <>
                                     {imageTemplate2TitleHighlightParts.before}
-                                    <span className="relative inline-block px-[0.02em] pb-[0.5em]">
+                                    <span
+                                      className="inline-block rounded-[0.08em] px-[0.12em] py-[0.1em]"
+                                      style={{
+                                        backgroundColor: imageTemplate2SquiggleColor,
+                                        color: TITLE_HIGHLIGHT_TEXT_COLOR,
+                                        transform: `rotate(${TITLE_HIGHLIGHT_TILT_RAD}rad)`,
+                                      }}
+                                    >
                                       {imageTemplate2TitleHighlightParts.word}
-                                      <svg
-                                        className="pointer-events-none absolute left-[-2%] right-[-2%] bottom-0 h-[0.48em] w-[104%]"
-                                        viewBox="0 0 100 28"
-                                        preserveAspectRatio="none"
-                                        aria-hidden
-                                      >
-                                        <path
-                                          d="M3 15 Q 15 3 27 19 Q 39 3 51 17 Q 63 4 75 19 Q 87 4 97 14"
-                                          fill="none"
-                                          stroke={imageTemplate2SquiggleColor}
-                                          strokeWidth="9"
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                        />
-                                      </svg>
                                     </span>
                                     {imageTemplate2TitleHighlightParts.after}
                                   </>
@@ -4928,12 +4881,6 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 )}
                                 </p>
                               </div>
-                              <p
-                                className="absolute inset-x-[8%] bottom-[9%] z-10 text-center text-[11px] sm:text-xs font-bold text-white/95"
-                                style={{ fontFamily: pastelCarouselFontFamily }}
-                              >
-                                {IMAGE_TEMPLATE2_APP_FOOTER}
-                              </p>
                               </>
                             ) : (
                             <>
@@ -4952,7 +4899,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 </div>
                               </div>
                               <p
-                                className="absolute left-1/2 top-1/2 z-10 w-[80%] -translate-x-1/2 -translate-y-1/2 text-center text-base sm:text-lg md:text-xl font-extrabold leading-snug text-white wrap-break-word"
+                                className="absolute left-1/2 top-1/2 z-10 w-[60%] -translate-x-1/2 -translate-y-1/2 text-center text-base sm:text-lg md:text-xl font-extrabold leading-snug text-white wrap-break-word"
                                 style={{
                                   fontFamily: pastelCarouselFontFamily,
                                 }}

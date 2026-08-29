@@ -153,6 +153,67 @@ export function squiggleColorForBackground(backgroundHex: string): string {
 }
 
 /**
+ * Ink color for text sitting on a marker swipe — the accents are all light, so
+ * white-on-highlight would wash out.
+ */
+export const TITLE_HIGHLIGHT_TEXT_COLOR = '#141414';
+
+/** Marker band geometry, shared by canvas export and the DOM preview. */
+export const TITLE_HIGHLIGHT_PAD_X_EM = 0.12;
+export const TITLE_HIGHLIGHT_PAD_Y_EM = 0.1;
+export const TITLE_HIGHLIGHT_RADIUS_EM = 0.08;
+export const TITLE_HIGHLIGHT_TILT_RAD = -0.012;
+
+/**
+ * Highlighter swipe behind a word on canvas. Draw this *before* the text so the
+ * word sits on top of the marker band.
+ */
+export function drawTitleHighlight(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  fontSize: number,
+  color: string
+) {
+  if (width <= 0) return;
+  const padX = fontSize * TITLE_HIGHLIGHT_PAD_X_EM;
+  const padY = fontSize * TITLE_HIGHLIGHT_PAD_Y_EM;
+
+  // `textBaseline = 'middle'` centers the em box, not the glyphs, so a band
+  // centered on `y` sits low. Measure a reference with ascenders + descenders
+  // (same for every word, so bands stay aligned across lines) and wrap the ink.
+  const ref = ctx.measureText('Hxpy');
+  const ascent = ref.actualBoundingBoxAscent;
+  const descent = ref.actualBoundingBoxDescent;
+  const hasInkMetrics = Number.isFinite(ascent) && Number.isFinite(descent);
+  const inkH = hasInkMetrics ? ascent + descent : fontSize;
+  const inkTop = hasInkMetrics ? y - ascent : y - fontSize / 2;
+
+  const bandW = width + padX * 2;
+  const bandH = inkH + padY * 2;
+  const bandX = x - padX;
+  const bandY = inkTop - padY;
+  const radius = Math.min(fontSize * TITLE_HIGHLIGHT_RADIUS_EM, bandH / 2);
+
+  ctx.save();
+  // Slight tilt so it reads as a hand swipe rather than a solid label.
+  ctx.translate(bandX + bandW / 2, bandY + bandH / 2);
+  ctx.rotate(TITLE_HIGHLIGHT_TILT_RAD);
+  ctx.translate(-(bandX + bandW / 2), -(bandY + bandH / 2));
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(bandX + radius, bandY);
+  ctx.arcTo(bandX + bandW, bandY, bandX + bandW, bandY + bandH, radius);
+  ctx.arcTo(bandX + bandW, bandY + bandH, bandX, bandY + bandH, radius);
+  ctx.arcTo(bandX, bandY + bandH, bandX, bandY, radius);
+  ctx.arcTo(bandX, bandY, bandX + bandW, bandY, radius);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+/**
  * Hand-drawn-style squiggle under a word on canvas (Breeze-ad look).
  * `y` is the top edge of the squiggle band — the path never rises above it,
  * so the wave can't creep up into the letters it sits under.

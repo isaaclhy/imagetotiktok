@@ -60,8 +60,8 @@ export const IMAGE_TEMPLATE2_PASTEL_COLORS = [
 /** Cover slide background — matches template-2-cover.jpg picker thumbnail. */
 export const IMAGE_TEMPLATE2_COVER_BACKGROUND = IMAGE_TEMPLATE2_PASTEL_COLORS[0];
 
-/** Default off while testing — skips highlight-word API and cover squiggle when false. */
-export const IMAGE_TEMPLATE2_COVER_SQUIGGLE_ENABLED_DEFAULT = false;
+/** When false, skips the highlight-word API and the cover marker highlight. */
+export const IMAGE_TEMPLATE2_COVER_SQUIGGLE_ENABLED_DEFAULT = true;
 
 export const IMAGE_TEMPLATE2_APP_FOOTER = 'Spill It - Couples Questions';
 
@@ -811,14 +811,13 @@ export const NIGHTY_PARTICLE_CONTENT_MAX_WIDTH_RATIO = 0.6;
 /** Caption size relative to frame width (smaller than default TikTok overlays). */
 export const NIGHTY_PARTICLE_CAPTION_SIZE_RATIO = 0.038;
 
-/** Inter-style geometric sans — matches Endel / clean sleep-content overlays. */
 export const NIGHTY_PARTICLE_CAPTION_FONT_WEIGHT = 500;
 
 export const NIGHTY_PARTICLE_FONT_STACK =
-  'var(--font-inter), Inter, system-ui, -apple-system, sans-serif';
+  '"TikTok Sans", system-ui, -apple-system, sans-serif';
 
-/** Canvas `font` family (CSS variables are not resolved in canvas). */
-export const NIGHTY_PARTICLE_CANVAS_FONT_STACK = 'Inter, system-ui, -apple-system, sans-serif';
+/** Canvas `font` family — same stack; the face is self-hosted, not a CSS var. */
+export const NIGHTY_PARTICLE_CANVAS_FONT_STACK = NIGHTY_PARTICLE_FONT_STACK;
 
 /**
  * Caption animation timeline (seconds).
