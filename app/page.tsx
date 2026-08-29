@@ -76,6 +76,10 @@ import {
 } from '@/app/lib/constants';
 import {
   drawImageTemplate3CoverOverlay,
+  imageTemplate3CoverTitleFontSizePx,
+  imageTemplate3CoverTypeLabelFontSizePx,
+  IMAGE_TEMPLATE3_COVER_TITLE_FONT_WEIGHT,
+  IMAGE_TEMPLATE3_COVER_TYPE_LABEL_FONT_WEIGHT,
 } from '@/app/lib/image-template-3-cover-overlay';
 import { ImageTemplate3CoverOverlay } from '@/app/components/ImageTemplate3CoverOverlay';
 import { ImageTemplate3ImessageBubble } from '@/app/components/ImageTemplate3ImessageBubble';
@@ -3683,6 +3687,23 @@ const imageFrameTitleLine1 = 'Questions to ask your';
 
       if (isTemplate3CoverExport) {
         const coverSource = imageTemplate3CoverDisplaySrc(sourceForTab(0));
+        // Canvas ignores CSS @font-face until the face is loaded in this document.
+        if (document.fonts?.load) {
+          try {
+            const titleSize = imageTemplate3CoverTitleFontSizePx(frameWidth);
+            const labelSize = imageTemplate3CoverTypeLabelFontSizePx(frameWidth);
+            await Promise.all([
+              document.fonts.load(
+                `${IMAGE_TEMPLATE3_COVER_TITLE_FONT_WEIGHT} ${titleSize}px "TikTok Sans"`
+              ),
+              document.fonts.load(
+                `${IMAGE_TEMPLATE3_COVER_TYPE_LABEL_FONT_WEIGHT} ${labelSize}px "TikTok Sans"`
+              ),
+            ]);
+          } catch {
+            /* fall back to system font */
+          }
+        }
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, frameWidth, frameHeight);
         const coverImg = await new Promise<HTMLImageElement>((resolve, reject) => {

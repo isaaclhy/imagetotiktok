@@ -4,7 +4,7 @@ import {
 } from '@/app/lib/constants';
 
 export const IMAGE_TEMPLATE3_COVER_FONT_STACK =
-  'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  '"TikTok Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
 /** Title block — upper third, TikTok reference layout. */
 export const IMAGE_TEMPLATE3_COVER_TITLE_TOP_RATIO = 0.12;

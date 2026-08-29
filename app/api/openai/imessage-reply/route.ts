@@ -53,29 +53,40 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/** Parse prompt JSON `{"replies":[...]}` or fall back to plain text. */
+/**
+ * Parse prompt JSON into bubble strings. The prompt has shipped several
+ * envelope keys over its versions (`replies`, `messages`, …), so accept any
+ * object whose first array-of-strings value holds the bubbles.
+ */
 export function parseImessageReplies(raw: string): string[] {
   const trimmed = raw.trim();
   if (!trimmed) return [];
 
+  const toStrings = (value: unknown): string[] | null => {
+    if (!Array.isArray(value)) return null;
+    const out = value
+      .filter((x): x is string => typeof x === 'string')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return out.length ? out : null;
+  };
+
   const tryParse = (text: string): string[] | null => {
+    let parsed: unknown;
     try {
-      const parsed = JSON.parse(text) as unknown;
-      if (Array.isArray(parsed)) {
-        return parsed
-          .filter((x): x is string => typeof x === 'string')
-          .map((s) => s.trim())
-          .filter(Boolean);
-      }
-      if (parsed && typeof parsed === 'object' && Array.isArray((parsed as { replies?: unknown }).replies)) {
-        return ((parsed as { replies: unknown[] }).replies)
-          .filter((x): x is string => typeof x === 'string')
-          .map((s) => s.trim())
-          .filter(Boolean);
-      }
+      parsed = JSON.parse(text);
     } catch {
-      /* not JSON */
+      return null;
     }
+    const direct = toStrings(parsed);
+    if (direct) return direct;
+    if (parsed && typeof parsed === 'object') {
+      for (const value of Object.values(parsed as Record<string, unknown>)) {
+        const nested = toStrings(value);
+        if (nested) return nested;
+      }
+    }
+    if (typeof parsed === 'string' && parsed.trim()) return [parsed.trim()];
     return null;
   };
 
@@ -90,7 +101,7 @@ export function parseImessageReplies(raw: string): string[] {
   }
 
   // Embedded object in surrounding text
-  const objMatch = trimmed.match(/\{[\s\S]*"replies"[\s\S]*\}/);
+  const objMatch = trimmed.match(/\{[\s\S]*\}/);
   if (objMatch?.[0]) {
     const fromObj = tryParse(objMatch[0]);
     if (fromObj?.length) return fromObj;
