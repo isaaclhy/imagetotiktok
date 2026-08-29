@@ -1581,7 +1581,7 @@ export default function Home() {
   const [imageTabFrameBg, setImageTabFrameBg] = useState('#FEFEFE');
   const [imageTabPastelBgs, setImageTabPastelBgs] = useState<string[]>([]);
   const [imageTabTypeLabel, setImageTabTypeLabel] = useState('Funny Questions');
-  const kawaiiCtaImageSrc = '/dog-images/kawaii-cta-tab.png';
+  const kawaiiCtaImageSrc = '/dog-images/kawaii-cta-tab-v2.png';
   const pastelCtaImageSrc = '/image-templates/template-2-cta.jpg';
   /** Kawaii image-tab frame: export is 1080×1440; keep preview text in the same ballpark via Tailwind below. */
   const imageFrameExportFontPx = 54;
@@ -5398,7 +5398,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                           <>
                             <button
                               type="button"
-                              onClick={handleRegenerateVideoTemplate2Video}
+                              onClick={() => void handleRegenerateVideoTemplate2Video()}
                               disabled={isVideoTemplate2VideoLoading || isVideoExporting}
                               className="inline-flex w-full sm:w-auto items-center justify-center gap-2 text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
