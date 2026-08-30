@@ -1440,6 +1440,15 @@ function resolveQuestionType(type: AutomateQuestionType): ConcreteQuestionType {
   return CONCRETE_QUESTION_TYPES[Math.floor(Math.random() * CONCRETE_QUESTION_TYPES.length)]!;
 }
 
+/** Random pick that never repeats `current`, so Retry always lands on a new type. */
+function pickDifferentRandomQuestionType(
+  current: ConcreteQuestionType
+): ConcreteQuestionType {
+  const others = CONCRETE_QUESTION_TYPES.filter((t) => t !== current);
+  const pool = others.length > 0 ? others : CONCRETE_QUESTION_TYPES;
+  return pool[Math.floor(Math.random() * pool.length)]!;
+}
+
 /** Keep Retry / description aligned with the type label currently shown on the slide. */
 function concreteTypeFromImageLabel(label: string): ConcreteQuestionType {
   const entry = (
@@ -1882,13 +1891,6 @@ export default function Home() {
         ? concreteTypeFromImageLabel(imageTabTypeLabel)
         : imageTemplate3QuestionType;
     return IMAGE_TEMPLATE3_TYPE_PILL_LABELS[type];
-  };
-
-  const regenerateImageTemplate2Type = () => {
-    const idx = VIDEO_TEMPLATE2_TYPE_CYCLE.indexOf(imageTemplate2QuestionType);
-    const next =
-      VIDEO_TEMPLATE2_TYPE_CYCLE[(idx + 1) % VIDEO_TEMPLATE2_TYPE_CYCLE.length] ?? 'random';
-    applyImageTemplate2QuestionType(next);
   };
 
   const regenerateImageTemplate2Colors = () => {
@@ -3432,7 +3434,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
 
     if (isPastel) {
       // Resolve Random once so label, title, and questions all share the same type.
-      const type = resolveQuestionType(imageTemplate2QuestionType);
+      // On Random, avoid repeating the current type so Retry visibly changes it.
+      const type =
+        imageTemplate2QuestionType === 'random'
+          ? pickDifferentRandomQuestionType(concreteTypeFromImageLabel(imageTabTypeLabel))
+          : imageTemplate2QuestionType;
       const title = pickTitleForType(type);
       const questions = pickQuestionsForType(type, 5);
       const pastelPool = shuffleCopy([...IMAGE_TEMPLATE2_PASTEL_COLORS]);
@@ -4796,19 +4802,6 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         ) : null}
                         {isPastelCarouselImageTemplate ? (
                           <>
-                            <button
-                              type="button"
-                              onClick={regenerateImageTemplate2Type}
-                              disabled={
-                            isImageTemplateDownloading ||
-                            isImageTemplateUploading ||
-                            isImageTemplate3CoverLoading ||
-                            (isCoverPhotoImageTemplate && !imageTemplate3CoverReady)
-                          }
-                              className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              Regenerate type
-                            </button>
                             <button
                               type="button"
                               onClick={regenerateImageTemplate2Colors}
