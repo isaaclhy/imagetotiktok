@@ -3611,7 +3611,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     isKawaiiTemplate: boolean;
     kawaiiNumSets?: number;
   }> => {
-    const KAWAII_DOWNLOAD_NUM_SETS = options?.kawaiiNumSets ?? 5;
+    const KAWAII_DOWNLOAD_NUM_SETS = options?.kawaiiNumSets ?? 1;
     const exportTemplateId = options?.templateId ?? selectedImageTemplateId;
     type ImageExportSlotData = { tabTexts: string[]; tabSources: string[] };
 
