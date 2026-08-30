@@ -10,6 +10,8 @@ import {
 type ImageTemplate3CoverOverlayProps = {
   title: string;
   typeLabel: string;
+  /** Template 4 centers the title vertically instead of sitting it in the upper third. */
+  centerTitle?: boolean;
 };
 
 const COVER_TITLE_STROKE_STYLE: React.CSSProperties = {
@@ -35,7 +37,11 @@ const COVER_LABEL_STROKE_STYLE: React.CSSProperties = {
 };
 
 /** Preview overlay — title top, question-type label mid-frame (text only, no pill bg). */
-export function ImageTemplate3CoverOverlay({ title, typeLabel }: ImageTemplate3CoverOverlayProps) {
+export function ImageTemplate3CoverOverlay({
+  title,
+  typeLabel,
+  centerTitle = false,
+}: ImageTemplate3CoverOverlayProps) {
   const label = typeLabel.trim().toLowerCase();
 
   return (
@@ -43,7 +49,11 @@ export function ImageTemplate3CoverOverlay({ title, typeLabel }: ImageTemplate3C
       {title.trim() ? (
         <div
           className="absolute inset-x-0 z-10 flex justify-center pointer-events-none px-[6%]"
-          style={{ top: `${IMAGE_TEMPLATE3_COVER_TITLE_TOP_RATIO * 100}%` }}
+          style={
+            centerTitle
+              ? { top: '50%', transform: 'translateY(-50%)' }
+              : { top: `${IMAGE_TEMPLATE3_COVER_TITLE_TOP_RATIO * 100}%` }
+          }
         >
           <p
             className="max-w-full text-center leading-[1.14] tracking-[-0.02em] wrap-break-word"

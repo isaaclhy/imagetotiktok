@@ -9,6 +9,10 @@ export const GEMINI_IMAGE_MODEL =
 export const GEMINI_PROMPT_TAB_IMAGE_MODEL =
   process.env.GEMINI_PROMPT_TAB_IMAGE_MODEL?.trim() || GEMINI_IMAGE_MODEL;
 
+/** Nano Banana Pro — higher quality, paid quota. Used by Image Template 4 covers. */
+export const GEMINI_IMAGE_PRO_MODEL =
+  process.env.GEMINI_IMAGE_PRO_MODEL?.trim() || 'gemini-3-pro-image-preview';
+
 export const GEMINI_IMAGE_ASPECT_RATIO =
   process.env.GEMINI_IMAGE_ASPECT_RATIO?.trim() || '3:4';
 

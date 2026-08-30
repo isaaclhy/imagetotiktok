@@ -91,6 +91,10 @@ import {
   IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT,
 } from '@/app/lib/image-template-2-cover';
 import { imageTemplate3CoverDisplaySrc } from '@/app/lib/image-template-3-cover';
+import {
+  imageTemplate4CoverDisplaySrc,
+  imageTemplate4FixedTabImageSrc,
+} from '@/app/lib/image-template-4-cover';
 import { drawImageTemplate3ImessageSlide } from '@/app/lib/image-template-3-imessage';
 import {
   DEFAULT_STUDIO_APP_ID,
@@ -1677,6 +1681,13 @@ export default function Home() {
     selectedAppId === 'spill-it' && selectedImageTemplateId === 2;
   const isTikTokReactionImageTemplate =
     selectedAppId === 'spill-it' && selectedImageTemplateId === 3;
+  const isMirrorSelfieImageTemplate =
+    selectedAppId === 'spill-it' && selectedImageTemplateId === 4;
+  /** Templates 3 and 4 share the cover-image + iMessage-reply structure. */
+  const isCoverPhotoImageTemplate = isTikTokReactionImageTemplate || isMirrorSelfieImageTemplate;
+  // Template 4 drops Q5, so the CTA sits one tab earlier.
+  const imageTemplateQuestionCount = isMirrorSelfieImageTemplate ? 4 : 5;
+  const imageTemplateCtaTabIndex = imageTemplateQuestionCount + 1;
   const isCouplesNatureVideoTemplate = selectedAppId === 'spill-it' && selectedVideoTemplateId === 2;
   const isSpillItNotesVideoTemplate = selectedAppId === 'spill-it' && selectedVideoTemplateId === 3;
   const isFabAffirmationVideoTemplate = selectedAppId === 'fab' && selectedVideoTemplateId === 1;
@@ -1739,15 +1750,16 @@ export default function Home() {
     if (
       (isKawaiiImageTemplate ||
         isPastelCarouselImageTemplate ||
-        isTikTokReactionImageTemplate) &&
-      selectedImageBrowserTab > 6
+        isCoverPhotoImageTemplate) &&
+      selectedImageBrowserTab > imageTemplateCtaTabIndex
     ) {
       setSelectedImageBrowserTab(0);
     }
   }, [
     isKawaiiImageTemplate,
     isPastelCarouselImageTemplate,
-    isTikTokReactionImageTemplate,
+    isCoverPhotoImageTemplate,
+    imageTemplateCtaTabIndex,
     selectedImageBrowserTab,
   ]);
 
@@ -1851,7 +1863,9 @@ export default function Home() {
           return fetchImageTemplate3ImessageReply(trimmed);
         })
       );
-      setImageTemplate3Replies(Array.from({ length: 5 }, (_, i) => replies[i] ?? []));
+      setImageTemplate3Replies(
+        Array.from({ length: questions.length }, (_, i) => replies[i] ?? [])
+      );
       setImageTemplate3ReadOnlyIndex(skipIndex);
     } catch (e) {
       setImageTemplate3ReplyError(
@@ -1887,7 +1901,10 @@ export default function Home() {
   };
 
   const fetchImageTemplate3Cover = async (): Promise<string> => {
-    const res = await fetch('/api/gemini/template-3-cover', { method: 'POST' });
+    const endpoint = isMirrorSelfieImageTemplate
+      ? '/api/gemini/template-4-cover'
+      : '/api/gemini/template-3-cover';
+    const res = await fetch(endpoint, { method: 'POST' });
     const data = (await res.json()) as { imageUrl?: string; error?: string };
     if (!res.ok || !data.imageUrl) {
       throw new Error(data.error || 'Failed to generate cover image');
@@ -1899,7 +1916,10 @@ export default function Home() {
     setIsImageTemplate3CoverLoading(true);
     setImageTemplate3CoverError(null);
     setImageTemplate3ReplyError(null);
-    const questions = imageTabTexts.slice(1, 6).map((q) => (q ?? '').trim());
+    const questions = imageTabTexts
+      .slice(1, imageTemplateQuestionCount + 1)
+      .map((q) => (q ?? '').trim());
+    const tabCount = imageTemplateCtaTabIndex + 1;
     try {
       const [coverUrl] = await Promise.all([
         fetchImageTemplate3Cover(),
@@ -1907,9 +1927,12 @@ export default function Home() {
       ]);
       setImageTabSources((prev) => {
         const next =
-          prev.length >= 7
+          prev.length >= tabCount
             ? [...prev]
-            : ['', '', '', '', '', '', pastelCtaImageSrc];
+            : [
+                ...Array.from({ length: tabCount - 1 }, () => ''),
+                pastelCtaImageSrc,
+              ];
         next[0] = coverUrl;
         return next;
       });
@@ -1922,7 +1945,7 @@ export default function Home() {
 
   const handleGenerateImageTemplate2Description = async () => {
     const questions = imageTabTexts
-      .slice(1, 6)
+      .slice(1, imageTemplateQuestionCount + 1)
       .map((q) => q.trim())
       .filter(Boolean);
     if (questions.length === 0) {
@@ -1932,7 +1955,7 @@ export default function Home() {
     setImageTemplate2Error(null);
     setIsGeneratingImageTemplate2Description(true);
     try {
-      const questionType = isTikTokReactionImageTemplate
+      const questionType = isCoverPhotoImageTemplate
         ? imageTemplate3QuestionType
         : imageTemplate2QuestionType;
       const type =
@@ -3402,7 +3425,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     const tid = templateId ?? selectedImageTemplateId;
     const isKawaii = selectedAppId === 'spill-it' && tid === 1;
     const isPastel = selectedAppId === 'spill-it' && tid === 2;
-    const isTikTokReaction = selectedAppId === 'spill-it' && tid === 3;
+    const isTikTokReaction = selectedAppId === 'spill-it' && (tid === 3 || tid === 4);
     if (options?.resetTab !== false) {
       setSelectedImageBrowserTab(0);
     }
@@ -3438,13 +3461,18 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       setImageTemplate3ReplyError(null);
       const type = resolveQuestionType(imageTemplate3QuestionType);
       const title = pickTitleForType(type);
-      const questions = pickQuestionsForType(type, 5);
+      // Template 4 has no Q5.
+      const questionCount = tid === 4 ? 4 : 5;
+      const questions = pickQuestionsForType(type, questionCount);
       setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[type]);
       setImageTabFunnyQuestions(questions);
       setImageTabTexts([title, ...questions, imageFrameCtaText]);
-      // Cover + replies empty until Start; Q1–Q5 are iMessage (no dog art); CTA matches Template 2.
-      setImageTabSources(['', '', '', '', '', '', pastelCtaImageSrc]);
-      setImageTemplate3Replies([[], [], [], [], []]);
+      // Cover + replies empty until Start; questions are iMessage (no dog art); CTA matches Template 2.
+      setImageTabSources([
+        ...Array.from({ length: questionCount + 1 }, () => ''),
+        pastelCtaImageSrc,
+      ]);
+      setImageTemplate3Replies(Array.from({ length: questionCount }, () => []));
       setImageTemplate3ReadOnlyIndex(null);
     } else {
       setImageTabTexts([`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked, imageFrameCtaText]);
@@ -3463,8 +3491,12 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     imageTabSources[tabIndex] ??
     (dogImagePool.length ? dogImagePool[tabIndex % dogImagePool.length]! : '');
   const imageTemplate3CoverSrc = (imageTabSources[0] ?? '').trim();
-  const imageTemplate3CoverReady = imageTemplate3CoverSrc.length > 0;
-  const imageTemplate3CoverPreviewSrc = imageTemplate3CoverDisplaySrc(imageTemplate3CoverSrc);
+  // Template 4 ships a default cover, so it is exportable before generating.
+  const imageTemplate3CoverReady =
+    imageTemplate3CoverSrc.length > 0 || isMirrorSelfieImageTemplate;
+  const imageTemplate3CoverPreviewSrc = isMirrorSelfieImageTemplate
+    ? imageTemplate4CoverDisplaySrc(imageTemplate3CoverSrc)
+    : imageTemplate3CoverDisplaySrc(imageTemplate3CoverSrc);
 
   // URL restores the selected template on refresh, but tab texts live only in memory.
   // Fill them once when empty so question slides don't show blank/`...` placeholders.
@@ -3526,16 +3558,26 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     imageTemplate2CoverSquiggleEnabled
       ? splitTitleAroundHighlight(imageFrameTextForActiveTab, imageTemplate2HighlightWord)
       : null;
-  const isCtaTabSelected = selectedImageBrowserTab === 6;
-  const isFullBleedImageTabSelected = isCtaTabSelected;
-  const imageSourceForActiveTab = isCtaTabSelected
-    ? isPastelCarouselImageTemplate || isTikTokReactionImageTemplate
-      ? pastelCtaImageSrc
-      : kawaiiCtaImageSrc
-    : getImageSourceForTab(selectedImageBrowserTab);
+  const isCtaTabSelected = selectedImageBrowserTab === imageTemplateCtaTabIndex;
+  /** Template 4 replaces some question slides with fixed full-bleed photos. */
+  const template4FixedTabImageSrc = isMirrorSelfieImageTemplate
+    ? imageTemplate4FixedTabImageSrc(selectedImageBrowserTab)
+    : null;
+  const isFullBleedImageTabSelected = isCtaTabSelected || template4FixedTabImageSrc !== null;
+  const imageSourceForActiveTab =
+    template4FixedTabImageSrc ??
+    (isCtaTabSelected
+      ? isPastelCarouselImageTemplate || isCoverPhotoImageTemplate
+        ? pastelCtaImageSrc
+        : kawaiiCtaImageSrc
+      : getImageSourceForTab(selectedImageBrowserTab));
   const imageTabLabelForActiveTab =
-    selectedImageBrowserTab === 0 ? 'Cover' : selectedImageBrowserTab <= 5 ? `Q${selectedImageBrowserTab}` : 'CTA';
-  const imageTemplateTabCount = 7;
+    selectedImageBrowserTab === 0
+      ? 'Cover'
+      : selectedImageBrowserTab <= imageTemplateQuestionCount
+        ? `Q${selectedImageBrowserTab}`
+        : 'CTA';
+  const imageTemplateTabCount = imageTemplateQuestionCount + 2;
   const pastelProgressRatio = (selectedImageBrowserTab + 1) / imageTemplateTabCount;
   const activeImageFrameBg = isPastelCarouselImageTemplate
     ? (imageTabPastelBgs[selectedImageBrowserTab] ??
@@ -3584,8 +3626,13 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         (dogImagePool.length ? dogImagePool[i % dogImagePool.length]! : '');
 
       const isPastelExport = exportTemplateId === 2;
-      const isTemplate3CoverExport = exportTemplateId === 3 && tabIndex === 0;
-      const isFullBleedTab = tabIndex === 6;
+      const isCoverPhotoExport = exportTemplateId === 3 || exportTemplateId === 4;
+      const isTemplate3CoverExport = isCoverPhotoExport && tabIndex === 0;
+      const template4FixedExportSrc =
+        exportTemplateId === 4 ? imageTemplate4FixedTabImageSrc(tabIndex) : null;
+      const exportCtaTabIndex = exportTemplateId === 4 ? 5 : 6;
+      const isFullBleedTab =
+        tabIndex === exportCtaTabIndex || template4FixedExportSrc !== null;
       const frameWidth = 1080;
       const frameHeight = 1440;
 
@@ -3705,7 +3752,10 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       }
 
       if (isTemplate3CoverExport) {
-        const coverSource = imageTemplate3CoverDisplaySrc(sourceForTab(0));
+        const coverSource =
+          exportTemplateId === 4
+            ? imageTemplate4CoverDisplaySrc(sourceForTab(0))
+            : imageTemplate3CoverDisplaySrc(sourceForTab(0));
         // Canvas ignores CSS @font-face until the face is loaded in this document.
         if (document.fonts?.load) {
           try {
@@ -3749,7 +3799,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           frameWidth,
           frameHeight,
           textForTab(0),
-          imageTemplate3TypePillLabel()
+          exportTemplateId === 4 ? '' : imageTemplate3TypePillLabel(),
+          { centerTitle: exportTemplateId === 4 }
         );
         return await new Promise<Blob>((resolve, reject) => {
           canvas.toBlob((blob) => {
@@ -3760,7 +3811,10 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       }
 
       const isTemplate3QuestionExport =
-        exportTemplateId === 3 && tabIndex >= 1 && tabIndex <= 5;
+        isCoverPhotoExport &&
+        tabIndex >= 1 &&
+        tabIndex < exportCtaTabIndex &&
+        template4FixedExportSrc === null;
       if (isTemplate3QuestionExport) {
         drawImageTemplate3ImessageSlide(
           ctx,
@@ -3778,11 +3832,13 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         });
       }
 
-      const source = isFullBleedTab
-        ? isPastelExport || exportTemplateId === 3
-          ? pastelCtaImageSrc
-          : kawaiiCtaImageSrc
-        : sourceForTab(tabIndex);
+      const source = template4FixedExportSrc
+        ? template4FixedExportSrc
+        : isFullBleedTab
+          ? isPastelExport || isCoverPhotoExport
+            ? pastelCtaImageSrc
+            : kawaiiCtaImageSrc
+          : sourceForTab(tabIndex);
       if (!source.trim()) {
         throw new Error('Missing image URL (dog images may still be loading).');
       }
@@ -3908,11 +3964,13 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       return { entries, isKawaiiTemplate, kawaiiNumSets: KAWAII_DOWNLOAD_NUM_SETS };
     }
 
-    const exportTabCount = 7;
+    const exportQuestionCount = exportTemplateId === 4 ? 4 : 5;
+    const exportTabCount = exportQuestionCount + 2;
 
     for (let tabIndex = 0; tabIndex < exportTabCount; tabIndex++) {
       const blob = await renderFrameBlob(tabIndex, null);
-      const tabName = tabIndex === 0 ? 'cover' : tabIndex <= 5 ? `q${tabIndex}` : 'cta';
+      const tabName =
+        tabIndex === 0 ? 'cover' : tabIndex <= exportQuestionCount ? `q${tabIndex}` : 'cta';
       entries.push({ path: `template-${exportTemplateId}-${tabName}.png`, blob });
     }
     return { entries, isKawaiiTemplate };
@@ -4702,7 +4760,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             Retry
                           </button>
                         ) : null}
-                        {isTikTokReactionImageTemplate && !imageTemplate3CoverReady ? (
+                        {isCoverPhotoImageTemplate && !imageTemplate3CoverReady ? (
                           <button
                             type="button"
                             onClick={() => void regenerateImageTemplate3Cover()}
@@ -4719,7 +4777,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               : 'Start'}
                           </button>
                         ) : null}
-                        {isTikTokReactionImageTemplate && imageTemplate3CoverReady ? (
+                        {isCoverPhotoImageTemplate && imageTemplate3CoverReady ? (
                           <button
                             type="button"
                             onClick={() => void regenerateImageTemplate3Cover()}
@@ -4745,7 +4803,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             isImageTemplateDownloading ||
                             isImageTemplateUploading ||
                             isImageTemplate3CoverLoading ||
-                            (isTikTokReactionImageTemplate && !imageTemplate3CoverReady)
+                            (isCoverPhotoImageTemplate && !imageTemplate3CoverReady)
                           }
                               className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
@@ -4758,7 +4816,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             isImageTemplateDownloading ||
                             isImageTemplateUploading ||
                             isImageTemplate3CoverLoading ||
-                            (isTikTokReactionImageTemplate && !imageTemplate3CoverReady)
+                            (isCoverPhotoImageTemplate && !imageTemplate3CoverReady)
                           }
                               className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
@@ -4814,7 +4872,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             isImageTemplateDownloading ||
                             isImageTemplateUploading ||
                             isImageTemplate3CoverLoading ||
-                            (isTikTokReactionImageTemplate && !imageTemplate3CoverReady)
+                            (isCoverPhotoImageTemplate && !imageTemplate3CoverReady)
                           }
                           title={
                             instagramAccount
@@ -4865,7 +4923,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             isImageTemplateDownloading ||
                             isImageTemplateUploading ||
                             isImageTemplate3CoverLoading ||
-                            (isTikTokReactionImageTemplate && !imageTemplate3CoverReady)
+                            (isCoverPhotoImageTemplate && !imageTemplate3CoverReady)
                           }
                             className="inline-flex w-full sm:w-auto items-center justify-center gap-2 text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
@@ -4923,7 +4981,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                           className="@container relative w-full max-w-sm mx-auto md:mx-0 aspect-3/4 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden min-w-0"
                           style={{
                             backgroundColor:
-                              isTikTokReactionImageTemplate &&
+                              isCoverPhotoImageTemplate &&
                               (selectedImageBrowserTab === 0 ||
                                 (selectedImageBrowserTab >= 1 && selectedImageBrowserTab <= 5))
                                 ? '#000000'
@@ -4934,7 +4992,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             imageSourceForActiveTab ? (
                               <img
                                 src={imageSourceForActiveTab}
-                                alt="CTA preview"
+                                alt={`${imageTabLabelForActiveTab} preview`}
                                 className="w-full h-full object-cover"
                               />
                             ) : null
@@ -5005,7 +5063,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               </p>
                             </>
                             )
-                          ) : isTikTokReactionImageTemplate && selectedImageBrowserTab === 0 ? (
+                          ) : isCoverPhotoImageTemplate && selectedImageBrowserTab === 0 ? (
                             <>
                               <img
                                 src={imageTemplate3CoverPreviewSrc}
@@ -5014,10 +5072,13 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               />
                               <ImageTemplate3CoverOverlay
                                 title={imageFrameTextForActiveTab}
-                                typeLabel={imageTemplate3TypePillLabel()}
+                                typeLabel={
+                                  isMirrorSelfieImageTemplate ? '' : imageTemplate3TypePillLabel()
+                                }
+                                centerTitle={isMirrorSelfieImageTemplate}
                               />
                             </>
-                          ) : isTikTokReactionImageTemplate &&
+                          ) : isCoverPhotoImageTemplate &&
                             selectedImageBrowserTab >= 1 &&
                             selectedImageBrowserTab <= 5 ? (
                             <ImageTemplate3ImessageBubble
@@ -5057,17 +5118,20 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         </div>
                         {!isFullBleedImageTabSelected ||
                         isPastelCarouselImageTemplate ||
-                        isTikTokReactionImageTemplate ? (
+                        isCoverPhotoImageTemplate ? (
                           <div className="w-full md:w-80 md:self-start space-y-4">
                             {!isFullBleedImageTabSelected ? (
                             <div>
-                              {isTikTokReactionImageTemplate ? (
+                              {isCoverPhotoImageTemplate ? (
                                 <>
                                   <div className="mb-3">
-                                    <label className="mb-2 block text-xs font-medium text-zinc-600 dark:text-zinc-300">
-                                      Question type
-                                    </label>
+                                    {isMirrorSelfieImageTemplate ? null : (
+                                      <label className="mb-2 block text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                                        Question type
+                                      </label>
+                                    )}
                                     <div className="flex items-center gap-2">
+                                      {isMirrorSelfieImageTemplate ? null : (
                                       <select
                                         value={imageTemplate3QuestionType}
                                         onChange={(e) =>
@@ -5088,6 +5152,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                         <option value="me_or_you">Me or you</option>
                                         <option value="brave">Brave</option>
                                       </select>
+                                      )}
                                       <button
                                         type="button"
                                         onClick={() =>
@@ -5105,8 +5170,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                       </button>
                                     </div>
                                     <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                                      Sets the cover title and all Q1–Q5 questions. Click Start to
-                                      generate the cover image and boyfriend replies.
+                                      {isMirrorSelfieImageTemplate
+                                        ? 'Picks a new cover title and all Q1–Q5 questions.'
+                                        : 'Sets the cover title and all Q1–Q5 questions. Click Start to generate the cover image and boyfriend replies.'}
                                     </p>
                                   </div>
                                   {selectedImageBrowserTab === 0 && !imageTemplate3CoverReady ? (
@@ -5249,7 +5315,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               )}
                             </div>
                             ) : null}
-                            {isPastelCarouselImageTemplate || isTikTokReactionImageTemplate ? (
+                            {isPastelCarouselImageTemplate || isCoverPhotoImageTemplate ? (
                               <div>
                                 <div className="mb-2 flex items-center justify-between gap-2">
                                   <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-300">

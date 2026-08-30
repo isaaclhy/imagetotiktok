@@ -75,13 +75,19 @@ function drawStrokedCenteredText(
   ctx.shadowOffsetY = 0;
 }
 
+export type ImageTemplate3CoverOverlayOptions = {
+  /** Template 4 centers the title vertically instead of sitting it in the upper third. */
+  centerTitle?: boolean;
+};
+
 /** TikTok-style title + question-type label (no pill background). */
 export function drawImageTemplate3CoverOverlay(
   ctx: CanvasRenderingContext2D,
   frameWidth: number,
   frameHeight: number,
   title: string,
-  typeLabel: string
+  typeLabel: string,
+  options?: ImageTemplate3CoverOverlayOptions
 ) {
   const trimmedTitle = title.trim();
   if (trimmedTitle) {
@@ -92,7 +98,9 @@ export function drawImageTemplate3CoverOverlay(
     ctx.textBaseline = 'middle';
     const lines = wrapLines(ctx, trimmedTitle, maxWidth);
     const lineHeight = fontSize * 1.14;
-    let y = frameHeight * IMAGE_TEMPLATE3_COVER_TITLE_TOP_RATIO + lineHeight / 2;
+    let y = options?.centerTitle
+      ? (frameHeight - lines.length * lineHeight) / 2 + lineHeight / 2
+      : frameHeight * IMAGE_TEMPLATE3_COVER_TITLE_TOP_RATIO + lineHeight / 2;
     for (const line of lines) {
       drawStrokedCenteredText(
         ctx,
