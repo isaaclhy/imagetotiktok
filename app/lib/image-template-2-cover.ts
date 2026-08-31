@@ -14,6 +14,42 @@ export const IMAGE_TEMPLATE2_COVER_LINE_HEIGHT_MULT = 1.15;
 /** 20% horizontal padding each side. */
 export const IMAGE_TEMPLATE2_COVER_MAX_TEXT_WIDTH_RATIO = 0.6;
 
+/**
+ * Q5 closes the carousel with an App Store mock instead of the app-name footer.
+ * Only the top half is on screen — enough to read the app name — and it is pushed
+ * further down if the question text would otherwise run into it.
+ */
+export const IMAGE_TEMPLATE2_Q5_TAB_INDEX = 5;
+export const IMAGE_TEMPLATE2_Q5_PROMO_SRC = '/image-templates/template-2-q5-appstore.png';
+export const IMAGE_TEMPLATE2_Q5_PROMO_ASPECT = 611 / 1024;
+/** Share of the frame height the on-screen part occupies; the rest runs off the bottom. */
+export const IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO = 0.34;
+export const IMAGE_TEMPLATE2_Q5_PROMO_WIDTH_RATIO = 0.9;
+/** Breathing room between the question text and the top of the mock. */
+export const IMAGE_TEMPLATE2_Q5_PROMO_TEXT_GAP_RATIO = 0.04;
+/** Q5 lifts its question so the promo block below never crowds it. */
+export const IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO = 0.44;
+/** Social proof line sitting just above the mock. */
+export const IMAGE_TEMPLATE2_Q5_PROMO_LABEL = '6,000,000+ cards swiped globally';
+export const IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO = 0.03;
+export const IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO = 0.022;
+
+/** Geometry for the Q5 promo, shared by the canvas export and the DOM preview. */
+export function imageTemplate2Q5PromoLayout(
+  frameWidth: number,
+  frameHeight: number,
+  textBottom = 0
+): { x: number; y: number; width: number; height: number } {
+  const width = frameWidth * IMAGE_TEMPLATE2_Q5_PROMO_WIDTH_RATIO;
+  const height = width / IMAGE_TEMPLATE2_Q5_PROMO_ASPECT;
+  const minTop = textBottom + frameHeight * IMAGE_TEMPLATE2_Q5_PROMO_TEXT_GAP_RATIO;
+  const y = Math.max(
+    frameHeight * (1 - IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO),
+    minTop
+  );
+  return { x: (frameWidth - width) / 2, y, width, height };
+}
+
 function wrapLines(
   ctx: CanvasRenderingContext2D,
   text: string,

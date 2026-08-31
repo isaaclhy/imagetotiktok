@@ -76,8 +76,11 @@ import {
 } from '@/app/lib/constants';
 import {
   drawImageTemplate3CoverOverlay,
+  imageTemplate3CoverSubtitleFontSizePx,
   imageTemplate3CoverTitleFontSizePx,
   imageTemplate3CoverTypeLabelFontSizePx,
+  pickRandomImageTemplate3CoverSubtitle,
+  IMAGE_TEMPLATE3_COVER_SUBTITLE_FONT_WEIGHT,
   IMAGE_TEMPLATE3_COVER_TITLE_FONT_WEIGHT,
   IMAGE_TEMPLATE3_COVER_TYPE_LABEL_FONT_WEIGHT,
 } from '@/app/lib/image-template-3-cover-overlay';
@@ -89,8 +92,21 @@ import {
   IMAGE_TEMPLATE2_COVER_LINE_HEIGHT_MULT,
   IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO,
   IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT,
+  IMAGE_TEMPLATE2_Q5_PROMO_LABEL,
+  IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO,
+  IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO,
+  IMAGE_TEMPLATE2_Q5_PROMO_SRC,
+  IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO,
+  IMAGE_TEMPLATE2_Q5_PROMO_WIDTH_RATIO,
+  IMAGE_TEMPLATE2_Q5_TAB_INDEX,
+  IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO,
+  imageTemplate2Q5PromoLayout,
 } from '@/app/lib/image-template-2-cover';
 import { imageTemplate3CoverDisplaySrc } from '@/app/lib/image-template-3-cover';
+import {
+  IMAGE_TEMPLATE3_COVER_MODEL_DEFAULT,
+  type ImageTemplate3CoverModel,
+} from '@/app/lib/image-template-3-openai-cover';
 import {
   imageTemplate4CoverDisplaySrc,
   imageTemplate4FixedTabImageSrc,
@@ -286,6 +302,9 @@ function shuffleCopy<T>(items: T[]): T[] {
 }
 
 const TIKTOK_SANS_STACK = '"TikTok Sans", system-ui, -apple-system, sans-serif';
+/** Kawaii downloads ship several shuffled sets per zip; Drive uploads stay at one. */
+const KAWAII_DOWNLOAD_SETS = 5;
+
 const TEMPLATE2_COVER_FONT_WEIGHT = 700;
 
 /** Scales with frame width; shared by preview export and canvas burn-in. */
@@ -1624,6 +1643,11 @@ export default function Home() {
   );
   const [isImageTemplate3CoverLoading, setIsImageTemplate3CoverLoading] = useState(false);
   const [imageTemplate3CoverError, setImageTemplate3CoverError] = useState<string | null>(null);
+  const [imageTemplate3CoverSubtitle, setImageTemplate3CoverSubtitle] = useState(() =>
+    pickRandomImageTemplate3CoverSubtitle()
+  );
+  const [imageTemplate3CoverModel, setImageTemplate3CoverModel] =
+    useState<ImageTemplate3CoverModel>(IMAGE_TEMPLATE3_COVER_MODEL_DEFAULT);
   const [imageTemplate3Replies, setImageTemplate3Replies] = useState<string[][]>([
     [],
     [],
@@ -1696,7 +1720,13 @@ export default function Home() {
   const isCoverPhotoImageTemplate = isTikTokReactionImageTemplate || isMirrorSelfieImageTemplate;
   // Template 4 drops Q5, so the CTA sits one tab earlier.
   const imageTemplateQuestionCount = isMirrorSelfieImageTemplate ? 4 : 5;
-  const imageTemplateCtaTabIndex = imageTemplateQuestionCount + 1;
+  // Template 2 ends on Q5 — its App Store slide replaced the CTA card.
+  const hasImageTemplateCtaTab = !isPastelCarouselImageTemplate;
+  const imageTemplateCtaTabIndex = hasImageTemplateCtaTab
+    ? imageTemplateQuestionCount + 1
+    : -1;
+  const imageTemplateTabCount =
+    imageTemplateQuestionCount + (hasImageTemplateCtaTab ? 2 : 1);
   const isCouplesNatureVideoTemplate = selectedAppId === 'spill-it' && selectedVideoTemplateId === 2;
   const isSpillItNotesVideoTemplate = selectedAppId === 'spill-it' && selectedVideoTemplateId === 3;
   const isFabAffirmationVideoTemplate = selectedAppId === 'fab' && selectedVideoTemplateId === 1;
@@ -1760,7 +1790,7 @@ export default function Home() {
       (isKawaiiImageTemplate ||
         isPastelCarouselImageTemplate ||
         isCoverPhotoImageTemplate) &&
-      selectedImageBrowserTab > imageTemplateCtaTabIndex
+      selectedImageBrowserTab >= imageTemplateTabCount
     ) {
       setSelectedImageBrowserTab(0);
     }
@@ -1768,7 +1798,7 @@ export default function Home() {
     isKawaiiImageTemplate,
     isPastelCarouselImageTemplate,
     isCoverPhotoImageTemplate,
-    imageTemplateCtaTabIndex,
+    imageTemplateTabCount,
     selectedImageBrowserTab,
   ]);
 
@@ -1905,7 +1935,9 @@ export default function Home() {
   const fetchImageTemplate3Cover = async (): Promise<string> => {
     const endpoint = isMirrorSelfieImageTemplate
       ? '/api/gemini/template-4-cover'
-      : '/api/gemini/template-3-cover';
+      : imageTemplate3CoverModel === 'openai'
+        ? '/api/openai/template-3-cover'
+        : '/api/gemini/template-3-cover';
     const res = await fetch(endpoint, { method: 'POST' });
     const data = (await res.json()) as { imageUrl?: string; error?: string };
     if (!res.ok || !data.imageUrl) {
@@ -1921,7 +1953,7 @@ export default function Home() {
     const questions = imageTabTexts
       .slice(1, imageTemplateQuestionCount + 1)
       .map((q) => (q ?? '').trim());
-    const tabCount = imageTemplateCtaTabIndex + 1;
+    const tabCount = imageTemplateTabCount;
     try {
       const [coverUrl] = await Promise.all([
         fetchImageTemplate3Cover(),
@@ -3448,8 +3480,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       setImageTabFrameBg(pastels[0]!);
       setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[type]);
       setImageTabFunnyQuestions(questions);
-      setImageTabTexts([title, ...questions, imageFrameCtaText]);
-      setImageTabSources(['', '', '', '', '', '', pastelCtaImageSrc]);
+      setImageTabTexts([title, ...questions]);
+      setImageTabSources(['', '', '', '', '', '']);
       return;
     }
 
@@ -3470,6 +3502,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       // Template 4 has no Q5.
       const questionCount = tid === 4 ? 4 : 5;
       const questions = pickQuestionsForType(type, questionCount);
+      setImageTemplate3CoverSubtitle(pickRandomImageTemplate3CoverSubtitle());
       setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[type]);
       setImageTabFunnyQuestions(questions);
       setImageTabTexts([title, ...questions, imageFrameCtaText]);
@@ -3583,7 +3616,6 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       : selectedImageBrowserTab <= imageTemplateQuestionCount
         ? `Q${selectedImageBrowserTab}`
         : 'CTA';
-  const imageTemplateTabCount = imageTemplateQuestionCount + 2;
   const pastelProgressRatio = (selectedImageBrowserTab + 1) / imageTemplateTabCount;
   const activeImageFrameBg = isPastelCarouselImageTemplate
     ? (imageTabPastelBgs[selectedImageBrowserTab] ??
@@ -3617,7 +3649,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     isKawaiiTemplate: boolean;
     kawaiiNumSets?: number;
   }> => {
-    const KAWAII_DOWNLOAD_NUM_SETS = options?.kawaiiNumSets ?? 1;
+    const KAWAII_DOWNLOAD_NUM_SETS = options?.kawaiiNumSets ?? KAWAII_DOWNLOAD_SETS;
     const exportTemplateId = options?.templateId ?? selectedImageTemplateId;
     type ImageExportSlotData = { tabTexts: string[]; tabSources: string[] };
 
@@ -3636,7 +3668,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       const isTemplate3CoverExport = isCoverPhotoExport && tabIndex === 0;
       const template4FixedExportSrc =
         exportTemplateId === 4 ? imageTemplate4FixedTabImageSrc(tabIndex) : null;
-      const exportCtaTabIndex = exportTemplateId === 4 ? 5 : 6;
+      // Template 2 has no CTA slide; its last tab is Q5.
+      const exportCtaTabIndex =
+        exportTemplateId === 2 ? -1 : exportTemplateId === 4 ? 5 : 6;
+      /** Cover + questions (+ CTA where the template has one) — drives the progress bar. */
+      const exportSlideTotal = exportTemplateId === 2 ? 6 : 7;
       const isFullBleedTab =
         tabIndex === exportCtaTabIndex || template4FixedExportSrc !== null;
       const frameWidth = 1080;
@@ -3690,7 +3726,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
               : null,
             fontFamily: pastelCarouselExportFontFamily,
             textColor: pastelCarouselTextColor,
-            progress: 1 / 7,
+            progress: 1 / exportSlideTotal,
             footer: '',
             showProgress: false,
           });
@@ -3705,7 +3741,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         ctx.fillStyle = slideBg;
         ctx.fillRect(0, 0, frameWidth, frameHeight);
 
-        const progress = (tabIndex + 1) / 7;
+        const progress = (tabIndex + 1) / exportSlideTotal;
         const barX = frameWidth * 0.08;
         const barW = frameWidth * 0.84;
         const barY = frameHeight * 0.21;
@@ -3738,16 +3774,51 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         const lines = wrapLines(ctx, centerText.replace(/\n/g, ' '), maxTextWidth);
         const lineHeight = fontSize * 1.22;
         const blockH = lines.length * lineHeight;
-        let y = frameHeight / 2 - blockH / 2 + lineHeight / 2;
+        const textCenterY =
+          frameHeight *
+          (tabIndex === IMAGE_TEMPLATE2_Q5_TAB_INDEX
+            ? IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO
+            : 0.5);
+        let y = textCenterY - blockH / 2 + lineHeight / 2;
         for (const line of lines) {
           ctx.fillText(line, frameWidth / 2, y);
           y += lineHeight;
         }
 
-        ctx.font = `700 ${Math.round(frameHeight * 0.03)}px ${pastelCarouselExportFontFamily}`;
-        ctx.fillStyle = 'rgba(255,255,255,0.95)';
-        ctx.textBaseline = 'bottom';
-        ctx.fillText(IMAGE_TEMPLATE2_APP_FOOTER, frameWidth / 2, frameHeight * 0.9);
+        if (tabIndex === IMAGE_TEMPLATE2_Q5_TAB_INDEX) {
+          // App Store mock replaces the footer, half of it hanging off the frame.
+          const promo = await new Promise<HTMLImageElement>((resolve, reject) => {
+            const el = new Image();
+            el.onload = () => resolve(el);
+            el.onerror = () => reject(new Error('Failed to load the App Store image'));
+            el.src = IMAGE_TEMPLATE2_Q5_PROMO_SRC;
+          });
+          const labelSize = Math.round(
+            frameHeight * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO
+          );
+          const labelGap = frameHeight * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO;
+          const layout = imageTemplate2Q5PromoLayout(
+            frameWidth,
+            frameHeight,
+            y - lineHeight / 2 + labelSize + labelGap
+          );
+          ctx.drawImage(promo, layout.x, layout.y, layout.width, layout.height);
+
+          ctx.font = `700 ${labelSize}px ${pastelCarouselExportFontFamily}`;
+          ctx.fillStyle = 'rgba(255,255,255,0.95)';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(
+            IMAGE_TEMPLATE2_Q5_PROMO_LABEL,
+            frameWidth / 2,
+            layout.y - labelGap
+          );
+        } else {
+          ctx.font = `700 ${Math.round(frameHeight * 0.03)}px ${pastelCarouselExportFontFamily}`;
+          ctx.fillStyle = 'rgba(255,255,255,0.95)';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(IMAGE_TEMPLATE2_APP_FOOTER, frameWidth / 2, frameHeight * 0.9);
+        }
 
         return await new Promise<Blob>((resolve, reject) => {
           canvas.toBlob((blob) => {
@@ -3767,12 +3838,16 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           try {
             const titleSize = imageTemplate3CoverTitleFontSizePx(frameWidth);
             const labelSize = imageTemplate3CoverTypeLabelFontSizePx(frameWidth);
+            const subtitleSize = imageTemplate3CoverSubtitleFontSizePx(frameWidth);
             await Promise.all([
               document.fonts.load(
                 `${IMAGE_TEMPLATE3_COVER_TITLE_FONT_WEIGHT} ${titleSize}px "TikTok Sans"`
               ),
               document.fonts.load(
                 `${IMAGE_TEMPLATE3_COVER_TYPE_LABEL_FONT_WEIGHT} ${labelSize}px "TikTok Sans"`
+              ),
+              document.fonts.load(
+                `${IMAGE_TEMPLATE3_COVER_SUBTITLE_FONT_WEIGHT} ${subtitleSize}px "TikTok Sans"`
               ),
             ]);
           } catch {
@@ -3800,14 +3875,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         const coverX = (frameWidth - coverW) / 2;
         const coverY = (frameHeight - coverH) / 2;
         ctx.drawImage(coverImg, coverX, coverY, coverW, coverH);
-        drawImageTemplate3CoverOverlay(
-          ctx,
-          frameWidth,
-          frameHeight,
-          textForTab(0),
-          exportTemplateId === 4 ? '' : imageTemplate3TypePillLabel(),
-          { centerTitle: exportTemplateId === 4 }
-        );
+        drawImageTemplate3CoverOverlay(ctx, frameWidth, frameHeight, textForTab(0), {
+          centerTitle: exportTemplateId === 4,
+          strokeTitle: exportTemplateId !== 3,
+          subtitle: imageTemplate3CoverSubtitle,
+        });
         return await new Promise<Blob>((resolve, reject) => {
           canvas.toBlob((blob) => {
             if (blob) resolve(blob);
@@ -3971,7 +4043,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     }
 
     const exportQuestionCount = exportTemplateId === 4 ? 4 : 5;
-    const exportTabCount = exportQuestionCount + 2;
+    const exportTabCount = exportQuestionCount + (exportTemplateId === 2 ? 1 : 2);
 
     for (let tabIndex = 0; tabIndex < exportTabCount; tabIndex++) {
       const blob = await renderFrameBlob(tabIndex, null);
@@ -3989,7 +4061,10 @@ const imageFrameTitleLine1 = 'Questions to ask your';
 
     setIsImageTemplateDownloading(true);
     try {
-      const { entries, isKawaiiTemplate, kawaiiNumSets } = await generateImageFrameExportEntries();
+      const { entries, isKawaiiTemplate, kawaiiNumSets } =
+        await generateImageFrameExportEntries({
+          kawaiiNumSets: KAWAII_DOWNLOAD_SETS,
+        });
       const zip = new JSZip();
       for (const { path, blob } of entries) {
         zip.file(path, blob);
@@ -5041,19 +5116,50 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 </div>
                               </div>
                               <p
-                                className="absolute left-1/2 top-1/2 z-10 w-[60%] -translate-x-1/2 -translate-y-1/2 text-center text-base sm:text-lg md:text-xl font-extrabold leading-snug text-white wrap-break-word"
+                                className="absolute left-1/2 z-10 w-[60%] -translate-x-1/2 -translate-y-1/2 text-center text-base sm:text-lg md:text-xl font-extrabold leading-snug text-white wrap-break-word"
                                 style={{
                                   fontFamily: pastelCarouselFontFamily,
+                                  top: `${
+                                    (selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX
+                                      ? IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO
+                                      : 0.5) * 100
+                                  }%`,
                                 }}
                               >
                                 {imageFrameTextForActiveTab}
                               </p>
-                              <p
-                                className="absolute inset-x-[8%] bottom-[9%] z-10 text-center text-[11px] sm:text-xs font-bold text-white/95"
-                                style={{ fontFamily: pastelCarouselFontFamily }}
-                              >
-                                {IMAGE_TEMPLATE2_APP_FOOTER}
-                              </p>
+                              {selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX ? (
+                                <>
+                                <p
+                                  className="absolute inset-x-[6%] z-10 text-center font-bold text-white/95"
+                                  style={{
+                                    fontFamily: pastelCarouselFontFamily,
+                                    // Ratio is frame-height based; the container query unit is width.
+                                    fontSize: `${IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO * (4 / 3) * 100}cqw`,
+                                    bottom: `${(IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO + IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO) * 100}%`,
+                                  }}
+                                >
+                                  {IMAGE_TEMPLATE2_Q5_PROMO_LABEL}
+                                </p>
+                                <img
+                                  src={IMAGE_TEMPLATE2_Q5_PROMO_SRC}
+                                  alt="Spill It on the App Store"
+                                  className="absolute left-1/2 z-10 -translate-x-1/2"
+                                  style={{
+                                    width: `${IMAGE_TEMPLATE2_Q5_PROMO_WIDTH_RATIO * 100}%`,
+                                    maxWidth: 'none',
+                                    top: `${(1 - IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO) * 100}%`,
+                                  }}
+                                />
+                                </>
+                              ) : (
+                                <p
+                                  className="absolute inset-x-[8%] bottom-[9%] z-10 text-center text-[11px] sm:text-xs font-bold text-white/95"
+                                  style={{ fontFamily: pastelCarouselFontFamily }}
+                                >
+                                  {IMAGE_TEMPLATE2_APP_FOOTER}
+                                </p>
+                              )}
                             </>
                             )
                           ) : isCoverPhotoImageTemplate && selectedImageBrowserTab === 0 ? (
@@ -5065,10 +5171,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               />
                               <ImageTemplate3CoverOverlay
                                 title={imageFrameTextForActiveTab}
-                                typeLabel={
-                                  isMirrorSelfieImageTemplate ? '' : imageTemplate3TypePillLabel()
-                                }
                                 centerTitle={isMirrorSelfieImageTemplate}
+                                strokeTitle={!isTikTokReactionImageTemplate}
+                                subtitle={imageTemplate3CoverSubtitle}
                               />
                             </>
                           ) : isCoverPhotoImageTemplate &&
@@ -5117,6 +5222,27 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             <div>
                               {isCoverPhotoImageTemplate ? (
                                 <>
+                                  {isMirrorSelfieImageTemplate ? null : (
+                                    <div className="mb-3">
+                                      <label className="mb-2 block text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                                        Model
+                                      </label>
+                                      <select
+                                        value={imageTemplate3CoverModel}
+                                        onChange={(e) =>
+                                          setImageTemplate3CoverModel(
+                                            e.target.value as ImageTemplate3CoverModel
+                                          )
+                                        }
+                                        disabled={isImageTemplate3CoverLoading}
+                                        className="w-full rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-800 dark:text-zinc-200 disabled:opacity-50"
+                                        aria-label="Cover image model"
+                                      >
+                                        <option value="claude">Claude</option>
+                                        <option value="openai">OpenAI</option>
+                                      </select>
+                                    </div>
+                                  )}
                                   <div className="mb-3">
                                     {isMirrorSelfieImageTemplate ? null : (
                                       <label className="mb-2 block text-xs font-medium text-zinc-600 dark:text-zinc-300">
