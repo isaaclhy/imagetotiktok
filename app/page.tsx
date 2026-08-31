@@ -16,6 +16,7 @@ import {
   KAWAII_DRIVE_FOLDER_ID,
   COUPLES_NATURE_DRIVE_FOLDER_ID,
   COUPLES_NATURE_VIDEO_FILTER,
+  VIDEO_TEMPLATE2_HIGHLIGHT_BACKGROUND,
   VIDEO_TEMPLATE2_PEXELS_QUERIES,
   NIGHTY_PARTICLE_PEXELS_QUERIES,
   NIGHTY_RAIN_VIDEO_OPTIONS,
@@ -127,6 +128,7 @@ import {
 import {
   splitTitleAroundHighlight,
   squiggleColorForBackground,
+  drawTitleHighlight,
   TITLE_HIGHLIGHT_TEXT_COLOR,
   TITLE_HIGHLIGHT_TILT_RAD,
 } from '@/app/lib/highlight-word';
@@ -168,7 +170,8 @@ import { PreviewPanel } from '@/app/components/PreviewPanel';
 import { DownloadModal } from '@/app/components/DownloadModal';
 import { VideoDownloadModal } from '@/app/components/VideoDownloadModal';
 import { Toast } from '@/app/components/Toast';
-import { transcodeWebmToMp4 } from '@/app/lib/webm-to-mp4';
+import { sampleCouplesNatureHighlightBackground } from '@/app/lib/couples-nature-color';
+import { encodeJpegSequenceToMp4, preloadFfmpeg, transcodeWebmToMp4 } from '@/app/lib/webm-to-mp4';
 import { INSTAGRAM_CAROUSEL_MAX } from '@/app/lib/instagram';
 
 type ContentTab = 'image' | 'video' | 'prompt' | 'automate';
@@ -197,18 +200,28 @@ function pexelsVideoProxySrc(directUrl: string): string {
   return `/api/pexels/video-proxy?url=${encodeURIComponent(directUrl)}`;
 }
 
-async function fetchRandomPexelsVideoUrlForExport(): Promise<string> {
+async function fetchRandomPexelsVideoForExport(): Promise<{
+  videoUrl: string;
+  thumbnailUrl: string | null;
+}> {
   const query =
     VIDEO_TEMPLATE2_PEXELS_QUERIES[Math.floor(Math.random() * VIDEO_TEMPLATE2_PEXELS_QUERIES.length)]!;
   const page = 1 + Math.floor(Math.random() * 15);
   const res = await fetch(
     `/api/pexels/random-video?query=${encodeURIComponent(query)}&page=${page}&preferHeight=${PEXELS_PREFER_HEIGHT}`
   );
-  const data = (await res.json()) as { videoUrl?: string; error?: string };
+  const data = (await res.json()) as {
+    videoUrl?: string;
+    thumbnailUrl?: string | null;
+    error?: string;
+  };
   if (!res.ok || !data.videoUrl) {
     throw new Error(data.error || 'Failed to fetch video');
   }
-  return pexelsVideoProxySrc(data.videoUrl);
+  return {
+    videoUrl: pexelsVideoProxySrc(data.videoUrl),
+    thumbnailUrl: data.thumbnailUrl ?? null,
+  };
 }
 
 function parsePositiveInt(raw: string | null): number | null {
@@ -721,12 +734,86 @@ function drawNaturalWhiteWrappedBlock(
   return y - lineHeight / 2 + lineHeight;
 }
 
+function drawNaturalWhiteWrappedBlockWithHighlight(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  startY: number,
+  text: string,
+  options: {
+    fontSizePx: number;
+    maxWidthRatio?: number;
+    lineHeightMult?: number;
+    highlightWord?: string | null;
+    highlightColor?: string;
+  }
+): number {
+  const trimmed = text.trim();
+  if (!trimmed) return startY;
+
+  const fontSize = options.fontSizePx;
+  const maxWidth = w * (options.maxWidthRatio ?? 0.84);
+  const lineHeight = fontSize * (options.lineHeightMult ?? 1.16);
+  ctx.font = `${TEMPLATE2_COVER_FONT_WEIGHT} ${fontSize}px ${TIKTOK_SANS_STACK}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const lines = wrapCanvasTextLines(ctx, trimmed, maxWidth);
+  if (lines.length === 0) return startY;
+
+  const highlight = options.highlightWord?.trim().toLowerCase() ?? '';
+  const highlightColor =
+    options.highlightColor ?? squiggleColorForBackground(VIDEO_TEMPLATE2_HIGHLIGHT_BACKGROUND);
+
+  const cx = w / 2;
+  let y = startY + lineHeight / 2;
+  for (const ln of lines) {
+    const idx = highlight ? ln.toLowerCase().indexOf(highlight) : -1;
+    if (idx >= 0) {
+      const before = ln.slice(0, idx);
+      const word = ln.slice(idx, idx + highlight.length);
+      const lineWidth = ctx.measureText(ln).width;
+      const lineStartX = cx - lineWidth / 2;
+      const beforeW = ctx.measureText(before).width;
+      const wordX = lineStartX + beforeW;
+      const wordW = ctx.measureText(before + word).width - beforeW;
+
+      drawTitleHighlight(ctx, wordX, y, wordW, fontSize, highlightColor);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.42)';
+      ctx.shadowBlur = Math.max(6, fontSize * 0.14);
+      ctx.shadowOffsetY = Math.max(1, fontSize * 0.04);
+      ctx.fillText(ln, cx, y);
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+
+      ctx.textAlign = 'left';
+      ctx.fillStyle = TITLE_HIGHLIGHT_TEXT_COLOR;
+      ctx.fillText(word, wordX, y);
+      ctx.textAlign = 'center';
+    } else {
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.42)';
+      ctx.shadowBlur = Math.max(6, fontSize * 0.14);
+      ctx.shadowOffsetY = Math.max(1, fontSize * 0.04);
+      ctx.fillText(ln, cx, y);
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+    }
+    y += lineHeight;
+  }
+  return y - lineHeight / 2 + lineHeight;
+}
+
 function drawVideoTemplate2OverlayOnCanvas(
   ctx: CanvasRenderingContext2D,
   w: number,
   h: number,
   title: string,
-  questions: string[]
+  questions: string[],
+  options?: { highlightWord?: string | null; highlightBackground?: string }
 ) {
   const titleFontSize = videoTemplate2TitleFontSizePx(h);
   const questionFontSize = videoTemplate2QuestionFontSizePx(h);
@@ -753,10 +840,15 @@ function drawVideoTemplate2OverlayOnCanvas(
 
   let y = h * VIDEO_TEMPLATE2_TITLE_TOP_RATIO;
 
+  const highlightBackground =
+    options?.highlightBackground ?? VIDEO_TEMPLATE2_HIGHLIGHT_BACKGROUND;
+
   if (hasTitle) {
-    y = drawNaturalWhiteWrappedBlock(ctx, w, y, title, {
+    y = drawNaturalWhiteWrappedBlockWithHighlight(ctx, w, y, title, {
       fontSizePx: titleFontSize,
       maxWidthRatio,
+      highlightWord: options?.highlightWord,
+      highlightColor: squiggleColorForBackground(highlightBackground),
     });
     if (hasQuestions || hasFooter) y += hasQuestions ? titleListGap : listFooterGap;
   }
@@ -780,6 +872,29 @@ function drawVideoTemplate2OverlayOnCanvas(
         maxWidthRatio,
       });
     }
+  }
+}
+
+/** Ask ChatGPT which title word to marker-highlight (shared by image + video Template 2). */
+async function fetchTitleHighlightWord(
+  title: string,
+  signal?: AbortSignal
+): Promise<string | null> {
+  const trimmed = title.trim();
+  if (!trimmed) return null;
+  try {
+    const res = await fetch('/api/openai/highlight-word', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: trimmed }),
+      signal,
+    });
+    const data = (await res.json()) as { word?: string; error?: string };
+    if (!res.ok || typeof data.word !== 'string' || !data.word.trim()) return null;
+    return data.word.trim();
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') return null;
+    return null;
   }
 }
 
@@ -813,6 +928,152 @@ function nightyParticleCanvasFontFamilyName(): string {
   return primary || 'TikTok Sans';
 }
 
+/** Seek without playing — each export frame lands on an exact 1/fps timestamp. */
+function seekVideoElement(video: HTMLVideoElement, timeSec: number): Promise<void> {
+  const clamped = Math.max(0, timeSec);
+  if (Math.abs(video.currentTime - clamped) < 0.001) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const onSeeked = () => {
+      cleanup();
+      resolve();
+    };
+    const onError = () => {
+      cleanup();
+      reject(new Error('Failed to seek video'));
+    };
+    const cleanup = () => {
+      video.removeEventListener('seeked', onSeeked);
+      video.removeEventListener('error', onError);
+    };
+    video.addEventListener('seeked', onSeeked, { once: true });
+    video.addEventListener('error', onError, { once: true });
+    const maxTime = Number.isFinite(video.duration) ? Math.max(0, video.duration - 0.04) : clamped;
+    video.currentTime = Math.min(clamped, maxTime);
+  });
+}
+
+/** Sync JPEG grab — keeps playback capture on pace (async toBlob drifts). */
+function canvasToJpegBytesSync(canvas: HTMLCanvasElement, quality = 0.82): Uint8Array {
+  const dataUrl = canvas.toDataURL('image/jpeg', quality);
+  const base64 = dataUrl.split(',')[1];
+  if (!base64) throw new Error('Failed to encode frame');
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+/**
+ * Capture export frames during realtime playback (~9s) instead of per-frame seek
+ * (270 seeks × ~100ms each was taking 30–90s). CFR encode still happens in ffmpeg.
+ */
+async function capturePlaybackJpegFrames(
+  video: HTMLVideoElement,
+  paintFrame: () => void,
+  canvas: HTMLCanvasElement,
+  fps: number,
+  durationSec: number,
+  onProgress?: (captured: number, total: number) => void
+): Promise<Uint8Array[]> {
+  const totalFrames = Math.max(1, Math.ceil(durationSec * fps));
+  const slots: Array<Uint8Array | undefined> = new Array(totalFrames);
+
+  await seekVideoElement(video, 0);
+  video.playbackRate = 1;
+  video.muted = true;
+
+  const fillCfrFrames = (): Uint8Array[] => {
+    const out: Uint8Array[] = [];
+    let last: Uint8Array | undefined;
+    for (let i = 0; i < totalFrames; i++) {
+      if (slots[i]) last = slots[i];
+      if (last) out.push(last);
+    }
+    return out;
+  };
+
+  const captureViaRvfc = () =>
+    new Promise<Uint8Array[]>((resolve, reject) => {
+      const timeoutMs = Math.ceil((durationSec + 1.5) * 1000);
+      const timeoutId = window.setTimeout(() => {
+        video.pause();
+        resolve(fillCfrFrames());
+      }, timeoutMs);
+
+      const step = (_now: DOMHighResTimeStamp, metadata: VideoFrameCallbackMetadata) => {
+        const t = metadata.mediaTime;
+        if (t >= durationSec - 0.001) {
+          window.clearTimeout(timeoutId);
+          video.pause();
+          resolve(fillCfrFrames());
+          return;
+        }
+        const idx = Math.min(totalFrames - 1, Math.floor(t * fps + 1e-4));
+        if (!slots[idx]) {
+          paintFrame();
+          slots[idx] = canvasToJpegBytesSync(canvas);
+          onProgress?.(slots.filter(Boolean).length, totalFrames);
+        }
+        video.requestVideoFrameCallback(step);
+      };
+
+      video
+        .play()
+        .then(() => video.requestVideoFrameCallback(step))
+        .catch((err) => {
+          window.clearTimeout(timeoutId);
+          reject(err);
+        });
+    });
+
+  const captureViaRaf = () =>
+    new Promise<Uint8Array[]>((resolve, reject) => {
+      const timeoutMs = Math.ceil((durationSec + 2) * 1000);
+      const timeoutId = window.setTimeout(() => {
+        video.pause();
+        resolve(fillCfrFrames());
+      }, timeoutMs);
+      let nextFrameAt = performance.now();
+      const frameMs = 1000 / fps;
+
+      const tick = (now: number) => {
+        if (video.currentTime >= durationSec - 0.001 || slots.filter(Boolean).length >= totalFrames) {
+          window.clearTimeout(timeoutId);
+          video.pause();
+          resolve(fillCfrFrames());
+          return;
+        }
+        if (now >= nextFrameAt) {
+          paintFrame();
+          const idx = Math.min(
+            totalFrames - 1,
+            Math.floor(video.currentTime * fps + 1e-4)
+          );
+          if (!slots[idx]) {
+            slots[idx] = canvasToJpegBytesSync(canvas);
+            onProgress?.(slots.filter(Boolean).length, totalFrames);
+          }
+          nextFrameAt += frameMs;
+          if (now > nextFrameAt + frameMs * 2) nextFrameAt = now;
+        }
+        requestAnimationFrame(tick);
+      };
+
+      video
+        .play()
+        .then(() => requestAnimationFrame(tick))
+        .catch((err) => {
+          window.clearTimeout(timeoutId);
+          reject(err);
+        });
+    });
+
+  if (typeof video.requestVideoFrameCallback === 'function') {
+    return captureViaRvfc();
+  }
+  return captureViaRaf();
+}
+
 async function exportVideoWithCaptionOverlay(
   videoSrc: string,
   caption: string,
@@ -820,6 +1081,10 @@ async function exportVideoWithCaptionOverlay(
     position?: VideoCaptionPosition;
     style?: VideoCaptionStyle;
     numberedQuestions?: string[];
+    /** Marker highlight on the Couples Nature title (one word from OpenAI). */
+    titleHighlightWord?: string | null;
+    /** Graded video tone for complementary marker color (from Pexels poster sample). */
+    titleHighlightBackground?: string;
     maxDurationSec?: number;
     maxWidthRatio?: number;
     /** Nighty Particle timed dual-line fade animation. */
@@ -833,11 +1098,15 @@ async function exportVideoWithCaptionOverlay(
     rainAudioSrc?: string;
     /** Second line under the main Rain caption. */
     rainSubline?: string;
+    onExportProgress?: (phase: 'frames' | 'encode', current: number, total: number) => void;
   } = {}
 ): Promise<Blob> {
   const captionPosition = options.position ?? 'center';
   const captionStyle = options.style ?? 'stroke';
   const numberedQuestions = options.numberedQuestions ?? [];
+  const titleHighlightWord = options.titleHighlightWord ?? null;
+  const titleHighlightBackground =
+    options.titleHighlightBackground ?? VIDEO_TEMPLATE2_HIGHLIGHT_BACKGROUND;
   const maxDurationSec = options.maxDurationSec;
   const maxWidthRatio = options.maxWidthRatio;
   const particleAnimated = options.particleAnimated === true;
@@ -846,11 +1115,18 @@ async function exportVideoWithCaptionOverlay(
   const rainTemplate = options.rainTemplate === true;
   const rainAudioSrc = options.rainAudioSrc;
   const rainSubline = options.rainSubline ?? NIGHTY_RAIN_CAPTION_SUBLINE;
+  const onExportProgress = options.onExportProgress;
   const bedAudioSrc = particleAnimated
     ? particleAudioSrc
     : rainTemplate
       ? rainAudioSrc
       : undefined;
+  /** Couples Nature: playback capture + ffmpeg CFR (seek-per-frame was 30–90s). */
+  const useFrameAccurateExport =
+    !particleAnimated &&
+    !rainTemplate &&
+    captionStyle === 'natural' &&
+    numberedQuestions.length > 0;
   if (typeof MediaRecorder === 'undefined') throw new Error('MediaRecorder is not supported in this browser');
 
   const mime = pickMediaRecorderMime();
@@ -962,9 +1238,112 @@ async function exportVideoWithCaptionOverlay(
       drawNightyRainCaptionStack(overlayCtx, w, h, caption, rainSubline);
     }
 
-    const chunks: BlobPart[] = [];
     const EXPORT_FPS = rainTemplate ? NIGHTY_RAIN_EXPORT_FPS : 30;
     const FRAME_MS = 1000 / EXPORT_FPS;
+
+    let coverSx = 0;
+    let coverSy = 0;
+    let coverSw = 0;
+    let coverSh = 0;
+    let coverReady = false;
+    let particleCaptionTimeSec = 0;
+
+    const updateCoverCrop = () => {
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      if (vw <= 0 || vh <= 0) return;
+      const srcAspect = vw / vh;
+      const destAspect = w / h;
+      if (srcAspect > destAspect) {
+        coverSw = vh * destAspect;
+        coverSh = vh;
+        coverSx = (vw - coverSw) / 2;
+        coverSy = 0;
+      } else {
+        coverSh = vw / destAspect;
+        coverSw = vw;
+        coverSx = 0;
+        coverSy = (vh - coverSh) / 2;
+      }
+      coverReady = true;
+    };
+
+    const paintFrameToCanvas = () => {
+      if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && video.videoWidth > 0) {
+        const useMagicalGrade = captionStyle === 'natural' && numberedQuestions.length > 0;
+        if (useMagicalGrade) {
+          ctx.filter = COUPLES_NATURE_VIDEO_FILTER;
+        }
+        if (!coverReady) updateCoverCrop();
+        ctx.drawImage(video, coverSx, coverSy, coverSw, coverSh, 0, 0, w, h);
+        if (useMagicalGrade) {
+          ctx.filter = 'none';
+        }
+        if (particleAnimated) {
+          drawNightyParticleCaptionOverlay(
+            ctx,
+            w,
+            h,
+            particleCaptionTimeSec,
+            nightyParticleCanvasFontStack(),
+            particleContent
+          );
+        } else if (rainTemplate && rainOverlayCanvas) {
+          ctx.drawImage(rainOverlayCanvas, 0, 0);
+        } else if (captionStyle === 'natural' && numberedQuestions.length > 0) {
+          drawVideoTemplate2DimOverlay(ctx, w, h);
+          drawVideoTemplate2OverlayOnCanvas(ctx, w, h, caption, numberedQuestions, {
+            highlightWord: titleHighlightWord,
+            highlightBackground: titleHighlightBackground,
+          });
+        } else if (captionStyle === 'natural') {
+          drawVideoTemplate2DimOverlay(ctx, w, h);
+          drawNaturalWhiteCaptionOnCanvas(ctx, w, h, caption, {
+            position: captionPosition,
+            fontSizePx: videoTemplate2TitleFontSizePx(h),
+            maxWidthRatio: maxWidthRatio ?? 0.7,
+            fontWeight: TEMPLATE2_COVER_FONT_WEIGHT,
+            shadow: true,
+            fontStack: TIKTOK_SANS_STACK,
+          });
+        } else {
+          drawTikTokCaptionOnCanvas(ctx, w, h, caption, {
+            position: captionPosition,
+            maxWidthRatio,
+          });
+        }
+      }
+    };
+
+    // Couples Nature: play through once (~9s), then ffmpeg CFR encode.
+    if (useFrameAccurateExport) {
+      const durationSec =
+        maxDurationSec !== undefined
+          ? Math.min(maxDurationSec, video.duration || maxDurationSec)
+          : video.duration || maxDurationSec || 1;
+      const totalFrames = Math.max(1, Math.ceil(durationSec * EXPORT_FPS));
+      const startedAt = performance.now();
+
+      const frames = await capturePlaybackJpegFrames(
+        video,
+        paintFrameToCanvas,
+        canvas,
+        EXPORT_FPS,
+        durationSec,
+        (captured, total) => onExportProgress?.('frames', captured, total)
+      );
+
+      const elapsed = (performance.now() - startedAt) / 1000;
+      console.info(
+        `[export] playback capture ${frames.length}/${totalFrames} frames @ ${EXPORT_FPS}fps (${elapsed.toFixed(1)}s) at ${w}x${h}`
+      );
+      onExportProgress?.('encode', 0, 1);
+      const mp4 = await encodeJpegSequenceToMp4(frames, EXPORT_FPS, sourceBlob);
+      onExportProgress?.('encode', 1, 1);
+      return mp4;
+    }
+
+    const chunks: BlobPart[] = [];
 
     await new Promise<void>((resolve, reject) => {
       let rafId = 0;
@@ -978,76 +1357,8 @@ async function exportVideoWithCaptionOverlay(
         rafId = 0;
       };
 
-      // Particle captions follow wall-clock so a stalled/short decode can't truncate the export.
-      let particleCaptionTimeSec = 0;
-      let coverSx = 0;
-      let coverSy = 0;
-      let coverSw = 0;
-      let coverSh = 0;
-      let coverReady = false;
-
-      const updateCoverCrop = () => {
-        const vw = video.videoWidth;
-        const vh = video.videoHeight;
-        if (vw <= 0 || vh <= 0) return;
-        const srcAspect = vw / vh;
-        const destAspect = w / h;
-        if (srcAspect > destAspect) {
-          coverSw = vh * destAspect;
-          coverSh = vh;
-          coverSx = (vw - coverSw) / 2;
-          coverSy = 0;
-        } else {
-          coverSh = vw / destAspect;
-          coverSw = vw;
-          coverSx = 0;
-          coverSy = (vh - coverSh) / 2;
-        }
-        coverReady = true;
-      };
-
       const paintFrame = () => {
-        if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && video.videoWidth > 0) {
-          const useMagicalGrade = captionStyle === 'natural' && numberedQuestions.length > 0;
-          if (useMagicalGrade) {
-            ctx.filter = COUPLES_NATURE_VIDEO_FILTER;
-          }
-          if (!coverReady) updateCoverCrop();
-          ctx.drawImage(video, coverSx, coverSy, coverSw, coverSh, 0, 0, w, h);
-          if (useMagicalGrade) {
-            ctx.filter = 'none';
-          }
-          if (particleAnimated) {
-            drawNightyParticleCaptionOverlay(
-              ctx,
-              w,
-              h,
-              particleCaptionTimeSec,
-              nightyParticleCanvasFontStack(),
-              particleContent
-            );
-          } else if (rainTemplate && rainOverlayCanvas) {
-            ctx.drawImage(rainOverlayCanvas, 0, 0);
-          } else if (captionStyle === 'natural' && numberedQuestions.length > 0) {
-            drawVideoTemplate2DimOverlay(ctx, w, h);
-            drawVideoTemplate2OverlayOnCanvas(ctx, w, h, caption, numberedQuestions);
-          } else if (captionStyle === 'natural') {
-            drawVideoTemplate2DimOverlay(ctx, w, h);
-            drawNaturalWhiteCaptionOnCanvas(ctx, w, h, caption, {
-              position: captionPosition,
-              fontSizePx: videoTemplate2TitleFontSizePx(h),
-              maxWidthRatio: maxWidthRatio ?? 0.7,
-              fontWeight: TEMPLATE2_COVER_FONT_WEIGHT,
-              shadow: true,
-              fontStack: TIKTOK_SANS_STACK,
-            });
-          } else {
-            drawTikTokCaptionOnCanvas(ctx, w, h, caption, {
-              position: captionPosition,
-              maxWidthRatio,
-            });
-          }
-        }
+        paintFrameToCanvas();
         const track = captureTrack as MediaStreamTrack & { requestFrame?: () => void };
         track?.requestFrame?.();
       };
@@ -1101,8 +1412,7 @@ async function exportVideoWithCaptionOverlay(
             video.currentTime = 0;
           });
 
-          // Particle / Rain: mute + loop bg. Unmuting + video.captureStream() often ends
-          // MediaRecorder early (~1s) under heavy decode.
+          // Particle / Rain: mute + loop bg. Frame-accurate: seek-only (audio muxed later).
           if (particleAnimated || rainTemplate) {
             video.muted = true;
             video.loop = true;
@@ -1297,6 +1607,7 @@ async function exportVideoWithCaptionOverlay(
               console.info(label);
             }
           };
+
           const tick = (now: number) => {
             if (finished) return;
             if (particleDurationMs !== null) {
@@ -1553,8 +1864,12 @@ export default function Home() {
   const [videoTemplate2Description, setVideoTemplate2Description] = useState('');
   const [isGeneratingVideoTemplate2Description, setIsGeneratingVideoTemplate2Description] =
     useState(false);
+  const [videoTemplate2HighlightWord, setVideoTemplate2HighlightWord] = useState<string | null>(
+    null
+  );
   const [videoTemplate2PexelsVideoSrc, setVideoTemplate2PexelsVideoSrc] = useState<string | null>(null);
   const [videoTemplate2PexelsPosterSrc, setVideoTemplate2PexelsPosterSrc] = useState<string | null>(null);
+  const [videoTemplate2HighlightBg, setVideoTemplate2HighlightBg] = useState<string | null>(null);
   const [isVideoTemplate2VideoLoading, setIsVideoTemplate2VideoLoading] = useState(false);
   const [videoTemplate2VideoError, setVideoTemplate2VideoError] = useState<string | null>(null);
   const nightyParticleVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -1602,6 +1917,7 @@ export default function Home() {
   const [videoExportProgress, setVideoExportProgress] = useState<{ current: number; total: number } | null>(
     null
   );
+  const [videoExportDetail, setVideoExportDetail] = useState<string | null>(null);
   const [isImageTemplateDownloading, setIsImageTemplateDownloading] = useState(false);
   const [isImageTemplateUploading, setIsImageTemplateUploading] = useState(false);
   const [instagramAccount, setInstagramAccount] = useState<{ username: string } | null>(null);
@@ -2188,6 +2504,7 @@ export default function Home() {
 
   useEffect(() => {
     if (isCouplesNatureVideoTemplate) {
+      preloadFfmpeg();
       regenerateVideoTemplate2Content();
       void handleRegenerateVideoTemplate2Video();
     } else if (isSpillItNotesVideoTemplate) {
@@ -3590,6 +3907,32 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     };
   }, [isPastelCarouselImageTemplate, imageTemplate2CoverSquiggleEnabled, imageTabTexts[0]]);
 
+  // Couples Nature video title — same highlight-word API as Image Template 2 cover.
+  useEffect(() => {
+    if (!isCouplesNatureVideoTemplate) {
+      setVideoTemplate2HighlightWord(null);
+      return;
+    }
+    const title = videoOverlayCaption.trim();
+    if (!title) {
+      setVideoTemplate2HighlightWord(null);
+      return;
+    }
+
+    setVideoTemplate2HighlightWord(null);
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      void fetchTitleHighlightWord(title, controller.signal).then((word) => {
+        if (word) setVideoTemplate2HighlightWord(word);
+      });
+    }, 350);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [isCouplesNatureVideoTemplate, videoOverlayCaption]);
+
   const imageFrameTextForActiveTab = getImageFrameTextForTab(selectedImageBrowserTab);
   const imageTemplate2TitleHighlightParts =
     isPastelCarouselImageTemplate &&
@@ -3624,6 +3967,12 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       ]!)
     : imageTabFrameBg;
   const imageTemplate2SquiggleColor = squiggleColorForBackground(activeImageFrameBg);
+  const videoTemplate2HighlightColor = squiggleColorForBackground(
+    videoTemplate2HighlightBg ?? VIDEO_TEMPLATE2_HIGHLIGHT_BACKGROUND
+  );
+  const videoTemplate2TitleHighlightParts = isCouplesNatureVideoTemplate
+    ? splitTitleAroundHighlight(videoOverlayCaption.trim(), videoTemplate2HighlightWord)
+    : null;
   const activeVideoTemplate =
     contentTab === 'video' && selectedVideoTemplateId !== null
       ? videoTemplateCards.find((c) => c.id === selectedVideoTemplateId)
@@ -3640,6 +3989,27 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     usesPexelsVideoBackground && videoTemplate2PexelsVideoSrc
       ? pexelsVideoProxySrc(videoTemplate2PexelsVideoSrc)
       : (activeVideoTemplate?.videoSrc ?? null);
+
+  // Pexels Videos API has no avg_color — sample the poster with the same grade + dim as preview.
+  useEffect(() => {
+    if (!isCouplesNatureVideoTemplate) {
+      setVideoTemplate2HighlightBg(null);
+      return;
+    }
+    const poster = template2PlaybackPosterSrc;
+    if (!poster) {
+      setVideoTemplate2HighlightBg(null);
+      return;
+    }
+
+    let cancelled = false;
+    void sampleCouplesNatureHighlightBackground(poster).then((bg) => {
+      if (!cancelled) setVideoTemplate2HighlightBg(bg);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isCouplesNatureVideoTemplate, template2PlaybackPosterSrc]);
 
   const generateImageFrameExportEntries = async (options?: {
     kawaiiNumSets?: number;
@@ -4252,18 +4622,33 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       }
 
       setIsVideoExporting(true);
+      setVideoExportDetail(null);
       let blob: Blob;
       try {
+        const highlightWord = await fetchTitleHighlightWord(title);
+        const highlightBackground = await sampleCouplesNatureHighlightBackground(
+          template2PlaybackPosterSrc
+        );
         const recordedBlob = await exportVideoWithCaptionOverlay(videoSrc, title, {
           position: 'top',
           style: 'natural',
           numberedQuestions: questions,
+          titleHighlightWord: highlightWord,
+          titleHighlightBackground: highlightBackground,
           maxDurationSec: VIDEO_TEMPLATE2_MAX_DURATION_SEC,
+          onExportProgress: (phase, current, total) => {
+            setVideoExportDetail(
+              phase === 'frames'
+                ? `Rendering ${current}/${total} frames…`
+                : 'Encoding MP4…'
+            );
+          },
         });
         blob =
           recordedBlob.type.includes('mp4') ? recordedBlob : await transcodeWebmToMp4(recordedBlob);
       } finally {
         setIsVideoExporting(false);
+        setVideoExportDetail(null);
       }
 
       const filename = `couples-nature-${new Date().toISOString().slice(0, 10)}.mp4`;
@@ -4292,6 +4677,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     setVideoExportError(null);
     setIsVideoExporting(true);
     setVideoExportProgress({ current: 0, total: count });
+    setVideoExportDetail(null);
 
     const scheduleRevokeObjectUrl = (url: string) => {
       window.setTimeout(() => URL.revokeObjectURL(url), 2500);
@@ -4313,17 +4699,35 @@ const imageFrameTitleLine1 = 'Questions to ask your';
               ? videoTemplate2Questions
               : pickRandomFunnyQuestions(7))
           : pickRandomFunnyQuestions(7);
-        const videoSrc = usePreview
-          ? (template2ExportVideoSrc ?? template2PlaybackVideoSrc)
-          : await fetchRandomPexelsVideoUrlForExport();
+        let videoSrc: string | null;
+        let posterForHighlight: string | null;
+        if (usePreview) {
+          videoSrc = template2ExportVideoSrc ?? template2PlaybackVideoSrc;
+          posterForHighlight = template2PlaybackPosterSrc ?? null;
+        } else {
+          const fetched = await fetchRandomPexelsVideoForExport();
+          videoSrc = fetched.videoUrl;
+          posterForHighlight = fetched.thumbnailUrl;
+        }
         if (!videoSrc) {
           throw new Error('No video available to export. Wait for the background to load, then try again.');
         }
+        const highlightWord = await fetchTitleHighlightWord(title);
+        const highlightBackground = await sampleCouplesNatureHighlightBackground(posterForHighlight);
         const recordedBlob = await exportVideoWithCaptionOverlay(videoSrc, title, {
           position: 'top',
           style: 'natural',
           numberedQuestions: questions,
+          titleHighlightWord: highlightWord,
+          titleHighlightBackground: highlightBackground,
           maxDurationSec: VIDEO_TEMPLATE2_MAX_DURATION_SEC,
+          onExportProgress: (phase, current, total) => {
+            setVideoExportDetail(
+              phase === 'frames'
+                ? `Rendering ${current}/${total} frames…`
+                : 'Encoding MP4…'
+            );
+          },
         });
         const blob =
           recordedBlob.type.includes('mp4') ? recordedBlob : await transcodeWebmToMp4(recordedBlob);
@@ -4361,6 +4765,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     } finally {
       setIsVideoExporting(false);
       setVideoExportProgress(null);
+      setVideoExportDetail(null);
     }
   };
 
@@ -4494,11 +4899,24 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       const title = videoOverlayCaption.trim() || pickRandomDailyFunnyTitle();
       const questions =
         videoTemplate2Questions.length > 0 ? videoTemplate2Questions : pickRandomFunnyQuestions(7);
+      const highlightWord = await fetchTitleHighlightWord(title);
+      const highlightBackground = await sampleCouplesNatureHighlightBackground(
+        template2PlaybackPosterSrc
+      );
       const recorded = await exportVideoWithCaptionOverlay(videoSrc, title, {
         position: 'top',
         style: 'natural',
         numberedQuestions: questions,
+        titleHighlightWord: highlightWord,
+        titleHighlightBackground: highlightBackground,
         maxDurationSec: VIDEO_TEMPLATE2_MAX_DURATION_SEC,
+        onExportProgress: (phase, current, total) => {
+          setVideoExportDetail(
+            phase === 'frames'
+              ? `Rendering ${current}/${total} frames…`
+              : 'Encoding MP4…'
+          );
+        },
       });
       return { ...(await toMp4(recorded)), baseName: `${baseName}-caption` };
     }
@@ -5707,9 +6125,10 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 />
                               </svg>
                               <span>
-                                {videoExportProgress
-                                  ? `Exporting ${videoExportProgress.current}/${videoExportProgress.total}…`
-                                  : 'Exporting…'}
+                                {videoExportDetail ??
+                                  (videoExportProgress
+                                    ? `Exporting ${videoExportProgress.current}/${videoExportProgress.total}…`
+                                    : 'Exporting…')}
                               </span>
                             </>
                           ) : (
@@ -6043,7 +6462,24 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                         textShadow: '0 2px 14px rgba(0, 0, 0, 0.45)',
                                       }}
                                     >
-                                      {videoOverlayCaption}
+                                      {videoTemplate2TitleHighlightParts ? (
+                                        <>
+                                          {videoTemplate2TitleHighlightParts.before}
+                                          <span
+                                            className="inline-block rounded-[0.08em] px-[0.12em] py-[0.1em]"
+                                            style={{
+                                              backgroundColor: videoTemplate2HighlightColor,
+                                              color: TITLE_HIGHLIGHT_TEXT_COLOR,
+                                              transform: `rotate(${TITLE_HIGHLIGHT_TILT_RAD}rad)`,
+                                            }}
+                                          >
+                                            {videoTemplate2TitleHighlightParts.word}
+                                          </span>
+                                          {videoTemplate2TitleHighlightParts.after}
+                                        </>
+                                      ) : (
+                                        videoOverlayCaption
+                                      )}
                                     </p>
                                   ) : null}
                                   {videoTemplate2Questions.length > 0 ? (

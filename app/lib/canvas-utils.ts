@@ -63,12 +63,29 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+type AverageColorOptions = {
+  /** Canvas/CSS filter applied before sampling (e.g. Couples Nature grade). */
+  cssFilter?: string;
+  /** Black scrim blended on top after the filter, 0–1. */
+  dimOverlay?: number;
+  /** RGB multiplier after averaging (card backgrounds use ~0.55). */
+  darken?: number;
+};
+
+function rgbToHex(r: number, g: number, b: number): string {
+  return `#${Math.round(r).toString(16).padStart(2, '0')}${Math.round(g)
+    .toString(16)
+    .padStart(2, '0')}${Math.round(b).toString(16).padStart(2, '0')}`;
+}
+
 /**
- * Extract a dominant color from an image URL for use as card background.
- * Samples a downscaled version, averages non-extreme pixels, and darkens for readability.
- * Returns hex string or null on failure.
+ * Average mid-tone pixels from an image URL. Optional CSS filter + dim scrim
+ * mirror preview/export grading before sampling.
  */
-export async function extractDominantColor(imageUrl: string): Promise<string | null> {
+export async function extractAverageColor(
+  imageUrl: string,
+  options: AverageColorOptions = {}
+): Promise<string | null> {
   if (typeof document === 'undefined') return null;
   try {
     const img = await loadImage(imageUrl);
@@ -78,11 +95,22 @@ export async function extractDominantColor(imageUrl: string): Promise<string | n
     canvas.height = size;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
+    if (options.cssFilter) ctx.filter = options.cssFilter;
     ctx.drawImage(img, 0, 0, size, size);
+    ctx.filter = 'none';
+    if (options.dimOverlay && options.dimOverlay > 0) {
+      ctx.fillStyle = `rgba(0, 0, 0, ${options.dimOverlay})`;
+      ctx.fillRect(0, 0, size, size);
+    }
     const data = ctx.getImageData(0, 0, size, size).data;
-    let r = 0, g = 0, b = 0, count = 0;
+    let r = 0,
+      g = 0,
+      b = 0,
+      count = 0;
     for (let i = 0; i < data.length; i += 4) {
-      const pr = data[i]! / 255, pg = data[i + 1]! / 255, pb = data[i + 2]! / 255;
+      const pr = data[i]! / 255,
+        pg = data[i + 1]! / 255,
+        pb = data[i + 2]! / 255;
       const l = 0.299 * pr + 0.587 * pg + 0.114 * pb;
       if (l > 0.15 && l < 0.92) {
         r += data[i]!;
@@ -92,17 +120,23 @@ export async function extractDominantColor(imageUrl: string): Promise<string | n
       }
     }
     if (count === 0) return null;
-    r = Math.round(r / count);
-    g = Math.round(g / count);
-    b = Math.round(b / count);
-    const darken = 0.55;
-    r = Math.round(r * darken);
-    g = Math.round(g * darken);
-    b = Math.round(b * darken);
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+    const darken = options.darken ?? 1;
+    r = Math.round((r / count) * darken);
+    g = Math.round((g / count) * darken);
+    b = Math.round((b / count) * darken);
+    return rgbToHex(r, g, b);
   } catch {
     return null;
   }
+}
+
+/**
+ * Extract a dominant color from an image URL for use as card background.
+ * Samples a downscaled version, averages non-extreme pixels, and darkens for readability.
+ * Returns hex string or null on failure.
+ */
+export async function extractDominantColor(imageUrl: string): Promise<string | null> {
+  return extractAverageColor(imageUrl, { darken: 0.55 });
 }
 
 /** Wrap title text into lines using canvas measure (matches export). Use in preview/carousel. */

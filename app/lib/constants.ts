@@ -6,6 +6,9 @@ export const ROMANTIC_IMAGE_FILTER =
 export const COUPLES_NATURE_VIDEO_FILTER =
   'brightness(1.12) contrast(0.88) saturate(1.55) sepia(0.32) hue-rotate(-22deg)';
 
+/** Fallback graded-video tone when poster sampling fails (Couples Nature). */
+export const VIDEO_TEMPLATE2_HIGHLIGHT_BACKGROUND = '#2d4228';
+
 /** Font for first-card title (TikTok-style clean sans-serif). */
 export const TITLE_FONT = 'Inter, sans-serif';
 
