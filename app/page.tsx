@@ -118,6 +118,15 @@ import {
   template5CoupleImageForTab,
   template5TabSourcesNeedRepair,
 } from '@/app/lib/image-template-5-kawaii';
+import {
+  buildTemplate6TabImageSources,
+  IMAGE_TEMPLATE6_BEAR_SRC,
+  IMAGE_TEMPLATE6_FRAME_BG,
+  IMAGE_TEMPLATE6_HIGHLIGHT_COLOR,
+  IMAGE_TEMPLATE6_TEXT_COLOR,
+  template6BearImageForTab,
+  template6TabSourcesNeedRepair,
+} from '@/app/lib/image-template-6-kawaii';
 import { drawImageTemplate3ImessageSlide } from '@/app/lib/image-template-3-imessage';
 import {
   DEFAULT_STUDIO_APP_ID,
@@ -203,7 +212,16 @@ function isFixedPhotoCarouselTemplateId(templateId: number | null | undefined): 
 }
 
 function isKawaiiStyleTemplateId(templateId: number | null | undefined): boolean {
-  return templateId === 1 || templateId === 5;
+  return templateId === 1 || templateId === 5 || templateId === 6;
+}
+
+/** Template 1 uses dog art; 5 / 6 omit the full-bleed CTA slide. */
+function isDogsKawaiiTemplateId(templateId: number | null | undefined): boolean {
+  return templateId === 1;
+}
+
+function isKawaiiNoCtaTemplateId(templateId: number | null | undefined): boolean {
+  return templateId === 5 || templateId === 6;
 }
 
 function fixedPhotoCarouselCoverDisplaySrc(
@@ -826,6 +844,7 @@ function drawKawaiiCoverTitleWithHighlight(
     fontFamily: string;
     highlightWord?: string | null;
     highlightColor?: string;
+    highlightTextColor?: string;
   }
 ) {
   const trimmed = text.trim();
@@ -846,6 +865,7 @@ function drawKawaiiCoverTitleWithHighlight(
   const highlight = options.highlightWord?.trim().toLowerCase() ?? '';
   const highlightColor =
     options.highlightColor ?? squiggleColorForBackground('#FEFEFE');
+  const highlightTextColor = options.highlightTextColor ?? TITLE_HIGHLIGHT_TEXT_COLOR;
 
   const cx = frameWidth / 2;
   let y = yStart + fontSize / 2;
@@ -866,7 +886,7 @@ function drawKawaiiCoverTitleWithHighlight(
       ctx.fillText(ln, cx, y);
 
       ctx.textAlign = 'left';
-      ctx.fillStyle = TITLE_HIGHLIGHT_TEXT_COLOR;
+      ctx.fillStyle = highlightTextColor;
       ctx.fillText(word, wordX, y);
       ctx.textAlign = 'center';
     } else {
@@ -1891,7 +1911,7 @@ export default function Home() {
   const imageFrameExportFontPx = 54;
   const imageFrameExportWrappedLineHeightPx = 70;
   const imageFrameExportFontFamily = '"Comic Sans MS", "Marker Felt", "Chalkboard SE", "Trebuchet MS", sans-serif';
-  const imageFrameExportTextColor = '#2f2a31';
+  const imageFrameExportTextColorDefault = '#2f2a31';
   const imageFrameExportGlowColor = 'rgba(255, 255, 255, 0.9)';
   const pastelCarouselTextColor = '#FFFFFF';
   const pastelCarouselFontFamily = TIKTOK_SANS_STACK;
@@ -1985,20 +2005,28 @@ export default function Home() {
   const isKawaiiImageTemplate = selectedAppId === 'spill-it' && selectedImageTemplateId === 1;
   const isCouplesKawaiiImageTemplate =
     selectedAppId === 'spill-it' && selectedImageTemplateId === 5;
-  const isKawaiiLayoutImageTemplate = isKawaiiImageTemplate || isCouplesKawaiiImageTemplate;
+  const isBearsKawaiiImageTemplate =
+    selectedAppId === 'spill-it' && selectedImageTemplateId === 6;
+  const isKawaiiLayoutImageTemplate =
+    isKawaiiImageTemplate || isCouplesKawaiiImageTemplate || isBearsKawaiiImageTemplate;
+  const imageFrameExportTextColor = isBearsKawaiiImageTemplate
+    ? IMAGE_TEMPLATE6_TEXT_COLOR
+    : imageFrameExportTextColorDefault;
   const isPastelCarouselImageTemplate =
     selectedAppId === 'spill-it' && selectedImageTemplateId === 2;
   const isTikTokReactionImageTemplate =
     selectedAppId === 'spill-it' && selectedImageTemplateId === 3;
   const isMirrorSelfieImageTemplate =
     selectedAppId === 'spill-it' && isFixedPhotoCarouselTemplateId(selectedImageTemplateId);
-  /** Templates 3–5 share the cover-image + iMessage-reply structure. */
+  /** Templates 3–4 share the cover-image + iMessage-reply structure. */
   const isCoverPhotoImageTemplate = isTikTokReactionImageTemplate || isMirrorSelfieImageTemplate;
   // Templates 4 drops Q5, so the CTA sits one tab earlier.
   const imageTemplateQuestionCount = isMirrorSelfieImageTemplate ? 4 : 5;
-  // Template 2 and Template 5 end on Q5 — no CTA card.
+  // Template 2 / 5 / 6 end on Q5 — no CTA card.
   const hasImageTemplateCtaTab =
-    !isPastelCarouselImageTemplate && !isCouplesKawaiiImageTemplate;
+    !isPastelCarouselImageTemplate &&
+    !isCouplesKawaiiImageTemplate &&
+    !isBearsKawaiiImageTemplate;
   const imageTemplateCtaTabIndex = hasImageTemplateCtaTab
     ? imageTemplateQuestionCount + 1
     : -1;
@@ -2759,6 +2787,14 @@ export default function Home() {
       return buildKawaiiTabImageSources(dogImagePool, kawaiiCtaImageSrc);
     });
   }, [isKawaiiImageTemplate, dogImagePool, kawaiiCtaImageSrc]);
+
+  useEffect(() => {
+    if (!isBearsKawaiiImageTemplate) return;
+    setImageTabSources((prev) => {
+      if (!template6TabSourcesNeedRepair(prev)) return prev;
+      return buildTemplate6TabImageSources();
+    });
+  }, [isBearsKawaiiImageTemplate]);
 
   useEffect(() => {
     if (!isCouplesKawaiiImageTemplate) return;
@@ -3755,6 +3791,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     const tid = templateId ?? selectedImageTemplateId;
     const isKawaii = selectedAppId === 'spill-it' && tid === 1;
     const isCouplesKawaii = selectedAppId === 'spill-it' && tid === 5;
+    const isBearsKawaii = selectedAppId === 'spill-it' && tid === 6;
     const isPastel = selectedAppId === 'spill-it' && tid === 2;
     const isTikTokReaction = selectedAppId === 'spill-it' && tid === 3;
     const isFixedPhotoCarousel =
@@ -3786,13 +3823,17 @@ const imageFrameTitleLine1 = 'Questions to ask your';
 
     const picked = [...FUNNY_QUESTIONS].sort(() => Math.random() - 0.5).slice(0, 5);
     setImageTabFunnyQuestions(picked);
-    setImageTabFrameBg('#FEFEFE');
+    setImageTabFrameBg(isBearsKawaii ? IMAGE_TEMPLATE6_FRAME_BG : '#FEFEFE');
     setImageTabPastelBgs([]);
     setImageTabTypeLabel('Funny Questions');
     if (isKawaii) {
       const title = pickRandomDailyFunnyTitle(imageTabTexts[0]);
       setImageTabSources(buildKawaiiTabImageSources(dogImagePool, kawaiiCtaImageSrc));
       setImageTabTexts([title, ...picked, imageFrameCtaText]);
+    } else if (isBearsKawaii) {
+      const title = pickRandomDailyFunnyTitle(imageTabTexts[0]);
+      setImageTabSources(buildTemplate6TabImageSources());
+      setImageTabTexts([title, ...picked]);
     } else if (isCouplesKawaii) {
       const title = pickRandomDailyFunnyTitle(imageTabTexts[0]);
       setImageTabSources(buildTemplate5TabImageSources());
@@ -3953,7 +3994,10 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     imageTemplate2CoverSquiggleEnabled
       ? splitTitleAroundHighlight(imageFrameTextForActiveTab, imageTemplate2HighlightWord)
       : null;
-  const imageTemplate1SquiggleColor = squiggleColorForBackground(imageTabFrameBg);
+  const imageTemplate1SquiggleColor = isBearsKawaiiImageTemplate
+    ? IMAGE_TEMPLATE6_HIGHLIGHT_COLOR
+    : squiggleColorForBackground(imageTabFrameBg);
+  const imageTemplate1HighlightTextColor = TITLE_HIGHLIGHT_TEXT_COLOR;
   const imageTemplate1TitleHighlightParts =
     isKawaiiLayoutImageTemplate && selectedImageBrowserTab === 0
       ? splitTitleAroundHighlight(imageFrameTextForActiveTab, imageTemplate1HighlightWord)
@@ -3966,7 +4010,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
   const isFullBleedImageTabSelected = isCtaTabSelected || template4FixedTabImageSrc !== null;
   const kawaiiIllustrationForActiveTab = isCouplesKawaiiImageTemplate
     ? template5CoupleImageForTab(selectedImageBrowserTab, imageTabSources)
-    : kawaiiDogImageForTab(selectedImageBrowserTab, imageTabSources, dogImagePool);
+    : isBearsKawaiiImageTemplate
+      ? template6BearImageForTab(selectedImageBrowserTab, imageTabSources)
+      : kawaiiDogImageForTab(selectedImageBrowserTab, imageTabSources, dogImagePool);
   const imageSourceForActiveTab =
     template4FixedTabImageSrc ??
     (isCtaTabSelected
@@ -4074,6 +4120,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           if (slot && !isKawaiiCtaIllustrationUrl(slot)) return slot;
           return template5CoupleImageForTab(i, merged);
         }
+        if (exportTemplateId === 6) {
+          if (i === IMAGE_TEMPLATE2_Q5_TAB_INDEX) return '';
+          const merged = slots?.tabSources ?? imageTabSources;
+          return template6BearImageForTab(i, merged);
+        }
         return (
           slots?.tabSources[i] ??
           imageTabSources[i] ??
@@ -4087,15 +4138,18 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       const template4FixedExportSrc = isFixedPhotoCarouselTemplateId(exportTemplateId)
         ? fixedPhotoCarouselTabImageSrc(tabIndex, exportTemplateId)
         : null;
-      // Template 2 has no CTA slide; its last tab is Q5.
+      const exportTextColor =
+        exportTemplateId === 6 ? IMAGE_TEMPLATE6_TEXT_COLOR : imageFrameExportTextColorDefault;
+      // Template 2 / 5 / 6 have no CTA slide; their last tab is Q5.
       const exportCtaTabIndex =
-        exportTemplateId === 2 || exportTemplateId === 5
+        exportTemplateId === 2 || isKawaiiNoCtaTemplateId(exportTemplateId)
           ? -1
           : isFixedPhotoCarouselTemplateId(exportTemplateId)
             ? 5
             : 6;
       /** Cover + questions (+ CTA where the template has one) — drives the progress bar. */
-      const exportSlideTotal = exportTemplateId === 2 || exportTemplateId === 5 ? 6 : 7;
+      const exportSlideTotal =
+        exportTemplateId === 2 || isKawaiiNoCtaTemplateId(exportTemplateId) ? 6 : 7;
       const isFullBleedTab =
         tabIndex === exportCtaTabIndex || template4FixedExportSrc !== null;
       const frameWidth = 1080;
@@ -4347,7 +4401,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       if (isKawaiiQ5Export) {
         ctx.fillStyle = imageTabFrameBg;
         ctx.fillRect(0, 0, frameWidth, frameHeight);
-        ctx.fillStyle = imageFrameExportTextColor;
+        ctx.fillStyle = exportTextColor;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         ctx.shadowColor = 'transparent';
@@ -4444,7 +4498,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       const drawX = (frameWidth - drawW) / 2;
       const drawY = frameHeight - drawH - frameHeight * 0.13;
 
-      ctx.fillStyle = imageFrameExportTextColor;
+      ctx.fillStyle = exportTextColor;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       ctx.shadowColor = imageFrameExportGlowColor;
@@ -4464,14 +4518,20 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       } else {
         const coverTitle = textForTab(0).trim() || pickRandomDailyFunnyTitle();
         if (isKawaiiStyleTemplateId(exportTemplateId)) {
+          const exportHighlightColor =
+            exportTemplateId === 6
+              ? IMAGE_TEMPLATE6_HIGHLIGHT_COLOR
+              : imageTemplate1SquiggleColor;
+          const exportHighlightTextColor = TITLE_HIGHLIGHT_TEXT_COLOR;
           drawKawaiiCoverTitleWithHighlight(ctx, frameWidth, frameHeight * 0.21, coverTitle, {
             fontSizePx: imageFrameExportFontPx,
             maxWidthRatio: 0.66,
             lineHeightPx: imageFrameExportWrappedLineHeightPx,
-            textColor: imageFrameExportTextColor,
+            textColor: exportTextColor,
             fontFamily: imageFrameExportFontFamily,
             highlightWord: imageTemplate1HighlightWord,
-            highlightColor: imageTemplate1SquiggleColor,
+            highlightColor: exportHighlightColor,
+            highlightTextColor: exportHighlightTextColor,
           });
         } else {
           drawWrapped(
@@ -4500,6 +4560,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       if (exportTemplateId === 5) {
         return buildTemplate5TabImageSources();
       }
+      if (exportTemplateId === 6) {
+        return buildTemplate6TabImageSources();
+      }
       const fromPool = buildKawaiiTabImageSources(dogImagePool, kawaiiCtaImageSrc).slice(0, 6);
       if (dogImagePool.length > 0) {
         return fromPool;
@@ -4520,7 +4583,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     if (isKawaiiTemplate) {
       const probe = buildSixTabSourcesForKawaiiSet();
       if (
-        exportTemplateId === 1 &&
+        isDogsKawaiiTemplateId(exportTemplateId) &&
         (probe.length < 6 || probe.slice(0, 5).some((u) => !u?.trim()))
       ) {
         throw new Error('Dog images are still loading. Wait a few seconds, then try again.');
@@ -4530,13 +4593,12 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         const picked = shuffleCopy(funnyPool).slice(0, 5);
         const coverTitle =
           (imageTabTexts[0] ?? '').trim() || pickRandomDailyFunnyTitle();
-        const tabTexts =
-          exportTemplateId === 5
-            ? [coverTitle, ...picked]
-            : [coverTitle, ...picked, imageFrameCtaText];
+        const tabTexts = isKawaiiNoCtaTemplateId(exportTemplateId)
+          ? [coverTitle, ...picked]
+          : [coverTitle, ...picked, imageFrameCtaText];
         const tabSources = buildSixTabSourcesForKawaiiSet();
-        // Single-set download matches the on-screen cover + question dogs.
-        if (KAWAII_DOWNLOAD_NUM_SETS === 1 && exportTemplateId === 1) {
+        // Single-set download matches the on-screen cover + question illustrations.
+        if (KAWAII_DOWNLOAD_NUM_SETS === 1 && isDogsKawaiiTemplateId(exportTemplateId)) {
           for (let i = 0; i < 5; i++) {
             const previewUrl = kawaiiDogImageForTab(i, imageTabSources, dogImagePool);
             if (previewUrl) tabSources[i] = previewUrl;
@@ -4547,9 +4609,14 @@ const imageFrameTitleLine1 = 'Questions to ask your';
             tabSources[i] = template5CoupleImageForTab(i, imageTabSources);
           }
         }
+        if (KAWAII_DOWNLOAD_NUM_SETS === 1 && exportTemplateId === 6) {
+          for (let i = 0; i < 5; i++) {
+            tabSources[i] = template6BearImageForTab(i, imageTabSources);
+          }
+        }
         const setPrefix =
           KAWAII_DOWNLOAD_NUM_SETS > 1 ? `set-${setIdx + 1}/` : '';
-        const kawaiiExportTabCount = exportTemplateId === 5 ? 6 : 7;
+        const kawaiiExportTabCount = isKawaiiNoCtaTemplateId(exportTemplateId) ? 6 : 7;
         for (let tabIndex = 0; tabIndex < kawaiiExportTabCount; tabIndex++) {
           const blob = await renderFrameBlob(tabIndex, { tabTexts, tabSources });
           const tabName = tabIndex === 0 ? 'cover' : tabIndex <= 5 ? `q${tabIndex}` : 'cta';
@@ -5339,16 +5406,22 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 alt={`${card.title} preview`}
                                 className="w-full h-full object-cover"
                               />
-                            ) : selectedAppId === 'spill-it' && (card.id === 1 || card.id === 5) ? (
+                            ) : selectedAppId === 'spill-it' &&
+                              (card.id === 1 || card.id === 5 || card.id === 6) ? (
                               <div
                                 className="w-full h-full relative"
-                                style={{ backgroundColor: '#FEFEFE' }}
+                                style={{
+                                  backgroundColor:
+                                    card.id === 6 ? IMAGE_TEMPLATE6_FRAME_BG : '#FEFEFE',
+                                }}
                               >
                                 {(() => {
                                   const previewIllustration =
                                     card.id === 5
                                       ? IMAGE_TEMPLATE5_COUPLE_SRC
-                                      : dogImagePool[0];
+                                      : card.id === 6
+                                        ? IMAGE_TEMPLATE6_BEAR_SRC
+                                        : dogImagePool[0];
                                   return previewIllustration ? (
                                     <img
                                       src={previewIllustration}
@@ -5763,7 +5836,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                     : ''
                                 }`}
                                 style={{
-                                  color: '#2f2a31',
+                                  color: imageFrameExportTextColor,
                                   textShadow: 'none',
                                   letterSpacing: '0.01em',
                                   fontFamily:
@@ -5782,7 +5855,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                       className="inline-block rounded-[0.08em] px-[0.12em] py-[0.1em]"
                                       style={{
                                         backgroundColor: imageTemplate1SquiggleColor,
-                                        color: TITLE_HIGHLIGHT_TEXT_COLOR,
+                                        color: imageTemplate1HighlightTextColor,
                                         transform: `rotate(${TITLE_HIGHLIGHT_TILT_RAD}rad)`,
                                       }}
                                     >
@@ -5798,8 +5871,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX ? (
                                 <>
                                   <p
-                                    className="absolute inset-x-[6%] z-10 text-center font-bold text-[#2f2a31]"
+                                    className="absolute inset-x-[6%] z-10 text-center font-bold"
                                     style={{
+                                      color: imageFrameExportTextColor,
                                       fontFamily:
                                         '"Comic Sans MS", "Marker Felt", "Chalkboard SE", "Trebuchet MS", sans-serif',
                                       fontSize: `${IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO * (4 / 3) * 100}cqw`,
