@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 
 const IMAGE_EXT = /\.(png|jpe?g|webp|gif|avif)$/i;
 /** Reserved for the CTA tab — not used as a random card illustration. */
-const EXCLUDED_FILES = new Set(['kawaii-cta-tab.png']);
+const EXCLUDED_FILES = new Set(['kawaii-cta-tab.png', 'kawaii-cta-tab-v2.png']);
 
 export async function GET() {
   try {

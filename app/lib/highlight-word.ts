@@ -170,10 +170,13 @@ export function drawTitleHighlight(
   const padX = fontSize * TITLE_HIGHLIGHT_PAD_X_EM;
   const padY = fontSize * TITLE_HIGHLIGHT_PAD_Y_EM;
 
-  // `textBaseline = 'middle'` centers the em box, not the glyphs, so a band
-  // centered on `y` sits low. Measure a reference with ascenders + descenders
-  // (same for every word, so bands stay aligned across lines) and wrap the ink.
+  // `y` must be the same coordinate passed to fillText with textBaseline
+  // 'middle'. Measuring with any other baseline (e.g. kawaii export used
+  // 'top') puts the band on the wrong part of the glyphs.
+  const previousBaseline = ctx.textBaseline;
+  ctx.textBaseline = 'middle';
   const ref = ctx.measureText('Hxpy');
+  ctx.textBaseline = previousBaseline;
   const ascent = ref.actualBoundingBoxAscent;
   const descent = ref.actualBoundingBoxDescent;
   const hasInkMetrics = Number.isFinite(ascent) && Number.isFinite(descent);

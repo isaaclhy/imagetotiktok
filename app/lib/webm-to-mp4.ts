@@ -38,8 +38,10 @@ async function getFfmpeg(): Promise<FFmpeg> {
 export async function transcodeWebmToMp4(
   webm: Blob,
   /** Original source clip — audio is muxed in when the export was frame-accurate (video-only). */
-  audioSource?: Blob | null
+  audioSource?: Blob | null,
+  options?: { preset?: 'veryfast' | 'medium' }
 ): Promise<Blob> {
+  const preset = options?.preset ?? 'medium';
   const ffmpeg = await getFfmpeg();
   const inputName = `input-${Date.now()}.webm`;
   const outputName = `output-${Date.now()}.mp4`;
@@ -66,7 +68,7 @@ export async function transcodeWebmToMp4(
     '-c:v',
     'libx264',
     '-preset',
-    'medium',
+    preset,
     // This is a second lossy pass over an already-compressed recording, so keep
     // it near-visually-lossless — TikTok re-encodes again after upload.
     '-crf',
@@ -98,7 +100,7 @@ export async function transcodeWebmToMp4(
 
 /**
  * Encodes a JPEG frame sequence at an exact CFR — bypasses MediaRecorder timing entirely.
- * Used for Couples Nature where realtime canvas capture judders on TikTok.
+ * Used by Couples Nature export (`app/lib/couples-nature/export.ts`).
  */
 export async function encodeJpegSequenceToMp4(
   frames: Uint8Array[],
@@ -137,7 +139,7 @@ export async function encodeJpegSequenceToMp4(
     '-fps_mode',
     'cfr',
     '-preset',
-    'veryfast',
+    'ultrafast',
     '-crf',
     '18',
     '-pix_fmt',

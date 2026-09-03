@@ -112,6 +112,12 @@ import {
   imageTemplate4CoverDisplaySrc,
   imageTemplate4FixedTabImageSrc,
 } from '@/app/lib/image-template-4-cover';
+import {
+  buildTemplate5TabImageSources,
+  IMAGE_TEMPLATE5_COUPLE_SRC,
+  template5CoupleImageForTab,
+  template5TabSourcesNeedRepair,
+} from '@/app/lib/image-template-5-kawaii';
 import { drawImageTemplate3ImessageSlide } from '@/app/lib/image-template-3-imessage';
 import {
   DEFAULT_STUDIO_APP_ID,
@@ -171,7 +177,13 @@ import { DownloadModal } from '@/app/components/DownloadModal';
 import { VideoDownloadModal } from '@/app/components/VideoDownloadModal';
 import { Toast } from '@/app/components/Toast';
 import { sampleCouplesNatureHighlightBackground } from '@/app/lib/couples-nature-color';
-import { encodeJpegSequenceToMp4, preloadFfmpeg, transcodeWebmToMp4 } from '@/app/lib/webm-to-mp4';
+import { exportCouplesNatureVideo, warmCouplesNatureExport, warmCouplesNatureVideoBlob } from '@/app/lib/couples-nature/export';
+import { fetchRandomCouplesNatureVideo } from '@/app/lib/couples-nature/fetch-video';
+import {
+  pexelsVideoProxySrc,
+  PEXELS_PREFER_HEIGHT,
+} from '@/app/lib/pexels-video-client';
+import { transcodeWebmToMp4 } from '@/app/lib/webm-to-mp4';
 import { INSTAGRAM_CAROUSEL_MAX } from '@/app/lib/instagram';
 
 type ContentTab = 'image' | 'video' | 'prompt' | 'automate';
@@ -186,42 +198,27 @@ type AppUrlState = {
 
 const CONTENT_TABS: ContentTab[] = ['image', 'video', 'prompt', 'automate'];
 
-/**
- * Portrait target height. 1080 used to score closest to a 540x960 rendition,
- * so exports were recorded well under 1080x1920 and TikTok upscaled them.
- */
-const PEXELS_PREFER_HEIGHT = 1920;
-
-function pexelsVideoProxySrc(directUrl: string): string {
-  // Local / relative assets don't need the Pexels proxy.
-  if (directUrl.startsWith('/') || !/^https?:\/\//i.test(directUrl)) {
-    return directUrl;
-  }
-  return `/api/pexels/video-proxy?url=${encodeURIComponent(directUrl)}`;
+function isFixedPhotoCarouselTemplateId(templateId: number | null | undefined): boolean {
+  return templateId === 4;
 }
 
-async function fetchRandomPexelsVideoForExport(): Promise<{
-  videoUrl: string;
-  thumbnailUrl: string | null;
-}> {
-  const query =
-    VIDEO_TEMPLATE2_PEXELS_QUERIES[Math.floor(Math.random() * VIDEO_TEMPLATE2_PEXELS_QUERIES.length)]!;
-  const page = 1 + Math.floor(Math.random() * 15);
-  const res = await fetch(
-    `/api/pexels/random-video?query=${encodeURIComponent(query)}&page=${page}&preferHeight=${PEXELS_PREFER_HEIGHT}`
-  );
-  const data = (await res.json()) as {
-    videoUrl?: string;
-    thumbnailUrl?: string | null;
-    error?: string;
-  };
-  if (!res.ok || !data.videoUrl) {
-    throw new Error(data.error || 'Failed to fetch video');
-  }
-  return {
-    videoUrl: pexelsVideoProxySrc(data.videoUrl),
-    thumbnailUrl: data.thumbnailUrl ?? null,
-  };
+function isKawaiiStyleTemplateId(templateId: number | null | undefined): boolean {
+  return templateId === 1 || templateId === 5;
+}
+
+function fixedPhotoCarouselCoverDisplaySrc(
+  generatedSrc: string,
+  templateId: number | null | undefined
+): string {
+  return imageTemplate4CoverDisplaySrc(generatedSrc);
+}
+
+function fixedPhotoCarouselTabImageSrc(
+  tabIndex: number,
+  templateId: number | null | undefined
+): string | null {
+  if (templateId === 4) return imageTemplate4FixedTabImageSrc(tabIndex);
+  return null;
 }
 
 function parsePositiveInt(raw: string | null): number | null {
@@ -315,8 +312,8 @@ function shuffleCopy<T>(items: T[]): T[] {
 }
 
 const TIKTOK_SANS_STACK = '"TikTok Sans", system-ui, -apple-system, sans-serif';
-/** Kawaii downloads ship several shuffled sets per zip; Drive uploads stay at one. */
-const KAWAII_DOWNLOAD_SETS = 5;
+/** Kawaii (Template 1) download — one carousel set per zip. */
+const KAWAII_DOWNLOAD_SETS = 1;
 
 const TEMPLATE2_COVER_FONT_WEIGHT = 700;
 
@@ -745,6 +742,8 @@ function drawNaturalWhiteWrappedBlockWithHighlight(
     lineHeightMult?: number;
     highlightWord?: string | null;
     highlightColor?: string;
+    /** Nudge marker band vertically (export-only tweaks). Negative = up. */
+    highlightYOffsetPx?: number;
   }
 ): number {
   const trimmed = text.trim();
@@ -777,7 +776,14 @@ function drawNaturalWhiteWrappedBlockWithHighlight(
       const wordX = lineStartX + beforeW;
       const wordW = ctx.measureText(before + word).width - beforeW;
 
-      drawTitleHighlight(ctx, wordX, y, wordW, fontSize, highlightColor);
+      drawTitleHighlight(
+        ctx,
+        wordX,
+        y + (options.highlightYOffsetPx ?? 0),
+        wordW,
+        fontSize,
+        highlightColor
+      );
 
       ctx.fillStyle = '#ffffff';
       ctx.shadowColor = 'rgba(0, 0, 0, 0.42)';
@@ -807,13 +813,81 @@ function drawNaturalWhiteWrappedBlockWithHighlight(
   return y - lineHeight / 2 + lineHeight;
 }
 
+function drawKawaiiCoverTitleWithHighlight(
+  ctx: CanvasRenderingContext2D,
+  frameWidth: number,
+  yStart: number,
+  text: string,
+  options: {
+    fontSizePx: number;
+    maxWidthRatio?: number;
+    lineHeightPx: number;
+    textColor: string;
+    fontFamily: string;
+    highlightWord?: string | null;
+    highlightColor?: string;
+  }
+) {
+  const trimmed = text.trim();
+  if (!trimmed) return;
+
+  const fontSize = options.fontSizePx;
+  const maxWidth = frameWidth * (options.maxWidthRatio ?? 0.66);
+  const lineHeight = options.lineHeightPx;
+  ctx.font = `bold ${fontSize}px ${options.fontFamily}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+
+  const lines = wrapCanvasTextLines(ctx, trimmed, maxWidth);
+  if (lines.length === 0) return;
+
+  const highlight = options.highlightWord?.trim().toLowerCase() ?? '';
+  const highlightColor =
+    options.highlightColor ?? squiggleColorForBackground('#FEFEFE');
+
+  const cx = frameWidth / 2;
+  let y = yStart + fontSize / 2;
+  for (const ln of lines) {
+    const idx = highlight ? ln.toLowerCase().indexOf(highlight) : -1;
+    if (idx >= 0) {
+      const before = ln.slice(0, idx);
+      const word = ln.slice(idx, idx + highlight.length);
+      const lineWidth = ctx.measureText(ln).width;
+      const lineStartX = cx - lineWidth / 2;
+      const beforeW = ctx.measureText(before).width;
+      const wordX = lineStartX + beforeW;
+      const wordW = ctx.measureText(before + word).width - beforeW;
+
+      drawTitleHighlight(ctx, wordX, y, wordW, fontSize, highlightColor);
+
+      ctx.fillStyle = options.textColor;
+      ctx.fillText(ln, cx, y);
+
+      ctx.textAlign = 'left';
+      ctx.fillStyle = TITLE_HIGHLIGHT_TEXT_COLOR;
+      ctx.fillText(word, wordX, y);
+      ctx.textAlign = 'center';
+    } else {
+      ctx.fillStyle = options.textColor;
+      ctx.fillText(ln, cx, y);
+    }
+    y += lineHeight;
+  }
+}
+
 function drawVideoTemplate2OverlayOnCanvas(
   ctx: CanvasRenderingContext2D,
   w: number,
   h: number,
   title: string,
   questions: string[],
-  options?: { highlightWord?: string | null; highlightBackground?: string }
+  options?: {
+    highlightWord?: string | null;
+    highlightBackground?: string;
+    highlightYOffsetPx?: number;
+  }
 ) {
   const titleFontSize = videoTemplate2TitleFontSizePx(h);
   const questionFontSize = videoTemplate2QuestionFontSizePx(h);
@@ -849,6 +923,7 @@ function drawVideoTemplate2OverlayOnCanvas(
       maxWidthRatio,
       highlightWord: options?.highlightWord,
       highlightColor: squiggleColorForBackground(highlightBackground),
+      highlightYOffsetPx: options?.highlightYOffsetPx,
     });
     if (hasQuestions || hasFooter) y += hasQuestions ? titleListGap : listFooterGap;
   }
@@ -873,6 +948,56 @@ function drawVideoTemplate2OverlayOnCanvas(
       });
     }
   }
+}
+
+function paintCouplesNatureExportOverlay(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  options: {
+    caption: string;
+    questions: string[];
+    highlightWord: string | null;
+    highlightBackground: string;
+  }
+) {
+  drawVideoTemplate2DimOverlay(ctx, w, h);
+  drawVideoTemplate2OverlayOnCanvas(ctx, w, h, options.caption, options.questions, {
+    highlightWord: options.highlightWord,
+    highlightBackground: options.highlightBackground,
+    highlightYOffsetPx: -Math.round(videoTemplate2TitleFontSizePx(h) * 0.07),
+  });
+}
+
+async function buildCouplesNatureVideoBlob(options: {
+  videoSrc: string;
+  title: string;
+  questions: string[];
+  posterForHighlight?: string | null;
+  highlightWord?: string | null;
+  highlightBackground?: string | null;
+  onProgress?: (phase: 'frames' | 'encode', current: number, total: number) => void;
+}): Promise<Blob> {
+  const [highlightWord, highlightBackground] = await Promise.all([
+    options.highlightWord !== undefined
+      ? Promise.resolve(options.highlightWord)
+      : fetchTitleHighlightWord(options.title),
+    options.highlightBackground !== undefined && options.highlightBackground !== null
+      ? Promise.resolve(options.highlightBackground)
+      : sampleCouplesNatureHighlightBackground(options.posterForHighlight),
+  ]);
+  return exportCouplesNatureVideo({
+    videoSrc: options.videoSrc,
+    maxDurationSec: VIDEO_TEMPLATE2_MAX_DURATION_SEC,
+    paintOverlay: (ctx, w, h) =>
+      paintCouplesNatureExportOverlay(ctx, w, h, {
+        caption: options.title,
+        questions: options.questions,
+        highlightWord,
+        highlightBackground,
+      }),
+    onProgress: options.onProgress,
+  });
 }
 
 /** Ask ChatGPT which title word to marker-highlight (shared by image + video Template 2). */
@@ -928,163 +1053,12 @@ function nightyParticleCanvasFontFamilyName(): string {
   return primary || 'TikTok Sans';
 }
 
-/** Seek without playing — each export frame lands on an exact 1/fps timestamp. */
-function seekVideoElement(video: HTMLVideoElement, timeSec: number): Promise<void> {
-  const clamped = Math.max(0, timeSec);
-  if (Math.abs(video.currentTime - clamped) < 0.001) return Promise.resolve();
-  return new Promise((resolve, reject) => {
-    const onSeeked = () => {
-      cleanup();
-      resolve();
-    };
-    const onError = () => {
-      cleanup();
-      reject(new Error('Failed to seek video'));
-    };
-    const cleanup = () => {
-      video.removeEventListener('seeked', onSeeked);
-      video.removeEventListener('error', onError);
-    };
-    video.addEventListener('seeked', onSeeked, { once: true });
-    video.addEventListener('error', onError, { once: true });
-    const maxTime = Number.isFinite(video.duration) ? Math.max(0, video.duration - 0.04) : clamped;
-    video.currentTime = Math.min(clamped, maxTime);
-  });
-}
-
-/** Sync JPEG grab — keeps playback capture on pace (async toBlob drifts). */
-function canvasToJpegBytesSync(canvas: HTMLCanvasElement, quality = 0.82): Uint8Array {
-  const dataUrl = canvas.toDataURL('image/jpeg', quality);
-  const base64 = dataUrl.split(',')[1];
-  if (!base64) throw new Error('Failed to encode frame');
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes;
-}
-
-/**
- * Capture export frames during realtime playback (~9s) instead of per-frame seek
- * (270 seeks × ~100ms each was taking 30–90s). CFR encode still happens in ffmpeg.
- */
-async function capturePlaybackJpegFrames(
-  video: HTMLVideoElement,
-  paintFrame: () => void,
-  canvas: HTMLCanvasElement,
-  fps: number,
-  durationSec: number,
-  onProgress?: (captured: number, total: number) => void
-): Promise<Uint8Array[]> {
-  const totalFrames = Math.max(1, Math.ceil(durationSec * fps));
-  const slots: Array<Uint8Array | undefined> = new Array(totalFrames);
-
-  await seekVideoElement(video, 0);
-  video.playbackRate = 1;
-  video.muted = true;
-
-  const fillCfrFrames = (): Uint8Array[] => {
-    const out: Uint8Array[] = [];
-    let last: Uint8Array | undefined;
-    for (let i = 0; i < totalFrames; i++) {
-      if (slots[i]) last = slots[i];
-      if (last) out.push(last);
-    }
-    return out;
-  };
-
-  const captureViaRvfc = () =>
-    new Promise<Uint8Array[]>((resolve, reject) => {
-      const timeoutMs = Math.ceil((durationSec + 1.5) * 1000);
-      const timeoutId = window.setTimeout(() => {
-        video.pause();
-        resolve(fillCfrFrames());
-      }, timeoutMs);
-
-      const step = (_now: DOMHighResTimeStamp, metadata: VideoFrameCallbackMetadata) => {
-        const t = metadata.mediaTime;
-        if (t >= durationSec - 0.001) {
-          window.clearTimeout(timeoutId);
-          video.pause();
-          resolve(fillCfrFrames());
-          return;
-        }
-        const idx = Math.min(totalFrames - 1, Math.floor(t * fps + 1e-4));
-        if (!slots[idx]) {
-          paintFrame();
-          slots[idx] = canvasToJpegBytesSync(canvas);
-          onProgress?.(slots.filter(Boolean).length, totalFrames);
-        }
-        video.requestVideoFrameCallback(step);
-      };
-
-      video
-        .play()
-        .then(() => video.requestVideoFrameCallback(step))
-        .catch((err) => {
-          window.clearTimeout(timeoutId);
-          reject(err);
-        });
-    });
-
-  const captureViaRaf = () =>
-    new Promise<Uint8Array[]>((resolve, reject) => {
-      const timeoutMs = Math.ceil((durationSec + 2) * 1000);
-      const timeoutId = window.setTimeout(() => {
-        video.pause();
-        resolve(fillCfrFrames());
-      }, timeoutMs);
-      let nextFrameAt = performance.now();
-      const frameMs = 1000 / fps;
-
-      const tick = (now: number) => {
-        if (video.currentTime >= durationSec - 0.001 || slots.filter(Boolean).length >= totalFrames) {
-          window.clearTimeout(timeoutId);
-          video.pause();
-          resolve(fillCfrFrames());
-          return;
-        }
-        if (now >= nextFrameAt) {
-          paintFrame();
-          const idx = Math.min(
-            totalFrames - 1,
-            Math.floor(video.currentTime * fps + 1e-4)
-          );
-          if (!slots[idx]) {
-            slots[idx] = canvasToJpegBytesSync(canvas);
-            onProgress?.(slots.filter(Boolean).length, totalFrames);
-          }
-          nextFrameAt += frameMs;
-          if (now > nextFrameAt + frameMs * 2) nextFrameAt = now;
-        }
-        requestAnimationFrame(tick);
-      };
-
-      video
-        .play()
-        .then(() => requestAnimationFrame(tick))
-        .catch((err) => {
-          window.clearTimeout(timeoutId);
-          reject(err);
-        });
-    });
-
-  if (typeof video.requestVideoFrameCallback === 'function') {
-    return captureViaRvfc();
-  }
-  return captureViaRaf();
-}
-
 async function exportVideoWithCaptionOverlay(
   videoSrc: string,
   caption: string,
   options: {
     position?: VideoCaptionPosition;
     style?: VideoCaptionStyle;
-    numberedQuestions?: string[];
-    /** Marker highlight on the Couples Nature title (one word from OpenAI). */
-    titleHighlightWord?: string | null;
-    /** Graded video tone for complementary marker color (from Pexels poster sample). */
-    titleHighlightBackground?: string;
     maxDurationSec?: number;
     maxWidthRatio?: number;
     /** Nighty Particle timed dual-line fade animation. */
@@ -1098,15 +1072,9 @@ async function exportVideoWithCaptionOverlay(
     rainAudioSrc?: string;
     /** Second line under the main Rain caption. */
     rainSubline?: string;
-    onExportProgress?: (phase: 'frames' | 'encode', current: number, total: number) => void;
   } = {}
 ): Promise<Blob> {
   const captionPosition = options.position ?? 'center';
-  const captionStyle = options.style ?? 'stroke';
-  const numberedQuestions = options.numberedQuestions ?? [];
-  const titleHighlightWord = options.titleHighlightWord ?? null;
-  const titleHighlightBackground =
-    options.titleHighlightBackground ?? VIDEO_TEMPLATE2_HIGHLIGHT_BACKGROUND;
   const maxDurationSec = options.maxDurationSec;
   const maxWidthRatio = options.maxWidthRatio;
   const particleAnimated = options.particleAnimated === true;
@@ -1115,18 +1083,11 @@ async function exportVideoWithCaptionOverlay(
   const rainTemplate = options.rainTemplate === true;
   const rainAudioSrc = options.rainAudioSrc;
   const rainSubline = options.rainSubline ?? NIGHTY_RAIN_CAPTION_SUBLINE;
-  const onExportProgress = options.onExportProgress;
   const bedAudioSrc = particleAnimated
     ? particleAudioSrc
     : rainTemplate
       ? rainAudioSrc
       : undefined;
-  /** Couples Nature: playback capture + ffmpeg CFR (seek-per-frame was 30–90s). */
-  const useFrameAccurateExport =
-    !particleAnimated &&
-    !rainTemplate &&
-    captionStyle === 'natural' &&
-    numberedQuestions.length > 0;
   if (typeof MediaRecorder === 'undefined') throw new Error('MediaRecorder is not supported in this browser');
 
   const mime = pickMediaRecorderMime();
@@ -1189,17 +1150,11 @@ async function exportVideoWithCaptionOverlay(
       ? Math.max(16, Math.min(48, Math.floor(w * NIGHTY_PARTICLE_CAPTION_SIZE_RATIO)))
       : rainTemplate
         ? Math.max(16, Math.min(40, Math.floor(w * NIGHTY_RAIN_CAPTION_SIZE_RATIO)))
-      : captionStyle === 'natural'
-        ? videoTemplate2TitleFontSizePx(h)
         : videoCaptionFontSizePx(w);
-    const questionFontSize = videoTemplate2QuestionFontSizePx(h);
-    const footerFontSize = videoTemplate2FooterFontSizePx(h);
     const captionFontWeight = isParticleCaption
       ? NIGHTY_PARTICLE_CAPTION_FONT_WEIGHT
       : rainTemplate
         ? NIGHTY_RAIN_CAPTION_FONT_WEIGHT
-      : captionStyle === 'natural'
-        ? TEMPLATE2_COVER_FONT_WEIGHT
         : 900;
     if (typeof document !== 'undefined' && document.fonts?.load) {
       try {
@@ -1210,10 +1165,6 @@ async function exportVideoWithCaptionOverlay(
         // Also try unquoted family (next/font hashed names).
         if (isParticleCaption || rainTemplate) {
           await document.fonts.load(`${captionFontWeight} ${captionFontSize}px ${fontFamilyName}`);
-        }
-        if (numberedQuestions.length > 0) {
-          await document.fonts.load(`${captionFontWeight} ${questionFontSize}px "TikTok Sans"`);
-          await document.fonts.load(`${captionFontWeight} ${footerFontSize}px "TikTok Sans"`);
         }
       } catch {
         /* fall back to system font if load fails */
@@ -1270,15 +1221,8 @@ async function exportVideoWithCaptionOverlay(
 
     const paintFrameToCanvas = () => {
       if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && video.videoWidth > 0) {
-        const useMagicalGrade = captionStyle === 'natural' && numberedQuestions.length > 0;
-        if (useMagicalGrade) {
-          ctx.filter = COUPLES_NATURE_VIDEO_FILTER;
-        }
         if (!coverReady) updateCoverCrop();
         ctx.drawImage(video, coverSx, coverSy, coverSw, coverSh, 0, 0, w, h);
-        if (useMagicalGrade) {
-          ctx.filter = 'none';
-        }
         if (particleAnimated) {
           drawNightyParticleCaptionOverlay(
             ctx,
@@ -1290,22 +1234,6 @@ async function exportVideoWithCaptionOverlay(
           );
         } else if (rainTemplate && rainOverlayCanvas) {
           ctx.drawImage(rainOverlayCanvas, 0, 0);
-        } else if (captionStyle === 'natural' && numberedQuestions.length > 0) {
-          drawVideoTemplate2DimOverlay(ctx, w, h);
-          drawVideoTemplate2OverlayOnCanvas(ctx, w, h, caption, numberedQuestions, {
-            highlightWord: titleHighlightWord,
-            highlightBackground: titleHighlightBackground,
-          });
-        } else if (captionStyle === 'natural') {
-          drawVideoTemplate2DimOverlay(ctx, w, h);
-          drawNaturalWhiteCaptionOnCanvas(ctx, w, h, caption, {
-            position: captionPosition,
-            fontSizePx: videoTemplate2TitleFontSizePx(h),
-            maxWidthRatio: maxWidthRatio ?? 0.7,
-            fontWeight: TEMPLATE2_COVER_FONT_WEIGHT,
-            shadow: true,
-            fontStack: TIKTOK_SANS_STACK,
-          });
         } else {
           drawTikTokCaptionOnCanvas(ctx, w, h, caption, {
             position: captionPosition,
@@ -1314,34 +1242,6 @@ async function exportVideoWithCaptionOverlay(
         }
       }
     };
-
-    // Couples Nature: play through once (~9s), then ffmpeg CFR encode.
-    if (useFrameAccurateExport) {
-      const durationSec =
-        maxDurationSec !== undefined
-          ? Math.min(maxDurationSec, video.duration || maxDurationSec)
-          : video.duration || maxDurationSec || 1;
-      const totalFrames = Math.max(1, Math.ceil(durationSec * EXPORT_FPS));
-      const startedAt = performance.now();
-
-      const frames = await capturePlaybackJpegFrames(
-        video,
-        paintFrameToCanvas,
-        canvas,
-        EXPORT_FPS,
-        durationSec,
-        (captured, total) => onExportProgress?.('frames', captured, total)
-      );
-
-      const elapsed = (performance.now() - startedAt) / 1000;
-      console.info(
-        `[export] playback capture ${frames.length}/${totalFrames} frames @ ${EXPORT_FPS}fps (${elapsed.toFixed(1)}s) at ${w}x${h}`
-      );
-      onExportProgress?.('encode', 0, 1);
-      const mp4 = await encodeJpegSequenceToMp4(frames, EXPORT_FPS, sourceBlob);
-      onExportProgress?.('encode', 1, 1);
-      return mp4;
-    }
 
     const chunks: BlobPart[] = [];
 
@@ -1674,6 +1574,57 @@ function pickDogUrlsWithoutReuseUntilDeckExhausted(pool: string[], count: number
   return picked;
 }
 
+/** Cover + Q1–Q4 each get a dog; Q5 is promo-only; CTA is full-bleed. */
+function buildKawaiiTabImageSources(pool: string[], ctaSrc: string): string[] {
+  const dogs =
+    pool.length > 0 ? pickDogUrlsWithoutReuseUntilDeckExhausted(pool, 6) : Array.from({ length: 6 }, () => '');
+  return [
+    dogs[0] ?? '',
+    dogs[1] ?? '',
+    dogs[2] ?? '',
+    dogs[3] ?? '',
+    dogs[4] ?? '',
+    '', // Q5 App Store mock — no dog
+    ctaSrc,
+  ];
+}
+
+const KAWAII_CTA_IMAGE_SRC = '/dog-images/kawaii-cta-tab-v2.png';
+
+const KAWAII_CTA_URLS = new Set([
+  '/dog-images/kawaii-cta-tab.png',
+  KAWAII_CTA_IMAGE_SRC,
+]);
+
+function isKawaiiCtaIllustrationUrl(url: string | undefined | null): boolean {
+  if (!url?.trim()) return false;
+  return KAWAII_CTA_URLS.has(url) || url.includes('kawaii-cta-tab');
+}
+
+/** Dog art for cover + Q1–Q4; never the CTA asset (guards short/legacy source arrays). */
+function kawaiiDogImageForTab(
+  tabIndex: number,
+  sources: readonly string[],
+  pool: readonly string[]
+): string {
+  if (tabIndex < 0 || tabIndex > 4) return '';
+  const slot = sources[tabIndex]?.trim();
+  if (slot && !isKawaiiCtaIllustrationUrl(slot)) return slot;
+  if (pool.length > 0) return pool[tabIndex % pool.length]!;
+  return '';
+}
+
+function kawaiiTabSourcesNeedRepair(sources: string[], ctaSrc: string): boolean {
+  if (sources.length < 7) return true;
+  if (sources[IMAGE_TEMPLATE2_Q5_TAB_INDEX] !== '') return true;
+  if (sources[6] !== ctaSrc) return true;
+  for (let i = 0; i < 5; i++) {
+    const url = sources[i]?.trim();
+    if (!url || isKawaiiCtaIllustrationUrl(url)) return true;
+  }
+  return false;
+}
+
 const INITIAL_CANVASES: CanvasData[] = [
   { id: '1', text: '', backgroundColor: '#000000', textColor: '#FFFFFF', textSize: '200', imageSize: '1080x1920' },
   { id: '3', text: '', backgroundColor: '#000000', textColor: '#000000', textSize: '200', imageSize: '1080x1920' },
@@ -1681,6 +1632,10 @@ const INITIAL_CANVASES: CanvasData[] = [
 ];
 
 const DAILY_TEMPLATE_TITLES_FUNNY = [
+  "Super Super Super Dumb Questions For Him",
+  "Super Super Super Dumb Questions For Your Boo",
+  "Super Super Super Dumb Questions For Your Boyfriend",
+  "Ragebait Your Boyfriend Tonight",
   "5 Impossible Questions To Tease Your Boyfriend Tonight",
   "5 Questions To Ask Your Sweet Heart Tonight",
   "5 Fun Questions To Gaslight Your Boyfriend Tonight",
@@ -1928,12 +1883,13 @@ export default function Home() {
   const [imageTabFrameBg, setImageTabFrameBg] = useState('#FEFEFE');
   const [imageTabPastelBgs, setImageTabPastelBgs] = useState<string[]>([]);
   const [imageTabTypeLabel, setImageTabTypeLabel] = useState('Funny Questions');
-  const kawaiiCtaImageSrc = '/dog-images/kawaii-cta-tab-v2.png';
+  const kawaiiCtaImageSrc = KAWAII_CTA_IMAGE_SRC;
+  const filterDogIllustrationPool = (urls: string[]) =>
+    urls.filter((u) => !isKawaiiCtaIllustrationUrl(u));
   const pastelCtaImageSrc = '/image-templates/template-2-cta-v2.png';
   /** Kawaii image-tab frame: export is 1080×1440; keep preview text in the same ballpark via Tailwind below. */
   const imageFrameExportFontPx = 54;
   const imageFrameExportWrappedLineHeightPx = 70;
-  const imageFrameExportCoverLineGapPx = 64;
   const imageFrameExportFontFamily = '"Comic Sans MS", "Marker Felt", "Chalkboard SE", "Trebuchet MS", sans-serif';
   const imageFrameExportTextColor = '#2f2a31';
   const imageFrameExportGlowColor = 'rgba(255, 255, 255, 0.9)';
@@ -1954,6 +1910,7 @@ export default function Home() {
   const [imageTemplate2HighlightWord, setImageTemplate2HighlightWord] = useState<string | null>(
     null
   );
+  const [imageTemplate1HighlightWord, setImageTemplate1HighlightWord] = useState<string | null>(null);
   const [imageTemplate2CoverSquiggleEnabled, setImageTemplate2CoverSquiggleEnabled] = useState(
     IMAGE_TEMPLATE2_COVER_SQUIGGLE_ENABLED_DEFAULT
   );
@@ -2026,18 +1983,22 @@ export default function Home() {
   const imageTemplateCards = getImageTemplatesForApp(selectedAppId);
   const videoTemplateCards = getVideoTemplatesForApp(selectedAppId);
   const isKawaiiImageTemplate = selectedAppId === 'spill-it' && selectedImageTemplateId === 1;
+  const isCouplesKawaiiImageTemplate =
+    selectedAppId === 'spill-it' && selectedImageTemplateId === 5;
+  const isKawaiiLayoutImageTemplate = isKawaiiImageTemplate || isCouplesKawaiiImageTemplate;
   const isPastelCarouselImageTemplate =
     selectedAppId === 'spill-it' && selectedImageTemplateId === 2;
   const isTikTokReactionImageTemplate =
     selectedAppId === 'spill-it' && selectedImageTemplateId === 3;
   const isMirrorSelfieImageTemplate =
-    selectedAppId === 'spill-it' && selectedImageTemplateId === 4;
-  /** Templates 3 and 4 share the cover-image + iMessage-reply structure. */
+    selectedAppId === 'spill-it' && isFixedPhotoCarouselTemplateId(selectedImageTemplateId);
+  /** Templates 3–5 share the cover-image + iMessage-reply structure. */
   const isCoverPhotoImageTemplate = isTikTokReactionImageTemplate || isMirrorSelfieImageTemplate;
-  // Template 4 drops Q5, so the CTA sits one tab earlier.
+  // Templates 4 drops Q5, so the CTA sits one tab earlier.
   const imageTemplateQuestionCount = isMirrorSelfieImageTemplate ? 4 : 5;
-  // Template 2 ends on Q5 — its App Store slide replaced the CTA card.
-  const hasImageTemplateCtaTab = !isPastelCarouselImageTemplate;
+  // Template 2 and Template 5 end on Q5 — no CTA card.
+  const hasImageTemplateCtaTab =
+    !isPastelCarouselImageTemplate && !isCouplesKawaiiImageTemplate;
   const imageTemplateCtaTabIndex = hasImageTemplateCtaTab
     ? imageTemplateQuestionCount + 1
     : -1;
@@ -2103,7 +2064,7 @@ export default function Home() {
 
   useEffect(() => {
     if (
-      (isKawaiiImageTemplate ||
+      (isKawaiiLayoutImageTemplate ||
         isPastelCarouselImageTemplate ||
         isCoverPhotoImageTemplate) &&
       selectedImageBrowserTab >= imageTemplateTabCount
@@ -2111,7 +2072,7 @@ export default function Home() {
       setSelectedImageBrowserTab(0);
     }
   }, [
-    isKawaiiImageTemplate,
+    isKawaiiLayoutImageTemplate,
     isPastelCarouselImageTemplate,
     isCoverPhotoImageTemplate,
     imageTemplateTabCount,
@@ -2249,11 +2210,12 @@ export default function Home() {
   };
 
   const fetchImageTemplate3Cover = async (): Promise<string> => {
-    const endpoint = isMirrorSelfieImageTemplate
-      ? '/api/gemini/template-4-cover'
-      : imageTemplate3CoverModel === 'openai'
-        ? '/api/openai/template-3-cover'
-        : '/api/gemini/template-3-cover';
+    const endpoint =
+      selectedImageTemplateId === 4
+        ? '/api/gemini/template-4-cover'
+        : imageTemplate3CoverModel === 'openai'
+          ? '/api/openai/template-3-cover'
+          : '/api/gemini/template-3-cover';
     const res = await fetch(endpoint, { method: 'POST' });
     const data = (await res.json()) as { imageUrl?: string; error?: string };
     if (!res.ok || !data.imageUrl) {
@@ -2504,7 +2466,7 @@ export default function Home() {
 
   useEffect(() => {
     if (isCouplesNatureVideoTemplate) {
-      preloadFfmpeg();
+      warmCouplesNatureExport();
       regenerateVideoTemplate2Content();
       void handleRegenerateVideoTemplate2Video();
     } else if (isSpillItNotesVideoTemplate) {
@@ -2779,7 +2741,7 @@ export default function Home() {
         ) {
           return;
         }
-        setDogImagePool((data as { urls: string[] }).urls.filter((u) => typeof u === 'string'));
+        setDogImagePool(filterDogIllustrationPool((data as { urls: string[] }).urls.filter((u) => typeof u === 'string')));
       } catch {
         /* ignore */
       }
@@ -2788,6 +2750,23 @@ export default function Home() {
       cancelled = true;
     };
   }, []);
+
+  // Template 1 can regenerate before dog images load, leaving `['', cta]` — Q1 then shows the CTA art.
+  useEffect(() => {
+    if (!isKawaiiImageTemplate || dogImagePool.length === 0) return;
+    setImageTabSources((prev) => {
+      if (!kawaiiTabSourcesNeedRepair(prev, kawaiiCtaImageSrc)) return prev;
+      return buildKawaiiTabImageSources(dogImagePool, kawaiiCtaImageSrc);
+    });
+  }, [isKawaiiImageTemplate, dogImagePool, kawaiiCtaImageSrc]);
+
+  useEffect(() => {
+    if (!isCouplesKawaiiImageTemplate) return;
+    setImageTabSources((prev) => {
+      if (!template5TabSourcesNeedRepair(prev)) return prev;
+      return buildTemplate5TabImageSources();
+    });
+  }, [isCouplesKawaiiImageTemplate]);
 
   useEffect(() => {
     if (contentTab !== 'video') {
@@ -3775,8 +3754,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
   ) => {
     const tid = templateId ?? selectedImageTemplateId;
     const isKawaii = selectedAppId === 'spill-it' && tid === 1;
+    const isCouplesKawaii = selectedAppId === 'spill-it' && tid === 5;
     const isPastel = selectedAppId === 'spill-it' && tid === 2;
-    const isTikTokReaction = selectedAppId === 'spill-it' && (tid === 3 || tid === 4);
+    const isTikTokReaction = selectedAppId === 'spill-it' && tid === 3;
+    const isFixedPhotoCarousel =
+      selectedAppId === 'spill-it' && isFixedPhotoCarouselTemplateId(tid);
     if (options?.resetTab !== false) {
       setSelectedImageBrowserTab(0);
     }
@@ -3808,16 +3790,19 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     setImageTabPastelBgs([]);
     setImageTabTypeLabel('Funny Questions');
     if (isKawaii) {
-      setImageTabTexts([`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked, imageFrameCtaText]);
-      const dogSources = dogImagePool.length ? pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 6) : [];
-      setImageTabSources([...dogSources, kawaiiCtaImageSrc]);
-    } else if (isTikTokReaction) {
+      const title = pickRandomDailyFunnyTitle(imageTabTexts[0]);
+      setImageTabSources(buildKawaiiTabImageSources(dogImagePool, kawaiiCtaImageSrc));
+      setImageTabTexts([title, ...picked, imageFrameCtaText]);
+    } else if (isCouplesKawaii) {
+      const title = pickRandomDailyFunnyTitle(imageTabTexts[0]);
+      setImageTabSources(buildTemplate5TabImageSources());
+      setImageTabTexts([title, ...picked]);
+    } else if (isTikTokReaction || isFixedPhotoCarousel) {
       setImageTemplate3CoverError(null);
       setImageTemplate3ReplyError(null);
       const type = resolveQuestionType(imageTemplate3QuestionType);
       const title = pickTitleForType(type);
-      // Template 4 has no Q5.
-      const questionCount = tid === 4 ? 4 : 5;
+      const questionCount = isFixedPhotoCarousel ? 4 : 5;
       const questions = pickQuestionsForType(type, questionCount);
       setImageTemplate3CoverSubtitle(pickRandomImageTemplate3CoverSubtitle());
       setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[type]);
@@ -3837,7 +3822,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
   };
   const getDefaultImageFrameTextForTab = (tabIndex: number): string =>
     tabIndex === 0
-      ? `${imageFrameTitleLine1}\n${imageFrameTitleLine2}`
+      ? isKawaiiLayoutImageTemplate
+        ? pickRandomDailyFunnyTitle()
+        : `${imageFrameTitleLine1}\n${imageFrameTitleLine2}`
       : tabIndex >= 1 && tabIndex <= 5
         ? imageTabFunnyQuestions[tabIndex - 1] || ''
         : imageFrameCtaText;
@@ -3851,7 +3838,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
   const imageTemplate3CoverReady =
     imageTemplate3CoverSrc.length > 0 || isMirrorSelfieImageTemplate;
   const imageTemplate3CoverPreviewSrc = isMirrorSelfieImageTemplate
-    ? imageTemplate4CoverDisplaySrc(imageTemplate3CoverSrc)
+    ? fixedPhotoCarouselCoverDisplaySrc(imageTemplate3CoverSrc, selectedImageTemplateId)
     : imageTemplate3CoverDisplaySrc(imageTemplate3CoverSrc);
 
   // URL restores the selected template on refresh, but tab texts live only in memory.
@@ -3907,6 +3894,32 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     };
   }, [isPastelCarouselImageTemplate, imageTemplate2CoverSquiggleEnabled, imageTabTexts[0]]);
 
+  // Template 1 cover — same highlight-word API as Image Template 2.
+  useEffect(() => {
+    if (!isKawaiiLayoutImageTemplate) {
+      setImageTemplate1HighlightWord(null);
+      return;
+    }
+    const title = (imageTabTexts[0] ?? '').trim();
+    if (!title) {
+      setImageTemplate1HighlightWord(null);
+      return;
+    }
+
+    setImageTemplate1HighlightWord(null);
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      void fetchTitleHighlightWord(title, controller.signal).then((word) => {
+        if (word) setImageTemplate1HighlightWord(word);
+      });
+    }, 350);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [isKawaiiLayoutImageTemplate, imageTabTexts[0]]);
+
   // Couples Nature video title — same highlight-word API as Image Template 2 cover.
   useEffect(() => {
     if (!isCouplesNatureVideoTemplate) {
@@ -3940,19 +3953,29 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     imageTemplate2CoverSquiggleEnabled
       ? splitTitleAroundHighlight(imageFrameTextForActiveTab, imageTemplate2HighlightWord)
       : null;
+  const imageTemplate1SquiggleColor = squiggleColorForBackground(imageTabFrameBg);
+  const imageTemplate1TitleHighlightParts =
+    isKawaiiLayoutImageTemplate && selectedImageBrowserTab === 0
+      ? splitTitleAroundHighlight(imageFrameTextForActiveTab, imageTemplate1HighlightWord)
+      : null;
   const isCtaTabSelected = selectedImageBrowserTab === imageTemplateCtaTabIndex;
   /** Template 4 replaces some question slides with fixed full-bleed photos. */
   const template4FixedTabImageSrc = isMirrorSelfieImageTemplate
-    ? imageTemplate4FixedTabImageSrc(selectedImageBrowserTab)
+    ? fixedPhotoCarouselTabImageSrc(selectedImageBrowserTab, selectedImageTemplateId)
     : null;
   const isFullBleedImageTabSelected = isCtaTabSelected || template4FixedTabImageSrc !== null;
+  const kawaiiIllustrationForActiveTab = isCouplesKawaiiImageTemplate
+    ? template5CoupleImageForTab(selectedImageBrowserTab, imageTabSources)
+    : kawaiiDogImageForTab(selectedImageBrowserTab, imageTabSources, dogImagePool);
   const imageSourceForActiveTab =
     template4FixedTabImageSrc ??
     (isCtaTabSelected
       ? isPastelCarouselImageTemplate || isCoverPhotoImageTemplate
         ? pastelCtaImageSrc
         : kawaiiCtaImageSrc
-      : getImageSourceForTab(selectedImageBrowserTab));
+      : isKawaiiLayoutImageTemplate
+        ? kawaiiIllustrationForActiveTab
+        : getImageSourceForTab(selectedImageBrowserTab));
   const imageTabLabelForActiveTab =
     selectedImageBrowserTab === 0
       ? 'Cover'
@@ -4011,6 +4034,16 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     };
   }, [isCouplesNatureVideoTemplate, template2PlaybackPosterSrc]);
 
+  useEffect(() => {
+    if (!isCouplesNatureVideoTemplate) return;
+    warmCouplesNatureVideoBlob(template2ExportVideoSrc ?? template2PlaybackVideoSrc);
+  }, [isCouplesNatureVideoTemplate, template2ExportVideoSrc, template2PlaybackVideoSrc]);
+
+  const couplesNatureExportExtras = {
+    highlightWord: videoTemplate2HighlightWord,
+    highlightBackground: videoTemplate2HighlightBg,
+  };
+
   const generateImageFrameExportEntries = async (options?: {
     kawaiiNumSets?: number;
     templateId?: number;
@@ -4028,21 +4061,41 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     const renderFrameBlob = async (tabIndex: number, slots?: ImageExportSlotData | null): Promise<Blob> => {
       const textForTab = (i: number) =>
         slots?.tabTexts[i] ?? imageTabTexts[i] ?? getDefaultImageFrameTextForTab(i);
-      const sourceForTab = (i: number) =>
-        slots?.tabSources[i] ??
-        imageTabSources[i] ??
-        (dogImagePool.length ? dogImagePool[i % dogImagePool.length]! : '');
+      const sourceForTab = (i: number) => {
+        if (exportTemplateId === 1) {
+          if (i === IMAGE_TEMPLATE2_Q5_TAB_INDEX) return '';
+          const merged = slots?.tabSources ?? imageTabSources;
+          return kawaiiDogImageForTab(i, merged, dogImagePool);
+        }
+        if (exportTemplateId === 5) {
+          if (i === IMAGE_TEMPLATE2_Q5_TAB_INDEX) return '';
+          const merged = slots?.tabSources ?? imageTabSources;
+          const slot = merged[i]?.trim();
+          if (slot && !isKawaiiCtaIllustrationUrl(slot)) return slot;
+          return template5CoupleImageForTab(i, merged);
+        }
+        return (
+          slots?.tabSources[i] ??
+          imageTabSources[i] ??
+          (dogImagePool.length ? dogImagePool[i % dogImagePool.length]! : '')
+        );
+      };
 
       const isPastelExport = exportTemplateId === 2;
-      const isCoverPhotoExport = exportTemplateId === 3 || exportTemplateId === 4;
+      const isCoverPhotoExport = isFixedPhotoCarouselTemplateId(exportTemplateId) || exportTemplateId === 3;
       const isTemplate3CoverExport = isCoverPhotoExport && tabIndex === 0;
-      const template4FixedExportSrc =
-        exportTemplateId === 4 ? imageTemplate4FixedTabImageSrc(tabIndex) : null;
+      const template4FixedExportSrc = isFixedPhotoCarouselTemplateId(exportTemplateId)
+        ? fixedPhotoCarouselTabImageSrc(tabIndex, exportTemplateId)
+        : null;
       // Template 2 has no CTA slide; its last tab is Q5.
       const exportCtaTabIndex =
-        exportTemplateId === 2 ? -1 : exportTemplateId === 4 ? 5 : 6;
+        exportTemplateId === 2 || exportTemplateId === 5
+          ? -1
+          : isFixedPhotoCarouselTemplateId(exportTemplateId)
+            ? 5
+            : 6;
       /** Cover + questions (+ CTA where the template has one) — drives the progress bar. */
-      const exportSlideTotal = exportTemplateId === 2 ? 6 : 7;
+      const exportSlideTotal = exportTemplateId === 2 || exportTemplateId === 5 ? 6 : 7;
       const isFullBleedTab =
         tabIndex === exportCtaTabIndex || template4FixedExportSrc !== null;
       const frameWidth = 1080;
@@ -4199,10 +4252,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       }
 
       if (isTemplate3CoverExport) {
-        const coverSource =
-          exportTemplateId === 4
-            ? imageTemplate4CoverDisplaySrc(sourceForTab(0))
-            : imageTemplate3CoverDisplaySrc(sourceForTab(0));
+        const coverSource = isFixedPhotoCarouselTemplateId(exportTemplateId)
+          ? fixedPhotoCarouselCoverDisplaySrc(sourceForTab(0), exportTemplateId)
+          : imageTemplate3CoverDisplaySrc(sourceForTab(0));
         // Canvas ignores CSS @font-face until the face is loaded in this document.
         if (document.fonts?.load) {
           try {
@@ -4246,7 +4298,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         const coverY = (frameHeight - coverH) / 2;
         ctx.drawImage(coverImg, coverX, coverY, coverW, coverH);
         drawImageTemplate3CoverOverlay(ctx, frameWidth, frameHeight, textForTab(0), {
-          centerTitle: exportTemplateId === 4,
+          centerTitle: isFixedPhotoCarouselTemplateId(exportTemplateId),
           strokeTitle: exportTemplateId !== 3,
           subtitle: imageTemplate3CoverSubtitle,
         });
@@ -4287,6 +4339,64 @@ const imageFrameTitleLine1 = 'Questions to ask your';
             ? pastelCtaImageSrc
             : kawaiiCtaImageSrc
           : sourceForTab(tabIndex);
+
+      const isKawaiiQ5Export =
+        isKawaiiStyleTemplateId(exportTemplateId) &&
+        tabIndex === IMAGE_TEMPLATE2_Q5_TAB_INDEX;
+
+      if (isKawaiiQ5Export) {
+        ctx.fillStyle = imageTabFrameBg;
+        ctx.fillRect(0, 0, frameWidth, frameHeight);
+        ctx.fillStyle = imageFrameExportTextColor;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.font = `bold ${imageFrameExportFontPx}px ${imageFrameExportFontFamily}`;
+        const maxTextWidth = frameWidth * 0.66;
+        const qLines = wrapLines(ctx, textForTab(tabIndex), maxTextWidth);
+        const lineHeight = imageFrameExportWrappedLineHeightPx;
+        const blockH = qLines.length * lineHeight;
+        const textCenterY = frameHeight * IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO;
+        let textY = textCenterY - blockH / 2;
+        for (const line of qLines) {
+          ctx.fillText(line, frameWidth / 2, textY);
+          textY += lineHeight;
+        }
+        const textBottom = textCenterY + blockH / 2;
+
+        const promo = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const el = new Image();
+          el.onload = () => resolve(el);
+          el.onerror = () => reject(new Error('Failed to load the App Store image'));
+          el.src = IMAGE_TEMPLATE2_Q5_PROMO_SRC;
+        });
+        const labelSize = Math.round(
+          frameHeight * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO
+        );
+        const labelGap = frameHeight * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO;
+        const layout = imageTemplate2Q5PromoLayout(
+          frameWidth,
+          frameHeight,
+          textBottom + labelSize + labelGap
+        );
+        ctx.drawImage(promo, layout.x, layout.y, layout.width, layout.height);
+        ctx.font = `bold ${labelSize}px ${imageFrameExportFontFamily}`;
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(
+          IMAGE_TEMPLATE2_Q5_PROMO_LABEL,
+          frameWidth / 2,
+          layout.y - labelGap
+        );
+
+        return await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error('Failed to create image blob'));
+          }, 'image/png');
+        });
+      }
+
       if (!source.trim()) {
         throw new Error('Missing image URL (dog images may still be loading).');
       }
@@ -4352,17 +4462,25 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           imageFrameExportWrappedLineHeightPx
         );
       } else {
-        const coverY = frameHeight * 0.21;
-        const coverLineGap = imageFrameExportCoverLineGapPx;
-        const coverBlock = textForTab(0).trim();
-        const coverParts = coverBlock
-          .split('\n')
-          .map((s) => s.trim())
-          .filter(Boolean);
-        const coverLine1 = coverParts[0] ?? imageFrameTitleLine1;
-        const coverLine2 = coverParts[1] ?? imageFrameTitleLine2;
-        ctx.fillText(coverLine1, frameWidth / 2, coverY);
-        ctx.fillText(coverLine2, frameWidth / 2, coverY + coverLineGap);
+        const coverTitle = textForTab(0).trim() || pickRandomDailyFunnyTitle();
+        if (isKawaiiStyleTemplateId(exportTemplateId)) {
+          drawKawaiiCoverTitleWithHighlight(ctx, frameWidth, frameHeight * 0.21, coverTitle, {
+            fontSizePx: imageFrameExportFontPx,
+            maxWidthRatio: 0.66,
+            lineHeightPx: imageFrameExportWrappedLineHeightPx,
+            textColor: imageFrameExportTextColor,
+            fontFamily: imageFrameExportFontFamily,
+            highlightWord: imageTemplate1HighlightWord,
+            highlightColor: imageTemplate1SquiggleColor,
+          });
+        } else {
+          drawWrapped(
+            coverTitle,
+            frameHeight * 0.21,
+            frameWidth * 0.66,
+            imageFrameExportWrappedLineHeightPx
+          );
+        }
       }
       ctx.shadowBlur = 0;
       ctx.drawImage(img, drawX, drawY, drawW, drawH);
@@ -4376,35 +4494,67 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     };
 
     const entries: { path: string; blob: Blob }[] = [];
-    const isKawaiiTemplate = exportTemplateId === 1;
+    const isKawaiiTemplate = isKawaiiStyleTemplateId(exportTemplateId);
 
     const buildSixTabSourcesForKawaiiSet = (): string[] => {
+      if (exportTemplateId === 5) {
+        return buildTemplate5TabImageSources();
+      }
+      const fromPool = buildKawaiiTabImageSources(dogImagePool, kawaiiCtaImageSrc).slice(0, 6);
       if (dogImagePool.length > 0) {
-        return pickDogUrlsWithoutReuseUntilDeckExhausted(dogImagePool, 6);
+        return fromPool;
       }
-      const fromUi = imageTabSources.filter((u) => typeof u === 'string' && u.length > 0);
+      const fromUi = imageTabSources.filter(
+        (u) => typeof u === 'string' && u.length > 0 && !isKawaiiCtaIllustrationUrl(u)
+      );
       if (fromUi.length > 0) {
-        return Array.from({ length: 6 }, (_, i) => fromUi[i % fromUi.length]!);
+        const dogs = fromUi.slice(0, 5);
+        while (dogs.length < 5) {
+          dogs.push(fromUi[dogs.length % fromUi.length]!);
+        }
+        return [...dogs, ''];
       }
-      return [];
+      return fromPool;
     };
 
     if (isKawaiiTemplate) {
       const probe = buildSixTabSourcesForKawaiiSet();
-      if (probe.length < 6 || probe.some((u) => !u?.trim())) {
+      if (
+        exportTemplateId === 1 &&
+        (probe.length < 6 || probe.slice(0, 5).some((u) => !u?.trim()))
+      ) {
         throw new Error('Dog images are still loading. Wait a few seconds, then try again.');
       }
       for (let setIdx = 0; setIdx < KAWAII_DOWNLOAD_NUM_SETS; setIdx++) {
         const funnyPool = Array.from(FUNNY_QUESTIONS) as string[];
         const picked = shuffleCopy(funnyPool).slice(0, 5);
-        const tabTexts = [`${imageFrameTitleLine1}\n${imageFrameTitleLine2}`, ...picked, imageFrameCtaText];
+        const coverTitle =
+          (imageTabTexts[0] ?? '').trim() || pickRandomDailyFunnyTitle();
+        const tabTexts =
+          exportTemplateId === 5
+            ? [coverTitle, ...picked]
+            : [coverTitle, ...picked, imageFrameCtaText];
         const tabSources = buildSixTabSourcesForKawaiiSet();
-        const setPrefix = `set-${setIdx + 1}`;
-        for (let tabIndex = 0; tabIndex < 7; tabIndex++) {
+        // Single-set download matches the on-screen cover + question dogs.
+        if (KAWAII_DOWNLOAD_NUM_SETS === 1 && exportTemplateId === 1) {
+          for (let i = 0; i < 5; i++) {
+            const previewUrl = kawaiiDogImageForTab(i, imageTabSources, dogImagePool);
+            if (previewUrl) tabSources[i] = previewUrl;
+          }
+        }
+        if (KAWAII_DOWNLOAD_NUM_SETS === 1 && exportTemplateId === 5) {
+          for (let i = 0; i < 5; i++) {
+            tabSources[i] = template5CoupleImageForTab(i, imageTabSources);
+          }
+        }
+        const setPrefix =
+          KAWAII_DOWNLOAD_NUM_SETS > 1 ? `set-${setIdx + 1}/` : '';
+        const kawaiiExportTabCount = exportTemplateId === 5 ? 6 : 7;
+        for (let tabIndex = 0; tabIndex < kawaiiExportTabCount; tabIndex++) {
           const blob = await renderFrameBlob(tabIndex, { tabTexts, tabSources });
           const tabName = tabIndex === 0 ? 'cover' : tabIndex <= 5 ? `q${tabIndex}` : 'cta';
           entries.push({
-            path: `${setPrefix}/template-${exportTemplateId}-${tabName}.png`,
+            path: `${setPrefix}template-${exportTemplateId}-${tabName}.png`,
             blob,
           });
         }
@@ -4412,7 +4562,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       return { entries, isKawaiiTemplate, kawaiiNumSets: KAWAII_DOWNLOAD_NUM_SETS };
     }
 
-    const exportQuestionCount = exportTemplateId === 4 ? 4 : 5;
+    const exportQuestionCount = isFixedPhotoCarouselTemplateId(exportTemplateId) ? 4 : 5;
     const exportTabCount = exportQuestionCount + (exportTemplateId === 2 ? 1 : 2);
 
     for (let tabIndex = 0; tabIndex < exportTabCount; tabIndex++) {
@@ -4447,9 +4597,10 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = isKawaiiTemplate
-        ? `template-${selectedImageTemplateId}-kawaii-${kawaiiNumSets}-sets.zip`
-        : `template-${selectedImageTemplateId}-all-tabs.zip`;
+      a.download =
+        isKawaiiTemplate && (kawaiiNumSets ?? 1) > 1
+          ? `template-${selectedImageTemplateId}-kawaii-${kawaiiNumSets}-sets.zip`
+          : `template-${selectedImageTemplateId}-all-tabs.zip`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -4542,7 +4693,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       }
 
       const { entries } =
-        selectedAppId === 'spill-it' && templateId === 1
+        selectedAppId === 'spill-it' && isKawaiiStyleTemplateId(templateId)
           ? await generateImageFrameExportEntries({
               kawaiiNumSets: options?.kawaiiNumSets ?? 1,
               templateId,
@@ -4625,18 +4776,13 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       setVideoExportDetail(null);
       let blob: Blob;
       try {
-        const highlightWord = await fetchTitleHighlightWord(title);
-        const highlightBackground = await sampleCouplesNatureHighlightBackground(
-          template2PlaybackPosterSrc
-        );
-        const recordedBlob = await exportVideoWithCaptionOverlay(videoSrc, title, {
-          position: 'top',
-          style: 'natural',
-          numberedQuestions: questions,
-          titleHighlightWord: highlightWord,
-          titleHighlightBackground: highlightBackground,
-          maxDurationSec: VIDEO_TEMPLATE2_MAX_DURATION_SEC,
-          onExportProgress: (phase, current, total) => {
+        blob = await buildCouplesNatureVideoBlob({
+          videoSrc,
+          title,
+          questions,
+          posterForHighlight: template2PlaybackPosterSrc,
+          ...couplesNatureExportExtras,
+          onProgress: (phase, current, total) => {
             setVideoExportDetail(
               phase === 'frames'
                 ? `Rendering ${current}/${total} frames…`
@@ -4644,8 +4790,6 @@ const imageFrameTitleLine1 = 'Questions to ask your';
             );
           },
         });
-        blob =
-          recordedBlob.type.includes('mp4') ? recordedBlob : await transcodeWebmToMp4(recordedBlob);
       } finally {
         setIsVideoExporting(false);
         setVideoExportDetail(null);
@@ -4705,23 +4849,20 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           videoSrc = template2ExportVideoSrc ?? template2PlaybackVideoSrc;
           posterForHighlight = template2PlaybackPosterSrc ?? null;
         } else {
-          const fetched = await fetchRandomPexelsVideoForExport();
+          const fetched = await fetchRandomCouplesNatureVideo();
           videoSrc = fetched.videoUrl;
           posterForHighlight = fetched.thumbnailUrl;
         }
         if (!videoSrc) {
           throw new Error('No video available to export. Wait for the background to load, then try again.');
         }
-        const highlightWord = await fetchTitleHighlightWord(title);
-        const highlightBackground = await sampleCouplesNatureHighlightBackground(posterForHighlight);
-        const recordedBlob = await exportVideoWithCaptionOverlay(videoSrc, title, {
-          position: 'top',
-          style: 'natural',
-          numberedQuestions: questions,
-          titleHighlightWord: highlightWord,
-          titleHighlightBackground: highlightBackground,
-          maxDurationSec: VIDEO_TEMPLATE2_MAX_DURATION_SEC,
-          onExportProgress: (phase, current, total) => {
+        const blob = await buildCouplesNatureVideoBlob({
+          videoSrc,
+          title,
+          questions,
+          posterForHighlight,
+          ...(usePreview ? couplesNatureExportExtras : {}),
+          onProgress: (phase, current, total) => {
             setVideoExportDetail(
               phase === 'frames'
                 ? `Rendering ${current}/${total} frames…`
@@ -4729,8 +4870,6 @@ const imageFrameTitleLine1 = 'Questions to ask your';
             );
           },
         });
-        const blob =
-          recordedBlob.type.includes('mp4') ? recordedBlob : await transcodeWebmToMp4(recordedBlob);
 
         if (count === 1) {
           const url = URL.createObjectURL(blob);
@@ -4899,18 +5038,13 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       const title = videoOverlayCaption.trim() || pickRandomDailyFunnyTitle();
       const questions =
         videoTemplate2Questions.length > 0 ? videoTemplate2Questions : pickRandomFunnyQuestions(7);
-      const highlightWord = await fetchTitleHighlightWord(title);
-      const highlightBackground = await sampleCouplesNatureHighlightBackground(
-        template2PlaybackPosterSrc
-      );
-      const recorded = await exportVideoWithCaptionOverlay(videoSrc, title, {
-        position: 'top',
-        style: 'natural',
-        numberedQuestions: questions,
-        titleHighlightWord: highlightWord,
-        titleHighlightBackground: highlightBackground,
-        maxDurationSec: VIDEO_TEMPLATE2_MAX_DURATION_SEC,
-        onExportProgress: (phase, current, total) => {
+      const recorded = await buildCouplesNatureVideoBlob({
+        videoSrc,
+        title,
+        questions,
+        posterForHighlight: template2PlaybackPosterSrc,
+        ...couplesNatureExportExtras,
+        onProgress: (phase, current, total) => {
           setVideoExportDetail(
             phase === 'frames'
               ? `Rendering ${current}/${total} frames…`
@@ -4918,7 +5052,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           );
         },
       });
-      return { ...(await toMp4(recorded)), baseName: `${baseName}-caption` };
+      return { blob: recorded, extension: 'mp4', baseName: `${baseName}-caption` };
     }
 
     if (!template2PlaybackVideoSrc) return null;
@@ -5187,7 +5321,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                           : 'Select one to start.'}
                       </p>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 md:gap-4">
                       {imageTemplateCards.map((card) => (
                         <button
                           key={card.id}
@@ -5205,18 +5339,24 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 alt={`${card.title} preview`}
                                 className="w-full h-full object-cover"
                               />
-                            ) : selectedAppId === 'spill-it' && card.id === 1 ? (
+                            ) : selectedAppId === 'spill-it' && (card.id === 1 || card.id === 5) ? (
                               <div
                                 className="w-full h-full relative"
                                 style={{ backgroundColor: '#FEFEFE' }}
                               >
-                                {dogImagePool[0] ? (
-                                  <img
-                                    src={dogImagePool[0]}
-                                    alt="Cover template preview"
-                                    className="absolute left-1/2 -translate-x-1/2 bottom-[6%] max-w-[42%] max-h-[24%] object-contain"
-                                  />
-                                ) : null}
+                                {(() => {
+                                  const previewIllustration =
+                                    card.id === 5
+                                      ? IMAGE_TEMPLATE5_COUPLE_SRC
+                                      : dogImagePool[0];
+                                  return previewIllustration ? (
+                                    <img
+                                      src={previewIllustration}
+                                      alt="Cover template preview"
+                                      className="absolute left-1/2 -translate-x-1/2 bottom-[6%] max-w-[42%] max-h-[24%] object-contain"
+                                    />
+                                  ) : null;
+                                })()}
                               </div>
                             ) : (
                               <div className="w-full h-full bg-linear-to-b from-zinc-200 to-zinc-300 dark:from-zinc-700 dark:to-zinc-800" />
@@ -5245,7 +5385,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         Template {selectedImageTemplateId}
                       </p>
                       <div className="order-2 ml-auto flex w-full sm:w-auto flex-col sm:flex-row gap-2 sm:items-center sm:justify-end">
-                        {isKawaiiImageTemplate || isPastelCarouselImageTemplate ? (
+                        {isKawaiiLayoutImageTemplate || isPastelCarouselImageTemplate ? (
                           <button
                             type="button"
                             onClick={() => regenerateImageTemplateContent(selectedImageTemplateId!)}
@@ -5396,7 +5536,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             'Post to Instagram'
                           )}
                         </button>
-                        {isKawaiiImageTemplate ? (
+                        {isKawaiiLayoutImageTemplate ? (
                           <button
                             type="button"
                             onClick={() =>
@@ -5457,7 +5597,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
                           }`}
                         >
-                          {i === 0 ? 'Cover' : i <= 5 ? `Q${i}` : 'CTA'}
+                          {i === 0
+                            ? 'Cover'
+                            : i <= imageTemplateQuestionCount
+                              ? `Q${i}`
+                              : 'CTA'}
                         </button>
                       ))}
                     </div>
@@ -5612,17 +5756,70 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                           ) : (
                             <>
                               <p
-                                className="absolute top-[21%] left-1/2 -translate-x-1/2 text-center text-base sm:text-xl md:text-2xl font-semibold px-2 sm:px-4 leading-snug max-w-[98%] whitespace-pre-line wrap-break-word"
+                                className={`absolute left-1/2 -translate-x-1/2 text-center text-base sm:text-xl md:text-2xl font-semibold px-2 sm:px-4 leading-snug max-w-[98%] whitespace-pre-line wrap-break-word ${
+                                  isKawaiiLayoutImageTemplate &&
+                                  selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX
+                                    ? '-translate-y-1/2'
+                                    : ''
+                                }`}
                                 style={{
                                   color: '#2f2a31',
                                   textShadow: 'none',
                                   letterSpacing: '0.01em',
-                                  fontFamily: '"Comic Sans MS", "Marker Felt", "Chalkboard SE", "Trebuchet MS", sans-serif',
+                                  fontFamily:
+                                    '"Comic Sans MS", "Marker Felt", "Chalkboard SE", "Trebuchet MS", sans-serif',
+                                  top:
+                                    isKawaiiLayoutImageTemplate &&
+                                    selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX
+                                      ? `${IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO * 100}%`
+                                      : '21%',
                                 }}
                               >
-                                {imageFrameTextForActiveTab}
+                                {imageTemplate1TitleHighlightParts ? (
+                                  <>
+                                    {imageTemplate1TitleHighlightParts.before}
+                                    <span
+                                      className="inline-block rounded-[0.08em] px-[0.12em] py-[0.1em]"
+                                      style={{
+                                        backgroundColor: imageTemplate1SquiggleColor,
+                                        color: TITLE_HIGHLIGHT_TEXT_COLOR,
+                                        transform: `rotate(${TITLE_HIGHLIGHT_TILT_RAD}rad)`,
+                                      }}
+                                    >
+                                      {imageTemplate1TitleHighlightParts.word}
+                                    </span>
+                                    {imageTemplate1TitleHighlightParts.after}
+                                  </>
+                                ) : (
+                                  imageFrameTextForActiveTab
+                                )}
                               </p>
-                              {imageSourceForActiveTab ? (
+                              {isKawaiiLayoutImageTemplate &&
+                              selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX ? (
+                                <>
+                                  <p
+                                    className="absolute inset-x-[6%] z-10 text-center font-bold text-[#2f2a31]"
+                                    style={{
+                                      fontFamily:
+                                        '"Comic Sans MS", "Marker Felt", "Chalkboard SE", "Trebuchet MS", sans-serif',
+                                      fontSize: `${IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO * (4 / 3) * 100}cqw`,
+                                      bottom: `${(IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO + IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO) * 100}%`,
+                                    }}
+                                  >
+                                    {IMAGE_TEMPLATE2_Q5_PROMO_LABEL}
+                                  </p>
+                                  <img
+                                    src={IMAGE_TEMPLATE2_Q5_PROMO_SRC}
+                                    alt="Spill It on the App Store"
+                                    className="absolute left-1/2 z-10 -translate-x-1/2"
+                                    style={{
+                                      width: `${IMAGE_TEMPLATE2_Q5_PROMO_WIDTH_RATIO * 100}%`,
+                                      maxWidth: 'none',
+                                      top: `${(1 - IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO) * 100}%`,
+                                    }}
+                                  />
+                                </>
+                              ) : imageSourceForActiveTab ? (
                                 <img
                                   src={imageSourceForActiveTab}
                                   alt={`Template ${selectedImageTemplateId} preview`}
@@ -5708,7 +5905,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                     </div>
                                     <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
                                       {isMirrorSelfieImageTemplate
-                                        ? 'Picks a new cover title and all Q1–Q5 questions.'
+                                        ? 'Picks a new cover title and all Q1–Q4 questions.'
                                         : 'Sets the cover title and all Q1–Q5 questions. Click Start to generate the cover image and boyfriend replies.'}
                                     </p>
                                   </div>
