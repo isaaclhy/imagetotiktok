@@ -1923,6 +1923,8 @@ export default function Home() {
     useState<AutomateQuestionType>('random');
   const [imageTemplate3QuestionType, setImageTemplate3QuestionType] =
     useState<AutomateQuestionType>('random');
+  const [imageTemplate6QuestionType, setImageTemplate6QuestionType] =
+    useState<AutomateQuestionType>('random');
   const [imageTemplate2Description, setImageTemplate2Description] = useState('');
   const [isGeneratingImageTemplate2Description, setIsGeneratingImageTemplate2Description] =
     useState(false);
@@ -2156,6 +2158,17 @@ export default function Home() {
     setImageTabTexts([title, ...questions, 'Remember to like, save and share the fun!']);
   };
 
+  const applyImageTemplate6QuestionType = (type: AutomateQuestionType) => {
+    setImageTemplate6QuestionType(type);
+    // Resolve Random once so label, title, and questions all share the same type.
+    const resolved = resolveQuestionType(type);
+    const title = pickTitleForType(resolved);
+    const questions = pickQuestionsForType(resolved, 5);
+    setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[resolved]);
+    setImageTabFunnyQuestions(questions);
+    setImageTabTexts([title, ...questions]);
+  };
+
   const applyImageTemplate3QuestionType = (type: AutomateQuestionType) => {
     setImageTemplate3QuestionType(type);
     const resolved = resolveQuestionType(type);
@@ -2297,7 +2310,9 @@ export default function Home() {
     try {
       const questionType = isCoverPhotoImageTemplate
         ? imageTemplate3QuestionType
-        : imageTemplate2QuestionType;
+        : isBearsKawaiiImageTemplate
+          ? imageTemplate6QuestionType
+          : imageTemplate2QuestionType;
       const type =
         questionType === 'random'
           ? concreteTypeFromImageLabel(imageTabTypeLabel)
@@ -3821,19 +3836,31 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       return;
     }
 
+    if (isBearsKawaii) {
+      const type =
+        imageTemplate6QuestionType === 'random'
+          ? pickDifferentRandomQuestionType(concreteTypeFromImageLabel(imageTabTypeLabel))
+          : imageTemplate6QuestionType;
+      const title = pickTitleForType(type);
+      const questions = pickQuestionsForType(type, 5);
+      setImageTabFrameBg(IMAGE_TEMPLATE6_FRAME_BG);
+      setImageTabPastelBgs([]);
+      setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[type]);
+      setImageTabFunnyQuestions(questions);
+      setImageTabSources(buildTemplate6TabImageSources());
+      setImageTabTexts([title, ...questions]);
+      return;
+    }
+
     const picked = [...FUNNY_QUESTIONS].sort(() => Math.random() - 0.5).slice(0, 5);
     setImageTabFunnyQuestions(picked);
-    setImageTabFrameBg(isBearsKawaii ? IMAGE_TEMPLATE6_FRAME_BG : '#FEFEFE');
+    setImageTabFrameBg('#FEFEFE');
     setImageTabPastelBgs([]);
     setImageTabTypeLabel('Funny Questions');
     if (isKawaii) {
       const title = pickRandomDailyFunnyTitle(imageTabTexts[0]);
       setImageTabSources(buildKawaiiTabImageSources(dogImagePool, kawaiiCtaImageSrc));
       setImageTabTexts([title, ...picked, imageFrameCtaText]);
-    } else if (isBearsKawaii) {
-      const title = pickRandomDailyFunnyTitle(imageTabTexts[0]);
-      setImageTabSources(buildTemplate6TabImageSources());
-      setImageTabTexts([title, ...picked]);
     } else if (isCouplesKawaii) {
       const title = pickRandomDailyFunnyTitle(imageTabTexts[0]);
       setImageTabSources(buildTemplate5TabImageSources());
@@ -3863,9 +3890,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
   };
   const getDefaultImageFrameTextForTab = (tabIndex: number): string =>
     tabIndex === 0
-      ? isKawaiiLayoutImageTemplate
-        ? pickRandomDailyFunnyTitle()
-        : `${imageFrameTitleLine1}\n${imageFrameTitleLine2}`
+      ? isBearsKawaiiImageTemplate
+        ? pickTitleForType(concreteTypeFromImageLabel(imageTabTypeLabel))
+        : isKawaiiLayoutImageTemplate
+          ? pickRandomDailyFunnyTitle()
+          : `${imageFrameTitleLine1}\n${imageFrameTitleLine2}`
       : tabIndex >= 1 && tabIndex <= 5
         ? imageTabFunnyQuestions[tabIndex - 1] || ''
         : imageFrameCtaText;
@@ -4589,13 +4618,29 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         throw new Error('Dog images are still loading. Wait a few seconds, then try again.');
       }
       for (let setIdx = 0; setIdx < KAWAII_DOWNLOAD_NUM_SETS; setIdx++) {
-        const funnyPool = Array.from(FUNNY_QUESTIONS) as string[];
-        const picked = shuffleCopy(funnyPool).slice(0, 5);
+        const exportType =
+          exportTemplateId === 6
+            ? imageTemplate6QuestionType === 'random'
+              ? concreteTypeFromImageLabel(imageTabTypeLabel)
+              : imageTemplate6QuestionType
+            : 'funny';
+        const picked = pickQuestionsForType(exportType, 5);
         const coverTitle =
-          (imageTabTexts[0] ?? '').trim() || pickRandomDailyFunnyTitle();
-        const tabTexts = isKawaiiNoCtaTemplateId(exportTemplateId)
+          (imageTabTexts[0] ?? '').trim() ||
+          (exportTemplateId === 6
+            ? pickTitleForType(exportType)
+            : pickRandomDailyFunnyTitle());
+        let tabTexts = isKawaiiNoCtaTemplateId(exportTemplateId)
           ? [coverTitle, ...picked]
           : [coverTitle, ...picked, imageFrameCtaText];
+        // Single-set Template 6 download matches the on-screen title + questions.
+        if (
+          KAWAII_DOWNLOAD_NUM_SETS === 1 &&
+          exportTemplateId === 6 &&
+          imageTabTexts.length >= 6
+        ) {
+          tabTexts = imageTabTexts.slice(0, 6);
+        }
         const tabSources = buildSixTabSourcesForKawaiiSet();
         // Single-set download matches the on-screen cover + question illustrations.
         if (KAWAII_DOWNLOAD_NUM_SETS === 1 && isDogsKawaiiTemplateId(exportTemplateId)) {
@@ -6019,14 +6064,21 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   Frame text
                                 </label>
                                 <div className="flex flex-wrap items-center gap-2">
-                                  {isPastelCarouselImageTemplate ? (
+                                  {isPastelCarouselImageTemplate || isBearsKawaiiImageTemplate ? (
                                     <select
-                                      value={imageTemplate2QuestionType}
-                                      onChange={(e) =>
-                                        applyImageTemplate2QuestionType(
-                                          e.target.value as AutomateQuestionType
-                                        )
+                                      value={
+                                        isBearsKawaiiImageTemplate
+                                          ? imageTemplate6QuestionType
+                                          : imageTemplate2QuestionType
                                       }
+                                      onChange={(e) => {
+                                        const next = e.target.value as AutomateQuestionType;
+                                        if (isBearsKawaiiImageTemplate) {
+                                          applyImageTemplate6QuestionType(next);
+                                        } else {
+                                          applyImageTemplate2QuestionType(next);
+                                        }
+                                      }}
                                       className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2 py-1.5 sm:py-1 text-sm sm:text-xs text-zinc-800 dark:text-zinc-200"
                                       aria-label="Question type"
                                     >
@@ -6040,11 +6092,17 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      if (isPastelCarouselImageTemplate) {
+                                      if (
+                                        isPastelCarouselImageTemplate ||
+                                        isBearsKawaiiImageTemplate
+                                      ) {
+                                        const selectedType = isBearsKawaiiImageTemplate
+                                          ? imageTemplate6QuestionType
+                                          : imageTemplate2QuestionType;
                                         const contentType =
-                                          imageTemplate2QuestionType === 'random'
+                                          selectedType === 'random'
                                             ? concreteTypeFromImageLabel(imageTabTypeLabel)
-                                            : imageTemplate2QuestionType;
+                                            : selectedType;
                                         if (selectedImageBrowserTab === 0) {
                                           const nextTitle = pickTitleForType(
                                             contentType,
@@ -6090,7 +6148,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                     }}
                                     className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                                   >
-                                    {isPastelCarouselImageTemplate
+                                    {isPastelCarouselImageTemplate || isBearsKawaiiImageTemplate
                                       ? 'Retry'
                                       : 'Random question'}
                                   </button>
@@ -6123,7 +6181,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               )}
                             </div>
                             ) : null}
-                            {isPastelCarouselImageTemplate || isCoverPhotoImageTemplate ? (
+                            {isPastelCarouselImageTemplate ||
+                            isCoverPhotoImageTemplate ||
+                            isBearsKawaiiImageTemplate ? (
                               <div>
                                 <div className="mb-2 flex items-center justify-between gap-2">
                                   <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-300">
@@ -6135,7 +6195,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                       onClick={() => void handleGenerateImageTemplate2Description()}
                                       disabled={
                                         isGeneratingImageTemplate2Description ||
-                                        imageTabTexts.slice(1, 6).every((q) => !q.trim())
+                                        imageTabTexts
+                                          .slice(1, imageTemplateQuestionCount + 1)
+                                          .every((q) => !q.trim())
                                       }
                                       className="text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >

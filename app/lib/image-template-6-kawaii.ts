@@ -45,6 +45,10 @@ export const IMAGE_TEMPLATE6_BEAR_SRCS = [
   '/image-templates/template-6-bear-41.png',
   '/image-templates/template-6-bear-42.png',
   '/image-templates/template-6-bear-43.png',
+  '/image-templates/template-6-bear-44.png',
+  '/image-templates/template-6-bear-45.png',
+  '/image-templates/template-6-bear-46.png',
+  '/image-templates/template-6-bear-47.png',
 ] as const;
 
 /** Default / picker thumbnail. */
