@@ -13,6 +13,39 @@ export const IMAGE_TEMPLATE2_COVER_LETTER_SPACING = '-0.03em';
 export const IMAGE_TEMPLATE2_COVER_LINE_HEIGHT_MULT = 1.15;
 /** 20% horizontal padding each side. */
 export const IMAGE_TEMPLATE2_COVER_MAX_TEXT_WIDTH_RATIO = 0.6;
+/** Quotation line under the cover title — same family, smaller. */
+export const IMAGE_TEMPLATE2_COVER_SUBTITLE_SIZE_RATIO = 0.038;
+export const IMAGE_TEMPLATE2_COVER_SUBTITLE_WEIGHT = 500;
+export const IMAGE_TEMPLATE2_COVER_SUBTITLE_GAP_EM = 0.55;
+
+const IMAGE_TEMPLATE2_COVER_SUBTITLE_STATIC = [
+  "bc it's fun",
+  'be careful',
+  "before it's too late",
+  'progressively more ragebait',
+  'level: hard',
+  'level: easy',
+  'level: super loving boyfriend',
+] as const;
+
+/** Cover quotation pool — `part (N)` resolves to a random 1–20 when picked. */
+export function pickRandomImageTemplate2CoverSubtitle(exclude?: string): string {
+  const partOption = `part (${1 + Math.floor(Math.random() * 20)})`;
+  const pool = [...IMAGE_TEMPLATE2_COVER_SUBTITLE_STATIC, partOption];
+  if (pool.length === 0) return '';
+  if (pool.length === 1) return pool[0]!;
+  let next = pool[Math.floor(Math.random() * pool.length)]!;
+  if (exclude && next === exclude) {
+    next = pool.find((s) => s !== exclude) ?? next;
+  }
+  return next;
+}
+
+/** Subtitles are stored bare and always rendered wrapped in parentheses. */
+export function formatImageTemplate2CoverSubtitle(subtitle: string): string {
+  const trimmed = subtitle.trim().replace(/^\(+|\)+$/g, '').trim();
+  return trimmed ? `(${trimmed})` : '';
+}
 
 /**
  * Q5 closes the carousel with an App Store mock instead of the app-name footer.
@@ -71,7 +104,7 @@ function wrapLines(
   return lines;
 }
 
-/** Cover slide — large centered title + progress bar + app footer. */
+/** Cover slide — large centered title + optional quotation + progress bar + app footer. */
 export function drawImageTemplate2CoverSlide(
   ctx: CanvasRenderingContext2D,
   frameWidth: number,
@@ -87,6 +120,8 @@ export function drawImageTemplate2CoverSlide(
     footer?: string;
     /** Cover slide hides the header chrome so only the title shows. */
     showProgress?: boolean;
+    /** Small quotation under the title (same font family, smaller size). */
+    subtitle?: string | null;
   }
 ) {
   const {
@@ -99,6 +134,7 @@ export function drawImageTemplate2CoverSlide(
     progress = 1 / 7,
     footer = IMAGE_TEMPLATE2_APP_FOOTER,
     showProgress = true,
+    subtitle,
   } = options;
 
   ctx.fillStyle = backgroundColor;
@@ -126,7 +162,8 @@ export function drawImageTemplate2CoverSlide(
   }
 
   const centerText = title.trim().replace(/\n/g, ' ');
-  if (centerText) {
+  const subtitleText = formatImageTemplate2CoverSubtitle(subtitle ?? '');
+  if (centerText || subtitleText) {
     const fontSize = Math.round(frameWidth * IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO);
     ctx.font = `${IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT} ${fontSize}px ${fontFamily}`;
     ctx.letterSpacing = IMAGE_TEMPLATE2_COVER_LETTER_SPACING;
@@ -135,11 +172,18 @@ export function drawImageTemplate2CoverSlide(
     ctx.fillStyle = textColor;
 
     const maxTextWidth = frameWidth * IMAGE_TEMPLATE2_COVER_MAX_TEXT_WIDTH_RATIO;
-    const lines = wrapLines(ctx, centerText, maxTextWidth);
+    const lines = centerText ? wrapLines(ctx, centerText, maxTextWidth) : [];
     const highlight = highlightWord?.trim().toLowerCase() ?? '';
     const lineHeight = fontSize * IMAGE_TEMPLATE2_COVER_LINE_HEIGHT_MULT;
-    const blockH = lines.length * lineHeight;
-    let y = frameHeight / 2 - blockH / 2 + lineHeight / 2;
+    const titleBlockH = lines.length * lineHeight;
+    const subtitleSize = Math.round(frameWidth * IMAGE_TEMPLATE2_COVER_SUBTITLE_SIZE_RATIO);
+    const subtitleGap = fontSize * IMAGE_TEMPLATE2_COVER_SUBTITLE_GAP_EM;
+    const subtitleBlockH = subtitleText ? subtitleGap + subtitleSize : 0;
+    const totalH = titleBlockH + subtitleBlockH;
+    let y =
+      frameHeight / 2 -
+      totalH / 2 +
+      (lines.length > 0 ? lineHeight / 2 : subtitleSize / 2);
     const highlightColor = squiggleColorForBackground(backgroundColor);
 
     for (const line of lines) {
@@ -169,6 +213,19 @@ export function drawImageTemplate2CoverSlide(
         ctx.fillText(line, frameWidth / 2, y);
       }
       y += lineHeight;
+    }
+
+    if (subtitleText) {
+      const subtitleY =
+        lines.length > 0
+          ? y - lineHeight / 2 + subtitleGap + subtitleSize / 2
+          : y;
+      ctx.font = `${IMAGE_TEMPLATE2_COVER_SUBTITLE_WEIGHT} ${subtitleSize}px ${fontFamily}`;
+      ctx.letterSpacing = '0px';
+      ctx.fillStyle = textColor;
+      ctx.globalAlpha = 0.88;
+      ctx.fillText(subtitleText, frameWidth / 2, subtitleY);
+      ctx.globalAlpha = 1;
     }
   }
 

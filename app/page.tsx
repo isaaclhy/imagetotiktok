@@ -91,6 +91,9 @@ import {
   drawImageTemplate2CoverSlide,
   IMAGE_TEMPLATE2_COVER_LETTER_SPACING,
   IMAGE_TEMPLATE2_COVER_LINE_HEIGHT_MULT,
+  IMAGE_TEMPLATE2_COVER_SUBTITLE_GAP_EM,
+  IMAGE_TEMPLATE2_COVER_SUBTITLE_SIZE_RATIO,
+  IMAGE_TEMPLATE2_COVER_SUBTITLE_WEIGHT,
   IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO,
   IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT,
   IMAGE_TEMPLATE2_Q5_PROMO_LABEL,
@@ -102,6 +105,8 @@ import {
   IMAGE_TEMPLATE2_Q5_TAB_INDEX,
   IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO,
   imageTemplate2Q5PromoLayout,
+  formatImageTemplate2CoverSubtitle,
+  pickRandomImageTemplate2CoverSubtitle,
 } from '@/app/lib/image-template-2-cover';
 import { imageTemplate3CoverDisplaySrc } from '@/app/lib/image-template-3-cover';
 import {
@@ -1681,6 +1686,11 @@ const DAILY_TEMPLATE_TITLES_FUNNY = [
   '5 Dumb Questions To Annoy Your Boyfriend',
   'Super Dumb Questions To Ragebait Your Boyfriend Tonight',
   '5 Cute Questions To Fall In Love With You Boyfriend Again',
+  '5 Evil Questions To Ask Your Boyfriend',
+  '5 Super Evil Questions To Ask Your Boyfriend',
+  'Questions I think You Should Ask Your Boyfriend',
+  'Super Real Questions To Ask Your Boyfriend',
+  'Ragebait Questions To Ask Your Man or Sneaky Link',
 ] as const;
 
 function pickRandomDailyFunnyTitle(exclude?: string): string {
@@ -1936,6 +1946,9 @@ export default function Home() {
   const [imageTemplate2CoverSquiggleEnabled, setImageTemplate2CoverSquiggleEnabled] = useState(
     IMAGE_TEMPLATE2_COVER_SQUIGGLE_ENABLED_DEFAULT
   );
+  const [imageTemplate2CoverSubtitle, setImageTemplate2CoverSubtitle] = useState(() =>
+    pickRandomImageTemplate2CoverSubtitle()
+  );
   const [isImageTemplate3CoverLoading, setIsImageTemplate3CoverLoading] = useState(false);
   const [imageTemplate3CoverError, setImageTemplate3CoverError] = useState<string | null>(null);
   const [imageTemplate3CoverSubtitle, setImageTemplate3CoverSubtitle] = useState(() =>
@@ -2156,6 +2169,7 @@ export default function Home() {
     setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[resolved]);
     setImageTabFunnyQuestions(questions);
     setImageTabTexts([title, ...questions, 'Remember to like, save and share the fun!']);
+    setImageTemplate2CoverSubtitle((current) => pickRandomImageTemplate2CoverSubtitle(current));
   };
 
   const applyImageTemplate6QuestionType = (type: AutomateQuestionType) => {
@@ -2312,7 +2326,9 @@ export default function Home() {
         ? imageTemplate3QuestionType
         : isBearsKawaiiImageTemplate
           ? imageTemplate6QuestionType
-          : imageTemplate2QuestionType;
+          : isKawaiiImageTemplate
+            ? ('funny' as AutomateQuestionType)
+            : imageTemplate2QuestionType;
       const type =
         questionType === 'random'
           ? concreteTypeFromImageLabel(imageTabTypeLabel)
@@ -3833,6 +3849,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       setImageTabFunnyQuestions(questions);
       setImageTabTexts([title, ...questions]);
       setImageTabSources(['', '', '', '', '', '']);
+      setImageTemplate2CoverSubtitle((current) => pickRandomImageTemplate2CoverSubtitle(current));
       return;
     }
 
@@ -4235,6 +4252,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
             progress: 1 / exportSlideTotal,
             footer: '',
             showProgress: false,
+            subtitle: imageTemplate2CoverSubtitle,
           });
           return await new Promise<Blob>((resolve, reject) => {
             canvas.toBlob((blob) => {
@@ -5748,6 +5766,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             selectedImageBrowserTab === 0 ? (
                               <>
                               <div className="absolute inset-0 z-10 flex items-center justify-center px-[20%] pointer-events-none">
+                                <div className="flex w-full flex-col items-center">
                                 <p
                                   className="w-full text-center text-white wrap-break-word"
                                   style={{
@@ -5777,6 +5796,21 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   imageFrameTextForActiveTab
                                 )}
                                 </p>
+                                {formatImageTemplate2CoverSubtitle(imageTemplate2CoverSubtitle) ? (
+                                  <p
+                                    className="w-full text-center text-white/90 wrap-break-word"
+                                    style={{
+                                      fontFamily: pastelCarouselFontFamily,
+                                      fontSize: `${IMAGE_TEMPLATE2_COVER_SUBTITLE_SIZE_RATIO * 100}cqw`,
+                                      fontWeight: IMAGE_TEMPLATE2_COVER_SUBTITLE_WEIGHT,
+                                      marginTop: `${IMAGE_TEMPLATE2_COVER_SUBTITLE_GAP_EM * IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO * 100}cqw`,
+                                      lineHeight: 1.2,
+                                    }}
+                                  >
+                                    {formatImageTemplate2CoverSubtitle(imageTemplate2CoverSubtitle)}
+                                  </p>
+                                ) : null}
+                                </div>
                               </div>
                               </>
                             ) : (
@@ -5950,7 +5984,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         </div>
                         {!isFullBleedImageTabSelected ||
                         isPastelCarouselImageTemplate ||
-                        isCoverPhotoImageTemplate ? (
+                        isCoverPhotoImageTemplate ||
+                        isKawaiiImageTemplate ? (
                           <div className="w-full md:w-80 md:self-start space-y-4">
                             {!isFullBleedImageTabSelected ? (
                             <div>
@@ -6111,6 +6146,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                           const next = [...imageTabTexts];
                                           next[0] = nextTitle;
                                           setImageTabTexts(next);
+                                          if (isPastelCarouselImageTemplate) {
+                                            setImageTemplate2CoverSubtitle((current) =>
+                                              pickRandomImageTemplate2CoverSubtitle(current)
+                                            );
+                                          }
                                           return;
                                         }
                                         const pool = questionPoolForType(contentType);
@@ -6183,7 +6223,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             ) : null}
                             {isPastelCarouselImageTemplate ||
                             isCoverPhotoImageTemplate ||
-                            isBearsKawaiiImageTemplate ? (
+                            isBearsKawaiiImageTemplate ||
+                            isKawaiiImageTemplate ? (
                               <div>
                                 <div className="mb-2 flex items-center justify-between gap-2">
                                   <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-300">
