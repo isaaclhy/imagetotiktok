@@ -850,6 +850,7 @@ function drawKawaiiCoverTitleWithHighlight(
     highlightWord?: string | null;
     highlightColor?: string;
     highlightTextColor?: string;
+    subtitle?: string | null;
   }
 ) {
   const trimmed = text.trim();
@@ -899,6 +900,18 @@ function drawKawaiiCoverTitleWithHighlight(
       ctx.fillText(ln, cx, y);
     }
     y += lineHeight;
+  }
+
+  const subtitleText = formatImageTemplate2CoverSubtitle(options.subtitle ?? '');
+  if (subtitleText) {
+    const subtitleSize = Math.round(fontSize * 0.62);
+    const gap = fontSize * 0.4;
+    const subtitleY = y - lineHeight / 2 + gap + subtitleSize / 2;
+    ctx.font = `bold ${subtitleSize}px ${options.fontFamily}`;
+    ctx.fillStyle = options.textColor;
+    ctx.globalAlpha = 0.88;
+    ctx.fillText(subtitleText, cx, subtitleY);
+    ctx.globalAlpha = 1;
   }
 }
 
@@ -2181,6 +2194,7 @@ export default function Home() {
     setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[resolved]);
     setImageTabFunnyQuestions(questions);
     setImageTabTexts([title, ...questions]);
+    setImageTemplate2CoverSubtitle((current) => pickRandomImageTemplate2CoverSubtitle(current));
   };
 
   const applyImageTemplate3QuestionType = (type: AutomateQuestionType) => {
@@ -3866,6 +3880,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       setImageTabFunnyQuestions(questions);
       setImageTabSources(buildTemplate6TabImageSources());
       setImageTabTexts([title, ...questions]);
+      setImageTemplate2CoverSubtitle((current) => pickRandomImageTemplate2CoverSubtitle(current));
       return;
     }
 
@@ -3878,6 +3893,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       const title = pickRandomDailyFunnyTitle(imageTabTexts[0]);
       setImageTabSources(buildKawaiiTabImageSources(dogImagePool, kawaiiCtaImageSrc));
       setImageTabTexts([title, ...picked, imageFrameCtaText]);
+      setImageTemplate2CoverSubtitle((current) => pickRandomImageTemplate2CoverSubtitle(current));
     } else if (isCouplesKawaii) {
       const title = pickRandomDailyFunnyTitle(imageTabTexts[0]);
       setImageTabSources(buildTemplate5TabImageSources());
@@ -4579,6 +4595,10 @@ const imageFrameTitleLine1 = 'Questions to ask your';
             highlightWord: imageTemplate1HighlightWord,
             highlightColor: exportHighlightColor,
             highlightTextColor: exportHighlightTextColor,
+            subtitle:
+              exportTemplateId === 1 || exportTemplateId === 6
+                ? imageTemplate2CoverSubtitle
+                : null,
           });
         } else {
           drawWrapped(
@@ -5907,24 +5927,29 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             />
                           ) : (
                             <>
-                              <p
-                                className={`absolute left-1/2 -translate-x-1/2 text-center text-base sm:text-xl md:text-2xl font-semibold px-2 sm:px-4 leading-snug max-w-[98%] whitespace-pre-line wrap-break-word ${
+                              <div
+                                className={`absolute left-1/2 z-10 w-full max-w-[98%] -translate-x-1/2 px-2 sm:px-4 ${
                                   isKawaiiLayoutImageTemplate &&
                                   selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX
                                     ? '-translate-y-1/2'
                                     : ''
                                 }`}
                                 style={{
-                                  color: imageFrameExportTextColor,
-                                  textShadow: 'none',
-                                  letterSpacing: '0.01em',
-                                  fontFamily:
-                                    '"Comic Sans MS", "Marker Felt", "Chalkboard SE", "Trebuchet MS", sans-serif',
                                   top:
                                     isKawaiiLayoutImageTemplate &&
                                     selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX
                                       ? `${IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO * 100}%`
                                       : '21%',
+                                }}
+                              >
+                              <p
+                                className="text-center text-base sm:text-xl md:text-2xl font-semibold leading-snug whitespace-pre-line wrap-break-word"
+                                style={{
+                                  color: imageFrameExportTextColor,
+                                  textShadow: 'none',
+                                  letterSpacing: '0.01em',
+                                  fontFamily:
+                                    '"Comic Sans MS", "Marker Felt", "Chalkboard SE", "Trebuchet MS", sans-serif',
                                 }}
                               >
                                 {imageTemplate1TitleHighlightParts ? (
@@ -5946,6 +5971,22 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   imageFrameTextForActiveTab
                                 )}
                               </p>
+                              {(isKawaiiImageTemplate || isBearsKawaiiImageTemplate) &&
+                              selectedImageBrowserTab === 0 &&
+                              formatImageTemplate2CoverSubtitle(imageTemplate2CoverSubtitle) ? (
+                                <p
+                                  className="mt-2 text-center text-sm sm:text-base md:text-lg font-semibold wrap-break-word"
+                                  style={{
+                                    color: imageFrameExportTextColor,
+                                    opacity: 0.88,
+                                    fontFamily:
+                                      '"Comic Sans MS", "Marker Felt", "Chalkboard SE", "Trebuchet MS", sans-serif',
+                                  }}
+                                >
+                                  {formatImageTemplate2CoverSubtitle(imageTemplate2CoverSubtitle)}
+                                </p>
+                              ) : null}
+                              </div>
                               {isKawaiiLayoutImageTemplate &&
                               selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX ? (
                                 <>
@@ -6146,7 +6187,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                           const next = [...imageTabTexts];
                                           next[0] = nextTitle;
                                           setImageTabTexts(next);
-                                          if (isPastelCarouselImageTemplate) {
+                                          if (isPastelCarouselImageTemplate || isBearsKawaiiImageTemplate) {
                                             setImageTemplate2CoverSubtitle((current) =>
                                               pickRandomImageTemplate2CoverSubtitle(current)
                                             );
