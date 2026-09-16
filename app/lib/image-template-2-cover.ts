@@ -120,6 +120,8 @@ export function drawImageTemplate2CoverSlide(
     footer?: string;
     /** Cover slide hides the header chrome so only the title shows. */
     showProgress?: boolean;
+    /** Skip the solid fill when the caller already painted a photo. */
+    skipBackground?: boolean;
     /** Small quotation under the title (same font family, smaller size). */
     subtitle?: string | null;
   }
@@ -134,11 +136,14 @@ export function drawImageTemplate2CoverSlide(
     progress = 1 / 7,
     footer = IMAGE_TEMPLATE2_APP_FOOTER,
     showProgress = true,
+    skipBackground = false,
     subtitle,
   } = options;
 
-  ctx.fillStyle = backgroundColor;
-  ctx.fillRect(0, 0, frameWidth, frameHeight);
+  if (!skipBackground) {
+    ctx.fillStyle = backgroundColor;
+    ctx.fillRect(0, 0, frameWidth, frameHeight);
+  }
 
   const barX = frameWidth * 0.08;
   const barW = frameWidth * 0.84;
