@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import {
   IMAGE_TEMPLATE3_IMESSAGE_ACCENT,
   IMAGE_TEMPLATE3_IMESSAGE_AVATAR_BG,
@@ -7,7 +8,6 @@ import {
   IMAGE_TEMPLATE3_IMESSAGE_BUBBLE,
   IMAGE_TEMPLATE3_IMESSAGE_CHROME_ICON,
   IMAGE_TEMPLATE3_IMESSAGE_CONTACT_NAME,
-  IMAGE_TEMPLATE3_IMESSAGE_CONTEXT_LINES,
   IMAGE_TEMPLATE3_IMESSAGE_FONT_STACK,
   IMAGE_TEMPLATE3_IMESSAGE_HEADER,
   IMAGE_TEMPLATE3_IMESSAGE_INCOMING_BUBBLE,
@@ -15,6 +15,8 @@ import {
   IMAGE_TEMPLATE3_IMESSAGE_SEPARATOR,
   IMAGE_TEMPLATE3_IMESSAGE_STATUS_TIME,
   IMAGE_TEMPLATE3_IMESSAGE_TEXT,
+  pickImessageContextThread,
+  type ImessageContextLine,
 } from '@/app/lib/image-template-3-imessage';
 
 type ImageTemplate3ImessageBubbleProps = {
@@ -164,32 +166,26 @@ function InputBar() {
   );
 }
 
-/** Earlier chatter that only ever shows up blurred behind the scrim. */
-function ContextBubbles() {
+const BUBBLE_TEXT_CLASS =
+  'rounded-[1.15em] px-[0.95em] py-[0.65em] text-[12px] sm:text-[14px] md:text-[15px] leading-[1.28] wrap-break-word';
+
+function ContextBubbleRow({ line }: { line: ImessageContextLine }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      {[...IMAGE_TEMPLATE3_IMESSAGE_CONTEXT_LINES]
-        .slice()
-        .reverse()
-        .map((line) => (
-          <div
-            key={line.text}
-            className={`flex ${line.outgoing ? 'justify-end' : 'justify-start'}`}
-          >
-            <div
-              className="max-w-[72%] rounded-[1.15em] px-[0.9em] py-[0.55em] text-[13px] leading-snug sm:text-[15px] md:text-[16px]"
-              style={{
-                backgroundColor: line.outgoing
-                  ? IMAGE_TEMPLATE3_IMESSAGE_BUBBLE
-                  : IMAGE_TEMPLATE3_IMESSAGE_INCOMING_BUBBLE,
-                color: IMAGE_TEMPLATE3_IMESSAGE_TEXT,
-                fontFamily: IMAGE_TEMPLATE3_IMESSAGE_FONT_STACK,
-              }}
-            >
-              {line.text}
-            </div>
-          </div>
-        ))}
+    <div className={`flex ${line.outgoing ? 'justify-end' : 'justify-start'}`}>
+      <div
+        className={`${BUBBLE_TEXT_CLASS} relative max-w-[72%] ${
+          line.outgoing ? 'imessage-tail-out' : 'imessage-tail-in'
+        }`}
+        style={{
+          backgroundColor: line.outgoing
+            ? IMAGE_TEMPLATE3_IMESSAGE_BUBBLE
+            : IMAGE_TEMPLATE3_IMESSAGE_INCOMING_BUBBLE,
+          color: IMAGE_TEMPLATE3_IMESSAGE_TEXT,
+          fontFamily: IMAGE_TEMPLATE3_IMESSAGE_FONT_STACK,
+        }}
+      >
+        {line.text}
+      </div>
     </div>
   );
 }
@@ -197,6 +193,8 @@ function ContextBubbles() {
 type MessagesScreenProps = ImageTemplate3ImessageBubbleProps & {
   /** Both layers render the same tree so the sharp copy lands exactly on its hole. */
   mode: 'backdrop' | 'focus';
+  before: ImessageContextLine[];
+  after: ImessageContextLine[];
 };
 
 function MessagesScreen({
@@ -205,6 +203,8 @@ function MessagesScreen({
   deliveryStatus = 'Delivered',
   replyLoading = false,
   mode,
+  before,
+  after,
 }: MessagesScreenProps) {
   const text = question.trim();
   const replyList = (replies ?? []).map((r) => r.trim()).filter(Boolean);
@@ -223,12 +223,14 @@ function MessagesScreen({
         <StatusBar />
         <ConversationHeader />
       </div>
-      {/* Bottom-anchored: real threads sit against the input bar. */}
-      <div className="flex flex-1 flex-col justify-end gap-2.5 overflow-hidden px-[6%] pb-[3%] pt-[4%]">
-        <div className={`${chromeClass} flex flex-col gap-2.5`}>
-          <ContextBubbles />
+      {/* Center the focused exchange so blurred messages sit above and below. */}
+      <div className="flex flex-1 flex-col justify-center gap-2 overflow-hidden px-[6%] py-[3%]">
+        <div className={`${chromeClass} flex flex-col gap-1.5`}>
+          {before.map((line) => (
+            <ContextBubbleRow key={`b-${line.text}-${line.outgoing}`} line={line} />
+          ))}
           <p
-            className="text-center text-[9px] sm:text-[11px]"
+            className="py-0.5 text-center text-[9px] sm:text-[11px]"
             style={{
               color: IMAGE_TEMPLATE3_IMESSAGE_HEADER,
               fontFamily: IMAGE_TEMPLATE3_IMESSAGE_FONT_STACK,
@@ -238,87 +240,70 @@ function MessagesScreen({
             {IMAGE_TEMPLATE3_IMESSAGE_STATUS_TIME} PM
           </p>
         </div>
-        <div className={`${focusClass} flex flex-col gap-2.5`}>
-        {text ? (
-          <div className="flex flex-col items-end gap-1.5">
-            <div className="relative max-w-[72%]">
+        <div className={`${focusClass} flex flex-col gap-2`}>
+          {text ? (
+            <div className="flex flex-col items-end gap-1">
               <div
-                className="rounded-[1.15em] px-[0.9em] py-[0.55em] text-[13px] sm:text-[15px] md:text-[16px] leading-snug wrap-break-word"
+                className={`${BUBBLE_TEXT_CLASS} relative max-w-[72%] imessage-tail-out`}
                 style={{
                   backgroundColor: IMAGE_TEMPLATE3_IMESSAGE_BUBBLE,
                   color: IMAGE_TEMPLATE3_IMESSAGE_TEXT,
                   fontFamily: IMAGE_TEMPLATE3_IMESSAGE_FONT_STACK,
-                  borderBottomRightRadius: '0.35em',
                 }}
               >
                 {text}
               </div>
-              <svg
-                aria-hidden
-                className="pointer-events-none absolute -right-1.5 -bottom-1.25 h-4 w-3.5"
-                viewBox="0 0 14 16"
-                fill={IMAGE_TEMPLATE3_IMESSAGE_BUBBLE}
+              <span
+                className="pr-0.5 text-[10px] sm:text-[11px]"
+                style={{
+                  color: IMAGE_TEMPLATE3_IMESSAGE_HEADER,
+                  fontFamily: IMAGE_TEMPLATE3_IMESSAGE_FONT_STACK,
+                }}
               >
-                <path d="M1.2 1.2C2.8 0.4 5.2 0.2 7.2 1.6C9.8 3.4 12.4 7.2 13.6 14.2C10.2 11.8 7.4 10.6 4.8 10.2C2.6 9.9 1.1 10.4 0.4 11.2C0.9 7.4 0.6 3.6 1.2 1.2Z" />
-              </svg>
+                {deliveryStatus}
+              </span>
             </div>
-            <span
-              className="pr-0.5 text-[10px] sm:text-[11px]"
-              style={{
-                color: IMAGE_TEMPLATE3_IMESSAGE_HEADER,
-                fontFamily: IMAGE_TEMPLATE3_IMESSAGE_FONT_STACK,
-              }}
-            >
-              {deliveryStatus}
-            </span>
-          </div>
-        ) : null}
+          ) : null}
 
-        {replyLoading ? (
-          <div className="flex justify-start">
-            <div
-              className="rounded-[1.15em] px-[0.9em] py-[0.55em] text-[12px] sm:text-[13px]"
-              style={{
-                backgroundColor: IMAGE_TEMPLATE3_IMESSAGE_INCOMING_BUBBLE,
-                color: IMAGE_TEMPLATE3_IMESSAGE_HEADER,
-                fontFamily: IMAGE_TEMPLATE3_IMESSAGE_FONT_STACK,
-              }}
-            >
-              …
+          {replyLoading ? (
+            <div className="flex justify-start">
+              <div
+                className="rounded-[1.15em] px-[0.95em] py-[0.65em] text-[12px] sm:text-[13px]"
+                style={{
+                  backgroundColor: IMAGE_TEMPLATE3_IMESSAGE_INCOMING_BUBBLE,
+                  color: IMAGE_TEMPLATE3_IMESSAGE_HEADER,
+                  fontFamily: IMAGE_TEMPLATE3_IMESSAGE_FONT_STACK,
+                }}
+              >
+                …
+              </div>
             </div>
-          </div>
-        ) : (
-          replyList.map((replyText, i) => {
-            const isLast = i === replyList.length - 1;
-            return (
-              <div key={`${i}-${replyText.slice(0, 24)}`} className="flex justify-start">
-                <div className="relative max-w-[72%]">
+          ) : (
+            replyList.map((replyText, i) => {
+              const isLast = i === replyList.length - 1;
+              return (
+                <div key={`${i}-${replyText.slice(0, 24)}`} className="flex justify-start">
                   <div
-                    className="rounded-[1.15em] px-[0.9em] py-[0.55em] text-[13px] sm:text-[15px] md:text-[16px] leading-snug wrap-break-word"
+                    className={`${BUBBLE_TEXT_CLASS} relative max-w-[72%] ${
+                      isLast ? 'imessage-tail-in' : ''
+                    }`}
                     style={{
                       backgroundColor: IMAGE_TEMPLATE3_IMESSAGE_INCOMING_BUBBLE,
                       color: IMAGE_TEMPLATE3_IMESSAGE_TEXT,
                       fontFamily: IMAGE_TEMPLATE3_IMESSAGE_FONT_STACK,
-                      borderBottomLeftRadius: isLast ? '0.35em' : undefined,
                     }}
                   >
                     {replyText}
                   </div>
-                  {isLast ? (
-                    <svg
-                      aria-hidden
-                      className="pointer-events-none absolute -left-1.5 -bottom-1.25 h-4 w-3.5"
-                      viewBox="0 0 14 16"
-                      fill={IMAGE_TEMPLATE3_IMESSAGE_INCOMING_BUBBLE}
-                    >
-                      <path d="M12.8 1.2C11.2 0.4 8.8 0.2 6.8 1.6C4.2 3.4 1.6 7.2 0.4 14.2C3.8 11.8 6.6 10.6 9.2 10.2C11.4 9.9 12.9 10.4 13.6 11.2C13.1 7.4 13.4 3.6 12.8 1.2Z" />
-                    </svg>
-                  ) : null}
                 </div>
-              </div>
-            );
-          })
-        )}
+              );
+            })
+          )}
+        </div>
+        <div className={`${chromeClass} flex flex-col gap-1.5`}>
+          {after.map((line) => (
+            <ContextBubbleRow key={`a-${line.text}-${line.outgoing}`} line={line} />
+          ))}
         </div>
       </div>
       <div className={chromeClass}>
@@ -333,16 +318,62 @@ function MessagesScreen({
  * of the thread blurred behind a scrim, like an inline reply in Messages.
  */
 export function ImageTemplate3ImessageBubble(props: ImageTemplate3ImessageBubbleProps) {
+  const thread = useMemo(() => {
+    const replies = (props.replies ?? []).join('|');
+    return pickImessageContextThread(
+      `${props.question}|${replies}|${props.deliveryStatus ?? 'Delivered'}`
+    );
+  }, [props.question, props.replies, props.deliveryStatus]);
+
   return (
     <div
       className="absolute inset-0 z-10 overflow-hidden"
       style={{ backgroundColor: IMAGE_TEMPLATE3_IMESSAGE_BG }}
     >
+      <style>{`
+        .imessage-tail-out,
+        .imessage-tail-in {
+          position: relative;
+        }
+        .imessage-tail-out::before,
+        .imessage-tail-out::after,
+        .imessage-tail-in::before,
+        .imessage-tail-in::after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          width: 20px;
+          height: 25px;
+          pointer-events: none;
+        }
+        .imessage-tail-out::before {
+          right: -7px;
+          background: ${IMAGE_TEMPLATE3_IMESSAGE_BUBBLE};
+          border-bottom-left-radius: 16px 14px;
+        }
+        .imessage-tail-out::after {
+          right: -26px;
+          width: 26px;
+          background: ${IMAGE_TEMPLATE3_IMESSAGE_BG};
+          border-bottom-left-radius: 10px;
+        }
+        .imessage-tail-in::before {
+          left: -7px;
+          background: ${IMAGE_TEMPLATE3_IMESSAGE_INCOMING_BUBBLE};
+          border-bottom-right-radius: 16px 14px;
+        }
+        .imessage-tail-in::after {
+          left: -26px;
+          width: 26px;
+          background: ${IMAGE_TEMPLATE3_IMESSAGE_BG};
+          border-bottom-right-radius: 10px;
+        }
+      `}</style>
       <div className="absolute inset-0 blur-[3px] sm:blur-[5px]">
-        <MessagesScreen {...props} mode="backdrop" />
+        <MessagesScreen {...props} mode="backdrop" before={thread.before} after={thread.after} />
       </div>
       <div className="absolute inset-0 bg-black/55" />
-      <MessagesScreen {...props} mode="focus" />
+      <MessagesScreen {...props} mode="focus" before={thread.before} after={thread.after} />
     </div>
   );
 }

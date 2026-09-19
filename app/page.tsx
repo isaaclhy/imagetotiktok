@@ -108,6 +108,15 @@ import {
   formatImageTemplate2CoverSubtitle,
   pickRandomImageTemplate2CoverSubtitle,
 } from '@/app/lib/image-template-2-cover';
+import {
+  drawImageTemplate9Title,
+  IMAGE_TEMPLATE9_TITLE_MAX_WIDTH_RATIO,
+  IMAGE_TEMPLATE9_TITLE_SIZE_RATIO,
+  IMAGE_TEMPLATE9_TITLE_WEIGHT,
+  pickImageTemplate9TitleAnchor,
+  type ImageTemplate9TitleAnchor,
+} from '@/app/lib/image-template-9-cover';
+import { IMAGE_TEMPLATE8_TITLE_MAX_WIDTH_RATIO } from '@/app/lib/image-template-8-cover';
 import { imageTemplate3CoverDisplaySrc } from '@/app/lib/image-template-3-cover';
 import {
   IMAGE_TEMPLATE3_COVER_MODEL_DEFAULT,
@@ -133,11 +142,14 @@ import {
   template6TabSourcesNeedRepair,
 } from '@/app/lib/image-template-6-kawaii';
 import {
+  fetchPinterestCoverImage,
   fetchPinterestSearchImages,
   IMAGE_TEMPLATE7_PINTEREST_QUERY,
   IMAGE_TEMPLATE7_PINTEREST_QUESTION_QUERIES,
   IMAGE_TEMPLATE7_QUESTION_COUNT,
   IMAGE_TEMPLATE7_TAB_COUNT,
+  IMAGE_TEMPLATE8_PINTEREST_QUERY,
+  IMAGE_TEMPLATE9_PINTEREST_QUERY,
   imageTemplate7SourcesReady,
   pickMixedPinterestQuestionUrls,
 } from '@/app/lib/pinterest';
@@ -240,6 +252,18 @@ function isKawaiiNoCtaTemplateId(templateId: number | null | undefined): boolean
 
 function isPinterestCoverImageTemplateId(templateId: number | null | undefined): boolean {
   return templateId === 7;
+}
+
+function isCouplesSelfieImageTemplateId(templateId: number | null | undefined): boolean {
+  return templateId === 8;
+}
+
+function isTopDownSelfieImageTemplateId(templateId: number | null | undefined): boolean {
+  return templateId === 9;
+}
+
+function isPinterestCoverOnlyImageTemplateId(templateId: number | null | undefined): boolean {
+  return isCouplesSelfieImageTemplateId(templateId) || isTopDownSelfieImageTemplateId(templateId);
 }
 
 function fixedPhotoCarouselCoverDisplaySrc(
@@ -1975,6 +1999,8 @@ export default function Home() {
   const [imageTemplate2CoverSubtitle, setImageTemplate2CoverSubtitle] = useState(() =>
     pickRandomImageTemplate2CoverSubtitle()
   );
+  const [imageTemplate9TitleAnchor, setImageTemplate9TitleAnchor] =
+    useState<ImageTemplate9TitleAnchor>(() => pickImageTemplate9TitleAnchor());
   const [isImageTemplate3CoverLoading, setIsImageTemplate3CoverLoading] = useState(false);
   const [imageTemplate3CoverError, setImageTemplate3CoverError] = useState<string | null>(null);
   const [isImageTemplate7CoverLoading, setIsImageTemplate7CoverLoading] = useState(false);
@@ -2053,6 +2079,12 @@ export default function Home() {
     selectedAppId === 'spill-it' && selectedImageTemplateId === 6;
   const isPinterestCoverImageTemplate =
     selectedAppId === 'spill-it' && isPinterestCoverImageTemplateId(selectedImageTemplateId);
+  const isPinterestCoverOnlyImageTemplate =
+    selectedAppId === 'spill-it' && isPinterestCoverOnlyImageTemplateId(selectedImageTemplateId);
+  const isCouplesSelfieImageTemplate =
+    selectedAppId === 'spill-it' && isCouplesSelfieImageTemplateId(selectedImageTemplateId);
+  const isTopDownSelfieImageTemplate =
+    selectedAppId === 'spill-it' && isTopDownSelfieImageTemplateId(selectedImageTemplateId);
   const isKawaiiLayoutImageTemplate =
     isKawaiiImageTemplate || isCouplesKawaiiImageTemplate || isBearsKawaiiImageTemplate;
   const imageFrameExportTextColor = isBearsKawaiiImageTemplate
@@ -2068,12 +2100,13 @@ export default function Home() {
   const isCoverPhotoImageTemplate = isTikTokReactionImageTemplate || isMirrorSelfieImageTemplate;
   // Templates 4 drops Q5, so the CTA sits one tab earlier.
   const imageTemplateQuestionCount = isMirrorSelfieImageTemplate ? 4 : 5;
-  // Template 2 / 5 / 6 / 7 end on Q5 — no CTA card.
+  // Template 2 / 5 / 6 / 7 / 8 / 9 end on Q5 — no CTA.
   const hasImageTemplateCtaTab =
     !isPastelCarouselImageTemplate &&
     !isCouplesKawaiiImageTemplate &&
     !isBearsKawaiiImageTemplate &&
-    !isPinterestCoverImageTemplate;
+    !isPinterestCoverImageTemplate &&
+    !isPinterestCoverOnlyImageTemplate;
   const imageTemplateCtaTabIndex = hasImageTemplateCtaTab
     ? imageTemplateQuestionCount + 1
     : -1;
@@ -2142,7 +2175,8 @@ export default function Home() {
       (isKawaiiLayoutImageTemplate ||
         isPastelCarouselImageTemplate ||
         isCoverPhotoImageTemplate ||
-        isPinterestCoverImageTemplate) &&
+        isPinterestCoverImageTemplate ||
+        isPinterestCoverOnlyImageTemplate) &&
       selectedImageBrowserTab >= imageTemplateTabCount
     ) {
       setSelectedImageBrowserTab(0);
@@ -2152,15 +2186,16 @@ export default function Home() {
     isPastelCarouselImageTemplate,
     isCoverPhotoImageTemplate,
     isPinterestCoverImageTemplate,
+    isPinterestCoverOnlyImageTemplate,
     imageTemplateTabCount,
     selectedImageBrowserTab,
   ]);
 
   useEffect(() => {
-    if (isPinterestCoverImageTemplate) return;
+    if (isPinterestCoverImageTemplate || isPinterestCoverOnlyImageTemplate) return;
     pinterestCoverAbortRef.current?.abort();
     setIsImageTemplate7CoverLoading(false);
-  }, [isPinterestCoverImageTemplate]);
+  }, [isPinterestCoverImageTemplate, isPinterestCoverOnlyImageTemplate]);
 
   const regenerateVideoTemplate2Title = () => {
     setVideoOverlayCaption((current) => pickTitleForType(videoTemplate2QuestionType, current));
@@ -2209,6 +2244,24 @@ export default function Home() {
     setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[resolved]);
     setImageTabFunnyQuestions(questions);
     setImageTabTexts([title, ...questions, 'Remember to like, save and share the fun!']);
+    setImageTemplate2CoverSubtitle((current) => pickRandomImageTemplate2CoverSubtitle(current));
+  };
+
+  const applyImageTemplate9QuestionType = (_type?: AutomateQuestionType) => {
+    const title = pickTitleForType('funny');
+    const questions = pickQuestionsForType('funny', 5);
+    setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS.funny);
+    setImageTabFunnyQuestions(questions);
+    setImageTabTexts([title, ...questions]);
+    setImageTemplate9TitleAnchor(pickImageTemplate9TitleAnchor());
+  };
+
+  const applyImageTemplate8QuestionType = (_type?: AutomateQuestionType) => {
+    const title = pickTitleForType('funny');
+    const questions = pickQuestionsForType('funny', 5);
+    setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS.funny);
+    setImageTabFunnyQuestions(questions);
+    setImageTabTexts([title, ...questions]);
     setImageTemplate2CoverSubtitle((current) => pickRandomImageTemplate2CoverSubtitle(current));
   };
 
@@ -3856,6 +3909,56 @@ export default function Home() {
 const imageFrameTitleLine1 = 'Questions to ask your';
   const imageFrameTitleLine2 = 'boyfriend tonight <3';
   const imageFrameCtaText = 'Remember to like, save and share the fun!';
+  const refreshImageTemplate8PinterestCover = async () => {
+    pinterestCoverAbortRef.current?.abort();
+    const controller = new AbortController();
+    pinterestCoverAbortRef.current = controller;
+    setIsImageTemplate7CoverLoading(true);
+    setImageTemplate7CoverError(null);
+    try {
+      const result = await fetchPinterestCoverImage({
+        query: IMAGE_TEMPLATE8_PINTEREST_QUERY,
+        exclude: imageTabSources[0] ?? '',
+        signal: controller.signal,
+      });
+      if (controller.signal.aborted) return;
+      setImageTabSources([result.imageUrl]);
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') return;
+      setImageTemplate7CoverError(
+        e instanceof Error ? e.message : 'Failed to fetch Pinterest image'
+      );
+    } finally {
+      if (pinterestCoverAbortRef.current === controller) {
+        setIsImageTemplate7CoverLoading(false);
+      }
+    }
+  };
+  const refreshImageTemplate9PinterestCover = async () => {
+    pinterestCoverAbortRef.current?.abort();
+    const controller = new AbortController();
+    pinterestCoverAbortRef.current = controller;
+    setIsImageTemplate7CoverLoading(true);
+    setImageTemplate7CoverError(null);
+    try {
+      const result = await fetchPinterestCoverImage({
+        query: IMAGE_TEMPLATE9_PINTEREST_QUERY,
+        exclude: imageTabSources[0] ?? '',
+        signal: controller.signal,
+      });
+      if (controller.signal.aborted) return;
+      setImageTabSources([result.imageUrl]);
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') return;
+      setImageTemplate7CoverError(
+        e instanceof Error ? e.message : 'Failed to fetch Pinterest image'
+      );
+    } finally {
+      if (pinterestCoverAbortRef.current === controller) {
+        setIsImageTemplate7CoverLoading(false);
+      }
+    }
+  };
   const refreshImageTemplate7PinterestCover = async () => {
     pinterestCoverAbortRef.current?.abort();
     const controller = new AbortController();
@@ -3918,6 +4021,10 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     const isBearsKawaii = selectedAppId === 'spill-it' && tid === 6;
     const isPinterestCover =
       selectedAppId === 'spill-it' && isPinterestCoverImageTemplateId(tid);
+    const isCouplesSelfie =
+      selectedAppId === 'spill-it' && isCouplesSelfieImageTemplateId(tid);
+    const isTopDownSelfie =
+      selectedAppId === 'spill-it' && isTopDownSelfieImageTemplateId(tid);
     const isPastel = selectedAppId === 'spill-it' && tid === 2;
     const isTikTokReaction = selectedAppId === 'spill-it' && tid === 3;
     const isFixedPhotoCarousel =
@@ -3945,6 +4052,34 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       setImageTabTexts([title, ...questions]);
       setImageTabSources(['', '', '', '', '', '']);
       setImageTemplate2CoverSubtitle((current) => pickRandomImageTemplate2CoverSubtitle(current));
+      return;
+    }
+
+    if (isTopDownSelfie) {
+      const title = pickTitleForType('funny');
+      const questions = pickQuestionsForType('funny', 5);
+      setImageTabFunnyQuestions(questions);
+      setImageTabFrameBg('#000000');
+      setImageTabPastelBgs([]);
+      setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS.funny);
+      setImageTabTexts([title, ...questions]);
+      setImageTemplate9TitleAnchor(pickImageTemplate9TitleAnchor());
+      setImageTabSources([(imageTabSources[0] ?? '').trim()]);
+      void refreshImageTemplate9PinterestCover();
+      return;
+    }
+
+    if (isCouplesSelfie) {
+      const title = pickTitleForType('funny');
+      const questions = pickQuestionsForType('funny', 5);
+      setImageTabFunnyQuestions(questions);
+      setImageTabFrameBg('#000000');
+      setImageTabPastelBgs([]);
+      setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS.funny);
+      setImageTabTexts([title, ...questions]);
+      setImageTemplate2CoverSubtitle((current) => pickRandomImageTemplate2CoverSubtitle(current));
+      setImageTabSources([(imageTabSources[0] ?? '').trim()]);
+      void refreshImageTemplate8PinterestCover();
       return;
     }
 
@@ -4289,7 +4424,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           const merged = slots?.tabSources ?? imageTabSources;
           return template6BearImageForTab(i, merged);
         }
-        if (exportTemplateId === 7) {
+        if (exportTemplateId === 7 || exportTemplateId === 8 || exportTemplateId === 9) {
           return slots?.tabSources[i] ?? imageTabSources[i] ?? '';
         }
         return (
@@ -4311,7 +4446,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       const exportCtaTabIndex =
         exportTemplateId === 2 ||
         isKawaiiNoCtaTemplateId(exportTemplateId) ||
-        exportTemplateId === 7
+        exportTemplateId === 7 ||
+        exportTemplateId === 8 ||
+        exportTemplateId === 9
           ? -1
           : isFixedPhotoCarouselTemplateId(exportTemplateId)
             ? 5
@@ -4320,7 +4457,10 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       const exportSlideTotal =
         exportTemplateId === 7
           ? IMAGE_TEMPLATE7_TAB_COUNT
-          : exportTemplateId === 2 || isKawaiiNoCtaTemplateId(exportTemplateId)
+          : exportTemplateId === 2 ||
+              exportTemplateId === 8 ||
+              exportTemplateId === 9 ||
+              isKawaiiNoCtaTemplateId(exportTemplateId)
             ? 6
             : 7;
       const isFullBleedTab =
@@ -4354,6 +4494,139 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       canvas.height = frameHeight;
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Canvas context unavailable');
+
+      if (exportTemplateId === 8 || exportTemplateId === 9) {
+        if (tabIndex === 0) {
+          const coverSource = sourceForTab(0).trim();
+          if (!coverSource) {
+            throw new Error('Pinterest image is still loading. Wait a moment, then try again.');
+          }
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(0, 0, frameWidth, frameHeight);
+          const coverImg = await new Promise<HTMLImageElement>((resolve, reject) => {
+            const el = new Image();
+            el.crossOrigin = 'anonymous';
+            el.onload = () => {
+              if (el.naturalWidth < 1 || el.naturalHeight < 1) {
+                reject(new Error('Invalid image dimensions'));
+                return;
+              }
+              resolve(el);
+            };
+            el.onerror = () =>
+              reject(new Error(`Failed to load image: ${coverSource.slice(0, 80)}`));
+            el.src = coverSource;
+          });
+          const coverScale = Math.max(frameWidth / coverImg.width, frameHeight / coverImg.height);
+          const coverW = coverImg.width * coverScale;
+          const coverH = coverImg.height * coverScale;
+          ctx.drawImage(
+            coverImg,
+            (frameWidth - coverW) / 2,
+            (frameHeight - coverH) / 2,
+            coverW,
+            coverH
+          );
+          if (exportTemplateId === 8) {
+            try {
+              await document.fonts.load(
+                `${IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT} ${Math.round(frameWidth * IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO)}px "TikTok Sans"`
+              );
+              await document.fonts.load(
+                `${IMAGE_TEMPLATE2_COVER_SUBTITLE_WEIGHT} ${Math.round(frameWidth * IMAGE_TEMPLATE2_COVER_SUBTITLE_SIZE_RATIO)}px "TikTok Sans"`
+              );
+            } catch {
+              /* font may already be ready */
+            }
+            drawImageTemplate2CoverSlide(ctx, frameWidth, frameHeight, {
+              backgroundColor: '#000000',
+              skipBackground: true,
+              title: textForTab(0),
+              highlightWord: null,
+              fontFamily: pastelCarouselExportFontFamily,
+              textColor: '#FFFFFF',
+              showProgress: false,
+              footer: '',
+              subtitle: imageTemplate2CoverSubtitle,
+              maxTextWidthRatio: IMAGE_TEMPLATE8_TITLE_MAX_WIDTH_RATIO,
+            });
+          } else {
+            try {
+              await document.fonts.load(
+                `${IMAGE_TEMPLATE9_TITLE_WEIGHT} ${Math.round(frameWidth * IMAGE_TEMPLATE9_TITLE_SIZE_RATIO)}px "TikTok Sans"`
+              );
+            } catch {
+              /* font may already be ready */
+            }
+            drawImageTemplate9Title(ctx, frameWidth, frameHeight, {
+              title: textForTab(0),
+              anchor: imageTemplate9TitleAnchor,
+              fontFamily: pastelCarouselExportFontFamily,
+              textColor: '#FFFFFF',
+            });
+          }
+        } else if (exportTemplateId === 8) {
+          drawImageTemplate3ImessageSlide(
+            ctx,
+            frameWidth,
+            frameHeight,
+            textForTab(tabIndex),
+            []
+          );
+        } else {
+          // Template 9 Q1–Q5: same title typography as the cover, black background.
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(0, 0, frameWidth, frameHeight);
+          const titleSizeRatio = IMAGE_TEMPLATE9_TITLE_SIZE_RATIO;
+          const titleWeight = IMAGE_TEMPLATE9_TITLE_WEIGHT;
+          const fontSize = Math.round(frameWidth * titleSizeRatio);
+          try {
+            await document.fonts.load(`${titleWeight} ${fontSize}px "TikTok Sans"`);
+          } catch {
+            /* font may already be ready */
+          }
+          ctx.font = `${titleWeight} ${fontSize}px ${pastelCarouselExportFontFamily}`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = '#FFFFFF';
+          ctx.letterSpacing = IMAGE_TEMPLATE2_COVER_LETTER_SPACING;
+          const maxTextWidth = frameWidth * 0.84;
+          const lines = wrapLines(ctx, textForTab(tabIndex).replace(/\n/g, ' '), maxTextWidth);
+          const lineHeight = fontSize * IMAGE_TEMPLATE2_COVER_LINE_HEIGHT_MULT;
+          const blockH = lines.length * lineHeight;
+          const textCenterY =
+            frameHeight *
+            (tabIndex === IMAGE_TEMPLATE2_Q5_TAB_INDEX
+              ? IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO
+              : 0.5);
+          let y = textCenterY - blockH / 2 + lineHeight / 2;
+          for (const line of lines) {
+            ctx.fillText(line, frameWidth / 2, y);
+            y += lineHeight;
+          }
+          ctx.letterSpacing = '0px';
+          if (tabIndex === IMAGE_TEMPLATE2_Q5_TAB_INDEX) {
+            const promo = await new Promise<HTMLImageElement>((resolve, reject) => {
+              const el = new Image();
+              el.onload = () => resolve(el);
+              el.onerror = () => reject(new Error('Failed to load the App Store image'));
+              el.src = IMAGE_TEMPLATE2_Q5_PROMO_SRC;
+            });
+            const layout = imageTemplate2Q5PromoLayout(
+              frameWidth,
+              frameHeight,
+              y - lineHeight / 2
+            );
+            ctx.drawImage(promo, layout.x, layout.y, layout.width, layout.height);
+          }
+        }
+        return await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error('Failed to create image blob'));
+          }, 'image/png');
+        });
+      }
 
       if (exportTemplateId === 7) {
         const coverSource = sourceForTab(tabIndex).trim();
@@ -4917,12 +5190,16 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       return { entries, isKawaiiTemplate, kawaiiNumSets: KAWAII_DOWNLOAD_NUM_SETS };
     }
 
-    const exportQuestionCount = isFixedPhotoCarouselTemplateId(exportTemplateId)
-      ? 4
-      : 5;
-    const exportTabCount = isPinterestCoverImageTemplateId(exportTemplateId)
-      ? IMAGE_TEMPLATE7_TAB_COUNT
-      : exportQuestionCount + (exportTemplateId === 2 ? 1 : 2);
+    const exportQuestionCount = isFixedPhotoCarouselTemplateId(exportTemplateId) ? 4 : 5;
+    const exportTabCount = isPinterestCoverOnlyImageTemplateId(exportTemplateId)
+      ? 6
+      : isPinterestCoverImageTemplateId(exportTemplateId)
+        ? IMAGE_TEMPLATE7_TAB_COUNT
+        : exportQuestionCount +
+          (exportTemplateId === 2 ||
+          isKawaiiNoCtaTemplateId(exportTemplateId)
+            ? 1
+            : 2);
 
     for (let tabIndex = 0; tabIndex < exportTabCount; tabIndex++) {
       const blob = await renderFrameBlob(tabIndex, null);
@@ -5752,7 +6029,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                       <div className="order-2 ml-auto flex w-full sm:w-auto flex-col sm:flex-row gap-2 sm:items-center sm:justify-end">
                         {isKawaiiLayoutImageTemplate ||
                         isPastelCarouselImageTemplate ||
-                        isPinterestCoverImageTemplate ? (
+                        isPinterestCoverImageTemplate ||
+                        isPinterestCoverOnlyImageTemplate ? (
                           <button
                             type="button"
                             onClick={() => regenerateImageTemplateContent(selectedImageTemplateId!)}
@@ -5764,7 +6042,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             }
                             className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {isPinterestCoverImageTemplate && isImageTemplate7CoverLoading
+                            {(isPinterestCoverImageTemplate || isPinterestCoverOnlyImageTemplate) &&
+                            isImageTemplate7CoverLoading
                               ? 'Loading…'
                               : 'Retry'}
                           </button>
@@ -5829,7 +6108,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             isImageTemplate3CoverLoading ||
                             isImageTemplate7CoverLoading ||
                             (isPinterestCoverImageTemplate &&
-                              !imageTemplate7SourcesReady(imageTabSources))
+                              !imageTemplate7SourcesReady(imageTabSources)) ||
+                            (isPinterestCoverOnlyImageTemplate && !(imageTabSources[0] ?? '').trim())
                           }
                           className="inline-flex w-full sm:w-auto items-center justify-center gap-2 text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
@@ -5874,7 +6154,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             isImageTemplate7CoverLoading ||
                             (isCoverPhotoImageTemplate && !imageTemplate3CoverReady) ||
                             (isPinterestCoverImageTemplate &&
-                              !imageTemplate7SourcesReady(imageTabSources))
+                              !imageTemplate7SourcesReady(imageTabSources)) ||
+                            (isPinterestCoverOnlyImageTemplate && !(imageTabSources[0] ?? '').trim())
                           }
                           title={
                             instagramAccount
@@ -5986,15 +6267,154 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         <div
                           className="@container relative w-full max-w-sm mx-auto md:mx-0 aspect-3/4 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden min-w-0"
                           style={{
-                            backgroundColor:
-                              isCoverPhotoImageTemplate &&
-                              (selectedImageBrowserTab === 0 ||
-                                (selectedImageBrowserTab >= 1 && selectedImageBrowserTab <= 5))
+                            backgroundColor: isPinterestCoverOnlyImageTemplate
+                              ? '#000000'
+                              : (isCoverPhotoImageTemplate &&
+                                    (selectedImageBrowserTab === 0 ||
+                                      (selectedImageBrowserTab >= 1 &&
+                                        selectedImageBrowserTab <= 5)))
                                 ? '#000000'
                                 : activeImageFrameBg,
                           }}
                         >
-                          {isFullBleedImageTabSelected ? (
+                          {isTopDownSelfieImageTemplate ? (
+                            selectedImageBrowserTab === 0 ? (
+                            <>
+                              {imageSourceForActiveTab ? (
+                                <img
+                                  src={imageSourceForActiveTab}
+                                  alt={`${imageTabLabelForActiveTab} preview`}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : null}
+                              {(imageTabTexts[0] ?? '').trim() ? (
+                                <div
+                                  className="absolute z-10 pointer-events-none"
+                                  style={{
+                                    left: `${imageTemplate9TitleAnchor.x * 100}%`,
+                                    top: `${imageTemplate9TitleAnchor.y * 100}%`,
+                                    transform: 'translate(-50%, -50%)',
+                                    width: `${IMAGE_TEMPLATE9_TITLE_MAX_WIDTH_RATIO * 100}%`,
+                                  }}
+                                >
+                                  <p
+                                    className="w-full text-center text-white wrap-break-word"
+                                    style={{
+                                      fontFamily: pastelCarouselFontFamily,
+                                      fontSize: `${IMAGE_TEMPLATE9_TITLE_SIZE_RATIO * 100}cqw`,
+                                      fontWeight: IMAGE_TEMPLATE9_TITLE_WEIGHT,
+                                      letterSpacing: IMAGE_TEMPLATE2_COVER_LETTER_SPACING,
+                                      lineHeight: IMAGE_TEMPLATE2_COVER_LINE_HEIGHT_MULT,
+                                      textShadow: '0 1px 8px rgba(0,0,0,0.45)',
+                                    }}
+                                  >
+                                    {imageFrameTextForActiveTab}
+                                  </p>
+                                </div>
+                              ) : null}
+                            </>
+                            ) : (
+                            <>
+                              <div className="absolute inset-0 bg-black" aria-hidden />
+                              <div
+                                className="absolute inset-x-[8%] z-10 -translate-y-1/2 pointer-events-none"
+                                style={{
+                                  top: `${
+                                    (selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX
+                                      ? IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO
+                                      : 0.5) * 100
+                                  }%`,
+                                }}
+                              >
+                                <p
+                                  className="w-full text-center text-white wrap-break-word"
+                                  style={{
+                                    fontFamily: pastelCarouselFontFamily,
+                                    fontSize: `${IMAGE_TEMPLATE9_TITLE_SIZE_RATIO * 100}cqw`,
+                                    fontWeight: IMAGE_TEMPLATE9_TITLE_WEIGHT,
+                                    letterSpacing: IMAGE_TEMPLATE2_COVER_LETTER_SPACING,
+                                    lineHeight: IMAGE_TEMPLATE2_COVER_LINE_HEIGHT_MULT,
+                                  }}
+                                >
+                                  {imageFrameTextForActiveTab}
+                                </p>
+                              </div>
+                              {selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX ? (
+                                <img
+                                  src={IMAGE_TEMPLATE2_Q5_PROMO_SRC}
+                                  alt="Spill It on the App Store"
+                                  className="absolute left-1/2 z-20 -translate-x-1/2"
+                                  style={{
+                                    width: `${IMAGE_TEMPLATE2_Q5_PROMO_WIDTH_RATIO * 100}%`,
+                                    maxWidth: 'none',
+                                    top: `${(1 - IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO) * 100}%`,
+                                  }}
+                                />
+                              ) : null}
+                            </>
+                            )
+                          ) : isCouplesSelfieImageTemplate ? (
+                            selectedImageBrowserTab === 0 ? (
+                            <>
+                              {imageSourceForActiveTab ? (
+                                <img
+                                  src={imageSourceForActiveTab}
+                                  alt={`${imageTabLabelForActiveTab} preview`}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : null}
+                              {(imageTabTexts[0] ?? '').trim() ? (
+                                <div
+                                  className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none"
+                                  style={{
+                                    paddingLeft: `${((1 - IMAGE_TEMPLATE8_TITLE_MAX_WIDTH_RATIO) / 2) * 100}%`,
+                                    paddingRight: `${((1 - IMAGE_TEMPLATE8_TITLE_MAX_WIDTH_RATIO) / 2) * 100}%`,
+                                  }}
+                                >
+                                  <div className="flex w-full flex-col items-center">
+                                    <p
+                                      className="w-full text-center text-white wrap-break-word"
+                                      style={{
+                                        fontFamily: pastelCarouselFontFamily,
+                                        fontSize: `${IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO * 100}cqw`,
+                                        fontWeight: IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT,
+                                        letterSpacing: IMAGE_TEMPLATE2_COVER_LETTER_SPACING,
+                                        lineHeight: IMAGE_TEMPLATE2_COVER_LINE_HEIGHT_MULT,
+                                        textShadow: '0 1px 8px rgba(0,0,0,0.45)',
+                                      }}
+                                    >
+                                      {imageFrameTextForActiveTab}
+                                    </p>
+                                    {formatImageTemplate2CoverSubtitle(
+                                      imageTemplate2CoverSubtitle
+                                    ) ? (
+                                      <p
+                                        className="w-full text-center text-white/90 wrap-break-word"
+                                        style={{
+                                          fontFamily: pastelCarouselFontFamily,
+                                          fontSize: `${IMAGE_TEMPLATE2_COVER_SUBTITLE_SIZE_RATIO * 100}cqw`,
+                                          fontWeight: IMAGE_TEMPLATE2_COVER_SUBTITLE_WEIGHT,
+                                          marginTop: `${IMAGE_TEMPLATE2_COVER_SUBTITLE_GAP_EM * IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO * 100}cqw`,
+                                          lineHeight: 1.2,
+                                          textShadow: '0 1px 8px rgba(0,0,0,0.45)',
+                                        }}
+                                      >
+                                        {formatImageTemplate2CoverSubtitle(
+                                          imageTemplate2CoverSubtitle
+                                        )}
+                                      </p>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              ) : null}
+                            </>
+                            ) : (
+                              <ImageTemplate3ImessageBubble
+                                question={imageFrameTextForActiveTab}
+                                replies={[]}
+                              />
+                            )
+                          ) : isFullBleedImageTabSelected ? (
                             imageSourceForActiveTab ? (
                               <img
                                 src={imageSourceForActiveTab}
@@ -6301,12 +6721,15 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               ) : null}
                             </>
                           )}
-                          {isPinterestCoverImageTemplate && isImageTemplate7CoverLoading ? (
+                          {((isPinterestCoverImageTemplate || isPinterestCoverOnlyImageTemplate) &&
+                            isImageTemplate7CoverLoading &&
+                            selectedImageBrowserTab === 0) ? (
                             <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/35 text-sm font-medium text-white">
                               Loading Pinterest image…
                             </div>
                           ) : null}
-                          {isPinterestCoverImageTemplate && imageTemplate7CoverError ? (
+                          {(isPinterestCoverImageTemplate || isPinterestCoverOnlyImageTemplate) &&
+                          imageTemplate7CoverError ? (
                             <div className="absolute inset-x-3 bottom-3 z-20 rounded-md bg-red-600/90 px-3 py-2 text-xs text-white">
                               {imageTemplate7CoverError}
                             </div>
@@ -6315,9 +6738,13 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         {!isFullBleedImageTabSelected ||
                         isPastelCarouselImageTemplate ||
                         isCoverPhotoImageTemplate ||
-                        isKawaiiImageTemplate ? (
+                        isKawaiiImageTemplate ||
+                        isCouplesSelfieImageTemplate ||
+                        isTopDownSelfieImageTemplate ? (
                           <div className="w-full md:w-80 md:self-start space-y-4">
-                            {!isFullBleedImageTabSelected ? (
+                            {!isFullBleedImageTabSelected ||
+                            isCouplesSelfieImageTemplate ||
+                            isTopDownSelfieImageTemplate ? (
                             <div>
                               {isCoverPhotoImageTemplate ? (
                                 <>
@@ -6459,15 +6886,22 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                     onClick={() => {
                                       if (
                                         isPastelCarouselImageTemplate ||
-                                        isBearsKawaiiImageTemplate
+                                        isBearsKawaiiImageTemplate ||
+                                        isCouplesSelfieImageTemplate ||
+                                        isTopDownSelfieImageTemplate
                                       ) {
-                                        const selectedType = isBearsKawaiiImageTemplate
-                                          ? imageTemplate6QuestionType
-                                          : imageTemplate2QuestionType;
                                         const contentType =
-                                          selectedType === 'random'
-                                            ? concreteTypeFromImageLabel(imageTabTypeLabel)
-                                            : selectedType;
+                                          isCouplesSelfieImageTemplate ||
+                                          isTopDownSelfieImageTemplate
+                                            ? 'funny'
+                                            : (() => {
+                                                const selectedType = isBearsKawaiiImageTemplate
+                                                  ? imageTemplate6QuestionType
+                                                  : imageTemplate2QuestionType;
+                                                return selectedType === 'random'
+                                                  ? concreteTypeFromImageLabel(imageTabTypeLabel)
+                                                  : selectedType;
+                                              })();
                                         if (selectedImageBrowserTab === 0) {
                                           const nextTitle = pickTitleForType(
                                             contentType,
@@ -6476,7 +6910,16 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                           const next = [...imageTabTexts];
                                           next[0] = nextTitle;
                                           setImageTabTexts(next);
-                                          if (isPastelCarouselImageTemplate || isBearsKawaiiImageTemplate) {
+                                          if (isTopDownSelfieImageTemplate) {
+                                            setImageTemplate9TitleAnchor(
+                                              pickImageTemplate9TitleAnchor()
+                                            );
+                                          }
+                                          if (
+                                            isPastelCarouselImageTemplate ||
+                                            isBearsKawaiiImageTemplate ||
+                                            isCouplesSelfieImageTemplate
+                                          ) {
                                             setImageTemplate2CoverSubtitle((current) =>
                                               pickRandomImageTemplate2CoverSubtitle(current)
                                             );

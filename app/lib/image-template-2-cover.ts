@@ -124,6 +124,8 @@ export function drawImageTemplate2CoverSlide(
     skipBackground?: boolean;
     /** Small quotation under the title (same font family, smaller size). */
     subtitle?: string | null;
+    /** Override default max title width (Template 2 uses 0.6). */
+    maxTextWidthRatio?: number;
   }
 ) {
   const {
@@ -138,6 +140,7 @@ export function drawImageTemplate2CoverSlide(
     showProgress = true,
     skipBackground = false,
     subtitle,
+    maxTextWidthRatio = IMAGE_TEMPLATE2_COVER_MAX_TEXT_WIDTH_RATIO,
   } = options;
 
   if (!skipBackground) {
@@ -176,7 +179,7 @@ export function drawImageTemplate2CoverSlide(
     ctx.textBaseline = 'middle';
     ctx.fillStyle = textColor;
 
-    const maxTextWidth = frameWidth * IMAGE_TEMPLATE2_COVER_MAX_TEXT_WIDTH_RATIO;
+    const maxTextWidth = frameWidth * maxTextWidthRatio;
     const lines = centerText ? wrapLines(ctx, centerText, maxTextWidth) : [];
     const highlight = highlightWord?.trim().toLowerCase() ?? '';
     const lineHeight = fontSize * IMAGE_TEMPLATE2_COVER_LINE_HEIGHT_MULT;

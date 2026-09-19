@@ -22,15 +22,15 @@ export const IMAGE_TEMPLATE3_IMESSAGE_STATUS_BAR_RATIO = 0.042;
 export const IMAGE_TEMPLATE3_IMESSAGE_HEADER_RATIO = 0.115;
 export const IMAGE_TEMPLATE3_IMESSAGE_INPUT_BAR_RATIO = 0.085;
 
-export const IMAGE_TEMPLATE3_IMESSAGE_MAX_BUBBLE_WIDTH_RATIO = 0.7;
-/** ~34px at 1080 — closer to real Messages body size in a phone screenshot. */
-export const IMAGE_TEMPLATE3_IMESSAGE_FONT_SIZE_RATIO = 0.0315;
-export const IMAGE_TEMPLATE3_IMESSAGE_LINE_HEIGHT_MULT = 1.22;
+export const IMAGE_TEMPLATE3_IMESSAGE_MAX_BUBBLE_WIDTH_RATIO = 0.72;
+/** ~31px at 1080 — matches real Messages body size in phone screenshots. */
+export const IMAGE_TEMPLATE3_IMESSAGE_FONT_SIZE_RATIO = 0.0285;
+export const IMAGE_TEMPLATE3_IMESSAGE_LINE_HEIGHT_MULT = 1.28;
 /** Padding / radius are font-relative so bubbles don’t look inflated on tall frames. */
-export const IMAGE_TEMPLATE3_IMESSAGE_PAD_X_EM = 0.62;
-export const IMAGE_TEMPLATE3_IMESSAGE_PAD_Y_EM = 0.42;
-export const IMAGE_TEMPLATE3_IMESSAGE_RADIUS_EM = 1.05;
-export const IMAGE_TEMPLATE3_IMESSAGE_DELIVERED_SIZE_RATIO = 0.018;
+export const IMAGE_TEMPLATE3_IMESSAGE_PAD_X_EM = 0.85;
+export const IMAGE_TEMPLATE3_IMESSAGE_PAD_Y_EM = 0.62;
+export const IMAGE_TEMPLATE3_IMESSAGE_RADIUS_EM = 1.15;
+export const IMAGE_TEMPLATE3_IMESSAGE_DELIVERED_SIZE_RATIO = 0.017;
 
 /**
  * Reply-focus look: earlier thread and chrome are blurred behind a scrim while the
@@ -39,16 +39,91 @@ export const IMAGE_TEMPLATE3_IMESSAGE_DELIVERED_SIZE_RATIO = 0.018;
  */
 export const IMAGE_TEMPLATE3_IMESSAGE_BLUR_RATIO = 0.012;
 export const IMAGE_TEMPLATE3_IMESSAGE_SCRIM = 'rgba(0, 0, 0, 0.55)';
-export const IMAGE_TEMPLATE3_IMESSAGE_CONTEXT_LINES: ReadonlyArray<{
-  text: string;
-  outgoing: boolean;
-}> = [
+
+export type ImessageContextLine = { text: string; outgoing: boolean };
+
+/** Varied lengths / sides so blurred filler doesn’t look like a repeating stack. */
+export const IMAGE_TEMPLATE3_IMESSAGE_CONTEXT_POOL: ReadonlyArray<ImessageContextLine> = [
   { text: 'wait what did you say', outgoing: false },
   { text: 'ok but be honest with me', outgoing: true },
   { text: 'hahaha stop', outgoing: false },
   { text: 'i have a question for you', outgoing: true },
   { text: 'you never answer these', outgoing: false },
+  { text: 'lol ok fine', outgoing: true },
+  { text: 'where are you rn', outgoing: false },
+  { text: 'on my way, give me like 10', outgoing: true },
+  { text: 'no rush', outgoing: false },
+  { text: 'do you actually mean that', outgoing: true },
+  { text: 'yes??', outgoing: false },
+  { text: 'bro', outgoing: true },
+  { text: 'i was literally about to text you', outgoing: false },
+  { text: 'ok wait hear me out', outgoing: true },
+  { text: 'this better be good', outgoing: false },
+  { text: 'are you free later', outgoing: true },
+  { text: 'depends… what for', outgoing: false },
+  { text: 'nothing weird i promise', outgoing: true },
+  { text: 'that already sounds weird', outgoing: false },
+  { text: 'haha fair', outgoing: true },
+  { text: 'send it', outgoing: false },
+  { text: 'one sec', outgoing: true },
+  { text: 'ok i’m listening', outgoing: false },
+  { text: 'don’t leave me on read', outgoing: true },
+  { text: 'i would never', outgoing: false },
+  { text: 'you already have three times', outgoing: true },
+  { text: 'that was different', outgoing: false },
+  { text: 'sure jan', outgoing: true },
+  { text: 'anyway', outgoing: false },
+  { text: 'so about earlier…', outgoing: true },
 ];
+
+/** @deprecated Prefer IMAGE_TEMPLATE3_IMESSAGE_CONTEXT_POOL + pickImessageContextThread. */
+export const IMAGE_TEMPLATE3_IMESSAGE_CONTEXT_LINES = IMAGE_TEMPLATE3_IMESSAGE_CONTEXT_POOL.slice(
+  0,
+  5
+);
+
+function hashSeed(input: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function mulberry32(seed: number): () => number {
+  let t = seed >>> 0;
+  return () => {
+    t += 0x6d2b79f5;
+    let r = Math.imul(t ^ (t >>> 15), 1 | t);
+    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Deterministic before/after filler so preview and export stay stable for a question. */
+export function pickImessageContextThread(seed: string): {
+  before: ImessageContextLine[];
+  after: ImessageContextLine[];
+} {
+  const rand = mulberry32(hashSeed(seed || 'imessage'));
+  const pool = [...IMAGE_TEMPLATE3_IMESSAGE_CONTEXT_POOL];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    const tmp = pool[i]!;
+    pool[i] = pool[j]!;
+    pool[j] = tmp;
+  }
+  const beforeCount = 4 + Math.floor(rand() * 3); // 4–6
+  const afterCount = 3 + Math.floor(rand() * 3); // 3–5
+  const before = pool.slice(0, beforeCount).map((line) => ({ ...line }));
+  const after = pool.slice(beforeCount, beforeCount + afterCount).map((line) => ({ ...line }));
+  // Nudge sides so it doesn’t alternate too perfectly.
+  for (const line of [...before, ...after]) {
+    if (rand() < 0.18) line.outgoing = !line.outgoing;
+  }
+  return { before, after };
+}
 
 function wrapLines(
   ctx: CanvasRenderingContext2D,
@@ -88,7 +163,7 @@ function measureBubble(
   frameWidth: number,
   _frameHeight: number
 ): BubbleMetrics {
-  const fontSize = Math.max(28, Math.round(frameWidth * IMAGE_TEMPLATE3_IMESSAGE_FONT_SIZE_RATIO));
+  const fontSize = Math.max(24, Math.round(frameWidth * IMAGE_TEMPLATE3_IMESSAGE_FONT_SIZE_RATIO));
   const padX = Math.max(14, Math.round(fontSize * IMAGE_TEMPLATE3_IMESSAGE_PAD_X_EM));
   const padY = Math.max(10, Math.round(fontSize * IMAGE_TEMPLATE3_IMESSAGE_PAD_Y_EM));
   const radius = Math.max(16, Math.round(fontSize * IMAGE_TEMPLATE3_IMESSAGE_RADIUS_EM));
@@ -105,87 +180,132 @@ function measureBubble(
   return { lines, bubbleW, bubbleH, lineHeight, padX, padY, radius, fontSize };
 }
 
-/** Outgoing iMessage bubble + bottom-right swoosh. */
+/**
+ * Continuous outgoing bubble + tail (SwiftUI BubbleShape). One path, one fill —
+ * no detached nub / cutout artifacts.
+ */
 function outgoingBubblePath(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   w: number,
   h: number,
-  r: number
+  corner: number
 ) {
-  const radius = Math.min(r, w / 2, h / 2);
-  const tailW = Math.max(11, radius * 0.55);
-  const tipX = x + w + tailW * 0.72;
-  const tipY = y + h + tailW * 0.55;
-
+  const u = corner / 15;
+  const width = w;
+  const height = h;
   ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.lineTo(x + w - radius, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
-  ctx.lineTo(x + w, y + h - radius * 0.55);
+  ctx.moveTo(x + width - 20 * u, y + height);
+  ctx.lineTo(x + 15 * u, y + height);
   ctx.bezierCurveTo(
-    x + w + tailW * 0.08,
-    y + h - radius * 0.1,
-    tipX - tailW * 0.05,
-    tipY - tailW * 0.35,
-    tipX,
-    tipY
+    x + 8 * u,
+    y + height,
+    x,
+    y + height - 8 * u,
+    x,
+    y + height - 15 * u
+  );
+  ctx.lineTo(x, y + 15 * u);
+  ctx.bezierCurveTo(x, y + 8 * u, x + 8 * u, y, x + 15 * u, y);
+  ctx.lineTo(x + width - 20 * u, y);
+  ctx.bezierCurveTo(
+    x + width - 12 * u,
+    y,
+    x + width - 5 * u,
+    y + 8 * u,
+    x + width - 5 * u,
+    y + 15 * u
+  );
+  ctx.lineTo(x + width - 5 * u, y + height - 12 * u);
+  ctx.bezierCurveTo(
+    x + width - 5 * u,
+    y + height - 1 * u,
+    x + width,
+    y + height,
+    x + width,
+    y + height
+  );
+  ctx.lineTo(x + width + 1 * u, y + height);
+  ctx.bezierCurveTo(
+    x + width - 4 * u,
+    y + height + 1 * u,
+    x + width - 8 * u,
+    y + height - 1 * u,
+    x + width - 12 * u,
+    y + height - 4 * u
   );
   ctx.bezierCurveTo(
-    tipX - tailW * 0.85,
-    tipY - tailW * 0.15,
-    x + w - radius * 0.05,
-    y + h + tailW * 0.02,
-    x + w - radius * 0.95,
-    y + h
+    x + width - 15 * u,
+    y + height,
+    x + width - 20 * u,
+    y + height,
+    x + width - 20 * u,
+    y + height
   );
-  ctx.lineTo(x + radius, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
-  ctx.lineTo(x, y + radius);
-  ctx.quadraticCurveTo(x, y, x + radius, y);
   ctx.closePath();
 }
 
-/** Incoming iMessage bubble + bottom-left swoosh. */
+/** Continuous incoming bubble + tail — mirror of outgoing. */
 function incomingBubblePath(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   w: number,
   h: number,
-  r: number
+  corner: number
 ) {
-  const radius = Math.min(r, w / 2, h / 2);
-  const tailW = Math.max(11, radius * 0.55);
-  const tipX = x - tailW * 0.72;
-  const tipY = y + h + tailW * 0.55;
-
+  const u = corner / 15;
+  const width = w;
+  const height = h;
   ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.lineTo(x + w - radius, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
-  ctx.lineTo(x + w, y + h - radius);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
-  ctx.lineTo(x + radius * 0.95, y + h);
+  ctx.moveTo(x + 20 * u, y + height);
+  ctx.lineTo(x + width - 15 * u, y + height);
   ctx.bezierCurveTo(
-    x + radius * 0.05,
-    y + h + tailW * 0.02,
-    tipX + tailW * 0.85,
-    tipY - tailW * 0.15,
-    tipX,
-    tipY
+    x + width - 8 * u,
+    y + height,
+    x + width,
+    y + height - 8 * u,
+    x + width,
+    y + height - 15 * u
   );
+  ctx.lineTo(x + width, y + 15 * u);
   ctx.bezierCurveTo(
-    tipX + tailW * 0.05,
-    tipY - tailW * 0.35,
-    x - tailW * 0.08,
-    y + h - radius * 0.1,
+    x + width,
+    y + 8 * u,
+    x + width - 8 * u,
+    y,
+    x + width - 15 * u,
+    y
+  );
+  ctx.lineTo(x + 20 * u, y);
+  ctx.bezierCurveTo(x + 12 * u, y, x + 5 * u, y + 8 * u, x + 5 * u, y + 15 * u);
+  ctx.lineTo(x + 5 * u, y + height - 10 * u);
+  ctx.bezierCurveTo(
+    x + 5 * u,
+    y + height - 1 * u,
     x,
-    y + h - radius * 0.55
+    y + height,
+    x,
+    y + height
   );
-  ctx.lineTo(x, y + radius);
-  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.lineTo(x - 1 * u, y + height);
+  ctx.bezierCurveTo(
+    x + 4 * u,
+    y + height + 1 * u,
+    x + 8 * u,
+    y + height - 1 * u,
+    x + 12 * u,
+    y + height - 4 * u
+  );
+  ctx.bezierCurveTo(
+    x + 15 * u,
+    y + height,
+    x + 20 * u,
+    y + height,
+    x + 20 * u,
+    y + height
+  );
   ctx.closePath();
 }
 
@@ -437,40 +557,49 @@ function drawBubble(
   outgoing: boolean,
   withTail: boolean
 ) {
-  target.fillStyle = outgoing
+  const fill = outgoing
     ? IMAGE_TEMPLATE3_IMESSAGE_BUBBLE
     : IMAGE_TEMPLATE3_IMESSAGE_INCOMING_BUBBLE;
+  const corner = Math.min(metrics.radius, metrics.bubbleH / 2, metrics.bubbleW / 2);
+  target.fillStyle = fill;
   if (withTail && outgoing) {
-    outgoingBubblePath(target, x, y, metrics.bubbleW, metrics.bubbleH, metrics.radius);
+    outgoingBubblePath(target, x, y, metrics.bubbleW, metrics.bubbleH, corner);
   } else if (withTail) {
-    incomingBubblePath(target, x, y, metrics.bubbleW, metrics.bubbleH, metrics.radius);
+    incomingBubblePath(target, x, y, metrics.bubbleW, metrics.bubbleH, corner);
   } else {
-    roundRectPath(target, x, y, metrics.bubbleW, metrics.bubbleH, metrics.radius);
+    roundRectPath(target, x, y, metrics.bubbleW, metrics.bubbleH, corner);
   }
   target.fill();
   fillBubbleText(target, metrics, x, y);
 }
 
 /**
- * Fills the space above the focused exchange with earlier chatter so the blurred
- * backdrop reads as a real thread rather than empty black.
+ * Fills a vertical band with context bubbles (newest near `fromY`, stacking toward `towardY`).
+ * `direction` -1 stacks upward (before), +1 stacks downward (after).
  */
-function drawContextBubbles(
+function drawContextBubbleBand(
   target: CanvasRenderingContext2D,
   frameWidth: number,
   frameHeight: number,
   marginX: number,
-  bottom: number,
-  top: number
+  lines: ReadonlyArray<ImessageContextLine>,
+  fromY: number,
+  limitY: number,
+  direction: -1 | 1
 ) {
   const gap = Math.max(8, frameHeight * 0.01);
-  let y = bottom;
-  for (const line of IMAGE_TEMPLATE3_IMESSAGE_CONTEXT_LINES) {
+  let y = fromY;
+  for (const line of lines) {
     const metrics = measureBubble(target, line.text, frameWidth, frameHeight);
-    y -= metrics.bubbleH + gap;
-    if (y < top) break;
+    if (direction < 0) {
+      y -= metrics.bubbleH + gap;
+      if (y < limitY) break;
+    } else {
+      if (y + metrics.bubbleH > limitY) break;
+    }
     const x = line.outgoing ? frameWidth - marginX - metrics.bubbleW : marginX;
     drawBubble(target, metrics, x, y, line.outgoing, true);
+    if (direction > 0) y += metrics.bubbleH + gap;
   }
 }
 
@@ -539,30 +668,46 @@ export function drawImageTemplate3ImessageSlide(
     (qMetrics ? deliveredGap + deliveredSize + gap : 0) +
     repliesH;
 
-  // Real conversations sit against the input bar rather than floating mid-screen.
   const conversationBottom = frameHeight - inputBarH - gap;
   const conversationTop = statusBarH + headerH;
-  let cursorY = conversationBottom - stackH;
+  const conversationMid = (conversationTop + conversationBottom) / 2;
+  // Center the focused exchange so blurred messages can sit above and below.
+  let focusTop = conversationMid - stackH / 2;
+  focusTop = Math.max(conversationTop + gap, Math.min(focusTop, conversationBottom - stackH));
+  const focusBottom = focusTop + stackH;
 
   const dividerSize = Math.max(15, Math.round(frameWidth * 0.0165));
   const dividerGap = dividerSize * 2.2;
-  const dividerY = cursorY - dividerGap;
+  const dividerY = focusTop - dividerGap;
   const showDivider = dividerY > conversationTop + dividerSize;
-  // Never let a long exchange run under the header.
-  cursorY = Math.max(cursorY, conversationTop + gap);
-  const focusTop = cursorY;
+
+  const { before, after } = pickImessageContextThread(
+    `${questionText}|${replyList.join('|')}|${deliveryStatus}`
+  );
 
   const drawBackdrop = (target: CanvasRenderingContext2D) => {
     drawChrome(target);
-    drawContextBubbles(
+    drawContextBubbleBand(
       target,
       frameWidth,
       frameHeight,
       marginX,
-      showDivider ? dividerY - dividerGap : focusTop - gap,
-      conversationTop + gap
+      before,
+      showDivider ? dividerY - dividerGap * 0.35 : focusTop - gap,
+      conversationTop + gap,
+      -1
     );
     if (showDivider) drawTimestampDivider(target, frameWidth, dividerY, dividerSize);
+    drawContextBubbleBand(
+      target,
+      frameWidth,
+      frameHeight,
+      marginX,
+      after,
+      focusBottom + gap,
+      conversationBottom,
+      1
+    );
   };
 
   const drawFocus = (target: CanvasRenderingContext2D) => {

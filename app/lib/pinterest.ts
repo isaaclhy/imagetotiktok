@@ -3,9 +3,16 @@ export const IMAGE_TEMPLATE7_PINTEREST_QUERY = 'blurry couples kissing selfie';
 export const IMAGE_TEMPLATE7_PINTEREST_QUESTION_QUERIES = [
   'blurry hands holding',
   'couples shadow blurry',
+  'couples ootd selfie blurry',
 ] as const;
 export const IMAGE_TEMPLATE7_QUESTION_COUNT = 5;
 export const IMAGE_TEMPLATE7_TAB_COUNT = 1 + IMAGE_TEMPLATE7_QUESTION_COUNT;
+
+/** Template 8 cover search — Q slides later. */
+export const IMAGE_TEMPLATE8_PINTEREST_QUERY = 'couples selfie cute';
+
+/** Template 9 cover search — Q slides later. */
+export const IMAGE_TEMPLATE9_PINTEREST_QUERY = 'Top down selfie angle funny women';
 
 export function pinterestImageProxyUrl(originalUrl: string): string {
   if (originalUrl.startsWith('/') || !/^https?:\/\//i.test(originalUrl)) {
