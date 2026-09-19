@@ -73,7 +73,12 @@ export const IMAGE_TEMPLATES_BY_APP: Record<StudioAppId, ImageTemplateCard[]> = 
       subtitle: '',
       coverSrc: '/image-templates/template-6-bear.png',
     },
-    { id: 7, title: 'Template 7', subtitle: '' },
+    {
+      id: 7,
+      title: 'Template 7',
+      subtitle: '',
+      coverSrc: '/image-templates/template-7-cover.jpg',
+    },
     {
       id: 8,
       title: 'Couples selfie',

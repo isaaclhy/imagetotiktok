@@ -116,7 +116,21 @@ import {
   pickImageTemplate9TitleAnchor,
   type ImageTemplate9TitleAnchor,
 } from '@/app/lib/image-template-9-cover';
-import { IMAGE_TEMPLATE8_TITLE_MAX_WIDTH_RATIO } from '@/app/lib/image-template-8-cover';
+import {
+  drawImageTemplate8Q5Banner,
+  drawImageTemplate8Q5SearchLabel,
+  IMAGE_TEMPLATE8_Q5_BANNER_SRC,
+  IMAGE_TEMPLATE8_Q5_BANNER_ASPECT,
+  IMAGE_TEMPLATE8_Q5_BANNER_GAP_RATIO,
+  IMAGE_TEMPLATE8_Q5_BANNER_RADIUS_RATIO,
+  IMAGE_TEMPLATE8_Q5_BANNER_WIDTH_RATIO,
+  IMAGE_TEMPLATE8_Q5_SEARCH_LINES,
+  IMAGE_TEMPLATE8_Q5_SEARCH_LINE_HEIGHT_MULT,
+  IMAGE_TEMPLATE8_Q5_SEARCH_SIZE_RATIO,
+  IMAGE_TEMPLATE8_Q5_SEARCH_TOP_RATIO,
+  IMAGE_TEMPLATE8_Q5_SEARCH_WEIGHT,
+  IMAGE_TEMPLATE8_TITLE_MAX_WIDTH_RATIO,
+} from '@/app/lib/image-template-8-cover';
 import { imageTemplate3CoverDisplaySrc } from '@/app/lib/image-template-3-cover';
 import {
   IMAGE_TEMPLATE3_COVER_MODEL_DEFAULT,
@@ -4573,6 +4587,31 @@ const imageFrameTitleLine1 = 'Questions to ask your';
             textForTab(tabIndex),
             []
           );
+          if (tabIndex === IMAGE_TEMPLATE2_Q5_TAB_INDEX) {
+            const searchFontSize = Math.round(
+              frameWidth * IMAGE_TEMPLATE8_Q5_SEARCH_SIZE_RATIO
+            );
+            try {
+              await document.fonts.load(
+                `${IMAGE_TEMPLATE8_Q5_SEARCH_WEIGHT} ${searchFontSize}px "TikTok Sans"`
+              );
+            } catch {
+              /* font may already be ready */
+            }
+            drawImageTemplate8Q5SearchLabel(
+              ctx,
+              frameWidth,
+              frameHeight,
+              pastelCarouselExportFontFamily
+            );
+            const banner = await new Promise<HTMLImageElement>((resolve, reject) => {
+              const el = new Image();
+              el.onload = () => resolve(el);
+              el.onerror = () => reject(new Error('Failed to load Template 8 app banner'));
+              el.src = IMAGE_TEMPLATE8_Q5_BANNER_SRC;
+            });
+            drawImageTemplate8Q5Banner(ctx, frameWidth, frameHeight, banner);
+          }
         } else {
           // Template 9 Q1–Q5: same title typography as the cover, black background.
           ctx.fillStyle = '#000000';
@@ -6409,10 +6448,50 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               ) : null}
                             </>
                             ) : (
-                              <ImageTemplate3ImessageBubble
-                                question={imageFrameTextForActiveTab}
-                                replies={[]}
-                              />
+                              <>
+                                <ImageTemplate3ImessageBubble
+                                  question={imageFrameTextForActiveTab}
+                                  replies={[]}
+                                />
+                                {selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX ? (
+                                  <div
+                                    className="absolute left-0 right-0 z-20 flex flex-col items-center pointer-events-none px-[6%]"
+                                    style={{
+                                      top: `${IMAGE_TEMPLATE8_Q5_SEARCH_TOP_RATIO * 100}%`,
+                                    }}
+                                  >
+                                    <p
+                                      className="w-full text-center text-white wrap-break-word"
+                                      style={{
+                                        fontFamily: pastelCarouselFontFamily,
+                                        fontSize: `${IMAGE_TEMPLATE8_Q5_SEARCH_SIZE_RATIO * 100}cqw`,
+                                        fontWeight: IMAGE_TEMPLATE8_Q5_SEARCH_WEIGHT,
+                                        lineHeight: IMAGE_TEMPLATE8_Q5_SEARCH_LINE_HEIGHT_MULT,
+                                        textShadow: '0 1px 8px rgba(0,0,0,0.55)',
+                                      }}
+                                    >
+                                      {IMAGE_TEMPLATE8_Q5_SEARCH_LINES.map((line) => (
+                                        <span key={line} className="block">
+                                          {line}
+                                        </span>
+                                      ))}
+                                    </p>
+                                    <img
+                                      src={IMAGE_TEMPLATE8_Q5_BANNER_SRC}
+                                      alt="Spill It - Couples Questions"
+                                      className="w-[88%] overflow-hidden"
+                                      style={{
+                                        marginTop: `${IMAGE_TEMPLATE8_Q5_BANNER_GAP_RATIO * 100}%`,
+                                        borderRadius: `${(
+                                          (IMAGE_TEMPLATE8_Q5_BANNER_WIDTH_RATIO *
+                                            IMAGE_TEMPLATE8_Q5_BANNER_RADIUS_RATIO) /
+                                          IMAGE_TEMPLATE8_Q5_BANNER_ASPECT
+                                        ) * 100}cqw`,
+                                      }}
+                                    />
+                                  </div>
+                                ) : null}
+                              </>
                             )
                           ) : isFullBleedImageTabSelected ? (
                             imageSourceForActiveTab ? (
