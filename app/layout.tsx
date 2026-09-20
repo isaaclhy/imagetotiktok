@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter, Nunito, Open_Sans } from "next/font/google";
+import { Geist, Geist_Mono, Inter, Libre_Baskerville, Nunito, Open_Sans } from "next/font/google";
 import "./globals.css";
 
 const openSans = Open_Sans({
@@ -12,6 +12,12 @@ const nunito = Nunito({
   variable: "--font-nunito",
   subsets: ["latin"],
   weight: ["600", "700", "800", "900"],
+});
+
+const libreBaskerville = Libre_Baskerville({
+  variable: "--font-libre-baskerville",
+  subsets: ["latin"],
+  weight: ["400", "700"],
 });
 
 const geistSans = Geist({
@@ -43,7 +49,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${openSans.variable} ${nunito.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${openSans.variable} ${nunito.variable} ${libreBaskerville.variable} antialiased`}
       >
         {children}
       </body>

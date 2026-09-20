@@ -96,7 +96,7 @@ function collectFromOfficialSearch(json: unknown): PinCandidate[] {
 async function searchOfficialPins(query: string, token: string): Promise<PinCandidate[]> {
   const url = new URL('https://api.pinterest.com/v5/search/pins');
   url.searchParams.set('query', query);
-  url.searchParams.set('page_size', '25');
+  url.searchParams.set('page_size', '50');
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
     cache: 'no-store',
@@ -113,7 +113,7 @@ async function searchPublicPins(query: string): Promise<PinCandidate[]> {
     options: {
       query,
       scope: 'pins',
-      page_size: 25,
+      page_size: 50,
       auto_correction_disabled: true,
     },
     context: {},
@@ -180,7 +180,7 @@ export async function GET(request: NextRequest) {
     const query = searchParams.get('query')?.trim() || IMAGE_TEMPLATE7_PINTEREST_QUERY;
     const exclude = parseExcludeList(searchParams.get('exclude')?.trim() || '');
     const count = Math.min(
-      25,
+      50,
       Math.max(1, Number.parseInt(searchParams.get('count') ?? '1', 10) || 1)
     );
     const token = process.env.PINTEREST_ACCESS_TOKEN?.trim();

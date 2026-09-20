@@ -8,11 +8,62 @@ export const IMAGE_TEMPLATE7_PINTEREST_QUESTION_QUERIES = [
 export const IMAGE_TEMPLATE7_QUESTION_COUNT = 5;
 export const IMAGE_TEMPLATE7_TAB_COUNT = 1 + IMAGE_TEMPLATE7_QUESTION_COUNT;
 
-/** Template 8 cover search — Q slides later. */
-export const IMAGE_TEMPLATE8_PINTEREST_QUERY = 'couples selfie cute';
+/** Template 8 cover search — rotate queries so Retries don’t stick to the same pins. */
+export const IMAGE_TEMPLATE8_PINTEREST_QUERIES = [
+  'couples selfie cute',
+  'couple mirror selfie',
+  'cute couple selfie aesthetic',
+  'boyfriend girlfriend selfie',
+  'couples cozy selfie',
+  'couple phone selfie',
+] as const;
+export const IMAGE_TEMPLATE8_PINTEREST_QUERY = IMAGE_TEMPLATE8_PINTEREST_QUERIES[0];
 
-/** Template 9 cover search — Q slides later. */
-export const IMAGE_TEMPLATE9_PINTEREST_QUERY = 'Top down selfie angle funny women';
+/** Template 9 cover search — randomly pick between the two on each fetch/Retry. */
+export const IMAGE_TEMPLATE9_PINTEREST_QUERIES = [
+  'Top down selfie angle funny women',
+  'women face mask selfie unhinged',
+] as const;
+export const IMAGE_TEMPLATE9_PINTEREST_QUERY = IMAGE_TEMPLATE9_PINTEREST_QUERIES[0];
+
+/** Template 10 — same query for cover + Q1–Q5. */
+export const IMAGE_TEMPLATE10_PINTEREST_QUERY = 'couples cute moments';
+export const IMAGE_TEMPLATE10_PINTEREST_QUESTION_QUERIES = [
+  IMAGE_TEMPLATE10_PINTEREST_QUERY,
+] as const;
+
+/** Template 11 — same query for cover + Q1–Q5. */
+export const IMAGE_TEMPLATE11_PINTEREST_QUERY = 'cute celebrity couples moments';
+export const IMAGE_TEMPLATE11_PINTEREST_QUESTION_QUERIES = [
+  IMAGE_TEMPLATE11_PINTEREST_QUERY,
+] as const;
+
+/** How many recent covers to avoid before allowing a re-pick. */
+export const PINTEREST_COVER_RECENT_EXCLUDE_LIMIT = 12;
+/** Fetch a pool, then pick one — spreads chance beyond the single top hit. */
+export const PINTEREST_COVER_CANDIDATE_POOL = 12;
+
+export function pickRandomPinterestQuery(
+  queries: readonly string[],
+  avoid?: string
+): string {
+  const pool = queries.filter((q) => q.trim().length > 0);
+  if (pool.length === 0) return '';
+  if (pool.length === 1) return pool[0]!;
+  const options = avoid ? pool.filter((q) => q !== avoid) : pool;
+  const list = options.length > 0 ? options : pool;
+  return list[Math.floor(Math.random() * list.length)]!;
+}
+
+export function rememberPinterestCoverUrl(
+  recent: string[],
+  nextUrl: string,
+  limit = PINTEREST_COVER_RECENT_EXCLUDE_LIMIT
+): string[] {
+  const original = originalPinterestUrlFromSrc(nextUrl);
+  if (!original) return recent;
+  return [original, ...recent.filter((url) => url !== original)].slice(0, limit);
+}
 
 export function pinterestImageProxyUrl(originalUrl: string): string {
   if (originalUrl.startsWith('/') || !/^https?:\/\//i.test(originalUrl)) {
@@ -46,15 +97,61 @@ export type PinterestSearchImage = {
   originalUrl: string;
 };
 
+/** Normalize proxy/original URLs so the same pin isn’t treated as two images. */
+export function pinterestImageIdentity(src: string): string {
+  return originalPinterestUrlFromSrc(src).trim().toLowerCase();
+}
+
+/**
+ * Shuffle `images` and take up to `count` unique URLs (by original pin identity),
+ * skipping anything in `exclude`.
+ */
+export function pickDistinctPinterestImageUrls(
+  images: PinterestSearchImage[],
+  count: number,
+  exclude: string[] = []
+): string[] {
+  const seen = new Set(
+    exclude.map((url) => pinterestImageIdentity(url)).filter(Boolean)
+  );
+  const shuffled = [...images];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = shuffled[i]!;
+    shuffled[i] = shuffled[j]!;
+    shuffled[j] = tmp;
+  }
+  const picked: string[] = [];
+  for (const item of shuffled) {
+    if (picked.length >= count) break;
+    const url = item.imageUrl?.trim();
+    if (!url) continue;
+    const id = pinterestImageIdentity(item.originalUrl || url);
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    picked.push(url);
+  }
+  return picked;
+}
+
 export function pickMixedPinterestQuestionUrls(
   pools: PinterestSearchImage[][],
-  count: number
+  count: number,
+  exclude: string[] = []
 ): string[] {
+  const seen = new Set(
+    exclude.map((url) => pinterestImageIdentity(url)).filter(Boolean)
+  );
   const queues = pools
     .map((pool) =>
       pool
         .map((item) => item.imageUrl)
-        .filter((url) => url.trim().length > 0)
+        .filter((url) => {
+          const trimmed = url.trim();
+          if (!trimmed) return false;
+          const id = pinterestImageIdentity(trimmed);
+          return Boolean(id) && !seen.has(id);
+        })
     )
     .filter((urls) => urls.length > 0)
     .map((urls) => {
@@ -72,7 +169,20 @@ export function pickMixedPinterestQuestionUrls(
     const available = queues.filter((queue) => queue.length > 0);
     if (available.length === 0) break;
     const queue = available[Math.floor(Math.random() * available.length)]!;
-    picked.push(queue.shift()!);
+    let nextUrl: string | undefined;
+    while (queue.length > 0) {
+      const candidate = queue.shift()!;
+      const id = pinterestImageIdentity(candidate);
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      nextUrl = candidate;
+      break;
+    }
+    if (!nextUrl) {
+      i -= 1;
+      continue;
+    }
+    picked.push(nextUrl);
   }
   return picked;
 }
@@ -116,20 +226,23 @@ export async function fetchPinterestSearchImages(options: {
 
 export async function fetchPinterestCoverImage(options?: {
   query?: string;
-  exclude?: string;
+  exclude?: string | string[];
+  /** How many candidates to fetch before picking one at random. */
+  poolSize?: number;
   signal?: AbortSignal;
 }): Promise<{ imageUrl: string; originalUrl: string; query: string }> {
   const query = options?.query?.trim() || IMAGE_TEMPLATE7_PINTEREST_QUERY;
+  const poolSize = Math.max(1, options?.poolSize ?? 1);
   const result = await fetchPinterestSearchImages({
     query,
-    count: 1,
+    count: poolSize,
     exclude: options?.exclude,
     signal: options?.signal,
   });
-  const first = result.images[0]!;
+  const pick = result.images[Math.floor(Math.random() * result.images.length)]!;
   return {
-    imageUrl: first.imageUrl,
-    originalUrl: first.originalUrl,
+    imageUrl: pick.imageUrl,
+    originalUrl: pick.originalUrl,
     query: result.query,
   };
 }

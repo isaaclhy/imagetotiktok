@@ -8,20 +8,31 @@ import {
 export const IMAGE_TEMPLATE9_TITLE_SIZE_RATIO = 0.04;
 export const IMAGE_TEMPLATE9_TITLE_WEIGHT = IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT;
 export const IMAGE_TEMPLATE9_TITLE_MAX_WIDTH_RATIO = 0.25;
-/** Vertical band for title placement (middle 50% of the frame). */
-export const IMAGE_TEMPLATE9_TITLE_BAND_TOP = 0.25;
-export const IMAGE_TEMPLATE9_TITLE_BAND_BOTTOM = 0.75;
+/** Placement band — center 50% of the frame, both axes. */
+export const IMAGE_TEMPLATE9_TITLE_BAND_START = 0.25;
+export const IMAGE_TEMPLATE9_TITLE_BAND_END = 0.75;
+/** @deprecated Use IMAGE_TEMPLATE9_TITLE_BAND_START. */
+export const IMAGE_TEMPLATE9_TITLE_BAND_TOP = IMAGE_TEMPLATE9_TITLE_BAND_START;
+/** @deprecated Use IMAGE_TEMPLATE9_TITLE_BAND_END. */
+export const IMAGE_TEMPLATE9_TITLE_BAND_BOTTOM = IMAGE_TEMPLATE9_TITLE_BAND_END;
+
+export const IMAGE_TEMPLATE9_QUESTION_COUNT = 5;
 
 export type ImageTemplate9TitleAnchor = { x: number; y: number };
 
-/** Random center point for the title block; x keeps the 25% box inside the frame. */
+/** Random center point inside the middle 50% horizontally and vertically. */
 export function pickImageTemplate9TitleAnchor(): ImageTemplate9TitleAnchor {
-  const halfMaxW = IMAGE_TEMPLATE9_TITLE_MAX_WIDTH_RATIO / 2;
-  const x = halfMaxW + Math.random() * (1 - IMAGE_TEMPLATE9_TITLE_MAX_WIDTH_RATIO);
-  const y =
-    IMAGE_TEMPLATE9_TITLE_BAND_TOP +
-    Math.random() * (IMAGE_TEMPLATE9_TITLE_BAND_BOTTOM - IMAGE_TEMPLATE9_TITLE_BAND_TOP);
-  return { x, y };
+  const span = IMAGE_TEMPLATE9_TITLE_BAND_END - IMAGE_TEMPLATE9_TITLE_BAND_START;
+  return {
+    x: IMAGE_TEMPLATE9_TITLE_BAND_START + Math.random() * span,
+    y: IMAGE_TEMPLATE9_TITLE_BAND_START + Math.random() * span,
+  };
+}
+
+export function pickImageTemplate9QuestionAnchors(
+  count = IMAGE_TEMPLATE9_QUESTION_COUNT
+): ImageTemplate9TitleAnchor[] {
+  return Array.from({ length: count }, () => pickImageTemplate9TitleAnchor());
 }
 
 function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {

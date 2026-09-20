@@ -50,24 +50,6 @@ export const IMAGE_TEMPLATES_BY_APP: Record<StudioAppId, ImageTemplateCard[]> = 
       coverSrc: '/image-templates/template-2-cover.jpg',
     },
     {
-      id: 3,
-      title: 'Template 3',
-      subtitle: '',
-      coverSrc: '/image-templates/template-3-cover-placeholder.jpg',
-    },
-    {
-      id: 4,
-      title: 'Template 4',
-      subtitle: '',
-      coverSrc: '/image-templates/template-4-cover-default.jpg',
-    },
-    {
-      id: 5,
-      title: 'Template 5',
-      subtitle: '',
-      coverSrc: '/image-templates/template-5-couple.png',
-    },
-    {
       id: 6,
       title: 'Template 6',
       subtitle: '',
@@ -90,6 +72,18 @@ export const IMAGE_TEMPLATES_BY_APP: Record<StudioAppId, ImageTemplateCard[]> = 
       title: 'Top down selfie angle',
       subtitle: '',
       coverSrc: '/image-templates/template-9-cover.jpg',
+    },
+    {
+      id: 10,
+      title: 'Couples cute moments',
+      subtitle: '',
+      coverSrc: '/image-templates/template-10-cover.jpg',
+    },
+    {
+      id: 11,
+      title: 'Cute celebrity couples',
+      subtitle: '',
+      coverSrc: '/image-templates/template-11-cover.jpg',
     },
   ],
   fab: [

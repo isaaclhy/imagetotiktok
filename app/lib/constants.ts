@@ -78,17 +78,6 @@ export const IMAGE_TEMPLATE2_TYPE_LABELS: Record<
   brave: 'Brave Questions',
 };
 
-/** Lowercase TikTok labels for Image Template 3 cover (question type line). */
-export const IMAGE_TEMPLATE3_TYPE_PILL_LABELS: Record<
-  'funny' | 'flirty' | 'me_or_you' | 'brave',
-  string
-> = {
-  funny: 'funny questions',
-  flirty: 'flirty questions',
-  me_or_you: 'me or you',
-  brave: 'brave questions',
-};
-
 /** Cover image prompt IDs for automate flow. Keys are display names. */
 export const COVER_IMAGE_PROMPTS = {
   boards: 'pmpt_6991006af1cc8195a60c91937fc07b7100c73c923d7ad252',

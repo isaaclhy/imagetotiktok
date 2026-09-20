@@ -126,6 +126,18 @@ export function drawImageTemplate2CoverSlide(
     subtitle?: string | null;
     /** Override default max title width (Template 2 uses 0.6). */
     maxTextWidthRatio?: number;
+    /** Override title size as a fraction of frame width. */
+    titleSizeRatio?: number;
+    /** Override subtitle size as a fraction of frame width. */
+    subtitleSizeRatio?: number;
+    /** Override title font weight. */
+    titleWeight?: number;
+    /** Override subtitle font weight. */
+    subtitleWeight?: number;
+    /** Override title letter-spacing (CSS canvas string). */
+    letterSpacing?: string;
+    /** Override title line-height multiplier. */
+    lineHeightMult?: number;
   }
 ) {
   const {
@@ -141,6 +153,12 @@ export function drawImageTemplate2CoverSlide(
     skipBackground = false,
     subtitle,
     maxTextWidthRatio = IMAGE_TEMPLATE2_COVER_MAX_TEXT_WIDTH_RATIO,
+    titleSizeRatio = IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO,
+    subtitleSizeRatio = IMAGE_TEMPLATE2_COVER_SUBTITLE_SIZE_RATIO,
+    titleWeight = IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT,
+    subtitleWeight = IMAGE_TEMPLATE2_COVER_SUBTITLE_WEIGHT,
+    letterSpacing = IMAGE_TEMPLATE2_COVER_LETTER_SPACING,
+    lineHeightMult = IMAGE_TEMPLATE2_COVER_LINE_HEIGHT_MULT,
   } = options;
 
   if (!skipBackground) {
@@ -172,9 +190,9 @@ export function drawImageTemplate2CoverSlide(
   const centerText = title.trim().replace(/\n/g, ' ');
   const subtitleText = formatImageTemplate2CoverSubtitle(subtitle ?? '');
   if (centerText || subtitleText) {
-    const fontSize = Math.round(frameWidth * IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO);
-    ctx.font = `${IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT} ${fontSize}px ${fontFamily}`;
-    ctx.letterSpacing = IMAGE_TEMPLATE2_COVER_LETTER_SPACING;
+    const fontSize = Math.round(frameWidth * titleSizeRatio);
+    ctx.font = `${titleWeight} ${fontSize}px ${fontFamily}`;
+    ctx.letterSpacing = letterSpacing;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = textColor;
@@ -182,9 +200,9 @@ export function drawImageTemplate2CoverSlide(
     const maxTextWidth = frameWidth * maxTextWidthRatio;
     const lines = centerText ? wrapLines(ctx, centerText, maxTextWidth) : [];
     const highlight = highlightWord?.trim().toLowerCase() ?? '';
-    const lineHeight = fontSize * IMAGE_TEMPLATE2_COVER_LINE_HEIGHT_MULT;
+    const lineHeight = fontSize * lineHeightMult;
     const titleBlockH = lines.length * lineHeight;
-    const subtitleSize = Math.round(frameWidth * IMAGE_TEMPLATE2_COVER_SUBTITLE_SIZE_RATIO);
+    const subtitleSize = Math.round(frameWidth * subtitleSizeRatio);
     const subtitleGap = fontSize * IMAGE_TEMPLATE2_COVER_SUBTITLE_GAP_EM;
     const subtitleBlockH = subtitleText ? subtitleGap + subtitleSize : 0;
     const totalH = titleBlockH + subtitleBlockH;
@@ -228,7 +246,7 @@ export function drawImageTemplate2CoverSlide(
         lines.length > 0
           ? y - lineHeight / 2 + subtitleGap + subtitleSize / 2
           : y;
-      ctx.font = `${IMAGE_TEMPLATE2_COVER_SUBTITLE_WEIGHT} ${subtitleSize}px ${fontFamily}`;
+      ctx.font = `${subtitleWeight} ${subtitleSize}px ${fontFamily}`;
       ctx.letterSpacing = '0px';
       ctx.fillStyle = textColor;
       ctx.globalAlpha = 0.88;

@@ -14,8 +14,8 @@ export const IMAGE_TEMPLATE8_Q5_SEARCH_WEIGHT = 600;
 export const IMAGE_TEMPLATE8_Q5_BANNER_SRC =
   '/image-templates/template-8-q5-app-banner.png';
 export const IMAGE_TEMPLATE8_Q5_BANNER_ASPECT = 888 / 256;
-export const IMAGE_TEMPLATE8_Q5_BANNER_WIDTH_RATIO = 0.88;
-export const IMAGE_TEMPLATE8_Q5_BANNER_GAP_RATIO = 0.04;
+export const IMAGE_TEMPLATE8_Q5_BANNER_WIDTH_RATIO = 0.78;
+export const IMAGE_TEMPLATE8_Q5_BANNER_GAP_RATIO = 0.02;
 /** Corner radius as a fraction of banner height. */
 export const IMAGE_TEMPLATE8_Q5_BANNER_RADIUS_RATIO = 0.14;
 
