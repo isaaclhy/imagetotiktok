@@ -3,7 +3,7 @@ export const IMAGE_TEMPLATE8_TITLE_MAX_WIDTH_RATIO = 0.5;
 
 /** Q5 top-middle CTA — search prompt for more questions. */
 export const IMAGE_TEMPLATE8_Q5_SEARCH_LINES = [
-  'Download for more fun questions!',
+  'Ready to ragebait him more?',
 ] as const;
 export const IMAGE_TEMPLATE8_Q5_SEARCH_TOP_RATIO = 0.16;
 export const IMAGE_TEMPLATE8_Q5_SEARCH_SIZE_RATIO = 0.036;

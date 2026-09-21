@@ -25,6 +25,9 @@ export const IMAGE_TEMPLATE3_IMESSAGE_INPUT_BAR_RATIO = 0.085;
 export const IMAGE_TEMPLATE3_IMESSAGE_MAX_BUBBLE_WIDTH_RATIO = 0.72;
 /** ~31px at 1080 — matches real Messages body size in phone screenshots. */
 export const IMAGE_TEMPLATE3_IMESSAGE_FONT_SIZE_RATIO = 0.0285;
+/** Focused Q + reply bubbles on export — larger than the blurred thread. */
+export const IMAGE_TEMPLATE3_IMESSAGE_FOCUS_FONT_SIZE_RATIO = 0.04;
+export const IMAGE_TEMPLATE3_IMESSAGE_FOCUS_MAX_BUBBLE_WIDTH_RATIO = 0.78;
 export const IMAGE_TEMPLATE3_IMESSAGE_LINE_HEIGHT_MULT = 1.28;
 /** Padding / radius are font-relative so bubbles don’t look inflated on tall frames. */
 export const IMAGE_TEMPLATE3_IMESSAGE_PAD_X_EM = 0.85;
@@ -161,13 +164,21 @@ function measureBubble(
   ctx: CanvasRenderingContext2D,
   text: string,
   frameWidth: number,
-  _frameHeight: number
+  _frameHeight: number,
+  options?: {
+    fontSizeRatio?: number;
+    maxBubbleWidthRatio?: number;
+  }
 ): BubbleMetrics {
-  const fontSize = Math.max(24, Math.round(frameWidth * IMAGE_TEMPLATE3_IMESSAGE_FONT_SIZE_RATIO));
+  const fontSizeRatio =
+    options?.fontSizeRatio ?? IMAGE_TEMPLATE3_IMESSAGE_FONT_SIZE_RATIO;
+  const maxBubbleWidthRatio =
+    options?.maxBubbleWidthRatio ?? IMAGE_TEMPLATE3_IMESSAGE_MAX_BUBBLE_WIDTH_RATIO;
+  const fontSize = Math.max(24, Math.round(frameWidth * fontSizeRatio));
   const padX = Math.max(14, Math.round(fontSize * IMAGE_TEMPLATE3_IMESSAGE_PAD_X_EM));
   const padY = Math.max(10, Math.round(fontSize * IMAGE_TEMPLATE3_IMESSAGE_PAD_Y_EM));
   const radius = Math.max(16, Math.round(fontSize * IMAGE_TEMPLATE3_IMESSAGE_RADIUS_EM));
-  const maxBubbleW = frameWidth * IMAGE_TEMPLATE3_IMESSAGE_MAX_BUBBLE_WIDTH_RATIO;
+  const maxBubbleW = frameWidth * maxBubbleWidthRatio;
   const maxBubbleInner = Math.max(40, maxBubbleW - padX * 2);
   ctx.font = `400 ${fontSize}px ${IMAGE_TEMPLATE3_IMESSAGE_FONT_STACK}`;
   const lines = wrapLines(ctx, text, maxBubbleInner);
@@ -649,14 +660,21 @@ export function drawImageTemplate3ImessageSlide(
   const marginX = frameWidth * 0.055;
   const gap = Math.max(16, frameHeight * 0.014);
   const bubbleGap = Math.max(8, frameHeight * 0.008);
-  const deliveredSize = Math.max(16, Math.round(frameWidth * IMAGE_TEMPLATE3_IMESSAGE_DELIVERED_SIZE_RATIO));
+  const deliveredSize = Math.max(
+    18,
+    Math.round(frameWidth * IMAGE_TEMPLATE3_IMESSAGE_DELIVERED_SIZE_RATIO * 1.35)
+  );
   const deliveredGap = Math.max(10, Math.round(deliveredSize * 0.55));
 
+  const focusMeasureOpts = {
+    fontSizeRatio: IMAGE_TEMPLATE3_IMESSAGE_FOCUS_FONT_SIZE_RATIO,
+    maxBubbleWidthRatio: IMAGE_TEMPLATE3_IMESSAGE_FOCUS_MAX_BUBBLE_WIDTH_RATIO,
+  };
   const qMetrics = questionText
-    ? measureBubble(ctx, questionText, frameWidth, frameHeight)
+    ? measureBubble(ctx, questionText, frameWidth, frameHeight, focusMeasureOpts)
     : null;
   const replyMetrics = replyList.map((r) =>
-    measureBubble(ctx, r, frameWidth, frameHeight)
+    measureBubble(ctx, r, frameWidth, frameHeight, focusMeasureOpts)
   );
 
   const repliesH = replyMetrics.reduce(

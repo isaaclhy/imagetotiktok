@@ -97,7 +97,11 @@ import {
   pickRandomImageTemplate2CoverSubtitle,
 } from '@/app/lib/image-template-2-cover';
 import {
+  clampImageTemplate9PreviewAnchor,
+  drawImageTemplate9CoverPhoto,
   drawImageTemplate9Title,
+  imageTemplate9Q5CtaBottomRatio,
+  imageTemplate9QuestionCrop,
   IMAGE_TEMPLATE9_TITLE_MAX_WIDTH_RATIO,
   IMAGE_TEMPLATE9_TITLE_SIZE_RATIO,
   IMAGE_TEMPLATE9_TITLE_WEIGHT,
@@ -4566,7 +4570,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
             drawImageTemplate8Q5Banner(ctx, frameWidth, frameHeight, banner);
           }
         } else {
-          // Template 9 Q1–Q5: same cover photo + random text in the center 50% band.
+          // Template 9 Q1–Q5: cropped regions of the cover photo + random text.
           const coverSource = sourceForTab(0).trim();
           if (!coverSource) {
             throw new Error('Pinterest image is still loading. Wait a moment, then try again.');
@@ -4587,15 +4591,12 @@ const imageFrameTitleLine1 = 'Questions to ask your';
               reject(new Error(`Failed to load image: ${coverSource.slice(0, 80)}`));
             el.src = coverSource;
           });
-          const coverScale = Math.max(frameWidth / coverImg.width, frameHeight / coverImg.height);
-          const coverW = coverImg.width * coverScale;
-          const coverH = coverImg.height * coverScale;
-          ctx.drawImage(
+          drawImageTemplate9CoverPhoto(
+            ctx,
             coverImg,
-            (frameWidth - coverW) / 2,
-            (frameHeight - coverH) / 2,
-            coverW,
-            coverH
+            frameWidth,
+            frameHeight,
+            imageTemplate9QuestionCrop(tabIndex - 1)
           );
           try {
             await document.fonts.load(
@@ -4611,7 +4612,35 @@ const imageFrameTitleLine1 = 'Questions to ask your';
             anchor: questionAnchor,
             fontFamily: pastelCarouselExportFontFamily,
             textColor: '#FFFFFF',
+            ...(tabIndex === IMAGE_TEMPLATE2_Q5_TAB_INDEX
+              ? { topInsetRatio: imageTemplate9Q5CtaBottomRatio(frameWidth, frameHeight) }
+              : {}),
           });
+          if (tabIndex === IMAGE_TEMPLATE2_Q5_TAB_INDEX) {
+            const searchFontSize = Math.round(
+              frameWidth * IMAGE_TEMPLATE8_Q5_SEARCH_SIZE_RATIO
+            );
+            try {
+              await document.fonts.load(
+                `${IMAGE_TEMPLATE8_Q5_SEARCH_WEIGHT} ${searchFontSize}px "TikTok Sans"`
+              );
+            } catch {
+              /* font may already be ready */
+            }
+            drawImageTemplate8Q5SearchLabel(
+              ctx,
+              frameWidth,
+              frameHeight,
+              pastelCarouselExportFontFamily
+            );
+            const banner = await new Promise<HTMLImageElement>((resolve, reject) => {
+              const el = new Image();
+              el.onload = () => resolve(el);
+              el.onerror = () => reject(new Error('Failed to load Template 8 app banner'));
+              el.src = IMAGE_TEMPLATE8_Q5_BANNER_SRC;
+            });
+            drawImageTemplate8Q5Banner(ctx, frameWidth, frameHeight, banner);
+          }
         }
         return await new Promise<Blob>((resolve, reject) => {
           canvas.toBlob((blob) => {
@@ -4766,7 +4795,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           ctx.letterSpacing = '0px';
           ctx.shadowBlur = 0;
           if (tabIndex === IMAGE_TEMPLATE2_Q5_TAB_INDEX) {
-            if (exportTemplateId === 10 || exportTemplateId === 11) {
+            if (
+              exportTemplateId === 7 ||
+              exportTemplateId === 10 ||
+              exportTemplateId === 11
+            ) {
               const searchFontSize = Math.round(
                 frameWidth * IMAGE_TEMPLATE8_Q5_SEARCH_SIZE_RATIO
               );
@@ -6279,21 +6312,56 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             ) : (
                             <>
                               {(imageTabSources[0] ?? '').trim() ? (
-                                <img
-                                  src={imageTabSources[0]}
-                                  alt={`${imageTabLabelForActiveTab} preview`}
-                                  className="w-full h-full object-cover"
-                                />
+                                <div className="absolute inset-0 overflow-hidden">
+                                  {(() => {
+                                    const crop = imageTemplate9QuestionCrop(
+                                      selectedImageBrowserTab - 1
+                                    );
+                                    return (
+                                      <img
+                                        src={imageTabSources[0]}
+                                        alt={`${imageTabLabelForActiveTab} preview`}
+                                        className="h-full w-full object-cover"
+                                        style={{
+                                          objectPosition: `${crop.x * 100}% ${crop.y * 100}%`,
+                                          transform: `scale(${crop.zoom})`,
+                                          transformOrigin: `${crop.x * 100}% ${crop.y * 100}%`,
+                                        }}
+                                      />
+                                    );
+                                  })()}
+                                </div>
                               ) : null}
                               {imageFrameTextForActiveTab.trim() ? (
                                 <div
                                   className="absolute z-10 pointer-events-none"
-                                  style={{
-                                    left: `${(imageTemplate9QuestionAnchors[selectedImageBrowserTab - 1]?.x ?? 0.5) * 100}%`,
-                                    top: `${(imageTemplate9QuestionAnchors[selectedImageBrowserTab - 1]?.y ?? 0.5) * 100}%`,
-                                    transform: 'translate(-50%, -50%)',
-                                    width: `${IMAGE_TEMPLATE9_TITLE_MAX_WIDTH_RATIO * 100}%`,
-                                  }}
+                                  style={(() => {
+                                    const raw =
+                                      imageTemplate9QuestionAnchors[
+                                        selectedImageBrowserTab - 1
+                                      ] ?? { x: 0.5, y: 0.5 };
+                                    const lineEstimate = Math.max(
+                                      1,
+                                      Math.ceil(
+                                        imageFrameTextForActiveTab.trim().split(/\s+/).length / 3
+                                      )
+                                    );
+                                    const clamped = clampImageTemplate9PreviewAnchor(
+                                      raw,
+                                      lineEstimate,
+                                      selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX
+                                        ? {
+                                            topInsetRatio: imageTemplate9Q5CtaBottomRatio(),
+                                          }
+                                        : undefined
+                                    );
+                                    return {
+                                      left: `${clamped.x * 100}%`,
+                                      top: `${clamped.y * 100}%`,
+                                      transform: 'translate(-50%, -50%)',
+                                      width: `${IMAGE_TEMPLATE9_TITLE_MAX_WIDTH_RATIO * 100}%`,
+                                    };
+                                  })()}
                                 >
                                   <p
                                     className="w-full text-center text-white wrap-break-word"
@@ -6308,6 +6376,45 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   >
                                     {imageFrameTextForActiveTab}
                                   </p>
+                                </div>
+                              ) : null}
+                              {selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX ? (
+                                <div
+                                  className="absolute left-0 right-0 z-20 flex flex-col items-center pointer-events-none px-[6%]"
+                                  style={{
+                                    top: `${IMAGE_TEMPLATE8_Q5_SEARCH_TOP_RATIO * 100}%`,
+                                  }}
+                                >
+                                  <p
+                                    className="w-full text-center text-white wrap-break-word"
+                                    style={{
+                                      fontFamily: pastelCarouselFontFamily,
+                                      fontSize: `${IMAGE_TEMPLATE8_Q5_SEARCH_SIZE_RATIO * 100}cqw`,
+                                      fontWeight: IMAGE_TEMPLATE8_Q5_SEARCH_WEIGHT,
+                                      lineHeight: IMAGE_TEMPLATE8_Q5_SEARCH_LINE_HEIGHT_MULT,
+                                      textShadow: '0 1px 8px rgba(0,0,0,0.55)',
+                                    }}
+                                  >
+                                    {IMAGE_TEMPLATE8_Q5_SEARCH_LINES.map((line) => (
+                                      <span key={line} className="block">
+                                        {line}
+                                      </span>
+                                    ))}
+                                  </p>
+                                  <img
+                                    src={IMAGE_TEMPLATE8_Q5_BANNER_SRC}
+                                    alt="Spill It - Couples Questions"
+                                    className="overflow-hidden"
+                                    style={{
+                                      width: `${IMAGE_TEMPLATE8_Q5_BANNER_WIDTH_RATIO * 100}%`,
+                                      marginTop: `${IMAGE_TEMPLATE8_Q5_BANNER_GAP_RATIO * 100}%`,
+                                      borderRadius: `${(
+                                        (IMAGE_TEMPLATE8_Q5_BANNER_WIDTH_RATIO *
+                                          IMAGE_TEMPLATE8_Q5_BANNER_RADIUS_RATIO) /
+                                        IMAGE_TEMPLATE8_Q5_BANNER_ASPECT
+                                      ) * 100}cqw`,
+                                    }}
+                                  />
                                 </div>
                               ) : null}
                             </>
@@ -6732,8 +6839,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               </div>
                               {(isKawaiiLayoutImageTemplate || isPinterestCoverImageTemplate) &&
                               selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX ? (
-                                isCouplesCuteMomentsImageTemplate ||
-                                isCelebrityCouplesImageTemplate ? (
+                                isPinterestCoverImageTemplate ? (
                                   <div
                                     className="absolute left-0 right-0 z-20 flex flex-col items-center pointer-events-none px-[6%]"
                                     style={{
@@ -6773,7 +6879,6 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   </div>
                                 ) : (
                                 <>
-                                  {isPinterestCoverImageTemplate ? null : (
                                   <p
                                     className="absolute inset-x-[6%] z-20 text-center font-bold"
                                     style={{
@@ -6786,7 +6891,6 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   >
                                     {IMAGE_TEMPLATE2_Q5_PROMO_LABEL}
                                   </p>
-                                  )}
                                   <img
                                     src={IMAGE_TEMPLATE2_Q5_PROMO_SRC}
                                     alt="Spill It on the App Store"
