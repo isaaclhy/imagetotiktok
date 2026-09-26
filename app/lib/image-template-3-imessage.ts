@@ -40,8 +40,8 @@ export const IMAGE_TEMPLATE3_IMESSAGE_DELIVERED_SIZE_RATIO = 0.017;
  * current exchange stays sharp, the way Messages dims the screen when you reply
  * inline. Filler lines only exist to give the blur something to smear.
  */
-export const IMAGE_TEMPLATE3_IMESSAGE_BLUR_RATIO = 0.012;
-export const IMAGE_TEMPLATE3_IMESSAGE_SCRIM = 'rgba(0, 0, 0, 0.55)';
+export const IMAGE_TEMPLATE3_IMESSAGE_BLUR_RATIO = 0.034;
+export const IMAGE_TEMPLATE3_IMESSAGE_SCRIM = 'rgba(0, 0, 0, 0.7)';
 
 export type ImessageContextLine = { text: string; outgoing: boolean };
 
@@ -757,9 +757,9 @@ export function drawImageTemplate3ImessageSlide(
   if (backdrop) {
     drawBackdrop(backdrop.ctx);
     ctx.save();
-    ctx.filter = `blur(${Math.max(4, frameWidth * IMAGE_TEMPLATE3_IMESSAGE_BLUR_RATIO)}px)`;
+    ctx.filter = `blur(${Math.max(22, frameWidth * IMAGE_TEMPLATE3_IMESSAGE_BLUR_RATIO)}px)`;
     // Blur samples transparent pixels past the edges, so overdraw the frame.
-    const bleed = frameWidth * IMAGE_TEMPLATE3_IMESSAGE_BLUR_RATIO * 3;
+    const bleed = frameWidth * IMAGE_TEMPLATE3_IMESSAGE_BLUR_RATIO * 4;
     ctx.drawImage(
       backdrop.canvas,
       -bleed,

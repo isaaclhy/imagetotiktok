@@ -26,10 +26,11 @@ export const IMAGE_TEMPLATE9_PINTEREST_QUERIES = [
 ] as const;
 export const IMAGE_TEMPLATE9_PINTEREST_QUERY = IMAGE_TEMPLATE9_PINTEREST_QUERIES[0];
 
-/** Template 10 — same query for cover + Q1–Q5. */
-export const IMAGE_TEMPLATE10_PINTEREST_QUERY = 'couples cute moments';
+/** Template 10 cover search. */
+export const IMAGE_TEMPLATE10_PINTEREST_QUERY = 'couples beach selfie';
+/** Template 10 Q1–Q5 search — kept distinct from the cover query. */
 export const IMAGE_TEMPLATE10_PINTEREST_QUESTION_QUERIES = [
-  IMAGE_TEMPLATE10_PINTEREST_QUERY,
+  'couples cute moments',
 ] as const;
 
 /** Template 11 — same query for cover + Q1–Q5. */

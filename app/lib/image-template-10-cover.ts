@@ -1,4 +1,12 @@
-import { imageTemplate8Q5BannerLayout } from '@/app/lib/image-template-8-cover';
+import {
+  IMAGE_TEMPLATE2_COVER_LINE_HEIGHT_MULT,
+  IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO,
+  IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT,
+} from '@/app/lib/image-template-2-cover';
+import {
+  IMAGE_TEMPLATE8_TITLE_MAX_WIDTH_RATIO,
+  imageTemplate8Q5BannerLayout,
+} from '@/app/lib/image-template-8-cover';
 import {
   drawImageTemplate11LuxuryOverlay,
   IMAGE_TEMPLATE11_CSS_FILTER,
@@ -27,6 +35,75 @@ export const IMAGE_TEMPLATE10_Q5_CTA_CLEARANCE = 0.03;
 export const IMAGE_TEMPLATE10_TITLE_BAND_START = 0.25;
 export const IMAGE_TEMPLATE10_TITLE_BAND_END = 0.75;
 export const IMAGE_TEMPLATE10_QUESTION_COUNT = 5;
+
+/** Local Q1–Q5 backgrounds — one unique photo per question. */
+export const IMAGE_TEMPLATE10_QUESTION_IMAGE_SRCS = [
+  '/image-templates/template-10-q1.jpg',
+  '/image-templates/template-10-q2.jpg',
+  '/image-templates/template-10-q3.jpg',
+  '/image-templates/template-10-q4.jpg',
+  '/image-templates/template-10-q5.jpg',
+] as const;
+
+/** Q1–Q5 match the Template 10 cover title (same as Template 8 cover). */
+export const IMAGE_TEMPLATE10_Q_TEXT_SIZE_RATIO = IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO;
+export const IMAGE_TEMPLATE10_Q_TEXT_WEIGHT = IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT;
+export const IMAGE_TEMPLATE10_Q_TEXT_MAX_WIDTH_RATIO = IMAGE_TEMPLATE8_TITLE_MAX_WIDTH_RATIO;
+export const IMAGE_TEMPLATE10_Q_TEXT_LINE_HEIGHT_MULT = IMAGE_TEMPLATE2_COVER_LINE_HEIGHT_MULT;
+
+/** Draw a photo so it fully covers the 3:4 frame (center-cropped). */
+export function drawImageTemplate10CoverFill(
+  ctx: CanvasRenderingContext2D,
+  img: CanvasImageSource & { width: number; height: number },
+  frameWidth: number,
+  frameHeight: number
+) {
+  const imgW =
+    'naturalWidth' in img && typeof img.naturalWidth === 'number' && img.naturalWidth > 0
+      ? img.naturalWidth
+      : img.width;
+  const imgH =
+    'naturalHeight' in img && typeof img.naturalHeight === 'number' && img.naturalHeight > 0
+      ? img.naturalHeight
+      : img.height;
+  if (imgW < 1 || imgH < 1) return;
+  const destAspect = frameWidth / frameHeight;
+  let sx = 0;
+  let sy = 0;
+  let sw = imgW;
+  let sh = imgH;
+  if (imgW / imgH > destAspect) {
+    sw = imgH * destAspect;
+    sx = (imgW - sw) / 2;
+  } else {
+    sh = imgW / destAspect;
+    sy = (imgH - sh) / 2;
+  }
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, frameWidth, frameHeight);
+}
+
+export function pickImageTemplate10QuestionSources(
+  excludeOrder?: readonly string[]
+): string[] {
+  const srcs = [...IMAGE_TEMPLATE10_QUESTION_IMAGE_SRCS];
+  for (let i = srcs.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const current = srcs[i]!;
+    srcs[i] = srcs[j]!;
+    srcs[j] = current;
+  }
+  if (
+    excludeOrder &&
+    excludeOrder.length === srcs.length &&
+    srcs.every((src, i) => src === excludeOrder[i]) &&
+    srcs.length > 1
+  ) {
+    const first = srcs[0]!;
+    srcs[0] = srcs[1]!;
+    srcs[1] = first;
+  }
+  return srcs;
+}
 
 export type ImageTemplate10QuestionAnchor = { x: number; y: number };
 
