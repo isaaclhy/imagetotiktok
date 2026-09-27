@@ -45,7 +45,11 @@ export const IMAGE_TEMPLATE10_QUESTION_IMAGE_SRCS = [
   '/image-templates/template-10-q5.jpg',
 ] as const;
 
-/** Q1–Q5 match the Template 10 cover title (same as Template 8 cover). */
+/** Cover overlay — smaller than Template 8 so it reads like a normal TikTok caption. */
+export const IMAGE_TEMPLATE10_COVER_TITLE_SIZE_RATIO = 0.038;
+export const IMAGE_TEMPLATE10_COVER_SUBTITLE_SIZE_RATIO = 0.024;
+
+/** Q1–Q5 stay at the larger Template 8 / cover-style question size. */
 export const IMAGE_TEMPLATE10_Q_TEXT_SIZE_RATIO = IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO;
 export const IMAGE_TEMPLATE10_Q_TEXT_WEIGHT = IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT;
 export const IMAGE_TEMPLATE10_Q_TEXT_MAX_WIDTH_RATIO = IMAGE_TEMPLATE8_TITLE_MAX_WIDTH_RATIO;

@@ -121,6 +121,8 @@ import {
 } from '@/app/lib/image-template-8-cover';
 import {
   drawImageTemplate10CoverFill,
+  IMAGE_TEMPLATE10_COVER_SUBTITLE_SIZE_RATIO,
+  IMAGE_TEMPLATE10_COVER_TITLE_SIZE_RATIO,
   IMAGE_TEMPLATE10_LUXURY_PREVIEW_OVERLAY,
   IMAGE_TEMPLATE10_Q_TEXT_LINE_HEIGHT_MULT,
   IMAGE_TEMPLATE10_Q_TEXT_MAX_WIDTH_RATIO,
@@ -4506,10 +4508,10 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           if (exportTemplateId === 8) {
             try {
               await document.fonts.load(
-                `${IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT} ${Math.round(frameWidth * IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO)}px "TikTok Sans"`
+                `${IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT} ${Math.round(frameWidth * IMAGE_TEMPLATE10_COVER_TITLE_SIZE_RATIO)}px "TikTok Sans"`
               );
               await document.fonts.load(
-                `${IMAGE_TEMPLATE2_COVER_SUBTITLE_WEIGHT} ${Math.round(frameWidth * IMAGE_TEMPLATE2_COVER_SUBTITLE_SIZE_RATIO)}px "TikTok Sans"`
+                `${IMAGE_TEMPLATE2_COVER_SUBTITLE_WEIGHT} ${Math.round(frameWidth * IMAGE_TEMPLATE10_COVER_SUBTITLE_SIZE_RATIO)}px "TikTok Sans"`
               );
             } catch {
               /* font may already be ready */
@@ -4525,6 +4527,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
               footer: '',
               subtitle: imageTemplate2CoverSubtitle,
               maxTextWidthRatio: IMAGE_TEMPLATE8_TITLE_MAX_WIDTH_RATIO,
+              titleSizeRatio: IMAGE_TEMPLATE10_COVER_TITLE_SIZE_RATIO,
+              subtitleSizeRatio: IMAGE_TEMPLATE10_COVER_SUBTITLE_SIZE_RATIO,
             });
           } else {
             try {
@@ -4630,7 +4634,12 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           drawImageTemplate11LuxuryOverlay(ctx, frameWidth, frameHeight);
         }
         const exportFontFamily = pastelCarouselExportFontFamily;
-        const titleSizeRatio = IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO;
+        const titleSizeRatio = isTemplate10Export
+          ? IMAGE_TEMPLATE10_COVER_TITLE_SIZE_RATIO
+          : IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO;
+        const coverSubtitleSizeRatio = isTemplate10Export
+          ? IMAGE_TEMPLATE10_COVER_SUBTITLE_SIZE_RATIO
+          : IMAGE_TEMPLATE2_COVER_SUBTITLE_SIZE_RATIO;
         const questionSizeRatio = isTemplate10Export
           ? IMAGE_TEMPLATE10_Q_TEXT_SIZE_RATIO
           : 0.05;
@@ -4639,7 +4648,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
             `${IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT} ${Math.round(frameWidth * titleSizeRatio)}px "TikTok Sans"`
           );
           await document.fonts.load(
-            `${IMAGE_TEMPLATE2_COVER_SUBTITLE_WEIGHT} ${Math.round(frameWidth * IMAGE_TEMPLATE2_COVER_SUBTITLE_SIZE_RATIO)}px "TikTok Sans"`
+            `${IMAGE_TEMPLATE2_COVER_SUBTITLE_WEIGHT} ${Math.round(frameWidth * coverSubtitleSizeRatio)}px "TikTok Sans"`
           );
           await document.fonts.load(
             `${isTemplate10Export ? IMAGE_TEMPLATE10_Q_TEXT_WEIGHT : 500} ${Math.round(frameWidth * questionSizeRatio)}px "TikTok Sans"`
@@ -4660,7 +4669,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
             showProgress: false,
             subtitle: imageTemplate2CoverSubtitle,
             ...(isTemplate10Export
-              ? { maxTextWidthRatio: IMAGE_TEMPLATE8_TITLE_MAX_WIDTH_RATIO }
+              ? {
+                  maxTextWidthRatio: IMAGE_TEMPLATE8_TITLE_MAX_WIDTH_RATIO,
+                  titleSizeRatio: IMAGE_TEMPLATE10_COVER_TITLE_SIZE_RATIO,
+                  subtitleSizeRatio: IMAGE_TEMPLATE10_COVER_SUBTITLE_SIZE_RATIO,
+                }
               : {}),
           });
         } else {
@@ -6277,7 +6290,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                       className="w-full text-center text-white wrap-break-word"
                                       style={{
                                         fontFamily: pastelCarouselFontFamily,
-                                        fontSize: `${IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO * 100}cqw`,
+                                        fontSize: `${IMAGE_TEMPLATE10_COVER_TITLE_SIZE_RATIO * 100}cqw`,
                                         fontWeight: IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT,
                                         letterSpacing: IMAGE_TEMPLATE2_COVER_LETTER_SPACING,
                                         lineHeight: IMAGE_TEMPLATE2_COVER_LINE_HEIGHT_MULT,
@@ -6293,9 +6306,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                         className="w-full text-center text-white/90 wrap-break-word"
                                         style={{
                                           fontFamily: pastelCarouselFontFamily,
-                                          fontSize: `${IMAGE_TEMPLATE2_COVER_SUBTITLE_SIZE_RATIO * 100}cqw`,
+                                          fontSize: `${IMAGE_TEMPLATE10_COVER_SUBTITLE_SIZE_RATIO * 100}cqw`,
                                           fontWeight: IMAGE_TEMPLATE2_COVER_SUBTITLE_WEIGHT,
-                                          marginTop: `${IMAGE_TEMPLATE2_COVER_SUBTITLE_GAP_EM * IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO * 100}cqw`,
+                                          marginTop: `${IMAGE_TEMPLATE2_COVER_SUBTITLE_GAP_EM * IMAGE_TEMPLATE10_COVER_TITLE_SIZE_RATIO * 100}cqw`,
                                           lineHeight: 1.2,
                                           textShadow: '0 1px 8px rgba(0,0,0,0.45)',
                                         }}
@@ -6575,7 +6588,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                         fontFamily: pastelCarouselFontFamily,
                                         fontSize: `${
                                           (selectedImageBrowserTab === 0
-                                            ? IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO
+                                            ? isCouplesCuteMomentsImageTemplate
+                                              ? IMAGE_TEMPLATE10_COVER_TITLE_SIZE_RATIO
+                                              : IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO
                                             : 0.05) * 100
                                         }cqw`,
                                         fontWeight:
@@ -6630,9 +6645,19 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                       ? {
                                           color: '#FFFFFF',
                                           fontFamily: pastelCarouselFontFamily,
-                                          fontSize: `${IMAGE_TEMPLATE2_COVER_SUBTITLE_SIZE_RATIO * 100}cqw`,
+                                          fontSize: `${
+                                            (isCouplesCuteMomentsImageTemplate
+                                              ? IMAGE_TEMPLATE10_COVER_SUBTITLE_SIZE_RATIO
+                                              : IMAGE_TEMPLATE2_COVER_SUBTITLE_SIZE_RATIO) * 100
+                                          }cqw`,
                                           fontWeight: IMAGE_TEMPLATE2_COVER_SUBTITLE_WEIGHT,
-                                          marginTop: `${IMAGE_TEMPLATE2_COVER_SUBTITLE_GAP_EM * IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO * 100}cqw`,
+                                          marginTop: `${
+                                            IMAGE_TEMPLATE2_COVER_SUBTITLE_GAP_EM *
+                                            (isCouplesCuteMomentsImageTemplate
+                                              ? IMAGE_TEMPLATE10_COVER_TITLE_SIZE_RATIO
+                                              : IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO) *
+                                            100
+                                          }cqw`,
                                           lineHeight: 1.2,
                                           opacity: 0.9,
                                           textShadow: '0 1px 10px rgba(0,0,0,0.45)',
