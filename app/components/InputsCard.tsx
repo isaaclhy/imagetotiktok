@@ -19,7 +19,7 @@ const DEFAULT_VIDEO_OVERLAY_LINES = [
 ];
 
 interface InputsCardProps {
-  contentTab: 'image' | 'video' | 'prompt' | 'automate';
+  contentTab: 'image' | 'video' | 'character' | 'prompt' | 'automate';
   // Image form state
   backgroundColor: string;
   setBackgroundColor: (v: string) => void;

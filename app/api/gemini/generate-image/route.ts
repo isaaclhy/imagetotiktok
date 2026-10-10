@@ -5,7 +5,7 @@ import { isGeminiQuotaError } from '@/app/lib/gemini-image';
 /**
  * POST /api/gemini/generate-image
  * Body: { prompt: string }
- * Generates one image from prompt text (Gemini → Vertex → OpenAI on quota).
+ * Generates one image from prompt text (OpenAI → Gemini → Vertex).
  */
 export async function POST(request: NextRequest) {
   try {

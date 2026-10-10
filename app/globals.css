@@ -70,6 +70,14 @@ body {
   src: url("/fonts/tiktok-sans/TikTokSans-900.ttf") format("truetype");
 }
 
+@font-face {
+  font-family: "Patrick Hand";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/patrick-hand/PatrickHand-400.ttf") format("truetype");
+}
+
 /* Video template overlay: real TikTok Sans file (900) — keep effects subtle so the face stays recognizable. */
 .video-overlay-caption {
   font-family: "TikTok Sans", ui-sans-serif, system-ui, sans-serif;

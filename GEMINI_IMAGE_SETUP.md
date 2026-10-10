@@ -23,7 +23,7 @@ GEMINI_BATCH_MAX_WAIT_MS=1800000
 OPENAI_API_KEY=sk-...
 ```
 
-Without `GEMINI_API_KEY`, the app falls back to **Vertex Imagen** (if `GOOGLE_CLOUD_PROJECT` is set) or **OpenAI `gpt-image-1-mini`**.
+Without `GEMINI_API_KEY`, the app falls back to **Vertex Imagen** (if `GOOGLE_CLOUD_PROJECT` is set) or **OpenAI `gpt-image-2.5-flare`**.
 
 ## Pricing (Google Batch = ~50% off)
 

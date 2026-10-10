@@ -48,15 +48,18 @@ async function generateWithVertex(prompt: string): Promise<PromptImageResult | n
   };
 }
 
-async function generateWithOpenAI(prompt: string): Promise<PromptImageResult | null> {
+export async function generateWithOpenAI(
+  prompt: string,
+  quality: 'low' | 'medium' | 'high' | 'xhigh' | 'max' = 'high'
+): Promise<PromptImageResult | null> {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) return null;
   const client = new OpenAI({ apiKey });
   const imgResult = await client.images.generate({
-    model: 'gpt-image-1-mini',
+    model: 'gpt-image-2.5-flare',
     prompt,
     size: '1024x1536',
-    quality: 'high',
+    quality: quality as unknown as 'low' | 'medium' | 'high',
     output_format: 'png',
   });
   const first = imgResult.data?.[0];
@@ -69,12 +72,20 @@ async function generateWithOpenAI(prompt: string): Promise<PromptImageResult | n
   };
 }
 
-/** Prompt tab: Gemini (Nano Banana 2) → Vertex Imagen → OpenAI on quota/errors. */
+/** Prompt tab: OpenAI (gpt-image-2.5-flare) → Gemini → Vertex Imagen. */
 export async function generatePromptTabImage(prompt: string): Promise<PromptImageResult> {
   const trimmed = prompt.trim();
   if (!trimmed) throw new Error('prompt is empty');
 
-  let geminiQuotaHit = false;
+  const errors: string[] = [];
+
+  try {
+    const openai = await generateWithOpenAI(trimmed);
+    if (openai) return openai;
+  } catch (e) {
+    errors.push(`OpenAI: ${e instanceof Error ? e.message : String(e)}`);
+    console.warn('[prompt-image] OpenAI failed, trying fallbacks');
+  }
 
   if (isGeminiImageConfigured()) {
     try {
@@ -85,16 +96,13 @@ export async function generatePromptTabImage(prompt: string): Promise<PromptImag
         provider: 'gemini',
       };
     } catch (e) {
-      if (isGeminiQuotaError(e)) {
-        geminiQuotaHit = true;
-        console.warn('[prompt-image] Gemini quota exhausted, trying fallbacks');
-      } else {
-        throw e;
-      }
+      errors.push(
+        isGeminiQuotaError(e)
+          ? formatGeminiQuotaHelp()
+          : `Gemini: ${e instanceof Error ? e.message : String(e)}`
+      );
     }
   }
-
-  const errors: string[] = [];
 
   try {
     const vertex = await generateWithVertex(trimmed);
@@ -103,24 +111,9 @@ export async function generatePromptTabImage(prompt: string): Promise<PromptImag
     errors.push(`Vertex: ${e instanceof Error ? e.message : String(e)}`);
   }
 
-  try {
-    const openai = await generateWithOpenAI(trimmed);
-    if (openai) return openai;
-  } catch (e) {
-    errors.push(`OpenAI: ${e instanceof Error ? e.message : String(e)}`);
-  }
-
-  if (geminiQuotaHit) {
-    const hint = formatGeminiQuotaHelp();
-    if (errors.length > 0) {
-      throw new Error(`${hint} Fallbacks failed: ${errors.join('; ')}`);
-    }
-    throw new Error(`${hint} Add OPENAI_API_KEY or GOOGLE_CLOUD_PROJECT for automatic fallback.`);
-  }
-
   throw new Error(
     errors.length > 0
       ? `No image provider available. ${errors.join('; ')}`
-      : 'Configure GEMINI_API_KEY, GOOGLE_CLOUD_PROJECT (Vertex), or OPENAI_API_KEY.'
+      : 'Configure OPENAI_API_KEY, GEMINI_API_KEY, or GOOGLE_CLOUD_PROJECT (Vertex).'
   );
 }

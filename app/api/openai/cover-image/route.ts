@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
 import { buildCoverImagePromptText } from '@/app/lib/cover-image-openai';
+import { generateWithOpenAI } from '@/app/lib/generate-prompt-image';
 import {
   generateGeminiImageSync,
   isGeminiImageConfigured,
@@ -19,8 +19,8 @@ import {
  * POST /api/openai/cover-image
  * Body: { questiontext: string, promptId?: string }
  * 1. OpenAI Responses API → final image prompt text.
- * 2. Pixels: Gemini (sync) when GEMINI_API_KEY; else Vertex Imagen; else OpenAI images.
- * For multiple images use POST /api/openai/cover-image/batch (50% cheaper, async).
+ * 2. Pixels: OpenAI gpt-image-2.5-flare first; Gemini then Vertex on failure.
+ * For multiple images use POST /api/openai/cover-image/batch (still Gemini batch).
  */
 export async function POST(request: NextRequest) {
   try {
@@ -39,47 +39,43 @@ export async function POST(request: NextRequest) {
 
     const imagePrompt = await buildCoverImagePromptText(questiontext, promptIdParam);
     let imageUrl: string;
+    let provider: 'openai' | 'gemini' | 'vertex' = 'openai';
 
-    if (isGeminiImageConfigured()) {
+    const openai = await generateWithOpenAI(imagePrompt).catch((e) => {
+      console.warn('OpenAI image generation failed, trying fallbacks:', e);
+      return null;
+    });
+
+    if (openai) {
+      imageUrl = openai.imageUrl;
+      provider = 'openai';
+    } else if (isGeminiImageConfigured()) {
       const result = await generateGeminiImageSync(imagePrompt);
       imageUrl = toDataUrl(result);
+      provider = 'gemini';
     } else {
       const vertexConfig = getVertexImagenConfigFromEnv();
-      if (vertexConfig) {
-        const vertexSize =
-          GEMINI_IMAGE_SIZE === '1K' || GEMINI_IMAGE_SIZE === '2K' ? GEMINI_IMAGE_SIZE : '2K';
-        const { base64, mimeType } = await generateVertexImagenImage({
-          prompt: imagePrompt,
-          projectId: vertexConfig.projectId,
-          location: vertexConfig.location,
-          model: vertexConfig.model,
-          aspectRatio: GEMINI_IMAGE_ASPECT_RATIO,
-          sampleImageSize: vertexSize,
-        });
-        imageUrl = `data:${mimeType};base64,${base64}`;
-      } else {
-        const client = new OpenAI({ apiKey });
-        const imgResult = await client.images.generate({
-          model: 'gpt-image-1-mini',
-          prompt: imagePrompt,
-          size: '1024x1536',
-          quality: 'high',
-          output_format: 'png',
-        });
-        const first = imgResult.data?.[0];
-        const b64 =
-          first && 'b64_json' in first ? (first as { b64_json?: string }).b64_json : null;
-        if (!b64) {
-          return NextResponse.json({ error: 'No image data in response' }, { status: 502 });
-        }
-        imageUrl = `data:image/png;base64,${b64}`;
+      if (!vertexConfig) {
+        return NextResponse.json({ error: 'No image data in response' }, { status: 502 });
       }
+      const vertexSize =
+        GEMINI_IMAGE_SIZE === '1K' || GEMINI_IMAGE_SIZE === '2K' ? GEMINI_IMAGE_SIZE : '2K';
+      const { base64, mimeType } = await generateVertexImagenImage({
+        prompt: imagePrompt,
+        projectId: vertexConfig.projectId,
+        location: vertexConfig.location,
+        model: vertexConfig.model,
+        aspectRatio: GEMINI_IMAGE_ASPECT_RATIO,
+        sampleImageSize: vertexSize,
+      });
+      imageUrl = `data:${mimeType};base64,${base64}`;
+      provider = 'vertex';
     }
 
     return NextResponse.json({
       imageUrl,
       imagePrompt,
-      provider: isGeminiImageConfigured() ? 'gemini' : 'fallback',
+      provider,
     });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'Failed to generate cover image';

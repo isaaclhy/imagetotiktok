@@ -93,10 +93,32 @@ function collectFromOfficialSearch(json: unknown): PinCandidate[] {
   return candidates;
 }
 
-async function searchOfficialPins(query: string, token: string): Promise<PinCandidate[]> {
+type PinPage = {
+  candidates: PinCandidate[];
+  bookmark: string | null;
+};
+
+function readBookmark(json: unknown): string | null {
+  if (!json || typeof json !== 'object') return null;
+  const root = json as { bookmark?: unknown; resource_response?: { bookmark?: unknown } };
+  const candidates = [root.resource_response?.bookmark, root.bookmark];
+  for (const value of candidates) {
+    if (typeof value !== 'string') continue;
+    const bookmark = value.trim();
+    if (bookmark && bookmark !== '-end-') return bookmark;
+  }
+  return null;
+}
+
+async function searchOfficialPinsPage(
+  query: string,
+  token: string,
+  bookmark?: string | null
+): Promise<PinPage> {
   const url = new URL('https://api.pinterest.com/v5/search/pins');
   url.searchParams.set('query', query);
   url.searchParams.set('page_size', '50');
+  if (bookmark) url.searchParams.set('bookmark', bookmark);
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
     cache: 'no-store',
@@ -105,19 +127,19 @@ async function searchOfficialPins(query: string, token: string): Promise<PinCand
     const text = await res.text();
     throw new Error(`Pinterest API error: ${res.status} ${text.slice(0, 180)}`);
   }
-  return collectFromOfficialSearch(await res.json());
+  const json = await res.json();
+  return { candidates: collectFromOfficialSearch(json), bookmark: readBookmark(json) };
 }
 
-async function searchPublicPins(query: string): Promise<PinCandidate[]> {
-  const data = JSON.stringify({
-    options: {
-      query,
-      scope: 'pins',
-      page_size: 50,
-      auto_correction_disabled: true,
-    },
-    context: {},
-  });
+async function searchPublicPinsPage(query: string, bookmark?: string | null): Promise<PinPage> {
+  const options: Record<string, unknown> = {
+    query,
+    scope: 'pins',
+    page_size: 50,
+    auto_correction_disabled: true,
+  };
+  if (bookmark) options.bookmarks = [bookmark];
+  const data = JSON.stringify({ options, context: {} });
   const sourceUrl = `/search/pins/?q=${encodeURIComponent(query)}`;
   const url =
     'https://www.pinterest.com/resource/BaseSearchResource/get/?source_url=' +
@@ -135,7 +157,60 @@ async function searchPublicPins(query: string): Promise<PinCandidate[]> {
     const text = await res.text();
     throw new Error(`Pinterest search error: ${res.status} ${text.slice(0, 180)}`);
   }
-  return collectFromPublicSearch(await res.json());
+  const json = await res.json();
+  return { candidates: collectFromPublicSearch(json), bookmark: readBookmark(json) };
+}
+
+type DeepPool = {
+  byUrl: Map<string, PinCandidate>;
+  bookmark: string | null;
+  exhausted: boolean;
+  primed: boolean;
+  source: 'official' | 'public' | null;
+};
+
+const deepPools = new Map<string, DeepPool>();
+const DEEP_POOL_CAP = 400;
+const DEEP_PRIME_PAGES = 3;
+
+async function fetchDeepPage(query: string, pool: DeepPool, token: string | undefined): Promise<PinPage> {
+  if (pool.source !== 'public' && token) {
+    try {
+      const page = await searchOfficialPinsPage(query, token, pool.bookmark);
+      if (page.candidates.length > 0 || pool.bookmark) {
+        pool.source = 'official';
+        return page;
+      }
+    } catch (e) {
+      if (pool.byUrl.size > 0) throw e;
+    }
+    pool.source = 'public';
+    pool.bookmark = null;
+  }
+  pool.source = 'public';
+  return searchPublicPinsPage(query, pool.bookmark);
+}
+
+async function collectDeepCandidates(query: string, token: string | undefined): Promise<PinCandidate[]> {
+  let pool = deepPools.get(query);
+  if (!pool) {
+    pool = { byUrl: new Map(), bookmark: null, exhausted: false, primed: false, source: null };
+    deepPools.set(query, pool);
+  }
+  const pages = pool.primed ? 1 : DEEP_PRIME_PAGES;
+  for (let i = 0; i < pages && !pool.exhausted && pool.byUrl.size < DEEP_POOL_CAP; i++) {
+    const page = await fetchDeepPage(query, pool, token);
+    const before = pool.byUrl.size;
+    for (const candidate of page.candidates) {
+      if (!pool.byUrl.has(candidate.url)) pool.byUrl.set(candidate.url, candidate);
+    }
+    pool.bookmark = page.bookmark;
+    if (!page.bookmark || page.candidates.length === 0 || pool.byUrl.size === before) {
+      pool.exhausted = true;
+    }
+  }
+  pool.primed = true;
+  return [...pool.byUrl.values()];
 }
 
 function parseExcludeList(raw: string): Set<string> {
@@ -150,7 +225,8 @@ function parseExcludeList(raw: string): Set<string> {
 function pickCandidates(
   candidates: PinCandidate[],
   exclude: Set<string>,
-  count: number
+  count: number,
+  allowExcludedFallback = true
 ): PinCandidate[] {
   const unique = new Map<string, PinCandidate>();
   for (const candidate of candidates) {
@@ -158,7 +234,13 @@ function pickCandidates(
   }
   const all = [...unique.values()];
   const withoutExcluded = all.filter((c) => !exclude.has(c.url));
-  const base = withoutExcluded.length >= Math.min(count, all.length) ? withoutExcluded : all;
+  const base = allowExcludedFallback
+    ? withoutExcluded.length >= Math.min(count, all.length)
+      ? withoutExcluded
+      : all
+    : withoutExcluded.length > 0
+      ? withoutExcluded
+      : all;
   if (base.length === 0) return [];
   const portraits = base.filter((c) => c.height >= c.width && c.height >= 400);
   const usable =
@@ -179,6 +261,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('query')?.trim() || IMAGE_TEMPLATE7_PINTEREST_QUERY;
     const exclude = parseExcludeList(searchParams.get('exclude')?.trim() || '');
+    const deep = searchParams.get('deep') === '1';
     const count = Math.min(
       50,
       Math.max(1, Number.parseInt(searchParams.get('count') ?? '1', 10) || 1)
@@ -188,23 +271,31 @@ export async function GET(request: NextRequest) {
     let candidates: PinCandidate[] = [];
     let lastError: string | null = null;
 
-    if (token) {
+    if (deep) {
       try {
-        candidates = await searchOfficialPins(query, token);
+        candidates = await collectDeepCandidates(query, token || undefined);
+      } catch (e) {
+        lastError = e instanceof Error ? e.message : 'Pinterest search failed';
+        const cached = deepPools.get(query);
+        if (cached && cached.byUrl.size > 0) candidates = [...cached.byUrl.values()];
+      }
+    } else if (token) {
+      try {
+        candidates = (await searchOfficialPinsPage(query, token)).candidates;
       } catch (e) {
         lastError = e instanceof Error ? e.message : 'Official Pinterest search failed';
       }
     }
 
-    if (candidates.length === 0) {
+    if (!deep && candidates.length === 0) {
       try {
-        candidates = await searchPublicPins(query);
+        candidates = (await searchPublicPinsPage(query)).candidates;
       } catch (e) {
         lastError = e instanceof Error ? e.message : lastError || 'Pinterest search failed';
       }
     }
 
-    const picked = pickCandidates(candidates, exclude, count);
+    const picked = pickCandidates(candidates, exclude, count, !deep);
     if (picked.length === 0) {
       return NextResponse.json(
         { error: lastError || 'No Pinterest images found' },

@@ -192,6 +192,8 @@ export async function fetchPinterestSearchImages(options: {
   query: string;
   count?: number;
   exclude?: string | string[];
+  /** Walk later Pinterest pages and sample from the whole pool, not just the first page. */
+  deep?: boolean;
   signal?: AbortSignal;
 }): Promise<{ images: PinterestSearchImage[]; query: string }> {
   const query = options.query.trim();
@@ -200,6 +202,7 @@ export async function fetchPinterestSearchImages(options: {
     .map((value) => originalPinterestUrlFromSrc(value))
     .filter(Boolean);
   const params = new URLSearchParams({ query, count: String(count) });
+  if (options.deep) params.set('deep', '1');
   if (excludeList.length > 0) params.set('exclude', excludeList.join(','));
   const res = await fetch(`/api/pinterest/search?${params.toString()}`, {
     signal: options.signal,
@@ -230,6 +233,8 @@ export async function fetchPinterestCoverImage(options?: {
   exclude?: string | string[];
   /** How many candidates to fetch before picking one at random. */
   poolSize?: number;
+  /** Walk later Pinterest pages and sample from the whole pool, not just the first page. */
+  deep?: boolean;
   signal?: AbortSignal;
 }): Promise<{ imageUrl: string; originalUrl: string; query: string }> {
   const query = options?.query?.trim() || IMAGE_TEMPLATE7_PINTEREST_QUERY;
@@ -238,6 +243,7 @@ export async function fetchPinterestCoverImage(options?: {
     query,
     count: poolSize,
     exclude: options?.exclude,
+    deep: options?.deep,
     signal: options?.signal,
   });
   const pick = result.images[Math.floor(Math.random() * result.images.length)]!;
