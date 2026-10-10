@@ -6,29 +6,29 @@ export const IMAGE_TEMPLATE12_STYLE = {
   style_name: "Rough Hand-Drawn Crayon Couple Illustrations",
   art_style: {
     medium:
-      "Traditional children's book illustration drawn with wax crayons and coloured pencils on textured white paper",
+      "A few wax-crayon strokes of two people on an otherwise empty white page",
     linework:
-      "Rough, scratchy, irregular black outlines with visible hand-drawn imperfections. Lines should be wobbly, uneven, and occasionally overlapping. Avoid clean contours.",
+      "Very thick, blunt crayon outlines. Heavy, wobbly, uneven strokes, like a chunky wax crayon pressed hard. No thin lines and no fine contours.",
     coloring:
-      "Loose crayon scribbling with dense, directional strokes. Uneven color coverage, visible white gaps between strokes, overlapping marks, and imperfect coloring outside the outlines.",
+      "Rough, unfinished crayon coloring. Big messy strokes, large white gaps, color spilling outside the outlines, and almost no blending. Clothes and skin are a few crude patches of color, not carefully filled shapes.",
     texture:
-      "Highly visible grainy wax crayon texture, dry colored-pencil scratches, rough pigment deposits, subtle paper grain, and authentic handmade imperfections.",
+      "Chunky wax-crayon marks. Thick pigment, visible individual strokes, and rough edges. Not fine pencil detail.",
     overall_look:
       "Cute, intimate, innocent, romantic, emotionally expressive, nostalgic, warm, simple, and handmade. Looks like a real illustration drawn by hand on paper rather than computer-generated artwork.",
     complexity:
-      "Simple cartoon characters with expressive body language, minimal facial details, recognizable silhouettes, and loosely sketched clothing.",
+      "Extremely simple. Two people made of a few crayon shapes, stick-like limbs, and almost no detail. No scenery, no furniture, no props, and no extra objects.",
   },
   characters: {
     style:
       "Simple cute cartoon couple with slightly exaggerated heads, small facial features, rounded faces, and natural, slightly awkward proportions.",
     faces:
-      "Warm peach skin colored with rough orange and pale yellow crayon strokes. Small black eyes, simple curved noses, tiny smiling mouths, and prominent pink or red scribbled blush on the cheeks.",
+      "A peach crayon patch, two dots for eyes, a tiny mouth, and a rough pink blush. No nose detail, no eyelashes, no teeth.",
     hair:
-      "Thick, messy, heavily scribbled dark hair. Use many overlapping black and dark brown strokes to create irregular silhouettes, visible individual marks, and a dense crayon texture. Hair must look hand-sketched, not like a smooth solid shape.",
+      "One thick scribbled mass of dark crayon. No individual strands.",
     bodies:
       "Simple bodies, natural affectionate poses, relaxed shoulders, and expressive gestures. Use loosely drawn limbs and imperfect anatomy consistent with a charming handmade cartoon.",
     clothing:
-      "Casual everyday outfits, such as oversized sweaters, T-shirts, hoodies, trousers, and skirts. Fill clothing areas with vivid, rough crayon strokes.",
+      "Plain shirts, hoodies, trousers, or skirts filled with a few thick crayon strokes. No patterns, pockets, seams, or small clothing details.",
     expressions:
       "Blushing, smiling, laughing, crying, comforting, hugging, kissing, leaning together, or looking lovingly at one another.",
     consistency:
@@ -42,15 +42,15 @@ export const IMAGE_TEMPLATE12_STYLE = {
     blush: ["#F05A65", "#F58A91"],
     clothing: ["#E83D42", "#278B50", "#2479D8", "#F5C92E", "#E75A9B", "#795039"],
     color_usage:
-      "Use a small palette of bright, warm crayon colors. Colors should be textured, imperfect, and slightly uneven, never smooth or digitally blended.",
+      "A few bright crayon colors laid on roughly. Leave white paper showing through. Never fill a shape neatly.",
   },
   composition: {
     background:
-      "Plain off-white or white paper with extremely subtle natural paper texture. No scenery, no decorative borders, no background objects unless explicitly requested.",
+      "Empty white. The environment is not drawn. No room, floor, sky, furniture, plants, lamps, windows, or props.",
     layout:
-      "A centered illustration of the couple occupying the middle and lower portions of the canvas, with generous empty white space above for a short handwritten message.",
+      "The only graphics are the two people and the handwritten words. Everything else on the page stays blank white.",
     framing:
-      "Portrait 4:5 composition, showing the characters from head to toe when appropriate. Adjust framing naturally for close-up hugs, kisses, or other intimate poses.",
+      "Portrait page. Draw the couple and stop. Do not fill the space around them.",
     text_placement: "Place the supplied message at the top center, separated from the characters.",
     visual_balance:
       "Minimalist, uncluttered, emotionally focused, with the couple as the primary focal point.",
@@ -88,6 +88,10 @@ export const IMAGE_TEMPLATE12_STYLE = {
     "polished vector illustration",
     "clean digital line art",
     "smooth black outlines",
+    "thin lines",
+    "fine detail",
+    "neat coloring",
+    "carefully filled shapes",
     "flat digital coloring",
     "airbrushed shading",
     "gradient backgrounds",
@@ -100,6 +104,15 @@ export const IMAGE_TEMPLATE12_STYLE = {
     "watercolor washes",
     "oil painting",
     "highly detailed backgrounds",
+    "rooms",
+    "furniture",
+    "kitchens",
+    "lamps",
+    "plants",
+    "tables",
+    "props",
+    "background objects",
+    "busy scenes",
     "realistic skin texture",
     "professional corporate illustration",
     "stock vector artwork",
@@ -113,9 +126,9 @@ export const IMAGE_TEMPLATE12_STYLE = {
     text: "",
     aspect_ratio: "4:5",
     quality_priority:
-      "Authentic rough crayon texture, recognizable cute couple characters, expressive body language, and close adherence to the supplied visual references.",
+      "Thick crayon, rough unfinished color, and almost no detail. A blank page, two simply drawn people, and the handwritten line.",
     final_instruction:
-      "Reproduce the handmade visual language of a simple romantic drawing made with black, red, blue, green, and yellow wax crayons on white paper. Every stroke should retain visible pigment grain and irregularity. The illustration should feel personal, imperfect, tender, and genuinely hand-drawn. Do not make it look like polished digital art.",
+      "The picture contains exactly two people and the supplied text. Draw them with a thick crayon and rough, patchy color. Do not draw an environment. Do not add fine detail.",
   },
 } as const;
 
@@ -124,71 +137,71 @@ export type Template12Scene = {
   action: string;
 };
 
-/** One scene per slide. None of these is a couple sitting on a sofa. */
+/** One plain pose per slide. No rooms, furniture, or props. */
 export const IMAGE_TEMPLATE12_SCENES: readonly Template12Scene[] = [
   {
-    setting: 'a small kitchen at night, warm lamp over the stove',
-    action: 'standing at the counter, one feeding the other a taste from a wooden spoon',
+    setting: 'blank white paper, no background and no objects',
+    action: 'standing and kissing, arms around each other',
   },
   {
-    setting: 'a softly lit bedroom, rumpled blankets and a bedside lamp',
-    action: 'lying on their sides facing each other, talking quietly under the blanket',
+    setting: 'blank white paper, no background and no objects',
+    action: 'sitting on nothing, facing each other and talking',
   },
   {
-    setting: 'a rainy city sidewalk at night',
-    action: 'walking close together under one shared umbrella',
+    setting: 'blank white paper, no background and no objects',
+    action: 'a close hug, one resting their head on the other’s shoulder',
   },
   {
-    setting: 'a quiet cafe window seat',
-    action: 'leaning toward each other across a small table, hands around two mugs',
+    setting: 'blank white paper, no background and no objects',
+    action: 'one hugging the other from the side',
   },
   {
-    setting: 'a park path at dusk, trees and a low sky',
-    action: 'walking side by side, one turning to look at the other',
+    setting: 'blank white paper, no background and no objects',
+    action: 'standing and looking at each other, both smiling',
   },
   {
-    setting: 'the front seat of a parked car at night, city lights outside the windows',
-    action: 'turned toward each other in their seats, mid-conversation',
+    setting: 'blank white paper, no background and no objects',
+    action: 'a hug from behind',
   },
   {
-    setting: 'a narrow bookstore aisle',
-    action: 'standing, one holding an open book toward the other',
+    setting: 'blank white paper, no background and no objects',
+    action: 'standing, holding both hands',
   },
   {
-    setting: 'a balcony overlooking a city in the evening',
-    action: 'standing at the railing with their shoulders touching, looking outward',
+    setting: 'blank white paper, no background and no objects',
+    action: 'foreheads touching, eyes closed',
   },
   {
-    setting: 'a living room with the lights low, no sofa in frame',
-    action: 'slow dancing, one hand at the other’s waist, feet mid-step',
+    setting: 'blank white paper, no background and no objects',
+    action: 'sitting side by side, one leaning on the other’s shoulder',
   },
   {
-    setting: 'a picnic blanket in an open field late in the day',
-    action: 'one lying back, the other propped on an elbow beside them',
+    setting: 'blank white paper, no background and no objects',
+    action: 'one kneeling to hug the other around the waist',
   },
   {
-    setting: 'a train seat beside a window',
-    action: 'one resting their head on the other’s shoulder while the scenery passes',
+    setting: 'blank white paper, no background and no objects',
+    action: 'standing with an arm around the other’s shoulders',
   },
   {
-    setting: 'an apartment doorway, coats and a bag still in hand',
-    action: 'standing in a full hug, greeting or saying goodbye',
+    setting: 'blank white paper, no background and no objects',
+    action: 'sitting cross-legged, facing each other and laughing',
   },
   {
-    setting: 'a laundromat with rows of machines',
-    action: 'standing and folding a sheet together between them',
+    setting: 'blank white paper, no background and no objects',
+    action: 'a full front hug, eyes closed',
   },
   {
-    setting: 'a beach at blue hour, wet sand and a dim sky',
-    action: 'walking in the shallow water, holding hands',
+    setting: 'blank white paper, no background and no objects',
+    action: 'one sitting, the other leaning down into a hug',
   },
   {
-    setting: 'a rooftop at night',
-    action: 'standing close, one pointing something out in the distance',
+    setting: 'blank white paper, no background and no objects',
+    action: 'standing close, one hand on the other’s cheek',
   },
   {
-    setting: 'a grocery aisle under fluorescent lights',
-    action: 'one reaching for a shelf while the other leans in, laughing',
+    setting: 'blank white paper, no background and no objects',
+    action: 'sitting and facing each other, one gently pointing as they talk',
   },
 ];
 
@@ -208,8 +221,8 @@ export function pickTemplate12Scenes(
   count: number,
   avoid: readonly Template12Scene[] = []
 ): Template12Scene[] {
-  const avoided = new Set(avoid.map((scene) => scene.setting));
-  let deck = shuffleScenes(IMAGE_TEMPLATE12_SCENES.filter((scene) => !avoided.has(scene.setting)));
+  const avoided = new Set(avoid.map((scene) => scene.action));
+  let deck = shuffleScenes(IMAGE_TEMPLATE12_SCENES.filter((scene) => !avoided.has(scene.action)));
   if (deck.length < count) {
     deck = shuffleScenes(IMAGE_TEMPLATE12_SCENES);
   }
@@ -217,14 +230,14 @@ export function pickTemplate12Scenes(
   while (picked.length < count) {
     if (deck.length === 0) deck = shuffleScenes(IMAGE_TEMPLATE12_SCENES);
     const scene = deck.pop()!;
-    if (picked.some((item) => item.setting === scene.setting)) continue;
+    if (picked.some((item) => item.action === scene.action)) continue;
     picked.push(scene);
   }
   return picked;
 }
 
 export function buildTemplate12ImagePrompt(slideText: string, scene: Template12Scene): string {
-  const sceneDescription = `${scene.setting}. Action: ${scene.action}. Do not draw the couple sitting together on a sofa.`;
+  const sceneDescription = `Pose only: ${scene.action}. The two people float on empty white. Do not draw where they are.`;
   const spec = {
     ...IMAGE_TEMPLATE12_STYLE,
     generation_instructions: {
@@ -233,12 +246,15 @@ export function buildTemplate12ImagePrompt(slideText: string, scene: Template12S
       text: slideText,
     },
   };
-  return `Generate a vertical TikTok slideshow image.
+  return `Generate a vertical image of only two people and the supplied text.
+
+Do not draw an environment. No room, no floor, no sky, no furniture, no plants, no objects, and no extra graphics around them. The rest of the page is blank white.
+
+Use a thick wax crayon. Keep the drawing crude and lightly detailed. Color in rough patches, with white paper showing through. Do not use thin lines or neat fills.
 
 Follow this visual style specification:
 ${JSON.stringify(spec, null, 2)}
 
-Create a complete illustrated poster. The text must be rendered
-exactly as supplied. Do not add any other words.
+The text must be rendered exactly as supplied. Do not add any other words.
 `;
 }
