@@ -13,7 +13,7 @@ export const maxDuration = 120;
 
 /**
  * POST /api/openai/template-12-image
- * Body: { slideText, scene: { setting, action }, quality, leaveBottomClear }
+ * Body: { slideText, scene: { setting, action }, quality }
  * One storybook poster via gpt-image-2.5-flare. Text is rendered in the image.
  */
 export async function POST(request: NextRequest) {
@@ -34,12 +34,7 @@ export async function POST(request: NextRequest) {
       ? qualityRaw
       : DEFAULT_CHARACTER_IMAGE_QUALITY;
 
-    const result = await generateWithOpenAI(
-      buildTemplate12ImagePrompt(slideText, scene, {
-        leaveBottomClear: body?.leaveBottomClear === true,
-      }),
-      quality
-    );
+    const result = await generateWithOpenAI(buildTemplate12ImagePrompt(slideText, scene), quality);
     if (!result) {
       return NextResponse.json({ error: 'Missing OPENAI_API_KEY' }, { status: 500 });
     }

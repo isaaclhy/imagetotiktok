@@ -223,40 +223,21 @@ export function pickTemplate12Scenes(
   return picked;
 }
 
-export function buildTemplate12ImagePrompt(
-  slideText: string,
-  scene: Template12Scene,
-  options?: { leaveBottomClear?: boolean }
-): string {
+export function buildTemplate12ImagePrompt(slideText: string, scene: Template12Scene): string {
   const sceneDescription = `${scene.setting}. Action: ${scene.action}. Do not draw the couple sitting together on a sofa.`;
   const spec = {
     ...IMAGE_TEMPLATE12_STYLE,
-    ...(options?.leaveBottomClear
-      ? {
-          composition: {
-            ...IMAGE_TEMPLATE12_STYLE.composition,
-            layout:
-              'Handwritten message at the top. The couple sits in the upper half, well above the bottom edge. Leave the entire bottom third as empty white paper because another image covers that area.',
-          },
-        }
-      : {}),
     generation_instructions: {
       ...IMAGE_TEMPLATE12_STYLE.generation_instructions,
       scene: sceneDescription,
       text: slideText,
     },
   };
-  const bottomClear = options?.leaveBottomClear
-    ? `
-Keep every word and both people in the upper half of the image.
-Leave the bottom third as empty white paper only. Do not put text, faces, or hands there.
-`
-    : '';
   return `Generate a vertical TikTok slideshow image.
 
 Follow this visual style specification:
 ${JSON.stringify(spec, null, 2)}
-${bottomClear}
+
 Create a complete illustrated poster. The text must be rendered
 exactly as supplied. Do not add any other words.
 `;

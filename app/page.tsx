@@ -4255,7 +4255,6 @@ const imageFrameTitleLine1 = 'Questions to ask your';
               slideText,
               scene: scenes[index],
               quality: template12Quality,
-              leaveBottomClear: index === IMAGE_TEMPLATE2_Q5_TAB_INDEX,
             }),
           });
           const data = (await res.json()) as { imageUrl?: string; error?: string };
@@ -4521,10 +4520,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         canvas.height = bitmap.height;
         const ctx = canvas.getContext('2d');
         if (!ctx) throw new Error('Failed to prepare the Q5 image');
-        const shift = Math.round(canvas.height * 0.16);
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(bitmap, 0, -shift);
+        ctx.drawImage(bitmap, 0, 0);
         bitmap.close();
         const promo = await new Promise<HTMLImageElement>((resolve, reject) => {
           const el = new Image();
@@ -4532,20 +4528,22 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           el.onerror = () => reject(new Error('Failed to load the App Store image'));
           el.src = IMAGE_TEMPLATE2_Q5_PROMO_SRC;
         });
-        const layout = imageTemplate2Q5PromoLayout(canvas.width, canvas.height);
-        ctx.drawImage(promo, layout.x, layout.y, layout.width, layout.height);
-        const labelSize = Math.round(canvas.height * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO);
-        const labelGap = canvas.height * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO;
-        try {
-          await document.fonts.load(`700 ${labelSize}px "TikTok Sans"`);
-        } catch {
-          /* font may already be ready */
-        }
-        ctx.font = `700 ${labelSize}px "TikTok Sans", system-ui, sans-serif`;
-        ctx.fillStyle = 'rgba(255,255,255,0.95)';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom';
-        ctx.fillText(IMAGE_TEMPLATE2_Q5_PROMO_LABEL, canvas.width / 2, layout.y - labelGap);
+        const promoWidth = canvas.width * IMAGE_TEMPLATE2_Q5_PROMO_WIDTH_RATIO;
+        const promoHeight = canvas.height * IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO;
+        const promoX = (canvas.width - promoWidth) / 2;
+        const promoY = canvas.height - promoHeight;
+        const scale = Math.max(
+          promoWidth / promo.naturalWidth,
+          promoHeight / promo.naturalHeight
+        );
+        const drawW = promo.naturalWidth * scale;
+        const drawH = promo.naturalHeight * scale;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(promoX, promoY, promoWidth, promoHeight);
+        ctx.clip();
+        ctx.drawImage(promo, promoX + (promoWidth - drawW) / 2, promoY, drawW, drawH);
+        ctx.restore();
         return await new Promise<Blob>((resolve, reject) => {
           canvas.toBlob((next) => {
             if (next) resolve(next);
@@ -6474,11 +6472,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 <img
                                   src={imageTabSources[selectedImageBrowserTab]}
                                   alt={`${imageTabLabelForActiveTab} preview`}
-                                  className={`h-full w-full object-contain ${
-                                    selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX
-                                      ? '-translate-y-[16%]'
-                                      : ''
-                                  }`}
+                                  className="absolute inset-0 h-full w-full object-contain"
                                 />
                               ) : (
                                 <div className="absolute inset-0 flex items-center justify-center px-8 text-center">
@@ -6490,29 +6484,15 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 </div>
                               )}
                               {selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX ? (
-                                <>
-                                  <p
-                                    className="absolute inset-x-[6%] z-10 text-center font-bold text-white/95"
-                                    style={{
-                                      fontFamily: pastelCarouselFontFamily,
-                                      fontSize: `${IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO * 1.5 * 100}cqw`,
-                                      bottom: `${(IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO + IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO) * 100}%`,
-                                      textShadow: '0 1px 6px rgba(0,0,0,0.45)',
-                                    }}
-                                  >
-                                    {IMAGE_TEMPLATE2_Q5_PROMO_LABEL}
-                                  </p>
-                                  <img
-                                    src={IMAGE_TEMPLATE2_Q5_PROMO_SRC}
-                                    alt="Spill It on the App Store"
-                                    className="absolute left-1/2 z-10 -translate-x-1/2"
-                                    style={{
-                                      width: `${IMAGE_TEMPLATE2_Q5_PROMO_WIDTH_RATIO * 100}%`,
-                                      maxWidth: 'none',
-                                      top: `${(1 - IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO) * 100}%`,
-                                    }}
-                                  />
-                                </>
+                                <img
+                                  src={IMAGE_TEMPLATE2_Q5_PROMO_SRC}
+                                  alt="Spill It on the App Store"
+                                  className="absolute bottom-0 left-1/2 z-10 max-w-none -translate-x-1/2 object-cover object-top"
+                                  style={{
+                                    width: `${IMAGE_TEMPLATE2_Q5_PROMO_WIDTH_RATIO * 100}%`,
+                                    height: `${IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO * 100}%`,
+                                  }}
+                                />
                               ) : null}
                               {isGeneratingTemplate12 ? (
                                 <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/35 px-6 text-center text-sm font-medium text-white">
