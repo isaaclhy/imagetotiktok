@@ -48,10 +48,11 @@ export const IMAGE_TEMPLATE12_STYLE = {
     background:
       "Empty white. The environment is not drawn. No room, floor, sky, furniture, plants, lamps, windows, or props.",
     layout:
-      "The only graphics are the two people and the handwritten words. Everything else on the page stays blank white.",
+      "The only graphics are the two people and the handwritten words. Everything else on the page stays blank white. Keep every mark inside a safe area: 20% of the width empty on the left and right, and 20% of the height empty on the top and bottom.",
     framing:
-      "Portrait page. Draw the couple and stop. Do not fill the space around them.",
-    text_placement: "Place the supplied message at the top center, separated from the characters.",
+      "Portrait page. Draw the couple small enough that neither the people nor the text touch the outer 20% of the image. That margin stays blank white.",
+    text_placement:
+      "Center the message horizontally inside the safe area. The first line starts at least 20% of the image height below the top edge. Keep the lettering small. Do not let any letter enter the side margins.",
     visual_balance:
       "Minimalist, uncluttered, emotionally focused, with the couple as the primary focal point.",
   },
@@ -63,7 +64,7 @@ export const IMAGE_TEMPLATE12_STYLE = {
     text_color: "#171311",
     alignment: "Centered",
     appearance:
-      "Natural, legible, slightly imperfect, and consistent with the handmade illustration.",
+      "Small, natural, and slightly imperfect. The letters should be clearly smaller than a poster headline.",
     rule:
       "Render the supplied text exactly as written, preserving punctuation, capitalization, and line breaks. Do not invent additional words.",
   },
@@ -128,7 +129,7 @@ export const IMAGE_TEMPLATE12_STYLE = {
     quality_priority:
       "Thick crayon, rough unfinished color, and almost no detail. A blank page, two simply drawn people, and the handwritten line.",
     final_instruction:
-      "The picture contains exactly two people and the supplied text. Draw them with a thick crayon and rough, patchy color. Do not draw an environment. Do not add fine detail.",
+      "The picture contains exactly two people and the supplied text, drawn with a thick crayon and rough, patchy color. Do not draw an environment. Do not add fine detail. Leave 20% of the width blank on the left and right, and 20% of the height blank on the top and bottom, so TikTok controls never cover the drawing or the words.",
   },
 } as const;
 
@@ -255,6 +256,8 @@ Use a thick wax crayon. Keep the drawing crude and lightly detailed. Color in ro
 Follow this visual style specification:
 ${JSON.stringify(spec, null, 2)}
 
-The text must be rendered exactly as supplied. Do not add any other words.
+Render the supplied text exactly, with no extra words. Draw it small.
+
+Keep the people and the text inside a safe area. Leave 20% of the image width blank on the left and 20% blank on the right. Leave 20% of the image height blank on the top and 20% blank on the bottom. Do not draw anything in those margins.
 `;
 }
