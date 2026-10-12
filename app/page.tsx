@@ -142,6 +142,7 @@ import {
 import {
   IMAGE_TEMPLATE13_BG,
   IMAGE_TEMPLATE13_COVER_SRC,
+  IMAGE_TEMPLATE13_COVER_TEXTS,
   IMAGE_TEMPLATE13_DEFAULT_SCREEN_TEXT,
   nextTemplate13CoverText,
   IMAGE_TEMPLATE13_SLIDE_COUNT,
@@ -2051,7 +2052,7 @@ export default function Home() {
     useState<ImageTemplate9TitleAnchor>(() => pickImageTemplate9TitleAnchor());
   const [isImageTemplate7CoverLoading, setIsImageTemplate7CoverLoading] = useState(false);
   const [isGeneratingTemplate12, setIsGeneratingTemplate12] = useState(false);
-  const [template12Quality, setTemplate12Quality] = useState<CharacterImageQuality>('low');
+  const [template12Quality, setTemplate12Quality] = useState<CharacterImageQuality>('medium');
   const [template12Status, setTemplate12Status] = useState('');
   const [template12Error, setTemplate12Error] = useState<string | null>(null);
   const template12RunRef = useRef(0);
@@ -7458,6 +7459,30 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                       }
                                       const pool = [...FUNNY_QUESTIONS];
                                       const current = imageFrameTextForActiveTab;
+                                      if (
+                                        isMaroonLockscreenImageTemplate &&
+                                        selectedImageBrowserTab === 0
+                                      ) {
+                                        const titles = IMAGE_TEMPLATE13_COVER_TEXTS.filter(
+                                          (line) => line !== current.trim()
+                                        );
+                                        const titlePool =
+                                          titles.length > 0 ? titles : IMAGE_TEMPLATE13_COVER_TEXTS;
+                                        const next = [...imageTabTexts];
+                                        next[0] =
+                                          titlePool[Math.floor(Math.random() * titlePool.length)]!;
+                                        setImageTabTexts(next);
+                                        return;
+                                      }
+                                      if (
+                                        isCouplesDoodleImageTemplate &&
+                                        selectedImageBrowserTab === 0
+                                      ) {
+                                        const next = [...imageTabTexts];
+                                        next[0] = pickRandomDailyFunnyTitle(current);
+                                        setImageTabTexts(next);
+                                        return;
+                                      }
                                       if (
                                         isPinterestCoverImageTemplate &&
                                         selectedImageBrowserTab === 0
