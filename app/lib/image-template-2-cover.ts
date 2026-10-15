@@ -63,7 +63,7 @@ export const IMAGE_TEMPLATE2_Q5_PROMO_TEXT_GAP_RATIO = 0.04;
 /** Q5 lifts its question so the promo block below never crowds it. */
 export const IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO = 0.44;
 /** Social proof line sitting just above the mock. */
-export const IMAGE_TEMPLATE2_Q5_PROMO_LABEL = '6,000+ couples questions for you here!';
+export const IMAGE_TEMPLATE2_Q5_PROMO_LABEL = 'Download for more questions!';
 export const IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO = 0.03;
 export const IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO = 0.022;
 

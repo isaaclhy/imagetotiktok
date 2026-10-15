@@ -71,6 +71,14 @@ body {
 }
 
 @font-face {
+  font-family: "Libre Baskerville";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/libre-baskerville/LibreBaskerville-400.ttf") format("truetype");
+}
+
+@font-face {
   font-family: "Patrick Hand";
   font-style: normal;
   font-weight: 400;

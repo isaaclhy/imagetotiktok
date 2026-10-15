@@ -149,6 +149,26 @@ import {
   IMAGE_TEMPLATE13_TEXT,
 } from '@/app/lib/image-template-13-cover';
 import {
+  IMAGE_TEMPLATE14_CARD_INSET_X,
+  IMAGE_TEMPLATE14_CARD_INSET_Y,
+  IMAGE_TEMPLATE14_CARD_RADIUS_RATIO,
+  IMAGE_TEMPLATE14_COVER_SIZE_RATIO,
+  IMAGE_TEMPLATE14_FONT_STACK,
+  IMAGE_TEMPLATE14_FRAME_BG,
+  IMAGE_TEMPLATE14_GRAIN_SRC,
+  IMAGE_TEMPLATE14_LINE_HEIGHT,
+  IMAGE_TEMPLATE14_MARK,
+  IMAGE_TEMPLATE14_MARK_SIZE_RATIO,
+  IMAGE_TEMPLATE14_MARK_Y_RATIO,
+  IMAGE_TEMPLATE14_QUESTION_SIZE_RATIO,
+  IMAGE_TEMPLATE14_TEXT,
+  IMAGE_TEMPLATE14_WHITE,
+  nextTemplate14Color,
+  nextTemplate14Gradient,
+  paintTemplate14Slide,
+  template14GradientCss,
+} from '@/app/lib/image-template-14-cards';
+import {
   CHARACTER_IMAGE_QUALITIES,
   type CharacterImageQuality,
 } from '@/app/lib/character-generation';
@@ -267,13 +287,14 @@ function isKawaiiStyleTemplateId(templateId: number | null | undefined): boolean
   return templateId === 1 || templateId === 6;
 }
 
-/** Template 1 uses dog art; 6 omits the full-bleed CTA slide. */
+/** Template 1 uses dog art. */
 function isDogsKawaiiTemplateId(templateId: number | null | undefined): boolean {
   return templateId === 1;
 }
 
+/** Templates 1 and 6 end on Q5. Neither has a full-bleed CTA slide. */
 function isKawaiiNoCtaTemplateId(templateId: number | null | undefined): boolean {
-  return templateId === 6;
+  return templateId === 1 || templateId === 6;
 }
 
 function isPinterestCoverImageTemplateId(templateId: number | null | undefined): boolean {
@@ -286,6 +307,10 @@ function isImageTemplate12Id(templateId: number | null | undefined): boolean {
 
 function isImageTemplate13Id(templateId: number | null | undefined): boolean {
   return templateId === 13;
+}
+
+function isImageTemplate14Id(templateId: number | null | undefined): boolean {
+  return templateId === 14;
 }
 
 function isGeneratedCoupleSlideTemplateId(templateId: number | null | undefined): boolean {
@@ -2058,6 +2083,10 @@ export default function Home() {
   const template12RunRef = useRef(0);
   /** Alternates Template 13 covers between a generated photo and centered text. */
   const template13CoverModeRef = useRef<'photo' | 'text'>('text');
+  /** Template 14 alternates a colored card with a white card on a gradient. */
+  const template14UsesGradientRef = useRef(true);
+  const template14ColorRef = useRef('');
+  const template14GradientFromRef = useRef('');
   const [imageTemplate7CoverError, setImageTemplate7CoverError] = useState<string | null>(null);
   const pinterestCoverAbortRef = useRef<AbortController | null>(null);
   const template8RecentCoverUrlsRef = useRef<string[]>([]);
@@ -2121,6 +2150,12 @@ export default function Home() {
     selectedAppId === 'spill-it' && isGeneratedCoupleSlideTemplateId(selectedImageTemplateId);
   const isMaroonLockscreenImageTemplate =
     selectedAppId === 'spill-it' && isImageTemplate13Id(selectedImageTemplateId);
+  const isColorCardImageTemplate =
+    selectedAppId === 'spill-it' && isImageTemplate14Id(selectedImageTemplateId);
+  const template14Gradient =
+    isColorCardImageTemplate && imageTabPastelBgs.length >= 2
+      ? { from: imageTabPastelBgs[0]!, to: imageTabPastelBgs[1]! }
+      : null;
   const isPinterestCoverImageTemplate =
     selectedAppId === 'spill-it' && isPinterestCoverImageTemplateId(selectedImageTemplateId);
   const isCouplesCuteMomentsImageTemplate =
@@ -2141,14 +2176,16 @@ export default function Home() {
   const isPastelCarouselImageTemplate =
     selectedAppId === 'spill-it' && selectedImageTemplateId === 2;
   const imageTemplateQuestionCount = 5;
-  // Template 2 / 6 / 7 / 8 / 9 end on Q5 — no CTA.
+  // Template 1 / 2 / 6 / 7 / 8 / 9 end on Q5 — no CTA.
   const hasImageTemplateCtaTab =
     !isPastelCarouselImageTemplate &&
+    !isKawaiiImageTemplate &&
     !isBearsKawaiiImageTemplate &&
     !isPinterestCoverImageTemplate &&
     !isPinterestCoverOnlyImageTemplate &&
     !isCouplesDoodleImageTemplate &&
-    !isMaroonLockscreenImageTemplate;
+    !isMaroonLockscreenImageTemplate &&
+    !isColorCardImageTemplate;
   const imageTemplateCtaTabIndex = hasImageTemplateCtaTab
     ? imageTemplateQuestionCount + 1
     : -1;
@@ -2349,6 +2386,7 @@ export default function Home() {
         : isKawaiiImageTemplate ||
             isCouplesDoodleImageTemplate ||
             isMaroonLockscreenImageTemplate ||
+            isColorCardImageTemplate ||
             isPinterestCoverImageTemplate ||
             isCouplesSelfieImageTemplate ||
             isTopDownSelfieImageTemplate
@@ -4205,6 +4243,32 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       return;
     }
 
+    if (selectedAppId === 'spill-it' && isImageTemplate14Id(tid)) {
+      const title = pickTitleForType(
+        'funny',
+        selectedImageTemplateId === 14 ? imageTabTexts[0] : undefined
+      );
+      const questions = pickQuestionsForType('funny', 5);
+      setImageTabFunnyQuestions(questions);
+      const useGradient = template14UsesGradientRef.current;
+      template14UsesGradientRef.current = !useGradient;
+      if (useGradient) {
+        const gradient = nextTemplate14Gradient(template14GradientFromRef.current);
+        template14GradientFromRef.current = gradient.from;
+        setImageTabFrameBg(IMAGE_TEMPLATE14_WHITE);
+        setImageTabPastelBgs([gradient.from, gradient.to]);
+      } else {
+        const card = nextTemplate14Color(template14ColorRef.current);
+        template14ColorRef.current = card;
+        setImageTabFrameBg(card);
+        setImageTabPastelBgs([]);
+      }
+      setImageTabTypeLabel('Funny Questions');
+      setImageTabSources(['', '', '', '', '', '']);
+      setImageTabTexts([title, ...questions]);
+      return;
+    }
+
     if (selectedAppId === 'spill-it' && isImageTemplate13Id(tid)) {
       template12RunRef.current += 1;
       setIsGeneratingTemplate12(false);
@@ -4675,6 +4739,56 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       coverBitmap?.close();
       return { entries, isKawaiiTemplate: false };
     }
+    if (exportTemplateId === 14) {
+      const names = ['cover', 'q1', 'q2', 'q3', 'q4', 'q5'] as const;
+      const frameWidth = 1080;
+      const frameHeight = 1440;
+      const backgroundColor = imageTabFrameBg;
+      const loadImage = (src: string) =>
+        new Promise<HTMLImageElement>((resolve, reject) => {
+          const el = new Image();
+          el.onload = () => resolve(el);
+          el.onerror = () => reject(new Error('Failed to load a Template 14 image'));
+          el.src = src;
+        });
+      const [grain, promo] = await Promise.all([
+        loadImage(IMAGE_TEMPLATE14_GRAIN_SRC),
+        loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC),
+      ]);
+      try {
+        await document.fonts.load('400 72px "Libre Baskerville"');
+        await document.fonts.load('700 48px "TikTok Sans"');
+      } catch {
+        /* fonts may already be ready */
+      }
+      const entries = [];
+      for (let i = 0; i < names.length; i++) {
+        const canvas = document.createElement('canvas');
+        canvas.width = frameWidth;
+        canvas.height = frameHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Failed to prepare the slide');
+        paintTemplate14Slide(ctx, frameWidth, frameHeight, {
+          backgroundColor,
+          text: (imageTabTexts[i] ?? '').trim(),
+          tabIndex: i,
+          grain,
+          promo,
+          gradient:
+            imageTabPastelBgs.length >= 2
+              ? { from: imageTabPastelBgs[0]!, to: imageTabPastelBgs[1]! }
+              : null,
+        });
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((next) => {
+            if (next) resolve(next);
+            else reject(new Error('Failed to export the slide'));
+          }, 'image/png');
+        });
+        entries.push({ path: `template-14-${names[i]}.png`, blob });
+      }
+      return { entries, isKawaiiTemplate: false };
+    }
     if (exportTemplateId === 12) {
       const names = ['cover', 'q1', 'q2', 'q3', 'q4', 'q5'] as const;
       const sources = imageTabSources.slice(0, IMAGE_TEMPLATE12_SLIDE_COUNT);
@@ -4771,7 +4885,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       const isPastelExport = exportTemplateId === 2;
       const exportTextColor =
         exportTemplateId === 6 ? IMAGE_TEMPLATE6_TEXT_COLOR : imageFrameExportTextColorDefault;
-      // Template 2 / 6 / 7 / 8 / 9 / 10 / 11 have no CTA slide; their last tab is Q5.
+      // Template 1 / 2 / 6 / 7 / 8 / 9 / 10 / 11 have no CTA slide; their last tab is Q5.
       const exportCtaTabIndex =
         exportTemplateId === 2 ||
         isKawaiiNoCtaTemplateId(exportTemplateId) ||
@@ -6380,6 +6494,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         {isKawaiiLayoutImageTemplate ||
                         isCouplesDoodleImageTemplate ||
                         isMaroonLockscreenImageTemplate ||
+                        isColorCardImageTemplate ||
                         isPastelCarouselImageTemplate ||
                         isPinterestCoverImageTemplate ||
                         isPinterestCoverOnlyImageTemplate ? (
@@ -6638,16 +6753,113 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 : 'aspect-3/4'
                           }`}
                           style={{
-                            backgroundColor: isMaroonLockscreenImageTemplate
+                            backgroundColor: isColorCardImageTemplate
+                              ? template14Gradient
+                                ? template14Gradient.from
+                                : IMAGE_TEMPLATE14_FRAME_BG
+                              : isMaroonLockscreenImageTemplate
                               ? IMAGE_TEMPLATE13_BG
                               : isCouplesDoodleImageTemplate
                               ? IMAGE_TEMPLATE12_FRAME_BG
                               : isPinterestCoverOnlyImageTemplate
                               ? '#000000'
                               : activeImageFrameBg,
+                            backgroundImage:
+                              isColorCardImageTemplate && template14Gradient
+                                ? template14GradientCss(
+                                    template14Gradient.from,
+                                    template14Gradient.to
+                                  )
+                                : undefined,
                           }}
                         >
-                          {isMaroonLockscreenImageTemplate ? (
+                          {isColorCardImageTemplate ? (
+                            <div
+                              className="absolute overflow-hidden"
+                              style={{
+                                left: `${IMAGE_TEMPLATE14_CARD_INSET_X * 100}%`,
+                                top: `${IMAGE_TEMPLATE14_CARD_INSET_Y * 100}%`,
+                                width: `${(1 - IMAGE_TEMPLATE14_CARD_INSET_X * 2) * 100}%`,
+                                height: `${(1 - IMAGE_TEMPLATE14_CARD_INSET_Y * 2) * 100}%`,
+                                borderRadius: `${IMAGE_TEMPLATE14_CARD_RADIUS_RATIO * 100}cqw`,
+                                backgroundColor: template14Gradient
+                                  ? IMAGE_TEMPLATE14_WHITE
+                                  : activeImageFrameBg,
+                              }}
+                            >
+                              {template14Gradient ? null : (
+                              <div
+                                className="pointer-events-none absolute inset-0"
+                                style={{
+                                  backgroundImage: `url(${IMAGE_TEMPLATE14_GRAIN_SRC})`,
+                                  backgroundSize: '180px',
+                                  opacity: 0.45,
+                                  mixBlendMode: 'overlay',
+                                }}
+                              />
+                              )}
+                              <p
+                                className="absolute left-1/2 z-10 w-[78%] -translate-x-1/2 -translate-y-1/2 text-center wrap-break-word"
+                                style={{
+                                  top: `${
+                                    (selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX
+                                      ? IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO
+                                      : 0.5) * 100
+                                  }%`,
+                                  color: IMAGE_TEMPLATE14_TEXT,
+                                  fontFamily: IMAGE_TEMPLATE14_FONT_STACK,
+                                  fontSize: `${
+                                    (selectedImageBrowserTab === 0
+                                      ? IMAGE_TEMPLATE14_COVER_SIZE_RATIO
+                                      : IMAGE_TEMPLATE14_QUESTION_SIZE_RATIO) * 100
+                                  }cqw`,
+                                  fontWeight: 400,
+                                  lineHeight: IMAGE_TEMPLATE14_LINE_HEIGHT,
+                                }}
+                              >
+                                {imageFrameTextForActiveTab}
+                              </p>
+                              {selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX ? (
+                                <>
+                                  <p
+                                    className="absolute inset-x-[6%] z-10 text-center font-bold"
+                                    style={{
+                                      color: template14Gradient
+                                        ? IMAGE_TEMPLATE14_TEXT
+                                        : 'rgba(255,255,255,0.95)',
+                                      fontFamily: pastelCarouselFontFamily,
+                                      fontSize: `${IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO * (4 / 3) * 100}cqw`,
+                                      bottom: `${(IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO + IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO) * 100}%`,
+                                    }}
+                                  >
+                                    {IMAGE_TEMPLATE2_Q5_PROMO_LABEL}
+                                  </p>
+                                  <img
+                                    src={IMAGE_TEMPLATE2_Q5_PROMO_SRC}
+                                    alt="Spill It on the App Store"
+                                    className="absolute left-1/2 z-10 -translate-x-1/2"
+                                    style={{
+                                      width: `${IMAGE_TEMPLATE2_Q5_PROMO_WIDTH_RATIO * 100}%`,
+                                      maxWidth: 'none',
+                                      top: `${(1 - IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO) * 100}%`,
+                                    }}
+                                  />
+                                </>
+                              ) : (
+                                <p
+                                  className="absolute inset-x-[8%] z-10 text-center"
+                                  style={{
+                                    top: `${IMAGE_TEMPLATE14_MARK_Y_RATIO * 100}%`,
+                                    color: IMAGE_TEMPLATE14_TEXT,
+                                    fontFamily: IMAGE_TEMPLATE14_FONT_STACK,
+                                    fontSize: `${IMAGE_TEMPLATE14_MARK_SIZE_RATIO * 100}cqw`,
+                                  }}
+                                >
+                                  {IMAGE_TEMPLATE14_MARK}
+                                </p>
+                              )}
+                            </div>
+                          ) : isMaroonLockscreenImageTemplate ? (
                             selectedImageBrowserTab === 0 && (imageTabSources[0] ?? '').trim() ? (
                               <>
                                 <img
@@ -7460,6 +7672,15 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                       const pool = [...FUNNY_QUESTIONS];
                                       const current = imageFrameTextForActiveTab;
                                       if (
+                                        isColorCardImageTemplate &&
+                                        selectedImageBrowserTab === 0
+                                      ) {
+                                        const next = [...imageTabTexts];
+                                        next[0] = pickTitleForType('funny', current);
+                                        setImageTabTexts(next);
+                                        return;
+                                      }
+                                      if (
                                         isMaroonLockscreenImageTemplate &&
                                         selectedImageBrowserTab === 0
                                       ) {
@@ -7545,6 +7766,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             isKawaiiImageTemplate ||
                             isCouplesDoodleImageTemplate ||
                             isMaroonLockscreenImageTemplate ||
+                            isColorCardImageTemplate ||
                             isPinterestCoverImageTemplate ||
                             isCouplesSelfieImageTemplate ||
                             isTopDownSelfieImageTemplate ? (
