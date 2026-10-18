@@ -244,6 +244,7 @@ import { exportFabNotesVideo } from '@/app/lib/export-fab-notes-video';
 import { exportFabAffirmationMontage } from '@/app/lib/export-fab-affirmation-montage';
 import { Sidebar } from '@/app/components/Sidebar';
 import { CharacterStudio } from '@/app/components/CharacterStudio';
+import { CopycatPanel } from '@/app/components/CopycatPanel';
 import { FabNotesOverlay } from '@/app/components/FabNotesOverlay';
 import { FabMontagePreview } from '@/app/components/FabMontagePreview';
 import { NightyParticleOverlay } from '@/app/components/NightyParticleOverlay';
@@ -267,7 +268,7 @@ import {
 import { transcodeWebmToMp4 } from '@/app/lib/webm-to-mp4';
 import { INSTAGRAM_CAROUSEL_MAX } from '@/app/lib/instagram';
 
-type ContentTab = 'image' | 'video' | 'character' | 'prompt' | 'automate';
+type ContentTab = 'image' | 'video' | 'character' | 'copycat' | 'prompt' | 'automate';
 
 type AppUrlState = {
   contentTab: ContentTab;
@@ -278,7 +279,17 @@ type AppUrlState = {
   selectedImageBrowserTab: number;
 };
 
-const CONTENT_TABS: ContentTab[] = ['image', 'video', 'character', 'prompt', 'automate'];
+const CONTENT_TABS: ContentTab[] = ['image', 'video', 'character', 'copycat', 'prompt', 'automate'];
+
+const COPYCAT_COMPETITORS = [
+  { id: 'flamingo-cards', label: 'Flamingo cards' },
+] as const;
+
+type CopycatCompetitorId = (typeof COPYCAT_COMPETITORS)[number]['id'];
+
+/** Spill It image templates available inside Copycat. */
+const COPYCAT_TEMPLATE_IDS = [1, 2, 6, 13, 14] as const;
+type CopycatTemplateId = (typeof COPYCAT_TEMPLATE_IDS)[number];
 
 function isKawaiiStyleTemplateId(templateId: number | null | undefined): boolean {
   return templateId === 1 || templateId === 6;
@@ -2033,6 +2044,10 @@ export default function Home() {
   const [isInstagramPosting, setIsInstagramPosting] = useState(false);
   const [videoExportError, setVideoExportError] = useState<string | null>(null);
   const [selectedImageBrowserTab, setSelectedImageBrowserTab] = useState(0);
+  const [selectedCopycatCompetitorId, setSelectedCopycatCompetitorId] =
+    useState<CopycatCompetitorId>('flamingo-cards');
+  const [selectedCopycatTemplateId, setSelectedCopycatTemplateId] =
+    useState<CopycatTemplateId>(1);
   const [imageTabFrameBg, setImageTabFrameBg] = useState('#FEFEFE');
   const [imageTabPastelBgs, setImageTabPastelBgs] = useState<string[]>([]);
   const [imageTabTypeLabel, setImageTabTypeLabel] = useState('Funny Questions');
@@ -6330,6 +6345,91 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                 isRetryingDailyCaption={isRetryingDailyCaption}
                 isAutomateNanaMode={contentTab === 'prompt'}
               />
+            )}
+            {contentTab === 'copycat' && (
+              <div className="lg:col-span-2 h-auto lg:h-full min-h-0 min-w-0 max-w-full overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6">
+                <div className="mb-4 flex flex-col gap-4 sm:mb-6 md:flex-row md:items-start md:justify-between md:gap-6">
+                  <div className="min-w-0">
+                    <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                      Copycat
+                    </h2>
+                    <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
+                      Pull posts from a competitor and recreate them.
+                    </p>
+                  </div>
+                  <div className="flex w-full min-w-0 flex-col gap-3 md:w-auto md:max-w-md md:items-end">
+                    <div className="w-full md:w-auto md:text-right">
+                      <label
+                        htmlFor="copycat-competitor"
+                        className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400"
+                      >
+                        Competitor
+                      </label>
+                      <select
+                        id="copycat-competitor"
+                        value={selectedCopycatCompetitorId}
+                        onChange={(e) =>
+                          setSelectedCopycatCompetitorId(e.target.value as CopycatCompetitorId)
+                        }
+                        className="w-full min-w-0 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-2.5 text-sm font-medium text-zinc-900 dark:text-zinc-100 outline-none focus:border-zinc-400 dark:focus:border-zinc-500 md:min-w-[10.5rem] md:w-auto md:py-2"
+                      >
+                        {COPYCAT_COMPETITORS.map((competitor) => (
+                          <option key={competitor.id} value={competitor.id}>
+                            {competitor.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="w-full min-w-0 md:text-right">
+                      <p className="mb-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                        Template
+                      </p>
+                      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                        {COPYCAT_TEMPLATE_IDS.map((templateId) => {
+                          const card = getImageTemplatesForApp('spill-it').find(
+                            (c) => c.id === templateId
+                          );
+                          const selected = selectedCopycatTemplateId === templateId;
+                          return (
+                            <button
+                              key={templateId}
+                              type="button"
+                              onClick={() => setSelectedCopycatTemplateId(templateId)}
+                              title={card?.title ?? `Template ${templateId}`}
+                              className={`min-w-0 rounded-lg border p-1.5 text-left transition-colors sm:p-1 ${
+                                selected
+                                  ? 'border-zinc-900 dark:border-zinc-100 bg-zinc-100 dark:bg-zinc-800'
+                                  : 'border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 hover:border-zinc-400 dark:hover:border-zinc-500'
+                              }`}
+                            >
+                              <div className="aspect-3/4 w-full overflow-hidden rounded-md bg-zinc-200 dark:bg-zinc-700">
+                                {card?.coverSrc ? (
+                                  <img
+                                    src={card.coverSrc}
+                                    alt={card.title}
+                                    className="h-full w-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+                                    {templateId}
+                                  </div>
+                                )}
+                              </div>
+                              <p className="mt-1 truncate text-center text-[11px] font-medium text-zinc-700 dark:text-zinc-300 sm:text-[10px]">
+                                {templateId}
+                              </p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <CopycatPanel
+                  competitorId={selectedCopycatCompetitorId}
+                  templateId={selectedCopycatTemplateId}
+                />
+              </div>
             )}
             {contentTab === 'automate' && (
               <div className="lg:col-span-2 h-auto lg:h-full min-h-0 min-w-0 p-6 flex items-center justify-center">
