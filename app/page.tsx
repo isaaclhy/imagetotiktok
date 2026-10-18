@@ -161,12 +161,9 @@ import {
   IMAGE_TEMPLATE14_MARK_SIZE_RATIO,
   IMAGE_TEMPLATE14_MARK_Y_RATIO,
   IMAGE_TEMPLATE14_QUESTION_SIZE_RATIO,
-  IMAGE_TEMPLATE14_TEXT,
-  IMAGE_TEMPLATE14_WHITE,
   nextTemplate14Color,
-  nextTemplate14Gradient,
   paintTemplate14Slide,
-  template14GradientCss,
+  template14TextForBackground,
 } from '@/app/lib/image-template-14-cards';
 import {
   CHARACTER_IMAGE_QUALITIES,
@@ -2083,10 +2080,6 @@ export default function Home() {
   const template12RunRef = useRef(0);
   /** Alternates Template 13 covers between a generated photo and centered text. */
   const template13CoverModeRef = useRef<'photo' | 'text'>('text');
-  /** Template 14 alternates a colored card with a white card on a gradient. */
-  const template14UsesGradientRef = useRef(true);
-  const template14ColorRef = useRef('');
-  const template14GradientFromRef = useRef('');
   const [imageTemplate7CoverError, setImageTemplate7CoverError] = useState<string | null>(null);
   const pinterestCoverAbortRef = useRef<AbortController | null>(null);
   const template8RecentCoverUrlsRef = useRef<string[]>([]);
@@ -2152,10 +2145,6 @@ export default function Home() {
     selectedAppId === 'spill-it' && isImageTemplate13Id(selectedImageTemplateId);
   const isColorCardImageTemplate =
     selectedAppId === 'spill-it' && isImageTemplate14Id(selectedImageTemplateId);
-  const template14Gradient =
-    isColorCardImageTemplate && imageTabPastelBgs.length >= 2
-      ? { from: imageTabPastelBgs[0]!, to: imageTabPastelBgs[1]! }
-      : null;
   const isPinterestCoverImageTemplate =
     selectedAppId === 'spill-it' && isPinterestCoverImageTemplateId(selectedImageTemplateId);
   const isCouplesCuteMomentsImageTemplate =
@@ -4250,19 +4239,10 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       );
       const questions = pickQuestionsForType('funny', 5);
       setImageTabFunnyQuestions(questions);
-      const useGradient = template14UsesGradientRef.current;
-      template14UsesGradientRef.current = !useGradient;
-      if (useGradient) {
-        const gradient = nextTemplate14Gradient(template14GradientFromRef.current);
-        template14GradientFromRef.current = gradient.from;
-        setImageTabFrameBg(IMAGE_TEMPLATE14_WHITE);
-        setImageTabPastelBgs([gradient.from, gradient.to]);
-      } else {
-        const card = nextTemplate14Color(template14ColorRef.current);
-        template14ColorRef.current = card;
-        setImageTabFrameBg(card);
-        setImageTabPastelBgs([]);
-      }
+      setImageTabFrameBg(
+        nextTemplate14Color(selectedImageTemplateId === 14 ? imageTabFrameBg : '')
+      );
+      setImageTabPastelBgs([]);
       setImageTabTypeLabel('Funny Questions');
       setImageTabSources(['', '', '', '', '', '']);
       setImageTabTexts([title, ...questions]);
@@ -4774,10 +4754,6 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           tabIndex: i,
           grain,
           promo,
-          gradient:
-            imageTabPastelBgs.length >= 2
-              ? { from: imageTabPastelBgs[0]!, to: imageTabPastelBgs[1]! }
-              : null,
         });
         const blob = await new Promise<Blob>((resolve, reject) => {
           canvas.toBlob((next) => {
@@ -6754,9 +6730,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                           }`}
                           style={{
                             backgroundColor: isColorCardImageTemplate
-                              ? template14Gradient
-                                ? template14Gradient.from
-                                : IMAGE_TEMPLATE14_FRAME_BG
+                              ? IMAGE_TEMPLATE14_FRAME_BG
                               : isMaroonLockscreenImageTemplate
                               ? IMAGE_TEMPLATE13_BG
                               : isCouplesDoodleImageTemplate
@@ -6764,13 +6738,6 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               : isPinterestCoverOnlyImageTemplate
                               ? '#000000'
                               : activeImageFrameBg,
-                            backgroundImage:
-                              isColorCardImageTemplate && template14Gradient
-                                ? template14GradientCss(
-                                    template14Gradient.from,
-                                    template14Gradient.to
-                                  )
-                                : undefined,
                           }}
                         >
                           {isColorCardImageTemplate ? (
@@ -6782,22 +6749,18 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 width: `${(1 - IMAGE_TEMPLATE14_CARD_INSET_X * 2) * 100}%`,
                                 height: `${(1 - IMAGE_TEMPLATE14_CARD_INSET_Y * 2) * 100}%`,
                                 borderRadius: `${IMAGE_TEMPLATE14_CARD_RADIUS_RATIO * 100}cqw`,
-                                backgroundColor: template14Gradient
-                                  ? IMAGE_TEMPLATE14_WHITE
-                                  : activeImageFrameBg,
+                                backgroundColor: activeImageFrameBg,
                               }}
                             >
-                              {template14Gradient ? null : (
                               <div
                                 className="pointer-events-none absolute inset-0"
                                 style={{
                                   backgroundImage: `url(${IMAGE_TEMPLATE14_GRAIN_SRC})`,
-                                  backgroundSize: '180px',
-                                  opacity: 0.45,
-                                  mixBlendMode: 'overlay',
+                                  backgroundSize: '80px',
+                                  opacity: 0.85,
+                                  mixBlendMode: 'multiply',
                                 }}
                               />
-                              )}
                               <p
                                 className="absolute left-1/2 z-10 w-[78%] -translate-x-1/2 -translate-y-1/2 text-center wrap-break-word"
                                 style={{
@@ -6806,7 +6769,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                       ? IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO
                                       : 0.5) * 100
                                   }%`,
-                                  color: IMAGE_TEMPLATE14_TEXT,
+                                  color: template14TextForBackground(activeImageFrameBg),
                                   fontFamily: IMAGE_TEMPLATE14_FONT_STACK,
                                   fontSize: `${
                                     (selectedImageBrowserTab === 0
@@ -6822,11 +6785,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               {selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX ? (
                                 <>
                                   <p
-                                    className="absolute inset-x-[6%] z-10 text-center font-bold"
+                                    className="absolute inset-x-[6%] z-10 text-center font-bold text-white/95"
                                     style={{
-                                      color: template14Gradient
-                                        ? IMAGE_TEMPLATE14_TEXT
-                                        : 'rgba(255,255,255,0.95)',
                                       fontFamily: pastelCarouselFontFamily,
                                       fontSize: `${IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO * (4 / 3) * 100}cqw`,
                                       bottom: `${(IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO + IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO) * 100}%`,
@@ -6850,7 +6810,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   className="absolute inset-x-[8%] z-10 text-center"
                                   style={{
                                     top: `${IMAGE_TEMPLATE14_MARK_Y_RATIO * 100}%`,
-                                    color: IMAGE_TEMPLATE14_TEXT,
+                                    color: template14TextForBackground(activeImageFrameBg),
                                     fontFamily: IMAGE_TEMPLATE14_FONT_STACK,
                                     fontSize: `${IMAGE_TEMPLATE14_MARK_SIZE_RATIO * 100}cqw`,
                                   }}
