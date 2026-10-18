@@ -268,19 +268,48 @@ export const FLAMINGO_CARDS_FEED: CopycatCompetitorFeed = {
 
 const OPTION_LETTERS = 'abcdefghijklmnopqrstuvwxyz';
 
+/** Collapse OCR/JSON line breaks inside a title or question into single spaces. */
+export function collapseCopycatInlineBreaks(text: string): string {
+  return text.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Drop carousel UI chrome OCR'd into titles/options ("swipe →", "swipe to start →").
+ * Does not remove intentional option content — only swipe+arrow patterns.
+ */
+export function stripCopycatSwipeChrome(text: string): string {
+  return text
+    .replace(/\s*swipe\s+to\s+start\s*→?/gi, '')
+    .replace(/\s*swipe\s*→/gi, '')
+    .replace(/\s*[→➜➡›»]+\s*$/g, '')
+    // Orphan openers left after stripping " (swipe to start →"
+    .replace(/\s*[\(\[]\s*$/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Normalize cover / question / option text for display and export. */
+export function cleanCopycatDisplayText(text: string): string {
+  return stripCopycatSwipeChrome(collapseCopycatInlineBreaks(text));
+}
+
 /** Question + a. b. c. options for preview / export text. */
 export function formatCopycatSlideBody(slide: CopycatSlideText): string {
-  const question = slide.text.trim();
+  const question = cleanCopycatDisplayText(slide.text);
   if (!slide.options?.length) return question;
   const lines = slide.options.map(
-    (option, index) => `${OPTION_LETTERS[index] ?? String(index + 1)}. ${option}`
+    (option, index) =>
+      `${OPTION_LETTERS[index] ?? String(index + 1)}. ${cleanCopycatDisplayText(option)}`
   );
   return `${question}\n\n${lines.join('\n')}`;
 }
 
 /** Cover + question slides for a post (question count follows the source post). */
 export function copycatPostSlideBodies(post: CopycatPost): string[] {
-  return [post.coverText, ...post.slideText.map(formatCopycatSlideBody)];
+  return [
+    cleanCopycatDisplayText(post.coverText),
+    ...post.slideText.map(formatCopycatSlideBody),
+  ];
 }
 
 export function formatCopycatViews(views: number): string {
@@ -310,5 +339,8 @@ export function isCopycatPromoNoiseSlide(slide: CopycatSlideText): boolean {
 
 export function copycatPostSlideBodiesClean(post: CopycatPost): string[] {
   const slides = post.slideText.filter((slide) => !isCopycatPromoNoiseSlide(slide));
-  return [post.coverText, ...slides.map(formatCopycatSlideBody)];
+  return [
+    cleanCopycatDisplayText(post.coverText),
+    ...slides.map(formatCopycatSlideBody),
+  ];
 }

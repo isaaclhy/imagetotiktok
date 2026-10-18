@@ -1,4 +1,9 @@
-import type { CopycatCompetitorFeed, CopycatPost, CopycatSlideText } from './flamingo-cards';
+import {
+  cleanCopycatDisplayText,
+  type CopycatCompetitorFeed,
+  type CopycatPost,
+  type CopycatSlideText,
+} from './flamingo-cards';
 import rawFeed from './flamingo-convos.json';
 
 type RawSlide = {
@@ -23,9 +28,12 @@ type RawFeed = {
 const feed = rawFeed as RawFeed;
 
 function mapSlide(slide: RawSlide): CopycatSlideText {
-  return slide.options?.length
-    ? { text: slide.text, options: slide.options }
-    : { text: slide.text };
+  const text = cleanCopycatDisplayText(slide.text);
+  if (!slide.options?.length) return { text };
+  return {
+    text,
+    options: slide.options.map(cleanCopycatDisplayText),
+  };
 }
 
 /** Instagram likes stand in for views so ranking matches CopycatPost. */
@@ -33,7 +41,7 @@ function mapPost(post: RawPost): CopycatPost {
   return {
     id: post.id,
     views: post.likes,
-    coverText: post.coverText,
+    coverText: cleanCopycatDisplayText(post.coverText),
     slideText: post.slideText.map(mapSlide),
     handle: feed.handle,
     platform: 'instagram',

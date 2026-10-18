@@ -6348,7 +6348,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
             )}
             {contentTab === 'copycat' && (
               <div className="lg:col-span-2 h-auto lg:h-full min-h-0 min-w-0 max-w-full overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6">
-                <div className="mb-4 flex flex-col gap-4 sm:mb-6 md:flex-row md:items-start md:justify-between md:gap-6">
+                <div className="mb-4 flex flex-col gap-4 sm:mb-6">
                   <div className="min-w-0">
                     <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
                       Copycat
@@ -6357,8 +6357,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                       Pull posts from a competitor and recreate them.
                     </p>
                   </div>
-                  <div className="flex w-full min-w-0 flex-col gap-3 md:w-auto md:max-w-md md:items-end">
-                    <div className="w-full md:w-auto md:text-right">
+                  <div className="flex w-full min-w-0 flex-col items-start gap-3">
+                    <div className="w-full max-w-md text-left">
                       <label
                         htmlFor="copycat-competitor"
                         className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400"
@@ -6380,7 +6380,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         ))}
                       </select>
                     </div>
-                    <div className="w-full min-w-0 md:text-right">
+                    <div className="w-full max-w-md text-left">
                       <p className="mb-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">
                         Template
                       </p>

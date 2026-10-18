@@ -8,6 +8,7 @@ import {
   type CopycatPost,
 } from '@/app/lib/copycat/flamingo-cards';
 import { getFlamingoCardsPosts } from '@/app/lib/copycat/flamingo-convos';
+import { exportCopycatSlidesZip } from '@/app/lib/copycat/export-slides';
 import { IMAGE_TEMPLATE2_PASTEL_COLORS } from '@/app/lib/constants';
 import {
   IMAGE_TEMPLATE2_Q5_PROMO_LABEL,
@@ -462,6 +463,7 @@ export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
   const [template14Color, setTemplate14Color] = useState(() => pickTemplate14Color());
   const [dogUrls, setDogUrls] = useState<string[]>([]);
   const [illustrations, setIllustrations] = useState<string[]>([]);
+  const [isDownloading, setIsDownloading] = useState(false);
   const postBagRef = useRef<string[]>([]);
   const lastPostIdRef = useRef<string | null>(null);
   const didInitRef = useRef(false);
@@ -479,12 +481,13 @@ export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
     [selectedPost]
   );
 
-  const slideBodies = useMemo(() => {
-    if (!selectedPost) return [];
-    return [...copycatPostSlideBodiesClean(selectedPost), ''];
-  }, [selectedPost]);
+  const slideBodies = useMemo(
+    () => (selectedPost ? copycatPostSlideBodiesClean(selectedPost) : []),
+    [selectedPost]
+  );
 
-  const ctaTabIndex = slideBodies.length > 0 ? slideBodies.length - 1 : -1;
+  // CTA is the last question slide itself — never a separate empty tab.
+  const ctaTabIndex = slideBodies.length > 1 ? slideBodies.length - 1 : -1;
   const isCtaSlide = selectedTab === ctaTabIndex && ctaTabIndex > 0;
 
   const reshufflePost = useCallback(() => {
@@ -530,27 +533,76 @@ export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
     };
   }, [templateId]);
 
-  // Crypto-random art per content slide; no hash / index modulo.
+  // Crypto-random art for cover + non-CTA questions (last question shows promo instead).
   useEffect(() => {
     if (templateId !== 1 && templateId !== 6) {
       setIllustrations([]);
       return;
     }
-    const contentCount = Math.max(0, slideBodies.length - 1);
-    if (contentCount === 0) {
+    const artCount =
+      slideBodies.length > 1 ? slideBodies.length - 1 : slideBodies.length;
+    if (artCount <= 0) {
       setIllustrations([]);
       return;
     }
     if (templateId === 6) {
-      setIllustrations(pickNUniqueRandom(IMAGE_TEMPLATE6_BEAR_SRCS, contentCount));
+      setIllustrations(pickNUniqueRandom(IMAGE_TEMPLATE6_BEAR_SRCS, artCount));
       return;
     }
     if (dogUrls.length === 0) {
       setIllustrations([]);
       return;
     }
-    setIllustrations(pickNUniqueRandom(dogUrls, contentCount));
+    setIllustrations(pickNUniqueRandom(dogUrls, artCount));
   }, [templateId, selectedPostId, slideBodies.length, dogUrls]);
+
+  const handleDownload = useCallback(async () => {
+    if (!selectedPost || slideBodies.length === 0 || isDownloading) return;
+    setIsDownloading(true);
+    try {
+      const slides = slideBodies.map((text, index) => {
+        const isCta = index === ctaTabIndex && ctaTabIndex > 0;
+        const isCover = index === 0;
+        return {
+          text,
+          isCta,
+          isCover,
+          leftAlign: Boolean(
+            index > 0 && !isCta && questionSlides[index - 1]?.options?.length
+          ),
+          illustrationSrc:
+            isCta || index >= illustrations.length ? undefined : illustrations[index],
+        };
+      });
+      const zipBlob = await exportCopycatSlidesZip({
+        templateId,
+        slides,
+        template14Color,
+      });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `copycat-template-${templateId}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.setTimeout(() => URL.revokeObjectURL(url), 2500);
+    } catch (e) {
+      console.error('Copycat download failed:', e);
+      alert(e instanceof Error ? e.message : 'Download failed');
+    } finally {
+      setIsDownloading(false);
+    }
+  }, [
+    selectedPost,
+    slideBodies,
+    isDownloading,
+    ctaTabIndex,
+    questionSlides,
+    illustrations,
+    templateId,
+    template14Color,
+  ]);
 
   if (competitorId !== 'flamingo-cards' || !selectedPost) {
     return (
@@ -568,13 +620,51 @@ export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
         <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
           Random post · {slideBodies.length} slides
         </p>
-        <button
-          type="button"
-          onClick={reshufflePost}
-          className="shrink-0 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-1.5 text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:border-zinc-400 dark:hover:border-zinc-500"
-        >
-          New random post
-        </button>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <button
+            type="button"
+            onClick={reshufflePost}
+            disabled={isDownloading}
+            className="rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-1.5 text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:border-zinc-400 dark:hover:border-zinc-500 disabled:opacity-50"
+          >
+            New random post
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleDownload()}
+            disabled={isDownloading || slideBodies.length === 0}
+            className="inline-flex items-center justify-center gap-1.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-1.5 text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:border-zinc-400 dark:hover:border-zinc-500 disabled:opacity-50"
+          >
+            {isDownloading ? (
+              <>
+                <svg
+                  className="h-3.5 w-3.5 shrink-0 animate-spin"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  aria-hidden
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                Downloading…
+              </>
+            ) : (
+              'Download'
+            )}
+          </button>
+        </div>
       </div>
       <div className="flex gap-1 overflow-x-auto pb-1">
         {slideBodies.map((_, index) => (
@@ -588,7 +678,7 @@ export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
                 : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
             }`}
           >
-            {index === 0 ? 'Cover' : index === ctaTabIndex ? 'CTA' : `Q${index}`}
+              {index === 0 ? 'Cover' : `Q${index}`}
           </button>
         ))}
       </div>
