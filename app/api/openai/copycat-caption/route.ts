@@ -74,7 +74,14 @@ export async function POST(request: NextRequest) {
       ],
     });
 
-    const caption = clampCaption(extractOutputText(response));
+    const caption = clampCaption(
+      extractOutputText(
+        response as {
+          output_text?: string;
+          output?: Array<{ content?: Array<{ type?: string; text?: string }> }>;
+        }
+      )
+    );
     if (!caption) {
       return NextResponse.json({ error: 'No caption generated' }, { status: 502 });
     }
