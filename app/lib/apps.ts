@@ -131,7 +131,7 @@ export const VIDEO_TEMPLATES_BY_APP: Record<StudioAppId, VideoTemplateCard[]> = 
       subtitle: '',
       coverSrc: '/video-templates/iphone-notes-cover.png',
     },
-    { id: 4, title: 'Template 4', subtitle: '' },
+    { id: 4, title: 'Ocean sunset', subtitle: '' },
   ],
   fab: [
     { id: 1, title: 'Affirmation montage', subtitle: '' },

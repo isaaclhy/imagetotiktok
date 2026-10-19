@@ -43,6 +43,7 @@ async function exportCouplesNatureViaJpegSequence(options: {
   paintOverlay: CouplesNatureOverlayPainter;
   maxDurationSec: number;
   onProgress?: CouplesNatureExportProgress;
+  backgroundFilter?: string;
 }): Promise<Blob> {
   const { sourceBlob, paintOverlay, maxDurationSec, onProgress } = options;
   const width = COUPLES_NATURE_EXPORT_WIDTH;
@@ -71,7 +72,14 @@ async function exportCouplesNatureViaJpegSequence(options: {
     const crop: CoverCrop = computeCoverCrop(video.videoWidth, video.videoHeight, width, height);
 
     const paintFrame = () => {
-      drawCouplesNatureBackground(ctx, video, crop, width, height);
+      drawCouplesNatureBackground(
+        ctx,
+        video,
+        crop,
+        width,
+        height,
+        options.backgroundFilter
+      );
       ctx.drawImage(overlayCanvas, 0, 0);
     };
 
@@ -108,6 +116,7 @@ export async function exportCouplesNatureVideo(options: {
   paintOverlay: CouplesNatureOverlayPainter;
   maxDurationSec: number;
   onProgress?: CouplesNatureExportProgress;
+  backgroundFilter?: string;
 }): Promise<Blob> {
   const sourceBlob = await getCouplesNatureVideoBlob(options.videoSrc, options.sourceBlob);
 
@@ -117,6 +126,7 @@ export async function exportCouplesNatureVideo(options: {
       paintOverlay: options.paintOverlay,
       maxDurationSec: options.maxDurationSec,
       onProgress: options.onProgress,
+      backgroundFilter: options.backgroundFilter,
     });
   } catch (recorderErr) {
     console.warn('[couples-nature] recorder export failed, using CFR jpeg fallback', recorderErr);
@@ -125,6 +135,7 @@ export async function exportCouplesNatureVideo(options: {
       paintOverlay: options.paintOverlay,
       maxDurationSec: options.maxDurationSec,
       onProgress: options.onProgress,
+      backgroundFilter: options.backgroundFilter,
     });
   }
 }

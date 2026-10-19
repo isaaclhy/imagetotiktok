@@ -152,7 +152,8 @@ async function paintSlide(
   templateId: CopycatExportTemplateId,
   slide: CopycatExportSlide,
   tabIndex: number,
-  template14Color: string
+  template14Color: string,
+  template15FrameBg?: string
 ): Promise<Blob> {
   const { w, h } = frameSize(templateId);
   const canvas = document.createElement('canvas');
@@ -178,6 +179,7 @@ async function paintSlide(
         text: slide.text,
         isCta: slide.isCta,
         promo,
+        frameBg: template15FrameBg,
       });
     }
     return canvasBlob(canvas);
@@ -437,13 +439,20 @@ export async function exportCopycatSlidesZip(options: {
   templateId: CopycatExportTemplateId;
   slides: CopycatExportSlide[];
   template14Color?: string;
+  template15FrameBg?: string;
 }): Promise<Blob> {
   const JSZip = (await import('jszip')).default;
   const zip = new JSZip();
   const color = options.template14Color ?? IMAGE_TEMPLATE14_COLORS[0]!;
   for (let i = 0; i < options.slides.length; i++) {
     const slide = options.slides[i]!;
-    const blob = await paintSlide(options.templateId, slide, i, color);
+    const blob = await paintSlide(
+      options.templateId,
+      slide,
+      i,
+      color,
+      options.template15FrameBg
+    );
     const name = i === 0 ? 'cover' : `q${i}`;
     zip.file(`template-${options.templateId}-${name}.png`, blob);
   }

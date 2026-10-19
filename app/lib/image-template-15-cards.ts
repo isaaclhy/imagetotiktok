@@ -5,9 +5,34 @@ import {
   imageTemplate2Q5PromoLayout,
 } from '@/app/lib/image-template-2-cover';
 
-/** Warm tan behind the cream question card (21 Questions reference). */
-export const IMAGE_TEMPLATE15_FRAME_BG = '#CDB892';
-export const IMAGE_TEMPLATE15_CARD_BG = '#F7F3EC';
+/** White question card; frame behind it is picked from this set. */
+export const IMAGE_TEMPLATE15_FRAME_COLORS = [
+  '#CDB892',
+  '#E8A0B0',
+  '#7EB8C9',
+  '#E3943A',
+  '#B97BCE',
+  '#6FA3C4',
+  '#D13B61',
+  '#8FBC8F',
+  '#F0C27A',
+  '#5B7C99',
+] as const;
+export const IMAGE_TEMPLATE15_FRAME_BG = IMAGE_TEMPLATE15_FRAME_COLORS[0];
+export const IMAGE_TEMPLATE15_CARD_BG = '#FFFFFF';
+
+export function pickTemplate15FrameColor(exclude?: string): string {
+  const skip = exclude?.trim().toLowerCase();
+  const pool = IMAGE_TEMPLATE15_FRAME_COLORS.filter(
+    (color) => color.toLowerCase() !== skip
+  );
+  const colors = pool.length > 0 ? pool : IMAGE_TEMPLATE15_FRAME_COLORS;
+  const index =
+    typeof crypto !== 'undefined' && crypto.getRandomValues
+      ? crypto.getRandomValues(new Uint32Array(1))[0]! % colors.length
+      : Math.floor(Math.random() * colors.length);
+  return colors[index]!;
+}
 export const IMAGE_TEMPLATE15_CARD_BORDER = '#1A1A1A';
 export const IMAGE_TEMPLATE15_TEXT = '#141414';
 export const IMAGE_TEMPLATE15_MARK = 'SPILL IT';
@@ -24,7 +49,8 @@ export const IMAGE_TEMPLATE15_MARK_SIZE_RATIO = 0.028;
 export const IMAGE_TEMPLATE15_MARK_TOP_RATIO = 0.085;
 export const IMAGE_TEMPLATE15_MARK_TRACKING = '0.14em';
 export const IMAGE_TEMPLATE15_QUESTION_SIZE_RATIO = 0.048;
-export const IMAGE_TEMPLATE15_QUESTION_TOP_RATIO = 0.5;
+/** Top of the question + options, just under the mark — card eye-level band. */
+export const IMAGE_TEMPLATE15_QUESTION_TOP_RATIO = 0.2;
 export const IMAGE_TEMPLATE15_LINE_HEIGHT = 1.22;
 export const IMAGE_TEMPLATE15_TEXT_INSET_X = 0.12;
 
@@ -119,9 +145,10 @@ export function paintTemplate15QuestionCard(
     text: string;
     isCta?: boolean;
     promo?: CanvasImageSource | null;
+    frameBg?: string;
   }
 ) {
-  ctx.fillStyle = IMAGE_TEMPLATE15_FRAME_BG;
+  ctx.fillStyle = options.frameBg?.trim() || IMAGE_TEMPLATE15_FRAME_BG;
   ctx.fillRect(0, 0, frameWidth, frameHeight);
 
   const card = template15CardRect(frameWidth, frameHeight);
@@ -148,8 +175,8 @@ export function paintTemplate15QuestionCard(
   ctx.fillStyle = IMAGE_TEMPLATE15_TEXT;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = `400 ${markSize}px ${IMAGE_TEMPLATE15_QUESTION_FONT_STACK}`;
-  ctx.letterSpacing = IMAGE_TEMPLATE15_MARK_TRACKING;
+  ctx.font = `500 ${markSize}px ${IMAGE_TEMPLATE15_QUESTION_FONT_STACK}`;
+  ctx.letterSpacing = '0px';
   ctx.fillText(
     IMAGE_TEMPLATE15_MARK,
     frameWidth / 2,
@@ -163,11 +190,11 @@ export function paintTemplate15QuestionCard(
   const lines = wrapLines(ctx, options.text, maxW);
   const lineHeight = fontSize * IMAGE_TEMPLATE15_LINE_HEIGHT;
   const x = card.x + card.width * IMAGE_TEMPLATE15_TEXT_INSET_X;
-  const centerY = card.y + card.height * IMAGE_TEMPLATE15_QUESTION_TOP_RATIO;
+  const topY = card.y + card.height * IMAGE_TEMPLATE15_QUESTION_TOP_RATIO;
   ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
+  ctx.textBaseline = 'top';
   const blockH = lines.length * lineHeight;
-  let y = centerY - blockH / 2 + lineHeight / 2;
+  let y = topY;
   for (const line of lines) {
     ctx.fillText(line, x, y);
     y += lineHeight;
@@ -179,7 +206,7 @@ export function paintTemplate15QuestionCard(
     const layout = imageTemplate2Q5PromoLayout(
       frameWidth,
       frameHeight,
-      centerY + blockH / 2 + labelSize + labelGap
+      topY + blockH + labelSize + labelGap
     );
     ctx.drawImage(options.promo, layout.x, layout.y, layout.width, layout.height);
     ctx.font = `700 ${labelSize}px ${IMAGE_TEMPLATE15_QUESTION_FONT_STACK}`;

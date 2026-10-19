@@ -81,6 +81,7 @@ export async function exportCouplesNatureViaRecorder(options: {
   paintOverlay: CouplesNatureOverlayPainter;
   maxDurationSec: number;
   onProgress?: CouplesNatureExportProgress;
+  backgroundFilter?: string;
 }): Promise<Blob> {
   if (typeof MediaRecorder === 'undefined') {
     throw new Error('MediaRecorder is not supported');
@@ -113,7 +114,14 @@ export async function exportCouplesNatureViaRecorder(options: {
     const crop: CoverCrop = computeCoverCrop(video.videoWidth, video.videoHeight, width, height);
 
     const paintFrame = () => {
-      drawCouplesNatureBackground(ctx, video, crop, width, height);
+      drawCouplesNatureBackground(
+        ctx,
+        video,
+        crop,
+        width,
+        height,
+        options.backgroundFilter
+      );
       ctx.drawImage(overlayCanvas, 0, 0);
     };
 

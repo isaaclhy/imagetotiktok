@@ -45,11 +45,11 @@ import {
   IMAGE_TEMPLATE15_CARD_RADIUS_RATIO,
   IMAGE_TEMPLATE15_FRAME_BG,
   IMAGE_TEMPLATE15_QUESTION_FONT_STACK,
+  pickTemplate15FrameColor,
   IMAGE_TEMPLATE15_LINE_HEIGHT,
   IMAGE_TEMPLATE15_MARK,
   IMAGE_TEMPLATE15_MARK_SIZE_RATIO,
   IMAGE_TEMPLATE15_MARK_TOP_RATIO,
-  IMAGE_TEMPLATE15_MARK_TRACKING,
   IMAGE_TEMPLATE15_QUESTION_SIZE_RATIO,
   IMAGE_TEMPLATE15_QUESTION_TOP_RATIO,
   IMAGE_TEMPLATE15_TEXT,
@@ -207,6 +207,7 @@ function CopycatSlidePreview({
   text,
   leftAlign = false,
   template14Color,
+  template15FrameBg,
   illustrationSrc,
   isCtaSlide = false,
 }: {
@@ -215,6 +216,7 @@ function CopycatSlidePreview({
   text: string;
   leftAlign?: boolean;
   template14Color?: string;
+  template15FrameBg?: string;
   illustrationSrc?: string;
   isCtaSlide?: boolean;
 }) {
@@ -281,7 +283,9 @@ function CopycatSlidePreview({
     return (
       <div
         className="@container relative w-full max-w-sm mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-[9/16]"
-        style={{ backgroundColor: IMAGE_TEMPLATE15_FRAME_BG }}
+        style={{
+          backgroundColor: template15FrameBg ?? IMAGE_TEMPLATE15_FRAME_BG,
+        }}
       >
         <div
           className="absolute overflow-hidden"
@@ -309,14 +313,13 @@ function CopycatSlidePreview({
                 color: IMAGE_TEMPLATE15_TEXT,
                 fontFamily: IMAGE_TEMPLATE15_QUESTION_FONT_STACK,
                 fontSize: `${IMAGE_TEMPLATE15_MARK_SIZE_RATIO * 100}cqw`,
-                letterSpacing: IMAGE_TEMPLATE15_MARK_TRACKING,
-                fontWeight: 400,
+                fontWeight: 500,
               }}
             >
               {IMAGE_TEMPLATE15_MARK}
             </p>
             <p
-              className="absolute z-10 -translate-y-1/2 whitespace-pre-wrap wrap-break-word text-left"
+              className="absolute z-10 whitespace-pre-wrap wrap-break-word text-left"
               style={{
                 left: `${IMAGE_TEMPLATE15_TEXT_INSET_X * 100}%`,
                 width: `${(1 - IMAGE_TEMPLATE15_TEXT_INSET_X * 2) * 100}%`,
@@ -711,10 +714,16 @@ export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState(0);
   const [template14Color, setTemplate14Color] = useState(() => pickTemplate14Color());
+  const [template15FrameBg, setTemplate15FrameBg] = useState(() =>
+    pickTemplate15FrameColor()
+  );
   const [dogUrls, setDogUrls] = useState<string[]>([]);
   const [illustrations, setIllustrations] = useState<string[]>([]);
   const [template15CoverSrc, setTemplate15CoverSrc] = useState('');
   const [template15CoverError, setTemplate15CoverError] = useState<string | null>(null);
+  const [caption, setCaption] = useState('');
+  const [captionError, setCaptionError] = useState<string | null>(null);
+  const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const postBagRef = useRef<string[]>([]);
   const lastPostIdRef = useRef<string | null>(null);
@@ -752,6 +761,7 @@ export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
     setSelectedPostId(drawn.next);
     setSelectedTab(0);
     setTemplate14Color((current) => pickTemplate14Color(current));
+    setTemplate15FrameBg((current) => pickTemplate15FrameColor(current));
   }, [postIds]);
 
   // Fresh crypto draw whenever the template or competitor changes (and once on mount).
@@ -841,6 +851,39 @@ export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
     setIllustrations(pickNUniqueRandom(dogUrls, artCount));
   }, [templateId, selectedPostId, slideBodies.length, dogUrls]);
 
+  const handleGenerateCaption = useCallback(async () => {
+    if (slideBodies.length === 0) return;
+    setCaptionError(null);
+    setIsGeneratingCaption(true);
+    try {
+      const res = await fetch('/api/openai/copycat-caption', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cover: slideBodies[0] ?? '',
+          questions: slideBodies.slice(1),
+        }),
+      });
+      const data = (await res.json()) as { caption?: string; error?: string };
+      if (!res.ok || !data.caption?.trim()) {
+        throw new Error(data.error || 'Failed to generate caption');
+      }
+      setCaption(data.caption.trim());
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') return;
+      setCaptionError(e instanceof Error ? e.message : 'Failed to generate caption');
+    } finally {
+      setIsGeneratingCaption(false);
+    }
+  }, [slideBodies]);
+
+  useEffect(() => {
+    setCaption('');
+    setCaptionError(null);
+    if (!selectedPostId || slideBodies.length === 0) return;
+    void handleGenerateCaption();
+  }, [selectedPostId, handleGenerateCaption, slideBodies.length]);
+
   const handleDownload = useCallback(async () => {
     if (!selectedPost || slideBodies.length === 0 || isDownloading) return;
     setIsDownloading(true);
@@ -869,6 +912,7 @@ export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
         templateId,
         slides,
         template14Color,
+        template15FrameBg,
       });
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
@@ -894,6 +938,7 @@ export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
     template15CoverSrc,
     templateId,
     template14Color,
+    template15FrameBg,
   ]);
 
   if (!selectedPost) {
@@ -989,6 +1034,7 @@ export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
           selectedTab > 0 && questionSlides[selectedTab - 1]?.options?.length
         )}
         template14Color={template14Color}
+        template15FrameBg={template15FrameBg}
         illustrationSrc={
           templateId === 15
             ? selectedTab === 0
@@ -1000,6 +1046,47 @@ export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
         }
         isCtaSlide={isCtaSlide}
       />
+      <div className="rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-900">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Caption</p>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => void handleGenerateCaption()}
+              disabled={isGeneratingCaption || slideBodies.length === 0}
+              className="rounded-md border border-zinc-200 px-2 py-1 text-xs font-medium text-zinc-800 hover:border-zinc-400 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-zinc-500"
+            >
+              {isGeneratingCaption ? 'Generating…' : caption ? 'Regenerate' : 'Generate'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (!caption.trim()) return;
+                void navigator.clipboard.writeText(caption).catch(() => {});
+              }}
+              disabled={!caption.trim()}
+              className="rounded-md border border-zinc-200 px-2 py-1 text-xs font-medium text-zinc-800 hover:border-zinc-400 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-zinc-500"
+            >
+              Copy
+            </button>
+          </div>
+        </div>
+        <textarea
+          value={caption}
+          onChange={(e) => setCaption(e.target.value)}
+          placeholder="lazy gen z caption shows up here…"
+          rows={3}
+          className="w-full resize-y rounded-md border border-zinc-200 bg-zinc-50 px-2.5 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-zinc-500"
+        />
+        {captionError ? (
+          <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{captionError}</p>
+        ) : (
+          <p className="mt-1.5 text-[11px] text-zinc-400 dark:text-zinc-500">
+            Under 10 words, plus #couplesgoals #datenightideas #relationshipgoals
+            #coupleschallenge.
+          </p>
+        )}
+      </div>
     </div>
   );
 }

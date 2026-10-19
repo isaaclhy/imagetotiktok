@@ -267,6 +267,13 @@ import { sampleCouplesNatureHighlightBackground } from '@/app/lib/couples-nature
 import { exportCouplesNatureVideo, warmCouplesNatureExport, warmCouplesNatureVideoBlob } from '@/app/lib/couples-nature/export';
 import { fetchRandomCouplesNatureVideo } from '@/app/lib/couples-nature/fetch-video';
 import {
+  paintVideoTemplate4Overlay,
+  pickVideoTemplate4Label,
+  pickVideoTemplate4Question,
+  VIDEO_TEMPLATE4_PEXELS_QUERY,
+  VIDEO_TEMPLATE4_VIDEO_FILTER,
+} from '@/app/lib/video-template-4-ocean';
+import {
   pexelsVideoProxySrc,
   PEXELS_PREFER_HEIGHT,
 } from '@/app/lib/pexels-video-client';
@@ -1992,9 +1999,16 @@ export default function Home() {
   /** TikTok-style overlay on video templates (white fill, black stroke). */
   const [videoOverlayCaption, setVideoOverlayCaption] = useState('Your text here');
   const [videoTemplate2Questions, setVideoTemplate2Questions] = useState<string[]>([]);
+  const [videoTemplate4Label, setVideoTemplate4Label] = useState(() => pickVideoTemplate4Label());
+  const [videoTemplate4Question, setVideoTemplate4Question] = useState(() =>
+    pickVideoTemplate4Question()
+  );
   const [videoTemplate2QuestionType, setVideoTemplate2QuestionType] =
     useState<AutomateQuestionType>('random');
   const [videoTemplate2Description, setVideoTemplate2Description] = useState('');
+  const [videoTemplate2DescriptionError, setVideoTemplate2DescriptionError] = useState<
+    string | null
+  >(null);
   const [isGeneratingVideoTemplate2Description, setIsGeneratingVideoTemplate2Description] =
     useState(false);
   const [videoTemplate2HighlightWord, setVideoTemplate2HighlightWord] = useState<string | null>(
@@ -2213,12 +2227,14 @@ export default function Home() {
     imageTemplateQuestionCount + (hasImageTemplateCtaTab ? 2 : 1);
   const isCouplesNatureVideoTemplate = selectedAppId === 'spill-it' && selectedVideoTemplateId === 2;
   const isSpillItNotesVideoTemplate = selectedAppId === 'spill-it' && selectedVideoTemplateId === 3;
+  const isOceanSunsetVideoTemplate = selectedAppId === 'spill-it' && selectedVideoTemplateId === 4;
   const isFabAffirmationVideoTemplate = selectedAppId === 'fab' && selectedVideoTemplateId === 1;
   const isNightyParticleVideoTemplate = selectedAppId === 'nighty' && selectedVideoTemplateId === 1;
   const isNightyRainVideoTemplate = selectedAppId === 'nighty' && selectedVideoTemplateId === 2;
   const usesPexelsVideoBackground =
     isCouplesNatureVideoTemplate ||
     isSpillItNotesVideoTemplate ||
+    isOceanSunsetVideoTemplate ||
     isNightyParticleVideoTemplate ||
     isNightyRainVideoTemplate;
 
@@ -2303,8 +2319,11 @@ export default function Home() {
   };
 
   const regenerateVideoTemplate2Content = () => {
-    regenerateVideoTemplate2Title();
-    setVideoTemplate2Questions(pickQuestionsForType(videoTemplate2QuestionType, 7));
+    const title = pickTitleForType(videoTemplate2QuestionType);
+    const questions = pickQuestionsForType(videoTemplate2QuestionType, 7);
+    setVideoOverlayCaption(title);
+    setVideoTemplate2Questions(questions);
+    return { cover: title, questions };
   };
 
   const regenerateFabNotesTitle = () => {
@@ -2312,16 +2331,28 @@ export default function Home() {
   };
 
   const regenerateFabNotesContent = () => {
-    regenerateFabNotesTitle();
-    setVideoTemplate2Questions(pickQuestionsForType(videoTemplate2QuestionType, 5));
+    const title = pickTitleForType(videoTemplate2QuestionType);
+    const questions = pickQuestionsForType(videoTemplate2QuestionType, 5);
+    setVideoOverlayCaption(title);
+    setVideoTemplate2Questions(questions);
+    return { cover: title, questions };
+  };
+
+  const regenerateVideoTemplate4Content = () => {
+    const label = pickVideoTemplate4Label(videoTemplate4Label);
+    const question = pickVideoTemplate4Question(videoTemplate4Question);
+    setVideoTemplate4Label(label);
+    setVideoTemplate4Question(question);
+    return { cover: label, questions: [question] };
   };
 
   const applyVideoTemplate2QuestionType = (type: AutomateQuestionType) => {
     setVideoTemplate2QuestionType(type);
-    setVideoOverlayCaption((current) => pickTitleForType(type, current));
-    setVideoTemplate2Questions(
-      pickQuestionsForType(type, isSpillItNotesVideoTemplate ? 5 : 7)
-    );
+    const title = pickTitleForType(type);
+    const questions = pickQuestionsForType(type, isSpillItNotesVideoTemplate ? 5 : 7);
+    setVideoOverlayCaption(title);
+    setVideoTemplate2Questions(questions);
+    void handleGenerateVideoTemplate2Description({ cover: title, questions });
   };
 
   const VIDEO_TEMPLATE2_TYPE_CYCLE: AutomateQuestionType[] = [
@@ -2447,42 +2478,79 @@ export default function Home() {
     }
   };
 
-  const handleGenerateVideoTemplate2Description = async () => {
-    const questions = videoTemplate2Questions.map((q) => q.trim()).filter(Boolean);
-    if (questions.length === 0) {
-      setVideoExportError('Add some questions first, then generate a description.');
+  const getVideoTemplateCaptionSource = () => {
+    if (isOceanSunsetVideoTemplate) {
+      return {
+        cover: videoTemplate4Label.trim(),
+        questions: [videoTemplate4Question.trim()].filter(Boolean),
+      };
+    }
+    if (isCouplesNatureVideoTemplate || isSpillItNotesVideoTemplate) {
+      return {
+        cover: videoOverlayCaption.trim(),
+        questions: videoTemplate2Questions.map((q) => q.trim()).filter(Boolean),
+      };
+    }
+    if (isNightyParticleVideoTemplate) {
+      const lines = [
+        nightyParticleLines.line1,
+        nightyParticleLines.line2,
+        nightyParticleLines.line3,
+        nightyParticleLines.line4,
+        nightyParticleLines.line5,
+        nightyParticleLines.line6,
+        nightyParticleLines.line7,
+        nightyParticleLines.line8,
+        nightyParticleLines.line9,
+      ]
+        .map((line) => line.trim())
+        .filter(Boolean);
+      return { cover: lines[0] ?? '', questions: lines.slice(1) };
+    }
+    if (isNightyRainVideoTemplate) {
+      return {
+        cover: (videoOverlayCaption.trim() || NIGHTY_RAIN_CAPTION).trim(),
+        questions: [(nightyRainSubline.trim() || NIGHTY_RAIN_CAPTION_SUBLINE).trim()].filter(
+          Boolean
+        ),
+      };
+    }
+    if (isFabAffirmationVideoTemplate) {
+      const lines = fabMontageAffirmations.map((line) => line.trim()).filter(Boolean);
+      return { cover: lines[0] ?? '', questions: lines.slice(1) };
+    }
+    return {
+      cover: videoOverlayCaption.trim(),
+      questions: [] as string[],
+    };
+  };
+
+  const handleGenerateVideoTemplate2Description = async (source?: {
+    cover: string;
+    questions: string[];
+  }) => {
+    const { cover, questions } = source ?? getVideoTemplateCaptionSource();
+    if (!cover && questions.length === 0) {
+      setVideoTemplate2DescriptionError('Add some text first, then generate a caption.');
       return;
     }
-    setVideoExportError(null);
+    setVideoTemplate2DescriptionError(null);
     setIsGeneratingVideoTemplate2Description(true);
     try {
-      const type = resolveQuestionType(videoTemplate2QuestionType);
-      const res = await fetch('/api/openai/daily-title', {
+      const res = await fetch('/api/openai/copycat-caption', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          questions: questions.join('\n'),
-          type,
-        }),
+        body: JSON.stringify({ cover, questions }),
       });
-      const data = (await res.json()) as {
-        description?: string;
-        text?: string;
-        error?: string;
-      };
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to generate description');
+      const data = (await res.json()) as { caption?: string; error?: string };
+      if (!res.ok || !data.caption?.trim()) {
+        throw new Error(data.error || 'Failed to generate caption');
       }
-      const description =
-        (typeof data.description === 'string' && data.description.trim()) ||
-        (typeof data.text === 'string' && data.text.trim()) ||
-        '';
-      if (!description) {
-        throw new Error('No description returned');
-      }
-      setVideoTemplate2Description(description);
+      setVideoTemplate2Description(data.caption.trim());
     } catch (e) {
-      setVideoExportError(e instanceof Error ? e.message : 'Failed to generate description');
+      setVideoTemplate2DescriptionError(
+        e instanceof Error ? e.message : 'Failed to generate caption'
+      );
     } finally {
       setIsGeneratingVideoTemplate2Description(false);
     }
@@ -2516,7 +2584,9 @@ export default function Home() {
               ? NIGHTY_PARTICLE_PEXELS_QUERIES
               : isSpillItNotesVideoTemplate
                 ? FAB_NOTES_PEXELS_QUERIES
-                : VIDEO_TEMPLATE2_PEXELS_QUERIES;
+                : isOceanSunsetVideoTemplate
+                  ? [VIDEO_TEMPLATE4_PEXELS_QUERY]
+                  : VIDEO_TEMPLATE2_PEXELS_QUERIES;
             return queryPool[Math.floor(Math.random() * queryPool.length)]!;
           })();
       const page = 1 + Math.floor(Math.random() * 15);
@@ -2604,16 +2674,19 @@ export default function Home() {
     const texts = pickFabMontageAffirmations();
     setFabMontageAffirmations(texts);
     void refreshFabMontageTts(texts);
+    return { cover: texts[0] ?? '', questions: texts.slice(1) };
   };
 
   useEffect(() => {
     if (isCouplesNatureVideoTemplate) {
       warmCouplesNatureExport();
-      regenerateVideoTemplate2Content();
+      const source = regenerateVideoTemplate2Content();
       void handleRegenerateVideoTemplate2Video();
+      void handleGenerateVideoTemplate2Description(source);
     } else if (isSpillItNotesVideoTemplate) {
-      regenerateFabNotesContent();
+      const source = regenerateFabNotesContent();
       void handleRegenerateVideoTemplate2Video();
+      void handleGenerateVideoTemplate2Description(source);
     } else if (isNightyParticleVideoTemplate) {
       setNightyParticleAccentColor((prev) => pickNightyParticleAccentColor(prev));
       setNightyParticleLines((prev) => {
@@ -2631,13 +2704,39 @@ export default function Home() {
       });
       setVideoOverlayCaption(nightyParticleLines.line1);
       void handleRegenerateVideoTemplate2Video();
+      const lines = [
+        nightyParticleLines.line1,
+        nightyParticleLines.line2,
+        nightyParticleLines.line3,
+        nightyParticleLines.line4,
+        nightyParticleLines.line5,
+        nightyParticleLines.line6,
+        nightyParticleLines.line7,
+        nightyParticleLines.line8,
+        nightyParticleLines.line9,
+      ]
+        .map((line) => line.trim())
+        .filter(Boolean);
+      void handleGenerateVideoTemplate2Description({
+        cover: lines[0] ?? '',
+        questions: lines.slice(1),
+      });
     } else if (isNightyRainVideoTemplate) {
       setVideoOverlayCaption(NIGHTY_RAIN_CAPTION);
       setNightyRainSubline(NIGHTY_RAIN_CAPTION_SUBLINE);
       void handleRegenerateVideoTemplate2Video();
+      void handleGenerateVideoTemplate2Description({
+        cover: NIGHTY_RAIN_CAPTION,
+        questions: [NIGHTY_RAIN_CAPTION_SUBLINE],
+      });
+    } else if (isOceanSunsetVideoTemplate) {
+      const source = regenerateVideoTemplate4Content();
+      void handleRegenerateVideoTemplate2Video();
+      void handleGenerateVideoTemplate2Description(source);
     } else if (isFabAffirmationVideoTemplate) {
-      regenerateFabMontageContent();
+      const source = regenerateFabMontageContent();
       void fetchFabMontageVideos(false);
+      void handleGenerateVideoTemplate2Description(source);
     } else {
       setVideoTemplate2PexelsVideoSrc(null);
       setVideoTemplate2PexelsPosterSrc(null);
@@ -2648,6 +2747,7 @@ export default function Home() {
     isSpillItNotesVideoTemplate,
     isNightyParticleVideoTemplate,
     isNightyRainVideoTemplate,
+    isOceanSunsetVideoTemplate,
     isFabAffirmationVideoTemplate,
     selectedVideoTemplateId,
   ]);
@@ -4533,31 +4633,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     imageTabTexts[0],
   ]);
 
-  // Couples Nature video title — same highlight-word API as Image Template 2 cover.
   useEffect(() => {
-    if (!isCouplesNatureVideoTemplate) {
-      setVideoTemplate2HighlightWord(null);
-      return;
-    }
-    const title = videoOverlayCaption.trim();
-    if (!title) {
-      setVideoTemplate2HighlightWord(null);
-      return;
-    }
-
     setVideoTemplate2HighlightWord(null);
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => {
-      void fetchTitleHighlightWord(title, controller.signal).then((word) => {
-        if (word) setVideoTemplate2HighlightWord(word);
-      });
-    }, 350);
-
-    return () => {
-      controller.abort();
-      window.clearTimeout(timer);
-    };
-  }, [isCouplesNatureVideoTemplate, videoOverlayCaption]);
+  }, [isCouplesNatureVideoTemplate]);
 
   const imageFrameTextForActiveTab = getImageFrameTextForTab(selectedImageBrowserTab);
   const imageTemplate2TitleHighlightParts =
@@ -4605,9 +4683,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
   const videoTemplate2HighlightColor = squiggleColorForBackground(
     videoTemplate2HighlightBg ?? VIDEO_TEMPLATE2_HIGHLIGHT_BACKGROUND
   );
-  const videoTemplate2TitleHighlightParts = isCouplesNatureVideoTemplate
-    ? splitTitleAroundHighlight(videoOverlayCaption.trim(), videoTemplate2HighlightWord)
-    : null;
+  const videoTemplate2TitleHighlightParts = null;
   const activeVideoTemplate =
     contentTab === 'video' && selectedVideoTemplateId !== null
       ? videoTemplateCards.find((c) => c.id === selectedVideoTemplateId)
@@ -4652,7 +4728,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
   }, [isCouplesNatureVideoTemplate, template2ExportVideoSrc, template2PlaybackVideoSrc]);
 
   const couplesNatureExportExtras = {
-    highlightWord: videoTemplate2HighlightWord,
+    highlightWord: null,
     highlightBackground: videoTemplate2HighlightBg,
   };
 
@@ -6005,6 +6081,26 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         return { blob: recorded, extension: 'webm' };
       }
     };
+
+    if (isOceanSunsetVideoTemplate) {
+      const videoSrc = requireVideoSrc();
+      try {
+        await document.fonts.load('800 48px "TikTok Sans"');
+      } catch {
+        /* font may already be ready */
+      }
+      const blob = await exportCouplesNatureVideo({
+        videoSrc,
+        maxDurationSec: VIDEO_TEMPLATE2_MAX_DURATION_SEC,
+        backgroundFilter: VIDEO_TEMPLATE4_VIDEO_FILTER,
+        paintOverlay: (ctx, w, h) =>
+          paintVideoTemplate4Overlay(ctx, w, h, {
+            label: videoTemplate4Label,
+            question: videoTemplate4Question,
+          }),
+      });
+      return { blob, extension: 'mp4', baseName: `ocean-sunset-${today}` };
+    }
 
     if (isSpillItNotesVideoTemplate) {
       const videoSrc = requireVideoSrc();
@@ -8318,6 +8414,59 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 </li>
                               ))}
                             </ol>
+                            <div>
+                              <div className="mb-2 flex items-center justify-between gap-2">
+                                <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                                  Description
+                                </label>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => void handleGenerateVideoTemplate2Description()}
+                                    disabled={
+                                      isGeneratingVideoTemplate2Description ||
+                                      fabMontageAffirmations.every((line) => !line.trim())
+                                    }
+                                    className="text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {isGeneratingVideoTemplate2Description
+                                      ? 'Generating…'
+                                      : videoTemplate2Description
+                                        ? 'Regenerate'
+                                        : 'Generate'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const text = videoTemplate2Description.trim();
+                                      if (!text) return;
+                                      void navigator.clipboard.writeText(text).catch(() => {});
+                                    }}
+                                    disabled={!videoTemplate2Description.trim()}
+                                    className="text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    Copy
+                                  </button>
+                                </div>
+                              </div>
+                              <textarea
+                                value={videoTemplate2Description}
+                                onChange={(e) => setVideoTemplate2Description(e.target.value)}
+                                placeholder="lazy gen z caption shows up here…"
+                                rows={3}
+                                className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-zinc-400 resize-y min-h-[4.5rem]"
+                              />
+                              {videoTemplate2DescriptionError ? (
+                                <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                                  {videoTemplate2DescriptionError}
+                                </p>
+                              ) : (
+                                <p className="mt-1.5 text-[11px] text-zinc-400 dark:text-zinc-500">
+                                  Under 10 words, plus #couplesgoals #datenightideas
+                                  #relationshipgoals #coupleschallenge.
+                                </p>
+                              )}
+                            </div>
                           </div>
                         </div>
                       ) : activeVideoTemplate?.videoSrc ||
@@ -8377,7 +8526,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               style={
                                 isCouplesNatureVideoTemplate
                                   ? { filter: COUPLES_NATURE_VIDEO_FILTER }
-                                  : undefined
+                                  : isOceanSunsetVideoTemplate
+                                    ? { filter: VIDEO_TEMPLATE4_VIDEO_FILTER }
+                                    : undefined
                               }
                               poster={template2PlaybackPosterSrc || undefined}
                             />
@@ -8473,6 +8624,58 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 >
                                   {nightyRainSubline.trim() || NIGHTY_RAIN_CAPTION_SUBLINE}
                                 </p>
+                              </div>
+                            ) : isOceanSunsetVideoTemplate ? (
+                              <div className="absolute inset-0 z-10 pointer-events-none">
+                                <div
+                                  className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,150,70,0.28)_0%,rgba(255,90,50,0.12)_42%,rgba(90,20,50,0.28)_100%)]"
+                                  aria-hidden
+                                />
+                                <div
+                                  className="absolute inset-x-0 top-[18%] h-[38%] bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.55)_0%,rgba(0,0,0,0)_72%)]"
+                                  aria-hidden
+                                />
+                                <div
+                                  className="absolute inset-x-0 bottom-[14%] h-[22%] bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.4)_0%,rgba(0,0,0,0)_70%)]"
+                                  aria-hidden
+                                />
+                                <div className="absolute inset-x-[11%] top-[38%] z-10 flex -translate-y-1/2 flex-col items-center text-center text-white">
+                                  <p
+                                    className="w-full text-base leading-[1.2] sm:text-lg md:text-xl"
+                                    style={{
+                                      fontFamily: TIKTOK_SANS_STACK,
+                                      fontWeight: 800,
+                                      textShadow:
+                                        '0 1px 2px rgba(0,0,0,0.85), 0 4px 18px rgba(0,0,0,0.7)',
+                                    }}
+                                  >
+                                    {videoTemplate4Label}
+                                  </p>
+                                  <p
+                                    className="mt-2 w-full text-sm leading-[1.25] sm:text-[15px] md:text-base"
+                                    style={{
+                                      fontFamily: TIKTOK_SANS_STACK,
+                                      fontWeight: 800,
+                                      textShadow:
+                                        '0 1px 2px rgba(0,0,0,0.85), 0 4px 18px rgba(0,0,0,0.7)',
+                                    }}
+                                  >
+                                    {videoTemplate4Question}
+                                  </p>
+                                </div>
+                                <div
+                                  className="absolute inset-x-[8%] bottom-[22%] z-10 flex flex-col items-center text-center text-white/95"
+                                  style={{
+                                    fontFamily: TIKTOK_SANS_STACK,
+                                    textShadow:
+                                      '0 1px 2px rgba(0,0,0,0.8), 0 3px 14px rgba(0,0,0,0.65)',
+                                  }}
+                                >
+                                  <span className="mb-1 text-sm leading-none tracking-[0.12em] sm:text-base">
+                                    ♥ ♥ ♥
+                                  </span>
+                                  <span className="text-xs font-bold sm:text-sm">Spill It</span>
+                                </div>
                               </div>
                             ) : (videoOverlayCaption.trim() ||
                               (isCouplesNatureVideoTemplate && videoTemplate2Questions.length > 0)) ? (
@@ -8648,7 +8851,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 <label className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
                                   {isCouplesNatureVideoTemplate || isSpillItNotesVideoTemplate
                                     ? 'Title text'
-                                    : 'Frame text'}
+                                    : isOceanSunsetVideoTemplate
+                                      ? 'Question'
+                                      : 'Frame text'}
                                 </label>
                                 <div className="flex flex-wrap items-center gap-2">
                                   {isCouplesNatureVideoTemplate || isSpillItNotesVideoTemplate ? (
@@ -8676,6 +8881,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                         regenerateVideoTemplate2Title();
                                         return;
                                       }
+                                      if (isOceanSunsetVideoTemplate) {
+                                        regenerateVideoTemplate4Content();
+                                        void handleRegenerateVideoTemplate2Video();
+                                        return;
+                                      }
                                       if (isSpillItNotesVideoTemplate) {
                                         regenerateFabNotesTitle();
                                         return;
@@ -8690,12 +8900,28 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                     }}
                                     className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                                   >
-                                    {isCouplesNatureVideoTemplate || isSpillItNotesVideoTemplate
+                                    {isCouplesNatureVideoTemplate ||
+                                    isSpillItNotesVideoTemplate ||
+                                    isOceanSunsetVideoTemplate
                                       ? 'Retry'
                                       : 'Random question'}
                                   </button>
                                 </div>
                               </div>
+                              {isOceanSunsetVideoTemplate ? (
+                                <div className="space-y-2">
+                                  <p className="text-sm text-zinc-800 dark:text-zinc-200">
+                                    {videoTemplate4Label}
+                                  </p>
+                                  <input
+                                    type="text"
+                                    value={videoTemplate4Question}
+                                    onChange={(e) => setVideoTemplate4Question(e.target.value)}
+                                    placeholder="Question…"
+                                    className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-zinc-400"
+                                  />
+                                </div>
+                              ) : (
                               <input
                                 type="text"
                                 value={videoOverlayCaption}
@@ -8703,6 +8929,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 placeholder="Type your on-video text…"
                                 className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-zinc-400"
                               />
+                              )}
                             </div>
                             {isCouplesNatureVideoTemplate || isSpillItNotesVideoTemplate ? (
                               <div>
@@ -8748,51 +8975,62 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 </div>
                               </div>
                             ) : null}
-                            {isCouplesNatureVideoTemplate || isSpillItNotesVideoTemplate ? (
-                              <div>
-                                <div className="mb-2 flex items-center justify-between gap-2">
-                                  <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-300">
-                                    Description
-                                  </label>
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      type="button"
-                                      onClick={() => void handleGenerateVideoTemplate2Description()}
-                                      disabled={
-                                        isGeneratingVideoTemplate2Description ||
-                                        videoTemplate2Questions.every((q) => !q.trim())
-                                      }
-                                      className="text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                      {isGeneratingVideoTemplate2Description
-                                        ? 'Generating…'
-                                        : 'Generate description'}
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const text = videoTemplate2Description.trim();
-                                        if (!text) return;
-                                        void navigator.clipboard.writeText(text).catch(() => {});
-                                      }}
-                                      disabled={!videoTemplate2Description.trim()}
-                                      className="text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                      Copy
-                                    </button>
-                                  </div>
-                                </div>
-                                <textarea
-                                  value={videoTemplate2Description}
-                                  onChange={(e) => setVideoTemplate2Description(e.target.value)}
-                                  placeholder="TikTok caption / description will appear here…"
-                                  rows={5}
-                                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-zinc-400 resize-y min-h-[6rem]"
-                                />
-                              </div>
-                            ) : null}
                               </>
                             )}
+                            <div>
+                              <div className="mb-2 flex items-center justify-between gap-2">
+                                <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                                  Description
+                                </label>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => void handleGenerateVideoTemplate2Description()}
+                                    disabled={
+                                      isGeneratingVideoTemplate2Description ||
+                                      (!getVideoTemplateCaptionSource().cover &&
+                                        getVideoTemplateCaptionSource().questions.length === 0)
+                                    }
+                                    className="text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {isGeneratingVideoTemplate2Description
+                                      ? 'Generating…'
+                                      : videoTemplate2Description
+                                        ? 'Regenerate'
+                                        : 'Generate'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const text = videoTemplate2Description.trim();
+                                      if (!text) return;
+                                      void navigator.clipboard.writeText(text).catch(() => {});
+                                    }}
+                                    disabled={!videoTemplate2Description.trim()}
+                                    className="text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    Copy
+                                  </button>
+                                </div>
+                              </div>
+                              <textarea
+                                value={videoTemplate2Description}
+                                onChange={(e) => setVideoTemplate2Description(e.target.value)}
+                                placeholder="lazy gen z caption shows up here…"
+                                rows={3}
+                                className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-zinc-400 resize-y min-h-[4.5rem]"
+                              />
+                              {videoTemplate2DescriptionError ? (
+                                <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                                  {videoTemplate2DescriptionError}
+                                </p>
+                              ) : (
+                                <p className="mt-1.5 text-[11px] text-zinc-400 dark:text-zinc-500">
+                                  Under 10 words, plus #couplesgoals #datenightideas
+                                  #relationshipgoals #coupleschallenge.
+                                </p>
+                              )}
+                            </div>
                           </div>
                         </div>
                       ) : activeVideoTemplate?.coverSrc ? (

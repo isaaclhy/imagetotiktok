@@ -34,10 +34,11 @@ export function drawCouplesNatureBackground(
   video: HTMLVideoElement,
   crop: CoverCrop,
   destWidth: number,
-  destHeight: number
+  destHeight: number,
+  filter = COUPLES_NATURE_VIDEO_FILTER
 ): void {
   if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || video.videoWidth <= 0) return;
-  ctx.filter = COUPLES_NATURE_VIDEO_FILTER;
+  ctx.filter = filter;
   ctx.drawImage(video, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, destWidth, destHeight);
   ctx.filter = 'none';
 }
