@@ -786,6 +786,7 @@ export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
       .then((res) => res.json())
       .then((data: { urls?: string[] }) => {
         if (!cancelled) setDogUrls(Array.isArray(data.urls) ? data.urls : []);
+        console.log('dog urls', data.urls);
       })
       .catch(() => {
         if (!cancelled) setDogUrls([]);
