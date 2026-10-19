@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter, Libre_Baskerville, Nunito, Open_Sans } from "next/font/google";
+import { Geist } from "next/font/google";
+import { Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
+import { Libre_Baskerville } from "next/font/google";
+import { Nunito } from "next/font/google";
+import { Open_Sans } from "next/font/google";
 import "./globals.css";
 
 const openSans = Open_Sans({
