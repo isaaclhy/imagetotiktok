@@ -152,6 +152,8 @@ import {
   IMAGE_TEMPLATE14_CARD_INSET_X,
   IMAGE_TEMPLATE14_CARD_INSET_Y,
   IMAGE_TEMPLATE14_CARD_RADIUS_RATIO,
+  IMAGE_TEMPLATE14_EDGE_BLUR_RATIO,
+  IMAGE_TEMPLATE14_EDGE_SCALE,
   IMAGE_TEMPLATE14_COVER_SIZE_RATIO,
   IMAGE_TEMPLATE14_FONT_STACK,
   IMAGE_TEMPLATE14_FRAME_BG,
@@ -160,7 +162,9 @@ import {
   IMAGE_TEMPLATE14_MARK,
   IMAGE_TEMPLATE14_MARK_SIZE_RATIO,
   IMAGE_TEMPLATE14_MARK_Y_RATIO,
-  IMAGE_TEMPLATE14_QUESTION_SIZE_RATIO,
+  IMAGE_TEMPLATE14_CTA_TEXT_CENTER_RATIO,
+  IMAGE_TEMPLATE14_CTA_TEXT_MAX_HEIGHT_RATIO,
+  template14QuestionSizeRatio,
   nextTemplate14Color,
   paintTemplate14Slide,
   template14TextForBackground,
@@ -245,6 +249,7 @@ import { exportFabAffirmationMontage } from '@/app/lib/export-fab-affirmation-mo
 import { Sidebar } from '@/app/components/Sidebar';
 import { CharacterStudio } from '@/app/components/CharacterStudio';
 import { CopycatPanel } from '@/app/components/CopycatPanel';
+import { LogoGeneratorPanel } from '@/app/components/LogoGeneratorPanel';
 import { FabNotesOverlay } from '@/app/components/FabNotesOverlay';
 import { FabMontagePreview } from '@/app/components/FabMontagePreview';
 import { NightyParticleOverlay } from '@/app/components/NightyParticleOverlay';
@@ -268,7 +273,7 @@ import {
 import { transcodeWebmToMp4 } from '@/app/lib/webm-to-mp4';
 import { INSTAGRAM_CAROUSEL_MAX } from '@/app/lib/instagram';
 
-type ContentTab = 'image' | 'video' | 'character' | 'copycat' | 'prompt' | 'automate';
+type ContentTab = 'image' | 'video' | 'character' | 'copycat' | 'logo' | 'prompt' | 'automate';
 
 type AppUrlState = {
   contentTab: ContentTab;
@@ -279,16 +284,25 @@ type AppUrlState = {
   selectedImageBrowserTab: number;
 };
 
-const CONTENT_TABS: ContentTab[] = ['image', 'video', 'character', 'copycat', 'prompt', 'automate'];
+const CONTENT_TABS: ContentTab[] = [
+  'image',
+  'video',
+  'character',
+  'copycat',
+  'logo',
+  'prompt',
+  'automate',
+];
 
 const COPYCAT_COMPETITORS = [
   { id: 'flamingo-cards', label: 'Flamingo cards' },
+  { id: '21-questions', label: '21 Questions' },
 ] as const;
 
 type CopycatCompetitorId = (typeof COPYCAT_COMPETITORS)[number]['id'];
 
 /** Spill It image templates available inside Copycat. */
-const COPYCAT_TEMPLATE_IDS = [1, 2, 6, 13, 14] as const;
+const COPYCAT_TEMPLATE_IDS = [1, 2, 6, 13, 14, 15] as const;
 type CopycatTemplateId = (typeof COPYCAT_TEMPLATE_IDS)[number];
 
 function isKawaiiStyleTemplateId(templateId: number | null | undefined): boolean {
@@ -2147,7 +2161,9 @@ export default function Home() {
   const firstCardTextValue = canvases.find((c) => c.id === '1')?.text || '';
   const prevFirstCardTextRef = useRef(firstCardTextValue);
 
-  const imageTemplateCards = getImageTemplatesForApp(selectedAppId);
+  const imageTemplateCards = getImageTemplatesForApp(selectedAppId).filter(
+    (card) => card.id !== 15
+  );
   const videoTemplateCards = getVideoTemplatesForApp(selectedAppId);
   const characterCards = getCharactersForApp(selectedAppId);
   const selectedCharacter = getCharacterById(selectedAppId, selectedCharacterId);
@@ -6346,6 +6362,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                 isAutomateNanaMode={contentTab === 'prompt'}
               />
             )}
+            {contentTab === 'logo' && <LogoGeneratorPanel />}
             {contentTab === 'copycat' && (
               <div className="lg:col-span-2 h-auto lg:h-full min-h-0 min-w-0 max-w-full overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6">
                 <div className="mb-4 flex flex-col gap-4 sm:mb-6">
@@ -6841,6 +6858,21 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                           }}
                         >
                           {isColorCardImageTemplate ? (
+                            <>
+                            <div
+                              className="pointer-events-none absolute"
+                              style={{
+                                left: `${IMAGE_TEMPLATE14_CARD_INSET_X * 100}%`,
+                                top: `${IMAGE_TEMPLATE14_CARD_INSET_Y * 100}%`,
+                                width: `${(1 - IMAGE_TEMPLATE14_CARD_INSET_X * 2) * 100}%`,
+                                height: `${(1 - IMAGE_TEMPLATE14_CARD_INSET_Y * 2) * 100}%`,
+                                borderRadius: `${IMAGE_TEMPLATE14_CARD_RADIUS_RATIO * 100}cqw`,
+                                backgroundColor: activeImageFrameBg,
+                                transform: `scale(${IMAGE_TEMPLATE14_EDGE_SCALE})`,
+                                filter: `blur(${IMAGE_TEMPLATE14_EDGE_BLUR_RATIO * 100}cqw)`,
+                              }}
+                              aria-hidden
+                            />
                             <div
                               className="absolute overflow-hidden"
                               style={{
@@ -6866,7 +6898,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 style={{
                                   top: `${
                                     (selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX
-                                      ? IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO
+                                      ? IMAGE_TEMPLATE14_CTA_TEXT_CENTER_RATIO
                                       : 0.5) * 100
                                   }%`,
                                   color: template14TextForBackground(activeImageFrameBg),
@@ -6874,38 +6906,26 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   fontSize: `${
                                     (selectedImageBrowserTab === 0
                                       ? IMAGE_TEMPLATE14_COVER_SIZE_RATIO
-                                      : IMAGE_TEMPLATE14_QUESTION_SIZE_RATIO) * 100
+                                      : template14QuestionSizeRatio(
+                                          imageFrameTextForActiveTab,
+                                          selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX
+                                        )) * 100
                                   }cqw`,
                                   fontWeight: 400,
                                   lineHeight: IMAGE_TEMPLATE14_LINE_HEIGHT,
+                                  maxHeight:
+                                    selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX
+                                      ? `${IMAGE_TEMPLATE14_CTA_TEXT_MAX_HEIGHT_RATIO * 100}%`
+                                      : undefined,
+                                  overflow:
+                                    selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX
+                                      ? 'hidden'
+                                      : undefined,
                                 }}
                               >
                                 {imageFrameTextForActiveTab}
                               </p>
-                              {selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX ? (
-                                <>
-                                  <p
-                                    className="absolute inset-x-[6%] z-10 text-center font-bold text-white/95"
-                                    style={{
-                                      fontFamily: pastelCarouselFontFamily,
-                                      fontSize: `${IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO * (4 / 3) * 100}cqw`,
-                                      bottom: `${(IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO + IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO) * 100}%`,
-                                    }}
-                                  >
-                                    {IMAGE_TEMPLATE2_Q5_PROMO_LABEL}
-                                  </p>
-                                  <img
-                                    src={IMAGE_TEMPLATE2_Q5_PROMO_SRC}
-                                    alt="Spill It on the App Store"
-                                    className="absolute left-1/2 z-10 -translate-x-1/2"
-                                    style={{
-                                      width: `${IMAGE_TEMPLATE2_Q5_PROMO_WIDTH_RATIO * 100}%`,
-                                      maxWidth: 'none',
-                                      top: `${(1 - IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO) * 100}%`,
-                                    }}
-                                  />
-                                </>
-                              ) : (
+                              {selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX ? null : (
                                 <p
                                   className="absolute inset-x-[8%] z-10 text-center"
                                   style={{
@@ -6919,6 +6939,31 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 </p>
                               )}
                             </div>
+                            {selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX ? (
+                              <>
+                                <p
+                                  className="absolute inset-x-[6%] z-20 text-center font-bold text-white"
+                                  style={{
+                                    fontFamily: pastelCarouselFontFamily,
+                                    fontSize: `${IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO * (4 / 3) * 100}cqw`,
+                                    bottom: `${(IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO + IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO) * 100}%`,
+                                  }}
+                                >
+                                  {IMAGE_TEMPLATE2_Q5_PROMO_LABEL}
+                                </p>
+                                <img
+                                  src={IMAGE_TEMPLATE2_Q5_PROMO_SRC}
+                                  alt="Spill It on the App Store"
+                                  className="absolute left-1/2 z-20 -translate-x-1/2"
+                                  style={{
+                                    width: `${IMAGE_TEMPLATE2_Q5_PROMO_WIDTH_RATIO * 100}%`,
+                                    maxWidth: 'none',
+                                    top: `${(1 - IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO) * 100}%`,
+                                  }}
+                                />
+                              </>
+                            ) : null}
+                            </>
                           ) : isMaroonLockscreenImageTemplate ? (
                             selectedImageBrowserTab === 0 && (imageTabSources[0] ?? '').trim() ? (
                               <>

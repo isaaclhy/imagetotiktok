@@ -274,14 +274,23 @@ export function collapseCopycatInlineBreaks(text: string): string {
 }
 
 /**
- * Drop carousel UI chrome OCR'd into titles/options ("swipe →", "swipe to start →").
- * Does not remove intentional option content — only swipe+arrow patterns.
+ * Drop carousel UI chrome OCR'd into titles/options
+ * ("swipe →", "swipe to start →", app promo footer glued onto last option).
  */
 export function stripCopycatSwipeChrome(text: string): string {
   return text
     .replace(/\s*swipe\s+to\s+start\s*→?/gi, '')
-    .replace(/\s*swipe\s*→/gi, '')
-    .replace(/\s*[→➜➡›»]+\s*$/g, '')
+    .replace(/\s*swipe\s*[→➜➡›»>]\s*/gi, ' ')
+    .replace(/\s*swipe\s*$/gi, '')
+    .replace(/\s*Q\s*search\s+for\s+[\s\S]*$/i, '')
+    .replace(/\s*search\s+for\s+more\s+questions[\s\S]*$/i, '')
+    .replace(/\s*(?:•ll|all)?\s*<\s*Search\s+today[\s\S]*$/i, '')
+    .replace(/\s*deep\s+questions\.?\s*couple\s+convos\.?[\s\S]*$/i, '')
+    // App Store status-bar + 21Q listing OCR glued onto last carousel slides.
+    .replace(/\s*9:?48[\s\S]*$/i, '')
+    .replace(/\s*Cancel\s+[Q\s-]*Card Games[\s\S]*$/i, '')
+    .replace(/\s*THE LOVE IAB\s*$/i, '')
+    .replace(/\s*[→➜➡›»>]+\s*$/g, '')
     // Orphan openers left after stripping " (swipe to start →"
     .replace(/\s*[\(\[]\s*$/g, '')
     .replace(/\s+/g, ' ')

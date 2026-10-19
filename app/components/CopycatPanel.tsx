@@ -8,6 +8,7 @@ import {
   type CopycatPost,
 } from '@/app/lib/copycat/flamingo-cards';
 import { getFlamingoCardsPosts } from '@/app/lib/copycat/flamingo-convos';
+import { getQuestions21Posts } from '@/app/lib/copycat/questions-21';
 import { exportCopycatSlidesZip } from '@/app/lib/copycat/export-slides';
 import { IMAGE_TEMPLATE2_PASTEL_COLORS } from '@/app/lib/constants';
 import {
@@ -30,33 +31,106 @@ import {
   IMAGE_TEMPLATE8_Q5_BANNER_RADIUS_RATIO,
   IMAGE_TEMPLATE8_Q5_BANNER_SRC,
   IMAGE_TEMPLATE8_Q5_BANNER_WIDTH_RATIO,
-  IMAGE_TEMPLATE8_Q5_SEARCH_LINES,
-  IMAGE_TEMPLATE8_Q5_SEARCH_LINE_HEIGHT_MULT,
   IMAGE_TEMPLATE8_Q5_SEARCH_SIZE_RATIO,
   IMAGE_TEMPLATE8_Q5_SEARCH_TOP_RATIO,
   IMAGE_TEMPLATE8_Q5_SEARCH_WEIGHT,
 } from '@/app/lib/image-template-8-cover';
 import { IMAGE_TEMPLATE13_BG } from '@/app/lib/image-template-13-cover';
 import {
+  IMAGE_TEMPLATE15_CARD_BG,
+  IMAGE_TEMPLATE15_CARD_BORDER,
+  IMAGE_TEMPLATE15_CARD_BORDER_RATIO,
+  IMAGE_TEMPLATE15_CARD_INSET_X,
+  IMAGE_TEMPLATE15_CARD_INSET_Y,
+  IMAGE_TEMPLATE15_CARD_RADIUS_RATIO,
+  IMAGE_TEMPLATE15_FRAME_BG,
+  IMAGE_TEMPLATE15_QUESTION_FONT_STACK,
+  IMAGE_TEMPLATE15_LINE_HEIGHT,
+  IMAGE_TEMPLATE15_MARK,
+  IMAGE_TEMPLATE15_MARK_SIZE_RATIO,
+  IMAGE_TEMPLATE15_MARK_TOP_RATIO,
+  IMAGE_TEMPLATE15_MARK_TRACKING,
+  IMAGE_TEMPLATE15_QUESTION_SIZE_RATIO,
+  IMAGE_TEMPLATE15_QUESTION_TOP_RATIO,
+  IMAGE_TEMPLATE15_TEXT,
+  IMAGE_TEMPLATE15_TEXT_INSET_X,
+} from '@/app/lib/image-template-15-cards';
+import {
+  fetchPinterestCoverImage,
+  IMAGE_TEMPLATE15_PINTEREST_QUERY,
+  PINTEREST_COVER_CANDIDATE_POOL,
+} from '@/app/lib/pinterest';
+import {
   IMAGE_TEMPLATE14_CARD_INSET_X,
   IMAGE_TEMPLATE14_CARD_INSET_Y,
+  IMAGE_TEMPLATE14_EDGE_BLUR_RATIO,
+  IMAGE_TEMPLATE14_EDGE_SCALE,
   IMAGE_TEMPLATE14_CARD_RADIUS_RATIO,
   IMAGE_TEMPLATE14_COLORS,
-  IMAGE_TEMPLATE14_COVER_SIZE_RATIO,
   IMAGE_TEMPLATE14_FONT_STACK,
   IMAGE_TEMPLATE14_FRAME_BG,
   IMAGE_TEMPLATE14_GRAIN_SRC,
   IMAGE_TEMPLATE14_LINE_HEIGHT,
-  IMAGE_TEMPLATE14_MARK,
   IMAGE_TEMPLATE14_MARK_SIZE_RATIO,
   IMAGE_TEMPLATE14_MARK_Y_RATIO,
-  IMAGE_TEMPLATE14_QUESTION_SIZE_RATIO,
+  IMAGE_TEMPLATE14_CTA_TEXT_CENTER_RATIO,
+  IMAGE_TEMPLATE14_CTA_TEXT_MAX_HEIGHT_RATIO,
+  template14QuestionSizeRatio,
   template14TextForBackground,
 } from '@/app/lib/image-template-14-cards';
 
 const TIKTOK_SANS_STACK = '"TikTok Sans", system-ui, -apple-system, sans-serif';
+const COPYCAT_APP_NAME = 'Spill It';
+const COPYCAT_COVER_HEARTS = '♥ ♥ ♥';
+/** Text-only covers and template-13 questions sit above center — closer to natural eye level. */
+const COPYCAT_TEXT_ONLY_COVER_TOP = 0.38;
+const COPYCAT_TEXT_ONLY_COVER_SIZE_T2 = 0.074;
+const COPYCAT_TEXT_ONLY_COVER_SIZE_T13 = 0.066;
+const COPYCAT_TEXT_ONLY_COVER_SIZE_T14 = 0.088;
 
-export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14;
+export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15;
+
+function CopycatAppMarkFooter({
+  isCover,
+  color,
+  fontFamily,
+  fontSize,
+  fontWeight,
+  bottom,
+  top,
+}: {
+  isCover: boolean;
+  color: string;
+  fontFamily: string;
+  fontSize: string;
+  fontWeight?: number | string;
+  bottom?: string;
+  top?: string;
+}) {
+  return (
+    <div
+      className="absolute inset-x-[8%] z-10 flex flex-col items-center text-center"
+      style={{
+        bottom,
+        top,
+        color,
+        fontFamily,
+        transform: top ? 'translateY(-50%)' : undefined,
+      }}
+    >
+      {isCover ? (
+        <span
+          className="leading-none"
+          style={{ fontSize: '3.6cqw', marginBottom: '0.35em', letterSpacing: '0.12em' }}
+          aria-hidden
+        >
+          {COPYCAT_COVER_HEARTS}
+        </span>
+      ) : null}
+      <span style={{ fontSize, fontWeight }}>{COPYCAT_APP_NAME}</span>
+    </div>
+  );
+}
 
 type CopycatPanelProps = {
   competitorId: string;
@@ -123,7 +197,7 @@ function pickTemplate14Color(exclude?: string): string {
 }
 
 function templateFrameAspect(templateId: CopycatTemplateId): string {
-  if (templateId === 13) return 'aspect-[9/16]';
+  if (templateId === 13 || templateId === 15) return 'aspect-[9/16]';
   return 'aspect-3/4';
 }
 
@@ -146,11 +220,15 @@ function CopycatSlidePreview({
 }) {
   const isCover = tabIndex === 0;
   const showTemplate2StyleCta =
-    (templateId === 1 || templateId === 2 || templateId === 6 || templateId === 14) && isCtaSlide;
+    (templateId === 1 ||
+      templateId === 2 ||
+      templateId === 6 ||
+      templateId === 14 ||
+      templateId === 15) &&
+    isCtaSlide;
   const showTemplate13Cta = templateId === 13 && isCtaSlide;
   const showSpillItMark =
     !showTemplate2StyleCta && !showTemplate13Cta && templateId !== 1 && templateId !== 6;
-  const spillItMark = IMAGE_TEMPLATE14_MARK;
   const alignLeft = Boolean(leftAlign && !isCover);
   const pastelBg =
     IMAGE_TEMPLATE2_PASTEL_COLORS[tabIndex % IMAGE_TEMPLATE2_PASTEL_COLORS.length]!;
@@ -160,12 +238,149 @@ function CopycatSlidePreview({
     ? 'left-[11%] w-[78%] -translate-y-1/2 text-left'
     : 'left-1/2 w-[78%] -translate-x-1/2 -translate-y-1/2 text-center';
 
+  if (templateId === 15) {
+    if (isCover) {
+      return (
+        <div className="@container relative w-full max-w-sm mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-[9/16] bg-[#CDB892]">
+          {illustrationSrc ? (
+            <img
+              src={illustrationSrc}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 animate-pulse bg-[#CDB892]" />
+          )}
+          <div className="pointer-events-none absolute inset-0 bg-black/28" />
+          <p
+            className="absolute left-1/2 top-1/2 z-10 w-[78%] -translate-x-1/2 -translate-y-1/2 whitespace-pre-wrap wrap-break-word text-center text-white"
+            style={{
+              fontFamily: IMAGE_TEMPLATE15_QUESTION_FONT_STACK,
+              fontSize: '6.8cqw',
+              fontWeight: 500,
+              lineHeight: 1.2,
+              textShadow: '0 2px 12px rgba(0,0,0,0.45)',
+            }}
+          >
+            {text}
+          </p>
+          <CopycatAppMarkFooter
+            isCover
+            color="rgba(255,255,255,0.95)"
+            fontFamily={TIKTOK_SANS_STACK}
+            fontSize="3cqw"
+            fontWeight={700}
+            bottom="9%"
+          />
+        </div>
+      );
+    }
+
+    const cardRadius = `${IMAGE_TEMPLATE15_CARD_RADIUS_RATIO * 100}cqw`;
+    const cardBorder = `${IMAGE_TEMPLATE15_CARD_BORDER_RATIO * 100}cqw`;
+    return (
+      <div
+        className="@container relative w-full max-w-sm mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-[9/16]"
+        style={{ backgroundColor: IMAGE_TEMPLATE15_FRAME_BG }}
+      >
+        <div
+          className="absolute overflow-hidden"
+          style={{
+            left: `${IMAGE_TEMPLATE15_CARD_INSET_X * 100}%`,
+            top: `${IMAGE_TEMPLATE15_CARD_INSET_Y * 100}%`,
+            width: `${(1 - IMAGE_TEMPLATE15_CARD_INSET_X * 2) * 100}%`,
+            height: `${(1 - IMAGE_TEMPLATE15_CARD_INSET_Y * 2) * 100}%`,
+            borderRadius: cardRadius,
+            backgroundColor: IMAGE_TEMPLATE15_CARD_BORDER,
+            padding: cardBorder,
+          }}
+        >
+          <div
+            className="relative h-full w-full overflow-hidden"
+            style={{
+              backgroundColor: IMAGE_TEMPLATE15_CARD_BG,
+              borderRadius: `calc(${cardRadius} - ${cardBorder})`,
+            }}
+          >
+            <p
+              className="absolute left-1/2 z-10 -translate-x-1/2"
+              style={{
+                top: `${IMAGE_TEMPLATE15_MARK_TOP_RATIO * 100}%`,
+                color: IMAGE_TEMPLATE15_TEXT,
+                fontFamily: IMAGE_TEMPLATE15_QUESTION_FONT_STACK,
+                fontSize: `${IMAGE_TEMPLATE15_MARK_SIZE_RATIO * 100}cqw`,
+                letterSpacing: IMAGE_TEMPLATE15_MARK_TRACKING,
+                fontWeight: 400,
+              }}
+            >
+              {IMAGE_TEMPLATE15_MARK}
+            </p>
+            <p
+              className="absolute z-10 -translate-y-1/2 whitespace-pre-wrap wrap-break-word text-left"
+              style={{
+                left: `${IMAGE_TEMPLATE15_TEXT_INSET_X * 100}%`,
+                width: `${(1 - IMAGE_TEMPLATE15_TEXT_INSET_X * 2) * 100}%`,
+                top: `${IMAGE_TEMPLATE15_QUESTION_TOP_RATIO * 100}%`,
+                color: IMAGE_TEMPLATE15_TEXT,
+                fontFamily: IMAGE_TEMPLATE15_QUESTION_FONT_STACK,
+                fontSize: `${IMAGE_TEMPLATE15_QUESTION_SIZE_RATIO * 100}cqw`,
+                fontWeight: 500,
+                lineHeight: IMAGE_TEMPLATE15_LINE_HEIGHT,
+              }}
+            >
+              {text}
+            </p>
+          </div>
+        </div>
+        {showTemplate2StyleCta ? (
+          <>
+            <p
+              className="absolute inset-x-[6%] z-20 text-center font-bold"
+              style={{
+                color: IMAGE_TEMPLATE15_TEXT,
+                fontFamily: IMAGE_TEMPLATE15_QUESTION_FONT_STACK,
+                fontSize: `${IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO * (4 / 3) * 100}cqw`,
+                bottom: `${(IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO + IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO) * 100}%`,
+              }}
+            >
+              {IMAGE_TEMPLATE2_Q5_PROMO_LABEL}
+            </p>
+            <img
+              src={IMAGE_TEMPLATE2_Q5_PROMO_SRC}
+              alt="Spill It on the App Store"
+              className="absolute left-1/2 z-20 -translate-x-1/2"
+              style={{
+                width: `${IMAGE_TEMPLATE2_Q5_PROMO_WIDTH_RATIO * 100}%`,
+                maxWidth: 'none',
+                top: `${(1 - IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO) * 100}%`,
+              }}
+            />
+          </>
+        ) : null}
+      </div>
+    );
+  }
+
   if (templateId === 14) {
     return (
       <div
         className="@container relative w-full max-w-sm mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4"
         style={{ backgroundColor: IMAGE_TEMPLATE14_FRAME_BG }}
       >
+        <div
+          className="pointer-events-none absolute"
+          style={{
+            left: `${IMAGE_TEMPLATE14_CARD_INSET_X * 100}%`,
+            top: `${IMAGE_TEMPLATE14_CARD_INSET_Y * 100}%`,
+            width: `${(1 - IMAGE_TEMPLATE14_CARD_INSET_X * 2) * 100}%`,
+            height: `${(1 - IMAGE_TEMPLATE14_CARD_INSET_Y * 2) * 100}%`,
+            borderRadius: `${IMAGE_TEMPLATE14_CARD_RADIUS_RATIO * 100}cqw`,
+            backgroundColor: card14Bg,
+            transform: `scale(${IMAGE_TEMPLATE14_EDGE_SCALE})`,
+            filter: `blur(${IMAGE_TEMPLATE14_EDGE_BLUR_RATIO * 100}cqw)`,
+          }}
+          aria-hidden
+        />
         <div
           className="absolute overflow-hidden"
           style={{
@@ -189,54 +404,61 @@ function CopycatSlidePreview({
           <p
             className={`absolute z-10 whitespace-pre-wrap wrap-break-word ${bodyAlignClass}`}
             style={{
-              top: `${(showTemplate2StyleCta ? IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO : 0.5) * 100}%`,
+              top: `${(showTemplate2StyleCta
+                ? IMAGE_TEMPLATE14_CTA_TEXT_CENTER_RATIO
+                : isCover
+                  ? COPYCAT_TEXT_ONLY_COVER_TOP
+                  : 0.5) * 100}%`,
               color: card14Text,
               fontFamily: IMAGE_TEMPLATE14_FONT_STACK,
-              fontSize: `${(isCover ? IMAGE_TEMPLATE14_COVER_SIZE_RATIO : IMAGE_TEMPLATE14_QUESTION_SIZE_RATIO) * 100}cqw`,
+              fontSize: `${(isCover
+                ? COPYCAT_TEXT_ONLY_COVER_SIZE_T14
+                : template14QuestionSizeRatio(text, showTemplate2StyleCta)) * 100}cqw`,
               fontWeight: 400,
               lineHeight: IMAGE_TEMPLATE14_LINE_HEIGHT,
+              maxHeight: showTemplate2StyleCta
+                ? `${IMAGE_TEMPLATE14_CTA_TEXT_MAX_HEIGHT_RATIO * 100}%`
+                : undefined,
+              overflow: showTemplate2StyleCta ? 'hidden' : undefined,
             }}
           >
             {text}
           </p>
-          {showTemplate2StyleCta ? (
-            <>
-              <p
-                className="absolute inset-x-[6%] z-10 text-center font-bold"
-                style={{
-                  color: card14Text === '#FFFFFF' ? card14Text : 'rgba(255,255,255,0.95)',
-                  fontFamily: TIKTOK_SANS_STACK,
-                  fontSize: `${IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO * (4 / 3) * 100}cqw`,
-                  bottom: `${(IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO + IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO) * 100}%`,
-                }}
-              >
-                {IMAGE_TEMPLATE2_Q5_PROMO_LABEL}
-              </p>
-              <img
-                src={IMAGE_TEMPLATE2_Q5_PROMO_SRC}
-                alt="Spill It on the App Store"
-                className="absolute left-1/2 z-10 -translate-x-1/2"
-                style={{
-                  width: `${IMAGE_TEMPLATE2_Q5_PROMO_WIDTH_RATIO * 100}%`,
-                  maxWidth: 'none',
-                  top: `${(1 - IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO) * 100}%`,
-                }}
-              />
-            </>
-          ) : (
-            <p
-              className="absolute inset-x-[8%] z-10 text-center"
-              style={{
-                top: `${IMAGE_TEMPLATE14_MARK_Y_RATIO * 100}%`,
-                color: card14Text,
-                fontFamily: IMAGE_TEMPLATE14_FONT_STACK,
-                fontSize: `${IMAGE_TEMPLATE14_MARK_SIZE_RATIO * 100}cqw`,
-              }}
-            >
-              {IMAGE_TEMPLATE14_MARK}
-            </p>
+          {showTemplate2StyleCta ? null : (
+            <CopycatAppMarkFooter
+              isCover={isCover}
+              color={card14Text}
+              fontFamily={IMAGE_TEMPLATE14_FONT_STACK}
+              fontSize={`${IMAGE_TEMPLATE14_MARK_SIZE_RATIO * 100}cqw`}
+              top={`${IMAGE_TEMPLATE14_MARK_Y_RATIO * 100}%`}
+            />
           )}
         </div>
+        {showTemplate2StyleCta ? (
+          <>
+            <p
+              className="absolute inset-x-[6%] z-20 text-center font-bold"
+              style={{
+                color: '#FFFFFF',
+                fontFamily: TIKTOK_SANS_STACK,
+                fontSize: `${IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO * (4 / 3) * 100}cqw`,
+                bottom: `${(IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO + IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO) * 100}%`,
+              }}
+            >
+              {IMAGE_TEMPLATE2_Q5_PROMO_LABEL}
+            </p>
+            <img
+              src={IMAGE_TEMPLATE2_Q5_PROMO_SRC}
+              alt="Spill It on the App Store"
+              className="absolute left-1/2 z-20 -translate-x-1/2"
+              style={{
+                width: `${IMAGE_TEMPLATE2_Q5_PROMO_WIDTH_RATIO * 100}%`,
+                maxWidth: 'none',
+                top: `${(1 - IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO) * 100}%`,
+              }}
+            />
+          </>
+        ) : null}
       </div>
     );
   }
@@ -247,23 +469,36 @@ function CopycatSlidePreview({
         className="@container relative w-full max-w-sm mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-[9/16]"
         style={{ backgroundColor: IMAGE_TEMPLATE13_BG }}
       >
-        <div
-          className={`absolute inset-0 flex items-center px-[11%] ${
-            alignLeft ? 'justify-start text-left' : 'justify-center text-center'
-          }`}
-        >
+        {isCover ? (
           <p
-            className="w-full whitespace-pre-wrap wrap-break-word font-semibold text-white"
+            className="absolute left-1/2 z-10 w-[78%] -translate-x-1/2 -translate-y-1/2 whitespace-pre-wrap wrap-break-word text-center font-semibold text-white"
             style={{
+              top: `${COPYCAT_TEXT_ONLY_COVER_TOP * 100}%`,
               fontFamily: TIKTOK_SANS_STACK,
-              fontSize: isCover ? '5.4cqw' : '4.8cqw',
+              fontSize: `${COPYCAT_TEXT_ONLY_COVER_SIZE_T13 * 100}cqw`,
               lineHeight: 1.3,
-              textAlign: alignLeft ? 'left' : 'center',
             }}
           >
             {text}
           </p>
-        </div>
+        ) : (
+          <p
+            className={`absolute z-10 w-[78%] -translate-y-1/2 whitespace-pre-wrap wrap-break-word font-semibold text-white ${
+              alignLeft || showTemplate13Cta
+                ? 'left-[11%] text-left'
+                : 'left-1/2 -translate-x-1/2 text-center'
+            }`}
+            style={{
+              top: `${(showTemplate13Cta ? 0.5 : COPYCAT_TEXT_ONLY_COVER_TOP) * 100}%`,
+              fontFamily: TIKTOK_SANS_STACK,
+              fontSize: '4.8cqw',
+              lineHeight: 1.3,
+              textAlign: alignLeft || showTemplate13Cta ? 'left' : 'center',
+            }}
+          >
+            {text}
+          </p>
+        )}
         {showTemplate13Cta ? (
           <div
             className="absolute left-0 right-0 z-20 flex flex-col items-center px-[6%]"
@@ -275,15 +510,11 @@ function CopycatSlidePreview({
                 fontFamily: TIKTOK_SANS_STACK,
                 fontSize: `${IMAGE_TEMPLATE8_Q5_SEARCH_SIZE_RATIO * 100}cqw`,
                 fontWeight: IMAGE_TEMPLATE8_Q5_SEARCH_WEIGHT,
-                lineHeight: IMAGE_TEMPLATE8_Q5_SEARCH_LINE_HEIGHT_MULT,
+                lineHeight: 1.25,
                 textShadow: '0 1px 8px rgba(0,0,0,0.55)',
               }}
             >
-              {IMAGE_TEMPLATE8_Q5_SEARCH_LINES.map((line) => (
-                <span key={line} className="block">
-                  {line}
-                </span>
-              ))}
+              {IMAGE_TEMPLATE2_Q5_PROMO_LABEL}
             </p>
             <img
               src={IMAGE_TEMPLATE8_Q5_BANNER_SRC}
@@ -301,17 +532,14 @@ function CopycatSlidePreview({
             />
           </div>
         ) : showSpillItMark ? (
-          <p
-            className="absolute inset-x-[8%] z-10 text-center text-white/95"
-            style={{
-              bottom: '9%',
-              fontFamily: TIKTOK_SANS_STACK,
-              fontSize: '3.2cqw',
-              fontWeight: 600,
-            }}
-          >
-            {spillItMark}
-          </p>
+          <CopycatAppMarkFooter
+            isCover={isCover}
+            color="rgba(255,255,255,0.95)"
+            fontFamily={TIKTOK_SANS_STACK}
+            fontSize="3.2cqw"
+            fontWeight={600}
+            bottom="9%"
+          />
         ) : null}
       </div>
     );
@@ -330,9 +558,15 @@ function CopycatSlidePreview({
               : 'left-1/2 w-[60%] -translate-x-1/2 -translate-y-1/2 text-center'
           }`}
           style={{
-            top: `${(showTemplate2StyleCta ? IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO : 0.5) * 100}%`,
+            top: `${(showTemplate2StyleCta
+              ? IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO
+              : isCover
+                ? COPYCAT_TEXT_ONLY_COVER_TOP
+                : 0.5) * 100}%`,
             fontFamily: TIKTOK_SANS_STACK,
-            fontSize: isCover ? '6.2cqw' : '5cqw',
+            fontSize: isCover
+              ? `${COPYCAT_TEXT_ONLY_COVER_SIZE_T2 * 100}cqw`
+              : '5cqw',
             lineHeight: 1.2,
           }}
         >
@@ -362,16 +596,14 @@ function CopycatSlidePreview({
             />
           </>
         ) : showSpillItMark ? (
-          <p
-            className="absolute inset-x-[8%] z-10 text-center font-bold text-white/95"
-            style={{
-              bottom: '9%',
-              fontFamily: TIKTOK_SANS_STACK,
-              fontSize: '3cqw',
-            }}
-          >
-            {spillItMark}
-          </p>
+          <CopycatAppMarkFooter
+            isCover={isCover}
+            color="rgba(255,255,255,0.95)"
+            fontFamily={TIKTOK_SANS_STACK}
+            fontSize="3cqw"
+            fontWeight={700}
+            bottom="9%"
+          />
         ) : null}
       </div>
     );
@@ -381,12 +613,14 @@ function CopycatSlidePreview({
   const textColor = templateId === 6 ? IMAGE_TEMPLATE6_TEXT_COLOR : '#2f2a31';
   const showKawaiiArt = Boolean(illustrationSrc) && !showTemplate2StyleCta;
   const kawaiiTextTop = showTemplate2StyleCta
-    ? `${IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO * 100}%`
+    ? `${(alignLeft ? 0.36 : IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO) * 100}%`
     : '21%';
-  const kawaiiTextTransform = alignLeft
-    ? undefined
-    : showTemplate2StyleCta
-      ? 'translate(-50%, -50%)'
+  const kawaiiTextTransform = showTemplate2StyleCta
+    ? alignLeft
+      ? 'translateY(-50%)'
+      : 'translate(-50%, -50%)'
+    : alignLeft
+      ? undefined
       : 'translateX(-50%)';
   return (
     <div
@@ -406,12 +640,26 @@ function CopycatSlidePreview({
           fontFamily: '"Comic Sans MS", "Marker Felt", "Chalkboard SE", "Trebuchet MS", sans-serif',
           fontSize: isCover ? '5cqw' : '4.6cqw',
           lineHeight: 1.25,
-          maxHeight: showTemplate2StyleCta ? undefined : '36%',
+          maxHeight: showTemplate2StyleCta ? '40%' : '36%',
           overflow: 'hidden',
         }}
       >
         {text}
       </p>
+      {showKawaiiArt && isCover ? (
+        <p
+          className="pointer-events-none absolute left-1/2 z-10 -translate-x-1/2 text-center leading-none"
+          style={{
+            bottom: '43%',
+            color: '#000000',
+            fontSize: '4.4cqw',
+            letterSpacing: '-0.12em',
+          }}
+          aria-hidden
+        >
+          ♥♥♥
+        </p>
+      ) : null}
       {showKawaiiArt ? (
         <img
           src={illustrationSrc}
@@ -449,13 +697,15 @@ function CopycatSlidePreview({
 }
 
 export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
-  const posts: CopycatPost[] = useMemo(
-    () =>
-      competitorId === 'flamingo-cards'
-        ? getFlamingoCardsPosts(FLAMINGO_CARDS_FEED.posts)
-        : [],
-    [competitorId]
-  );
+  const posts: CopycatPost[] = useMemo(() => {
+    if (competitorId === 'flamingo-cards') {
+      return getFlamingoCardsPosts(FLAMINGO_CARDS_FEED.posts);
+    }
+    if (competitorId === '21-questions') {
+      return getQuestions21Posts();
+    }
+    return [];
+  }, [competitorId]);
   const postIds = useMemo(() => posts.map((post) => post.id), [posts]);
 
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
@@ -463,10 +713,11 @@ export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
   const [template14Color, setTemplate14Color] = useState(() => pickTemplate14Color());
   const [dogUrls, setDogUrls] = useState<string[]>([]);
   const [illustrations, setIllustrations] = useState<string[]>([]);
+  const [template15CoverSrc, setTemplate15CoverSrc] = useState('');
+  const [template15CoverError, setTemplate15CoverError] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const postBagRef = useRef<string[]>([]);
   const lastPostIdRef = useRef<string | null>(null);
-  const didInitRef = useRef(false);
 
   const selectedPost = useMemo(
     () => posts.find((post) => post.id === selectedPostId) ?? null,
@@ -503,15 +754,16 @@ export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
     setTemplate14Color((current) => pickTemplate14Color(current));
   }, [postIds]);
 
-  // Fresh crypto draw whenever the template changes (and once on mount).
+  // Fresh crypto draw whenever the template or competitor changes (and once on mount).
   useEffect(() => {
-    if (postIds.length === 0) return;
-    if (!didInitRef.current) {
-      didInitRef.current = true;
-      postBagRef.current = shuffleCrypto(postIds);
+    if (postIds.length === 0) {
+      setSelectedPostId(null);
+      return;
     }
+    postBagRef.current = [];
+    lastPostIdRef.current = null;
     reshufflePost();
-  }, [templateId, reshufflePost]);
+  }, [templateId, competitorId, reshufflePost]);
 
   useEffect(() => {
     if (selectedTab >= slideBodies.length) setSelectedTab(0);
@@ -530,6 +782,39 @@ export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
       });
     return () => {
       cancelled = true;
+    };
+  }, [templateId]);
+
+  useEffect(() => {
+    if (templateId !== 15) {
+      setTemplate15CoverSrc('');
+      setTemplate15CoverError(null);
+      return;
+    }
+    let cancelled = false;
+    const controller = new AbortController();
+    setTemplate15CoverError(null);
+    fetchPinterestCoverImage({
+      query: IMAGE_TEMPLATE15_PINTEREST_QUERY,
+      poolSize: PINTEREST_COVER_CANDIDATE_POOL,
+      signal: controller.signal,
+    })
+      .then((result) => {
+        if (cancelled) return;
+        setTemplate15CoverSrc(result.imageUrl);
+        setTemplate15CoverError(null);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        if (e instanceof DOMException && e.name === 'AbortError') return;
+        setTemplate15CoverSrc('');
+        setTemplate15CoverError(
+          e instanceof Error ? e.message : 'Failed to fetch Pinterest cover'
+        );
+      });
+    return () => {
+      cancelled = true;
+      controller.abort();
     };
   }, [templateId]);
 
@@ -568,10 +853,16 @@ export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
           isCta,
           isCover,
           leftAlign: Boolean(
-            index > 0 && !isCta && questionSlides[index - 1]?.options?.length
+            index > 0 && questionSlides[index - 1]?.options?.length
           ),
           illustrationSrc:
-            isCta || index >= illustrations.length ? undefined : illustrations[index],
+            templateId === 15
+              ? index === 0
+                ? template15CoverSrc || undefined
+                : undefined
+              : isCta || index >= illustrations.length
+                ? undefined
+                : illustrations[index],
         };
       });
       const zipBlob = await exportCopycatSlidesZip({
@@ -600,11 +891,12 @@ export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
     ctaTabIndex,
     questionSlides,
     illustrations,
+    template15CoverSrc,
     templateId,
     template14Color,
   ]);
 
-  if (competitorId !== 'flamingo-cards' || !selectedPost) {
+  if (!selectedPost) {
     return (
       <div className="flex min-h-[10rem] items-center justify-center rounded-xl border border-dashed border-zinc-200 dark:border-zinc-700 bg-zinc-50/80 dark:bg-zinc-900/40 px-4 py-8">
         <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center">
@@ -632,7 +924,11 @@ export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
           <button
             type="button"
             onClick={() => void handleDownload()}
-            disabled={isDownloading || slideBodies.length === 0}
+            disabled={
+              isDownloading ||
+              slideBodies.length === 0 ||
+              (templateId === 15 && !template15CoverSrc)
+            }
             className="inline-flex items-center justify-center gap-1.5 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-1.5 text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:border-zinc-400 dark:hover:border-zinc-500 disabled:opacity-50"
           >
             {isDownloading ? (
@@ -682,20 +978,25 @@ export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
           </button>
         ))}
       </div>
+      {templateId === 15 && template15CoverError ? (
+        <p className="text-xs text-red-600 dark:text-red-400">{template15CoverError}</p>
+      ) : null}
       <CopycatSlidePreview
         templateId={templateId}
         tabIndex={selectedTab}
         text={slideBodies[selectedTab] ?? ''}
         leftAlign={Boolean(
-          selectedTab > 0 &&
-            selectedTab !== ctaTabIndex &&
-            questionSlides[selectedTab - 1]?.options?.length
+          selectedTab > 0 && questionSlides[selectedTab - 1]?.options?.length
         )}
         template14Color={template14Color}
         illustrationSrc={
-          isCtaSlide || selectedTab >= illustrations.length
-            ? undefined
-            : illustrations[selectedTab]
+          templateId === 15
+            ? selectedTab === 0
+              ? template15CoverSrc || undefined
+              : undefined
+            : isCtaSlide || selectedTab >= illustrations.length
+              ? undefined
+              : illustrations[selectedTab]
         }
         isCtaSlide={isCtaSlide}
       />

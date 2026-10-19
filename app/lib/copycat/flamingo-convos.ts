@@ -4,7 +4,8 @@ import {
   type CopycatPost,
   type CopycatSlideText,
 } from './flamingo-cards';
-import rawFeed from './flamingo-convos.json';
+import rawConvoFeed from './flamingo-convos.json';
+import rawReelsFeed from './flamingoappreels.json';
 
 type RawSlide = {
   text: string;
@@ -25,7 +26,8 @@ type RawFeed = {
   posts: RawPost[];
 };
 
-const feed = rawFeed as RawFeed;
+const convoFeed = rawConvoFeed as RawFeed;
+const reelsFeed = rawReelsFeed as RawFeed;
 
 function mapSlide(slide: RawSlide): CopycatSlideText {
   const text = cleanCopycatDisplayText(slide.text);
@@ -37,36 +39,60 @@ function mapSlide(slide: RawSlide): CopycatSlideText {
 }
 
 /** Instagram likes stand in for views so ranking matches CopycatPost. */
-function mapPost(post: RawPost): CopycatPost {
+function mapPost(post: RawPost, handle: string): CopycatPost {
   return {
     id: post.id,
     views: post.likes,
     coverText: cleanCopycatDisplayText(post.coverText),
     slideText: post.slideText.map(mapSlide),
-    handle: feed.handle,
+    handle,
     platform: 'instagram',
   };
 }
 
-const posts = feed.posts.map(mapPost);
+function mapFeed(feed: RawFeed): CopycatPost[] {
+  return feed.posts.map((post) => mapPost(post, feed.handle));
+}
+
+const convoPosts = mapFeed(convoFeed);
+const reelsPosts = mapFeed(reelsFeed);
 
 /** Flamingo convos Instagram posts used by the Copycat tab. */
 export const FLAMINGO_CONVOS_FEED: CopycatCompetitorFeed = {
-  handle: feed.handle,
+  handle: convoFeed.handle,
   minViews: 0,
-  postCount: posts.length,
-  posts,
+  postCount: convoPosts.length,
+  posts: convoPosts,
   platform: 'instagram',
 };
 
-/** All Flamingo Cards sources: TikTok @flamingokiss1 + Instagram @flamingoconvos. */
-export function getFlamingoCardsPosts(
-  tiktokPosts: CopycatPost[]
-): CopycatPost[] {
+export const FLAMINGO_APPREELS_FEED: CopycatCompetitorFeed = {
+  handle: reelsFeed.handle,
+  minViews: 0,
+  postCount: reelsPosts.length,
+  posts: reelsPosts,
+  platform: 'instagram',
+};
+
+function mergeUniquePosts(...groups: CopycatPost[][]): CopycatPost[] {
+  const seen = new Set<string>();
+  const merged: CopycatPost[] = [];
+  for (const group of groups) {
+    for (const post of group) {
+      if (seen.has(post.id)) continue;
+      seen.add(post.id);
+      merged.push(post);
+    }
+  }
+  return merged;
+}
+
+/** TikTok @flamingokiss1 + Instagram @flamingoconvos + @flamingoappreels. */
+export function getFlamingoCardsPosts(tiktokPosts: CopycatPost[]): CopycatPost[] {
   const tiktok = tiktokPosts.map((post) => ({
     ...post,
     handle: post.handle ?? 'flamingokiss1',
     platform: post.platform ?? ('tiktok' as const),
   }));
-  return [...tiktok, ...posts];
+  return mergeUniquePosts(tiktok, convoPosts, reelsPosts);
 }

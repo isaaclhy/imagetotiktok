@@ -60,7 +60,7 @@
           ]
         },
         {
-          "text": "If you love someone, you sbould never get tired of them.",
+          "text": "If you love someone, you should never get tired of them.",
           "options": [
             "Agree, love is enough",
             "Disagree, everyone needs space",
@@ -71,7 +71,8 @@
         {
           "text": "Your partner should unfollow someone you're jealous of.",
           "options": [
-            "Yes, respect my feelings B. No, trust your partner",
+            "Yes, respect my feelings",
+            "No, trust your partner",
             "Only if there's a reason",
             "Let's talk about it first"
           ]
@@ -189,48 +190,48 @@
       "likes": 74,
       "comments": 1,
       "createdAt": "2026-10-09T10:38:38.000Z",
-      "coverText": "Allowed or not\nallowed? (\nswipe to start →",
+      "coverText": "Allowed or not\nallowed?",
       "slideText": [
         {
           "text": "Shows up 20 minutes early to everything",
           "options": [
             "Allowed behavior",
-            "Not allowed swipe →"
+            "Not allowed"
           ]
         },
         {
           "text": "Keeps every gift receipt in a folder",
           "options": [
             "Allowed behavior",
-            "Not allowed swipe →"
+            "Not allowed"
           ]
         },
         {
           "text": "Orders for you because they know your usual",
           "options": [
             "Allowed behavior",
-            "Not allowed swipe →"
+            "Not allowed"
           ]
         },
         {
           "text": "Sends a play-by-play while building furniture",
           "options": [
             "Allowed behavior",
-            "Not allowed swipe →"
+            "Not allowed"
           ]
         },
         {
           "text": "Puts your phone on Do Not Disturb during movies",
           "options": [
             "Allowed behavior",
-            "Not allowed swipe →"
+            "Not allowed"
           ]
         },
         {
           "text": "Corrects your driving from the passenger seat",
           "options": [
             "Allowed behavior",
-            "Not allowed swipe →"
+            "Not allowed"
           ]
         },
         {
@@ -269,14 +270,14 @@
       "likes": 57,
       "comments": 3,
       "createdAt": "2026-10-09T08:39:33.000Z",
-      "coverText": "Boyfriend report\ncard?\nswipe to start →",
+      "coverText": "Boyfriend report\ncard?",
       "slideText": [
         {
           "text": "Planning dates",
           "options": [
             "10/10",
             "7/10",
-            "needs work swipe →"
+            "needs work"
           ]
         },
         {
@@ -284,7 +285,7 @@
           "options": [
             "10/10",
             "7/10",
-            "needs work swipe →"
+            "needs work"
           ]
         },
         {
@@ -292,7 +293,7 @@
           "options": [
             "10/10",
             "7/10",
-            "needs work swipe →"
+            "needs work"
           ]
         },
         {
@@ -300,7 +301,7 @@
           "options": [
             "10/10",
             "7/10",
-            "needs work swipe →"
+            "needs work"
           ]
         },
         {
@@ -308,7 +309,7 @@
           "options": [
             "10/10",
             "7/10",
-            "needs work swipe →"
+            "needs work"
           ]
         },
         {
@@ -343,7 +344,7 @@
       "likes": 45,
       "comments": 0,
       "createdAt": "2026-10-07T14:00:27.000Z",
-      "coverText": "Girlfriend decoding\ntest?\n(send this to\nhim\nswipe to start →",
+      "coverText": "Girlfriend decoding\ntest?\n(send this to\nhim",
       "slideText": [
         {
           "text": "What's my first sign that I'm overwhelmed?",
@@ -351,7 +352,7 @@
             "I go quiet",
             "I clean everything",
             "1 get snappy",
-            "I need space swipe →"
+            "I need space"
           ]
         },
         {
@@ -360,7 +361,7 @@
             "My bed",
             "The car",
             "A long shower",
-            "Outside alone swipe →"
+            "Outside alone"
           ]
         },
         {
@@ -369,7 +370,7 @@
             "\"I'm here\"",
             "\"Take your time\"",
             "\"Want company?\"",
-            "\"Need anything?\" swipe →"
+            "\"Need anything?\""
           ]
         },
         {
@@ -378,7 +379,7 @@
             "Strangers all day",
             "My family groupchat",
             "One clingy friend",
-            "Crowded plans swipe →"
+            "Crowded plans"
           ]
         },
         {
@@ -387,7 +388,7 @@
             "A distraction first",
             "Quiet beside me",
             "Advice right away",
-            "A real hug swipe →"
+            "A real hug"
           ]
         },
         {
@@ -402,14 +403,14 @@
       "likes": 43,
       "comments": 6,
       "createdAt": "2026-10-11T10:25:11.000Z",
-      "coverText": "Marry me someday?\nswipe to start →",
+      "coverText": "Marry me someday?",
       "slideText": [
         {
           "text": "First year married, Friday night plan?",
           "options": [
             "Date night downtown",
             "Movie night in",
-            "Last-minute road trip swipe →"
+            "Last-minute road trip"
           ]
         },
         {
@@ -417,7 +418,7 @@
           "options": [
             "Mostly you",
             "Mostly me",
-            "We split everything swipe →"
+            "We split everything"
           ]
         },
         {
@@ -425,7 +426,7 @@
           "options": [
             "Big busy city",
             "Quiet little suburb",
-            "Near the beach swipe →"
+            "Near the beach"
           ]
         },
         {
@@ -433,7 +434,7 @@
           "options": [
             "Fancy dinner out",
             "Weekend getaway",
-            "Staying cozy at home swipe →"
+            "Staying cozy at home"
           ]
         },
         {
@@ -441,7 +442,7 @@
           "options": [
             "Mostly you choose",
             "Mostly I choose",
-            "We debate together swipe →"
+            "We debate together"
           ]
         },
         {
@@ -459,10 +460,10 @@
       "coverText": "Dumb Questions\nto Crack Your BF",
       "slideText": [
         {
-          "text": "IfI disappeared for 24 hours and came back as a chicken, what would you do?"
+          "text": "If I disappeared for 24 hours and came back as a chicken, what would you do?"
         },
         {
-          "text": "IfI could read your mind for five minutes, what would you try to hide first?"
+          "text": "If I could read your mind for five minutes, what would you try to hide first?"
         }
       ]
     },
@@ -571,14 +572,14 @@
       "likes": 39,
       "comments": 0,
       "createdAt": "2026-10-08T09:21:01.000Z",
-      "coverText": "Marriage mode: us?\nswipe to start →",
+      "coverText": "Marriage mode: us?",
       "slideText": [
         {
           "text": "Proposal day, your first reaction?",
           "options": [
             "Happy ugly cry",
             "Laugh then say yes",
-            "Need one minute swipe →"
+            "Need one minute"
           ]
         },
         {
@@ -586,7 +587,7 @@
           "options": [
             "Mostly you",
             "Mostly me",
-            "We split jobs swipe →"
+            "We split jobs"
           ]
         },
         {
@@ -594,7 +595,7 @@
           "options": [
             "Big busy city",
             "Quiet suburbs",
-            "Near the water swipe →"
+            "Near the water"
           ]
         },
         {
@@ -602,7 +603,7 @@
           "options": [
             "One shared budget",
             "Separate but clear",
-            "Yours, mine, ours swipe →"
+            "Yours, mine, ours"
           ]
         },
         {
@@ -610,7 +611,7 @@
           "options": [
             "Sleep in late",
             "Coffee and errands",
-            "Brunch somewhere nice swipe →"
+            "Brunch somewhere nice"
           ]
         },
         {
@@ -618,7 +619,7 @@
           "options": [
             "Location matters most",
             "Space matters most",
-            "Price matters most swipe →"
+            "Price matters most"
           ]
         },
         {
@@ -626,7 +627,7 @@
           "options": [
             "Fancy hotel weekend",
             "Cabin in nature",
-            "New country adventure swipe →"
+            "New country adventure"
           ]
         },
         {
@@ -641,14 +642,14 @@
       "likes": 38,
       "comments": 2,
       "createdAt": "2026-10-09T07:28:53.000Z",
-      "coverText": "Marry me someday\nor nah? C\nswipe to start →",
+      "coverText": "Marry me someday\nor nah? C",
       "slideText": [
         {
           "text": "If I proposed at dinner, your first reaction?",
           "options": [
             "Happy tears first",
             "Ask to see ring",
-            "Laugh then say yes swipe →"
+            "Laugh then say yes"
           ]
         },
         {
@@ -656,7 +657,7 @@
           "options": [
             "Mostly you",
             "Mostly me",
-            "We split everything swipe →"
+            "We split everything"
           ]
         },
         {
@@ -664,7 +665,7 @@
           "options": [
             "Big city condo",
             "Quiet house outside",
-            "Near both families swipe →"
+            "Near both families"
           ]
         },
         {
@@ -672,7 +673,7 @@
           "options": [
             "One shared account",
             "Separate with a plan",
-            "Yours mine ours swipe →"
+            "Yours mine ours"
           ]
         },
         {
@@ -680,7 +681,7 @@
           "options": [
             "Hosting everybody over",
             "Slow day at home",
-            "Out exploring somewhere swipe →"
+            "Out exploring somewhere"
           ]
         },
         {
@@ -735,14 +736,14 @@
       "likes": 33,
       "comments": 0,
       "createdAt": "2026-10-08T03:06:16.000Z",
-      "coverText": "Rate my girlfriend\nskills?\nswipe to start →",
+      "coverText": "Rate my girlfriend\nskills?",
       "slideText": [
         {
           "text": "Planning dates",
           "options": [
             "10/10",
             "7/10",
-            "needs work swipe →"
+            "needs work"
           ]
         },
         {
@@ -750,7 +751,7 @@
           "options": [
             "10/10",
             "7/10",
-            "needs work swipe →"
+            "needs work"
           ]
         },
         {
@@ -758,7 +759,7 @@
           "options": [
             "10/10",
             "7/10",
-            "needs work swipe >"
+            "needs work"
           ]
         },
         {
@@ -766,7 +767,7 @@
           "options": [
             "10/10",
             "7/10",
-            "needs work swipe →"
+            "needs work"
           ]
         },
         {
@@ -774,7 +775,7 @@
           "options": [
             "10/10",
             "7/10",
-            "needs work swipe →"
+            "needs work"
           ]
         },
         {
@@ -789,7 +790,7 @@
       "likes": 32,
       "comments": 6,
       "createdAt": "2026-10-08T10:39:44.000Z",
-      "coverText": "Pick One\n(steamy\nedition)\nswipe to start →",
+      "coverText": "Pick One\n(steamy\nedition)",
       "slideText": [
         {
           "text": "First move when the door shuts?",
@@ -797,7 +798,7 @@
             "Slow neck kiss",
             "Pinned-to-wall kiss",
             "Hands on thighs",
-            "Breathless teasing swipe →"
+            "Breathless teasing"
           ]
         },
         {
@@ -806,7 +807,7 @@
             "On the couch",
             "In the shower",
             "By the door",
-            "In bed swipe →"
+            "In bed"
           ]
         },
         {
@@ -815,7 +816,7 @@
             "The needy one",
             "The flirty one",
             "The touch-starved one",
-            "The weak one swipe →"
+            "The weak one"
           ]
         },
         {
@@ -824,7 +825,7 @@
             "My lips closer",
             "Your hand lower",
             "A neck bite",
-            "Bedroom eye contact swipe →"
+            "Bedroom eye contact"
           ]
         },
         {
@@ -833,7 +834,7 @@
             "Ten seconds max",
             "One full minute",
             "Till you tease",
-            "Not resisting once swipe →"
+            "Not resisting once"
           ]
         },
         {
@@ -842,7 +843,7 @@
             "No touching rule",
             "Whisper your fantasy",
             "Kiss my neck",
-            "Hands on thighs swipe →"
+            "Hands on thighs"
           ]
         },
         {
@@ -915,7 +916,7 @@
           ]
         },
         {
-          "text": "IfI could read your mind for one minute, what would worry you most?",
+          "text": "If I could read your mind for one minute, what would worry you most?",
           "options": [
             "My embarrassing thoughts",
             "My past crushes",
@@ -929,7 +930,7 @@
             "Kisses on the neck",
             "Whispering in my ear",
             "Unexpected kisses",
-            "When I make the first move Q search for deep questions. couple convos. Get"
+            "When I make the first move"
           ]
         }
       ]
@@ -967,19 +968,19 @@
       "likes": 24,
       "comments": 2,
       "createdAt": "2026-10-08T22:40:43.000Z",
-      "coverText": "Truth or dare, tease?\nswipe to start →",
+      "coverText": "Truth or dare, tease?",
       "slideText": [
         {
-          "text": "Where do you want my lips first when the teasing turns steamy tonight? swipe →"
+          "text": "Where do you want my lips first when the teasing turns steamy tonight?"
         },
         {
-          "text": "How slow do you want my touch before I kiss your neck again? swipe →"
+          "text": "How slow do you want my touch before I kiss your neck again?"
         },
         {
-          "text": "When would you want me pulling you closer for dirty, breathless pillow talk? swipe →"
+          "text": "When would you want me pulling you closer for dirty, breathless pillow talk?"
         },
         {
-          "text": "What would turn you on faster tonight: my tease, my kiss, or my touch? swipe →"
+          "text": "What would turn you on faster tonight: my tease, my kiss, or my touch?"
         },
         {
           "text": "WANT 1,000 + MORE? We saved the best for the app. all 9:41 • = ‹ .app • tap the link! followers following posts Relationship app Want more questions. The good ones. Download the app 4 @apps.apple.com/app/-cards Follow + Message"
@@ -1068,7 +1069,11 @@
       "coverText": "Red Flag or\nGreen Flag? Ask\nYour Partner!",
       "slideText": [
         {
-          "text": "Your partner gives you space when you need time alone. A) Green Flag B. Red Flag"
+          "text": "Your partner gives you space when you need time alone.",
+          "options": [
+            "Green Flag",
+            "Red Flag"
+          ]
         },
         {
           "text": "Your partner gets angry when you say no to something they want.",
@@ -1107,7 +1112,7 @@
       "likes": 22,
       "comments": 5,
       "createdAt": "2026-10-10T11:00:28.000Z",
-      "coverText": "Tease or Taste Me?\nswipe to start →",
+      "coverText": "Tease or Taste Me?",
       "slideText": [
         {
           "text": "When I kiss you first, what gives me away?",
@@ -1115,7 +1120,7 @@
             "my slow tease",
             "my hungry lips",
             "my neck pull",
-            "my breathless grin swipe →"
+            "my breathless grin"
           ]
         },
         {
@@ -1124,7 +1129,7 @@
             "hand on your neck",
             "fingers on your thigh",
             "lips near yours",
-            "pressed in close swipe →"
+            "pressed in close"
           ]
         },
         {
@@ -1133,7 +1138,7 @@
             "your lips first",
             "your neck slowly",
             "your ear tease",
-            "your thigh touch swipe →"
+            "your thigh touch"
           ]
         },
         {
@@ -1142,7 +1147,7 @@
             "hold your stare",
             "tease your lips",
             "pull you closer",
-            "bite my lip swipe →"
+            "bite my lip"
           ]
         },
         {
@@ -1151,7 +1156,7 @@
             "my couch cuddles",
             "my tempting whispers",
             "my sleepy kisses",
-            "my bedroom stare swipe →"
+            "my bedroom stare"
           ]
         },
         {
@@ -1308,7 +1313,7 @@
           "options": [
             "Reassure you with sweet words.",
             "Hold you until you feel better.",
-            "Stay and listen without Q search for deep questions. couple convos. * Get"
+            "Stay and listen without trying to fix it."
           ]
         }
       ]
@@ -1320,25 +1325,25 @@
       "likes": 20,
       "comments": 0,
       "createdAt": "2026-10-13T12:20:40.000Z",
-      "coverText": "What would she\ncrave tonight?\nswipe to start →",
+      "coverText": "What would she\ncrave tonight?",
       "slideText": [
         {
-          "text": "What do you do when my lips meet yours and the door clicks shut? swipe →"
+          "text": "What do you do when my lips meet yours and the door clicks shut?"
         },
         {
-          "text": "Where would you pull me first if the bedroom stayed ours all night? swipe →"
+          "text": "Where would you pull me first if the bedroom stayed ours all night?"
         },
         {
-          "text": "How long could you handle my teasing touch before you kissed my neck again? swipe →"
+          "text": "How long could you handle my teasing touch before you kissed my neck again?"
         },
         {
-          "text": "When I whisper something dirty, what would you want my lips doing next? swipe →"
+          "text": "When I whisper something dirty, what would you want my lips doing next?"
         },
         {
-          "text": "Which part of me would make you blush hardest when we're breathless on the bed? swipe →"
+          "text": "Which part of me would make you blush hardest when we're breathless on the bed?"
         },
         {
-          "text": "Would you keep teasing me, or kiss me deep until we forget the time? swipe →"
+          "text": "Would you keep teasing me, or kiss me deep until we forget the time?"
         },
         {
           "text": "WANT 1,000 + MORE? We saved the best for the app. all 9:41 • = ‹ .app • tap the link! followers following posts Relationship app Want more questions. The good ones. Download the app 4 @apps.apple.com/app/-cards Follow + Message"
@@ -1375,7 +1380,7 @@
       "likes": 19,
       "comments": 0,
       "createdAt": "2026-10-13T11:10:26.000Z",
-      "coverText": "Memory or delusion?\n(pick one)\nswipe to start →",
+      "coverText": "Memory or delusion?\n(pick one)",
       "slideText": [
         {
           "text": "What's my most obvious bad mood tell?",
@@ -1383,7 +1388,7 @@
             "Shorter replies",
             "Cleaning everything",
             "Going quiet",
-            "Fake joking swipe →"
+            "Fake joking"
           ]
         },
         {
@@ -1392,7 +1397,7 @@
             "Getting ready",
             "Replying to texts",
             "Starting chores",
-            "Going to sleep swipe →"
+            "Going to sleep"
           ]
         },
         {
@@ -1401,7 +1406,7 @@
             "Taste is elite",
             "You're so thoughtful",
             "You look good",
-            "You're hilarious swipe →"
+            "You're hilarious"
           ]
         },
         {
@@ -1410,7 +1415,7 @@
             "Pacing around",
             "Overplanning everything",
             "Needing alone time",
-            "Snapping a little swipe →"
+            "Snapping a little"
           ]
         },
         {
@@ -1419,7 +1424,7 @@
             "Wrong directions",
             "Slow walkers",
             "Phone calls",
-            "Messy counters swipe →"
+            "Messy counters"
           ]
         },
         {
@@ -1428,7 +1433,7 @@
             "Sit with me",
             "Make me laugh",
             "Give me advice",
-            "Handle something swipe →"
+            "Handle something"
           ]
         },
         {
@@ -1443,25 +1448,25 @@
       "likes": 19,
       "comments": 1,
       "createdAt": "2026-10-09T11:13:56.000Z",
-      "coverText": "Never Have I Ever:\nCraving? J\nswipe to start →",
+      "coverText": "Never Have I Ever:\nCraving? J",
       "slideText": [
         {
-          "text": "What have you secretly wanted me to do in bed lately? swipe →"
+          "text": "What have you secretly wanted me to do in bed lately?"
         },
         {
-          "text": "When did you first picture kissing me and wanting more? swipe →"
+          "text": "When did you first picture kissing me and wanting more?"
         },
         {
-          "text": "Where do you crave my lips when you're feeling extra needy? swipe →"
+          "text": "Where do you crave my lips when you're feeling extra needy?"
         },
         {
-          "text": "How do I tease you so well you turn weak for me? swipe →"
+          "text": "How do I tease you so well you turn weak for me?"
         },
         {
-          "text": "Which touch from me still leaves you breathless and craving more? swipe →"
+          "text": "Which touch from me still leaves you breathless and craving more?"
         },
         {
-          "text": "Would you tell me your boldest fantasy if I asked in bed? swipe →"
+          "text": "Would you tell me your boldest fantasy if I asked in bed?"
         },
         {
           "text": "WANT 1,000 + MORE? We saved the best for the app. all 9:41 • = ‹ .app • tap the link! followers following posts Relationship app Want more questions. The good ones. Download the app 4 @apps.apple.com/app/-cards Follow + Message"
@@ -1501,21 +1506,22 @@
       "likes": 18,
       "comments": 0,
       "createdAt": "2026-10-13T10:06:07.000Z",
-      "coverText": "Chill or jealous,\nreally?\nswipe to start →",
+      "coverText": "Chill or jealous,\nreally?",
       "slideText": [
         {
           "text": "A stranger keeps complimenting my outfit. You?",
           "options": [
             "Let it happen",
             "Who keeps saying that?",
-            "I'm standing closer swipe →"
+            "I'm standing closer"
           ]
         },
         {
           "text": "My phone lights up with the same name again. You?",
           "options": [
             "Probably nothing",
-            "Lemme see the vibe с) Why are they persistent? swipe →"
+            "Lemme see the vibe",
+            "Why are they persistent?"
           ]
         },
         {
@@ -1523,7 +1529,7 @@
           "options": [
             "I'd ignore it",
             "I'd notice fast",
-            "Okay, relax buddy swipe →"
+            "Okay, relax buddy"
           ]
         },
         {
@@ -1531,7 +1537,7 @@
           "options": [
             "It's just a comment",
             "Who is always first?",
-            "They need a hobby swipe →"
+            "They need a hobby"
           ]
         },
         {
@@ -1539,7 +1545,7 @@
           "options": [
             "Good for you",
             "Why are they grinning?",
-            "I'm ordering for us swipe →"
+            "I'm ordering for us"
           ]
         },
         {
@@ -1547,7 +1553,7 @@
           "options": [
             "I'd stay chill",
             "I'm definitely watching",
-            "Absolutely not today swipe →"
+            "Absolutely not today"
           ]
         },
         {
@@ -1566,14 +1572,14 @@
       "likes": 18,
       "comments": 0,
       "createdAt": "2026-10-12T09:53:44.000Z",
-      "coverText": "Score me as your\nboyfriend?\nswipe to start →",
+      "coverText": "Score me as your\nboyfriend?",
       "slideText": [
         {
           "text": "Planning dates you actually enjoy",
           "options": [
             "10/10",
             "7/10",
-            "needs work swipe →"
+            "needs work"
           ]
         },
         {
@@ -1581,7 +1587,7 @@
           "options": [
             "10/10",
             "7/10",
-            "needs work swipe →"
+            "needs work"
           ]
         },
         {
@@ -1589,7 +1595,7 @@
           "options": [
             "10/10",
             "7/10",
-            "needs work swipe →"
+            "needs work"
           ]
         },
         {
@@ -1597,14 +1603,14 @@
           "options": [
             "10/10",
             "7/10",
-            "needs work swipe →"
+            "needs work"
           ]
         },
         {
           "text": "Picking food without taking forever",
           "options": [
             "10/10 в) 7/10",
-            "needs work swipe →"
+            "needs work"
           ]
         },
         {
@@ -1619,25 +1625,25 @@
       "likes": 17,
       "comments": 0,
       "createdAt": "2026-10-13T10:41:28.000Z",
-      "coverText": "Truth or dare?\n(flirty touch edition)\nswipe to start →",
+      "coverText": "Truth or dare?\n(flirty touch edition)",
       "slideText": [
         {
-          "text": "Would you rather feel my lips on your neck or my touch on your thigh? swipe →"
+          "text": "Would you rather feel my lips on your neck or my touch on your thigh?"
         },
         {
-          "text": "How long could you handle my teasing before you pulled me into a breathless kiss? swipe →"
+          "text": "How long could you handle my teasing before you pulled me into a breathless kiss?"
         },
         {
-          "text": "Which turns you on more, dirty pillow talk or a slow kiss in bed? swipe →"
+          "text": "Which turns you on more, dirty pillow talk or a slow kiss in bed?"
         },
         {
-          "text": "Where do you crave my touch most when we're finally alone tonight? swipe →"
+          "text": "Where do you crave my touch most when we're finally alone tonight?"
         },
         {
-          "text": "When 1 kiss your neck, do you want gentle teasing or tempting bites? swipe →"
+          "text": "When I kiss your neck, do you want gentle teasing or tempting bites?"
         },
         {
-          "text": "Are you more obsessed with shower kisses or cuddling in bed after? swipe →"
+          "text": "Are you more obsessed with shower kisses or cuddling in bed after?"
         },
         {
           "text": "WANT 1,000 + MORE? We saved the best for the app. all 9:41 • = ‹ .app • tap the link! followers following posts Relationship app Want more questions. The good ones. Download the app 4 @apps.apple.com/app/-cards Follow + Message"
@@ -1651,25 +1657,25 @@
       "likes": 17,
       "comments": 2,
       "createdAt": "2026-10-12T12:02:30.000Z",
-      "coverText": "Tease or touch first?\nswipe to start →",
+      "coverText": "Tease or touch first?",
       "slideText": [
         {
-          "text": "What do you do the second the bedroom door clicks shut behind us? swipe →"
+          "text": "What do you do the second the bedroom door clicks shut behind us?"
         },
         {
-          "text": "Where do you want my kiss first if I'm already breathless and smiling? swipe →"
+          "text": "Where do you want my kiss first if I'm already breathless and smiling?"
         },
         {
-          "text": "How long would you tease me before pulling me closer against the bed? swipe →"
+          "text": "How long would you tease me before pulling me closer against the bed?"
         },
         {
-          "text": "When my lips pause at your neck, what are you craving next? swipe →"
+          "text": "When my lips pause at your neck, what are you craving next?"
         },
         {
-          "text": "Would you keep it flirty and slow, or make me blush faster? swipe →"
+          "text": "Would you keep it flirty and slow, or make me blush faster?"
         },
         {
-          "text": "After all that tension, how do you want our pillow talk to start? swipe →"
+          "text": "After all that tension, how do you want our pillow talk to start?"
         },
         {
           "text": "WANT 1,000 + MORE? We saved the best for the app. all 9:41 • = ‹ .app • tap the link! followers following posts Relationship app Want more questions. The good ones. Download the app 4 @apps.apple.com/app/-cards Follow + Message"
@@ -1683,14 +1689,14 @@
       "likes": 17,
       "comments": 1,
       "createdAt": "2026-10-11T08:39:29.000Z",
-      "coverText": "Picture us in ten\nyears.... (\nswipe to start →",
+      "coverText": "Picture us in ten\nyears....",
       "slideText": [
         {
           "text": "If we get engaged, who tells everyone first?",
           "options": [
             "You call family",
             "I post it first",
-            "We keep it quiet swipe →"
+            "We keep it quiet"
           ]
         },
         {
@@ -1698,7 +1704,7 @@
           "options": [
             "Great food only",
             "Best playlist ever",
-            "Pretty little details swipe →"
+            "Pretty little details"
           ]
         },
         {
@@ -1706,7 +1712,7 @@
           "options": [
             "Big busy city",
             "Quiet little suburb",
-            "Near the water swipe →"
+            "Near the water"
           ]
         },
         {
@@ -1714,7 +1720,7 @@
           "options": [
             "Sleep in late",
             "Coffee then errands",
-            "Big breakfast together swipe →"
+            "Big breakfast together"
           ]
         },
         {
@@ -1722,7 +1728,7 @@
           "options": [
             "Mostly you",
             "Mostly me",
-            "We split everything swipe →"
+            "We split everything"
           ]
         },
         {
@@ -1730,7 +1736,7 @@
           "options": [
             "Your family's house",
             "My family's house",
-            "Host at our place swipe →"
+            "Host at our place"
           ]
         },
         {
@@ -1738,7 +1744,7 @@
           "options": [
             "Always out together",
             "Homebody little duo",
-            "Mix of both swipe →"
+            "Mix of both"
           ]
         },
         {
@@ -1753,55 +1759,55 @@
       "likes": 17,
       "comments": 0,
       "createdAt": "2026-10-07T14:27:20.000Z",
-      "coverText": "Rate these: cute or\nannoying?\nswipe to start →",
+      "coverText": "Rate these: cute or\nannoying?",
       "slideText": [
         {
           "text": "Sends a play-by-play of their whole day",
           "options": [
             "Cute behavior",
-            "Actually annoying swipe →"
+            "Actually annoying"
           ]
         },
         {
           "text": "Steals fries after saying they're not hungry",
           "options": [
             "Cute behavior",
-            "Actually annoying swipe →"
+            "Actually annoying"
           ]
         },
         {
           "text": "Uses your hoodie as their permanent hoodie",
           "options": [
             "Cute behavior",
-            "Actually annoying swipe →"
+            "Actually annoying"
           ]
         },
         {
           "text": "Calls you the second they leave your place",
           "options": [
             "Cute behavior",
-            "Actually annoying swipe →"
+            "Actually annoying"
           ]
         },
         {
           "text": "Picks the movie, then falls asleep first",
           "options": [
             "Cute behavior",
-            "Actually annoying swipe →"
+            "Actually annoying"
           ]
         },
         {
           "text": "Changes your GPS voice to something ridiculous",
           "options": [
             "Cute behavior",
-            "Actually annoying swipe →"
+            "Actually annoying"
           ]
         },
         {
           "text": "Replies with one word when theyre busy",
           "options": [
             "Cute behavior",
-            "Actually annoying swipe →"
+            "Actually annoying"
           ]
         },
         {
@@ -1822,7 +1828,7 @@
           "text": "What would you name me if I were a badly behaved toddler?"
         },
         {
-          "text": "IfI got arrested for stealing something ridiculous, what would you assume I stole?"
+          "text": "If I got arrested for stealing something ridiculous, what would you assume I stole?"
         }
       ]
     },
@@ -1833,48 +1839,48 @@
       "likes": 16,
       "comments": 0,
       "createdAt": "2026-10-12T07:16:15.000Z",
-      "coverText": "Boyfriend habits:\nsweet or weird?\nswipe to start →",
+      "coverText": "Boyfriend habits:\nsweet or weird?",
       "slideText": [
         {
           "text": "Sends a play-by-play when he's running late",
           "options": [
             "Sweet behavior",
-            "Weird behavior swipe →"
+            "Weird behavior"
           ]
         },
         {
           "text": "Keeps the first receipt from your date",
           "options": [
             "Sweet behavior",
-            "Weird behavior swipe →"
+            "Weird behavior"
           ]
         },
         {
           "text": "Orders for you because he knows your usual",
           "options": [
             "Sweet behavior",
-            "Weird behavior swipe →"
+            "Weird behavior"
           ]
         },
         {
           "text": "Changes your phone contact to a private inside joke",
           "options": [
             "Sweet behavior",
-            "Weird behavior swipe →"
+            "Weird behavior"
           ]
         },
         {
           "text": "Matches his outfit to yours without mentioning it",
           "options": [
             "Sweet behavior",
-            "Weird behavior swipe →"
+            "Weird behavior"
           ]
         },
         {
           "text": "Saves your random voice notes and replays them later",
           "options": [
             "Sweet behavior",
-            "Weird behavior swipe →"
+            "Weird behavior"
           ]
         },
         {
@@ -1950,7 +1956,7 @@
       "likes": 15,
       "comments": 5,
       "createdAt": "2026-10-11T11:31:27.000Z",
-      "coverText": "Beat me, win kisses?\nswipe to start →",
+      "coverText": "Beat me, win kisses?",
       "slideText": [
         {
           "text": "Where do my lips land first?",
@@ -1958,7 +1964,7 @@
             "Your neck",
             "Your cheek",
             "Your shoulder",
-            "Your jawline swipe →"
+            "Your jawline"
           ]
         },
         {
@@ -1967,7 +1973,7 @@
             "Five seconds",
             "Ten seconds",
             "Half a minute",
-            "One whole minute swipe →"
+            "One whole minute"
           ]
         },
         {
@@ -1976,7 +1982,7 @@
             "Neck kisses",
             "Slow whispers",
             "Thigh touch",
-            "Bedroom stare swipe →"
+            "Bedroom stare"
           ]
         },
         {
@@ -1985,7 +1991,7 @@
             "You pull me",
             "I climb in",
             "Same exact time",
-            "Whoever is colder swipe →"
+            "Whoever is colder"
           ]
         },
         {
@@ -1994,7 +2000,7 @@
             "By the door",
             "On the couch",
             "Against the counter",
-            "Edge of the bed swipe →"
+            "Edge of the bed"
           ]
         },
         {
@@ -2032,25 +2038,25 @@
       "likes": 15,
       "comments": 6,
       "createdAt": "2026-10-07T10:24:58.000Z",
-      "coverText": "Lips or desire?\nswipe to start →",
+      "coverText": "Lips or desire?",
       "slideText": [
         {
-          "text": "Would you rather feel my lips on your neck or my touch on your thigh? swipe →"
+          "text": "Would you rather feel my lips on your neck or my touch on your thigh?"
         },
         {
-          "text": "Which turns you on more: slow kisses in bed or teasing by the shower? swipe →"
+          "text": "Which turns you on more: slow kisses in bed or teasing by the shower?"
         },
         {
-          "text": "Where would you want me first tonight: your lips or your neck? swipe →"
+          "text": "Where would you want me first tonight: your lips or your neck?"
         },
         {
-          "text": "Are you craving dirty pillow talk or breathless kisses that make you blush? swipe →"
+          "text": "Are you craving dirty pillow talk or breathless kisses that make you blush?"
         },
         {
-          "text": "When you pull me closer, do you want cuddles first or something more tempting? swipe →"
+          "text": "When you pull me closer, do you want cuddles first or something more tempting?"
         },
         {
-          "text": "How do you want me tonight: flirty and teasing or sexy and impatient? swipe →"
+          "text": "How do you want me tonight: flirty and teasing or sexy and impatient?"
         },
         {
           "text": "WANT 1,000 + MORE? We saved the best for the app. all 9:41 • = ‹ .app • tap the link! followers following posts Relationship app Want more questions. The good ones. Download the app 4 @apps.apple.com/app/-cards Follow + Message"
@@ -2081,7 +2087,7 @@
             "Before falling asleep",
             "When something reminds me of you",
             "When I'm having a hard day",
-            "Every chance I get to think of vou"
+            "Every chance I get to think of you"
           ]
         },
         {
@@ -2090,7 +2096,7 @@
             "Our first date",
             "Our first kiss",
             "Our random little moments",
-            "The time we laughed nonstop Q search for deep questions. couple convos. * Get"
+            "The time we laughed nonstop"
           ]
         }
       ]
@@ -2140,25 +2146,25 @@
       "likes": 14,
       "comments": 1,
       "createdAt": "2026-10-08T12:52:29.000Z",
-      "coverText": "Can you\nhan\nCan you handle\ntouch?\nswipe to start →",
+      "coverText": "Can you\nhan\nCan you handle\ntouch?",
       "slideText": [
         {
-          "text": "Would you rather feel my lips on your neck or my touch on your thighs? swipe →"
+          "text": "Would you rather feel my lips on your neck or my touch on your thighs?"
         },
         {
-          "text": "Which turns you on more, a slow kiss or dirty pillow talk first? swipe →"
+          "text": "Which turns you on more, a slow kiss or dirty pillow talk first?"
         },
         {
-          "text": "Are you craving the shower more, or the bedroom with teasing kisses? swipe →"
+          "text": "Are you craving the shower more, or the bedroom with teasing kisses?"
         },
         {
-          "text": "When do you want me closest, during cuddles or when things get spicy? swipe →"
+          "text": "When do you want me closest, during cuddles or when things get spicy?"
         },
         {
-          "text": "How would you tempt me more, with flirty blushes or sexy bites? swipe →"
+          "text": "How would you tempt me more, with flirty blushes or sexy bites?"
         },
         {
-          "text": "Do you want sweet kisses first or steamy touch that leaves us breathless? swipe →"
+          "text": "Do you want sweet kisses first or steamy touch that leaves us breathless?"
         },
         {
           "text": "WANT 1,000 + MORE? We saved the best for the app. all 9:41 • = ‹ .app • tap the link! followers following posts Relationship app Want more questions. The good ones. Download the app 4 @apps.apple.com/app/-cards Follow + Message"
@@ -2172,25 +2178,25 @@
       "likes": 13,
       "comments": 0,
       "createdAt": "2026-10-13T11:45:52.000Z",
-      "coverText": "Pick a tease?\n(flirty edition)\nswipe to start →",
+      "coverText": "Pick a tease?\n(flirty edition)",
       "slideText": [
         {
-          "text": "Would you want my lips on your neck or my touch on your thighs first? swipe →"
+          "text": "Would you want my lips on your neck or my touch on your thighs first?"
         },
         {
-          "text": "Which kiss would make you weaker, slow in bed or stolen in the shower? swipe →"
+          "text": "Which kiss would make you weaker, slow in bed or stolen in the shower?"
         },
         {
-          "text": "What turns you on more, my teasing text or my breathless whisper tonight? swipe →"
+          "text": "What turns you on more, my teasing text or my breathless whisper tonight?"
         },
         {
-          "text": "Where do you crave my touch most, your neck, your thighs, or your lips? swipe →"
+          "text": "Where do you crave my touch most, your neck, your thighs, or your lips?"
         },
         {
-          "text": "How would you start us off, with dirty pillow talk or a long kiss? swipe →"
+          "text": "How would you start us off, with dirty pillow talk or a long kiss?"
         },
         {
-          "text": "When I pull you closer, do you want sweet teasing or sexy tension first? swipe →"
+          "text": "When I pull you closer, do you want sweet teasing or sexy tension first?"
         },
         {
           "text": "WANT 1,000 + MORE? We saved the best for the app. all 9:41 • = ‹ .app • tap the link! followers following posts Relationship app Want more questions. The good ones. Download the app 4 @apps.apple.com/app/-cards Follow + Message"
@@ -2204,14 +2210,14 @@
       "likes": 13,
       "comments": 5,
       "createdAt": "2026-10-13T08:58:39.000Z",
-      "coverText": "Pick our marriage\nera?\nswipe to start →",
+      "coverText": "Pick our marriage\nera?",
       "slideText": [
         {
           "text": "If I proposed tomorrow, your first reaction?",
           "options": [
             "Happy crying instantly",
             "Laugh then say yes",
-            "Stare, then hug me swipe →"
+            "Stare, then hug me"
           ]
         },
         {
@@ -2219,7 +2225,7 @@
           "options": [
             "You plan everything",
             "I plan most",
-            "We split every call swipe →"
+            "We split every call"
           ]
         },
         {
@@ -2227,7 +2233,7 @@
           "options": [
             "Big city condo",
             "Quiet house outside",
-            "Near both families swipe →"
+            "Near both families"
           ]
         },
         {
@@ -2235,7 +2241,7 @@
           "options": [
             "Brunch and errands",
             "Sleep in late",
-            "Road trip somewhere swipe →"
+            "Road trip somewhere"
           ]
         },
         {
@@ -2243,7 +2249,7 @@
           "options": [
             "You track everything",
             "I handle the budget",
-            "We do monthly check-ins swipe →"
+            "We do monthly check-ins"
           ]
         },
         {
@@ -2281,14 +2287,14 @@
       "likes": 13,
       "comments": 1,
       "createdAt": "2026-10-11T07:27:04.000Z",
-      "coverText": "The night we met...?\nswipe to start →",
+      "coverText": "The night we met...?",
       "slideText": [
         {
           "text": "If I propose next year, your first reaction?",
           "options": [
             "Laugh then cry",
             "Say yes fast",
-            "Stare at the ring swipe →"
+            "Stare at the ring"
           ]
         },
         {
@@ -2296,7 +2302,7 @@
           "options": [
             "Mostly you",
             "Mostly me",
-            "We split it swipe →"
+            "We split it"
           ]
         },
         {
@@ -2304,7 +2310,7 @@
           "options": [
             "Big city condo",
             "Quiet house outside",
-            "Near both families swipe →"
+            "Near both families"
           ]
         },
         {
@@ -2312,7 +2318,7 @@
           "options": [
             "You track it",
             "I track it",
-            "We check monthly swipe →"
+            "We check monthly"
           ]
         },
         {
@@ -2320,7 +2326,7 @@
           "options": [
             "Hosting everyone over",
             "Quick little trips",
-            "Slow mornings in swipe →"
+            "Slow mornings in"
           ]
         },
         {
@@ -2328,7 +2334,7 @@
           "options": [
             "Thermostat setting",
             "Holiday plans",
-            "Closet space swipe →"
+            "Closet space"
           ]
         },
         {
@@ -2336,7 +2342,7 @@
           "options": [
             "Friday date night",
             "Annual photo book",
-            "Sunday family dinner swipe →"
+            "Sunday family dinner"
           ]
         },
         {
@@ -2351,14 +2357,14 @@
       "likes": 13,
       "comments": 0,
       "createdAt": "2026-10-10T08:26:33.000Z",
-      "coverText": "At the party...\njealous?\nswipe to start →",
+      "coverText": "At the party...\njealous?",
       "slideText": [
         {
           "text": "A cashier calls me pretty. You?",
           "options": [
             "I let it slide",
             "I notice immediately",
-            "I'm judging her tone swipe →"
+            "I'm judging her tone"
           ]
         },
         {
@@ -2366,7 +2372,7 @@
           "options": [
             "Probably means nothing",
             "Okay who is that",
-            "I'm checking their page swipe →"
+            "I'm checking their page"
           ]
         },
         {
@@ -2374,7 +2380,7 @@
           "options": [
             "That's actually sweet",
             "Why so invested though",
-            "They're doing a lot swipe →"
+            "They're doing a lot"
           ]
         },
         {
@@ -2382,7 +2388,7 @@
           "options": [
             "Normal conversation",
             "Why are they smiling",
-            "I'm suddenly nearby swipe →"
+            "I'm suddenly nearby"
           ]
         },
         {
@@ -2390,7 +2396,7 @@
           "options": [
             "Good for my ego",
             "Hmm that was flirty",
-            "I'm watching this closely swipe →"
+            "I'm watching this closely"
           ]
         },
         {
@@ -2398,7 +2404,7 @@
           "options": [
             "Sure, that's harmless",
             "Why do they care",
-            "Nope I'll take it swipe →"
+            "Nope I'll take it"
           ]
         },
         {
@@ -2413,25 +2419,25 @@
       "likes": 13,
       "comments": 0,
       "createdAt": "2026-10-07T11:00:36.000Z",
-      "coverText": "Brave enough for\ntouch?\nswipe to start →",
+      "coverText": "Brave enough for\ntouch?",
       "slideText": [
         {
-          "text": "What do you do the second the bedroom door clicks shut behind us? swipe →"
+          "text": "What do you do the second the bedroom door clicks shut behind us?"
         },
         {
-          "text": "Where would you pull me first if the tension turned instantly spicy? swipe →"
+          "text": "Where would you pull me first if the tension turned instantly spicy?"
         },
         {
-          "text": "How long would you tease me before your lips finally kiss my neck? swipe →"
+          "text": "How long would you tease me before your lips finally kiss my neck?"
         },
         {
-          "text": "When I whisper against your neck, what would you want next? swipe →"
+          "text": "When I whisper against your neck, what would you want next?"
         },
         {
-          "text": "Would you keep me breathless with slow touch or make me blush first? swipe →"
+          "text": "Would you keep me breathless with slow touch or make me blush first?"
         },
         {
-          "text": "How would you want us tangled in bed when the teasing gets too tempting? swipe →"
+          "text": "How would you want us tangled in bed when the teasing gets too tempting?"
         },
         {
           "text": "WANT 1,000 + MORE? We saved the best for the app. all 9:41 • = ‹ .app • tap the link! followers following posts Relationship app Want more questions. The good ones. Download the app 4 @apps.apple.com/app/-cards Follow + Message"
@@ -2488,8 +2494,9 @@
       "coverText": "Ask These at Your\nOwn Risk",
       "slideText": [
         {
-          "text": "What's something you've wanted to try with me but haven't admitted? A spontaneous date",
+          "text": "What's something you've wanted to try with me but haven't admitted?",
           "options": [
+            "A spontaneous date",
             "A risky kiss",
             "A steamy night",
             "I'll never tell"
@@ -2510,7 +2517,7 @@
             "My flirting",
             "My kisses",
             "My sweet talk",
-            "My eye contact Q search for deep questions. couple convos. * Get"
+            "My eye contact"
           ]
         }
       ]
@@ -2560,19 +2567,19 @@
       "likes": 12,
       "comments": 1,
       "createdAt": "2026-10-10T12:44:55.000Z",
-      "coverText": "Handle my tease?\n(spicy edition)\nswipe to start →",
+      "coverText": "Handle my tease?\n(spicy edition)",
       "slideText": [
         {
-          "text": "Would you rather have my lips on your neck or my tease in bed? swipe →"
+          "text": "Would you rather have my lips on your neck or my tease in bed?"
         },
         {
-          "text": "Which turns you on faster, my dirty whisper or my kiss at your neck? swipe →"
+          "text": "Which turns you on faster, my dirty whisper or my kiss at your neck?"
         },
         {
-          "text": "How long could you handle my flirty touch before you're breathless and craving more? swipe →"
+          "text": "How long could you handle my flirty touch before you're breathless and craving more?"
         },
         {
-          "text": "Where do you want my kiss when the bedroom tension gets spicy tonight? swipe →"
+          "text": "Where do you want my kiss when the bedroom tension gets spicy tonight?"
         },
         {
           "text": "WANT 1,000 + MORE? We saved the best for the app. all 9:41 • = ‹ .app • tap the link! followers following posts Relationship app Want more questions. The good ones. Download the app 4 @apps.apple.com/app/-cards Follow + Message"
@@ -2586,7 +2593,7 @@
       "likes": 12,
       "comments": 8,
       "createdAt": "2026-10-09T11:49:18.000Z",
-      "coverText": "Couch or Bed?\n(spicy edition)\nswipe to start →",
+      "coverText": "Couch or Bed?\n(spicy edition)",
       "slideText": [
         {
           "text": "First kiss gets dangerous where?",
@@ -2594,7 +2601,7 @@
             "On the couch",
             "Against the wall",
             "In the shower",
-            "In bed fast swipe →"
+            "In bed fast"
           ]
         },
         {
@@ -2603,7 +2610,7 @@
             "Me, no warning",
             "You, every time",
             "Whoever gets closer",
-            "Whoever is craving swipe →"
+            "Whoever is craving"
           ]
         },
         {
@@ -2612,7 +2619,7 @@
             "Ten seconds max",
             "Till someone blushes",
             "Till lips finally win",
-            "No chance at all swipe →"
+            "No chance at all"
           ]
         },
         {
@@ -2621,7 +2628,7 @@
             "Hand on thigh",
             "Kiss on neck",
             "Lips at my ear",
-            "Pulled in closer swipe →"
+            "Pulled in closer"
           ]
         },
         {
@@ -2630,7 +2637,7 @@
             "The front door",
             "The kitchen counter",
             "The hallway wall",
-            "The bedroom floor swipe →"
+            "The bedroom floor"
           ]
         },
         {
@@ -2651,7 +2658,8 @@
           "text": "What's a secret thought about me that makes you smile?",
           "options": [
             "Imagining our future together",
-            "Remembering our best kisses C. Thinking about our next private date"
+            "Remembering our best kisses",
+            "Thinking about our next private date"
           ]
         },
         {
@@ -2667,7 +2675,7 @@
           "options": [
             "A romantic escape with no distractions",
             "A night of unexpected surprises",
-            "Exploring each other's Q search for deep questions. couple convos. * Get"
+            "Exploring each other's desires"
           ]
         }
       ]
@@ -2713,7 +2721,7 @@
           "text": "They're not big on texting but always make plans to see you.",
           "options": [
             "Date It",
-            "Ditch It? Q search for deep questions. couple convos. Get"
+            "Ditch It?"
           ]
         }
       ]
@@ -2743,15 +2751,6 @@
             "Send bold texts",
             "Make the first move",
             "Act innocent and let them wonder"
-          ]
-        },
-        {
-          "text": "How do you usually flirt when you really want someone?",
-          "options": [
-            "Give them teasing looks",
-            "Send bold texts",
-            "Make the first move",
-            "Act innocent and let them wonder Q search for deep questions. couple convos. * Get"
           ]
         }
       ]
@@ -2819,7 +2818,7 @@
           "options": [
             "Sweet messages and reassuring words.",
             "Video calls where we give each other undivided attention.",
-            "Surprise deliveries to mv"
+            "Surprise deliveries to my door."
           ]
         },
         {
@@ -2835,7 +2834,7 @@
           "options": [
             "When they express their love out loud.",
             "When we cuddle in silence.",
-            "When we spend quality time together. Q search for deep questions. couple convos. * Get"
+            "When we spend quality time together."
           ]
         }
       ]
@@ -2905,48 +2904,48 @@
       "likes": 10,
       "comments": 0,
       "createdAt": "2026-10-10T07:09:32.000Z",
-      "coverText": "Green flag orred\nflag?\nswipe to start →",
+      "coverText": "Green flag orred\nflag?",
       "slideText": [
         {
           "text": "Saves the last bite for you",
           "options": [
             "Green flag",
-            "Red flag swipe →"
+            "Red flag"
           ]
         },
         {
           "text": "Shows up 20 minutes early everywhere",
           "options": [
             "Green flag",
-            "Red flag swipe →"
+            "Red flag"
           ]
         },
         {
           "text": "Orders for you without asking first",
           "options": [
             "Green flag",
-            "Red flag swipe →"
+            "Red flag"
           ]
         },
         {
           "text": "Keeps every note you ever wrote",
           "options": [
             "Green flag",
-            "Red flag swipe →"
+            "Red flag"
           ]
         },
         {
           "text": "Sends a play-by-play of their whole day",
           "options": [
             "Green flag",
-            "Red flag swipe →"
+            "Red flag"
           ]
         },
         {
           "text": "Claps when the plane lands",
           "options": [
             "Green flag",
-            "Red flag swipe →"
+            "Red flag"
           ]
         },
         {
@@ -3008,7 +3007,7 @@
           "options": [
             "Imagining our future together",
             "Remembering our best kisses",
-            "Thinking about our next private date Q search for deep questions. couple convos. * Get"
+            "Thinking about our next private date"
           ]
         }
       ]
@@ -3020,14 +3019,14 @@
       "likes": 9,
       "comments": 0,
       "createdAt": "2026-10-10T10:25:27.000Z",
-      "coverText": "You're being too\nfriendly...?\nswipe to start →",
+      "coverText": "You're being too\nfriendly...?",
       "slideText": [
         {
           "text": "A cashier gets extra chatty with me. You?",
           "options": [
             "I'm unfazed",
             "I'm watching closely",
-            "Wrap it up, please swipe →"
+            "Wrap it up, please"
           ]
         },
         {
@@ -3035,7 +3034,7 @@
           "options": [
             "Let them react",
             "Who even is that",
-            "Mute them for me swipe →"
+            "Mute them for me"
           ]
         },
         {
@@ -3043,15 +3042,15 @@
           "options": [
             "That's just nice",
             "Okay, noted",
-            "Why are they lingering swipe →"
+            "Why are they lingering"
           ]
         },
         {
-          "text": "My friend says | look \"dangerously good\" today. You?",
+          "text": "My friend says I look \"dangerously good\" today. You?",
           "options": [
             "I'd laugh too",
             "Hmm, interesting",
-            "Say that again? swipe →"
+            "Say that again?"
           ]
         },
         {
@@ -3059,7 +3058,7 @@
           "options": [
             "I'd stay chill",
             "I'm side-eyeing",
-            "Absolutely not happening swipe →"
+            "Absolutely not happening"
           ]
         },
         {
@@ -3097,25 +3096,25 @@
       "likes": 9,
       "comments": 0,
       "createdAt": "2026-10-07T14:53:51.000Z",
-      "coverText": "Tempting touch\ntonight? J\nswipe to start →",
+      "coverText": "Tempting touch\ntonight? J",
       "slideText": [
         {
-          "text": "Would you rather my lips on your neck or my hands pulling you closer? swipe →"
+          "text": "Would you rather my lips on your neck or my hands pulling you closer?"
         },
         {
-          "text": "Which turns you on more: a flirty tease or a hungry kiss? swipe →"
+          "text": "Which turns you on more: a flirty tease or a hungry kiss?"
         },
         {
-          "text": "Where would you want me first, the couch or the bedroom? swipe →"
+          "text": "Where would you want me first, the couch or the bedroom?"
         },
         {
-          "text": "How do you want the tension tonight: slow touches or breathless kisses? swipe →"
+          "text": "How do you want the tension tonight: slow touches or breathless kisses?"
         },
         {
-          "text": "When I pull you in, do you want cuddles first or something spicy? swipe →"
+          "text": "When I pull you in, do you want cuddles first or something spicy?"
         },
         {
-          "text": "Are you craving pillow talk more, or a kiss that leaves you blushing? swipe →"
+          "text": "Are you craving pillow talk more, or a kiss that leaves you blushing?"
         },
         {
           "text": "WANT 1,000 + MORE? We saved the best for the app. all 9:41 • = ‹ .app • tap the link! followers following posts Relationship app Want more questions. The good ones. Download the app 4 @apps.apple.com/app/-cards Follow + Message"
@@ -3129,7 +3128,7 @@
       "likes": 8,
       "comments": 1,
       "createdAt": "2026-10-09T12:59:38.000Z",
-      "coverText": "Prove you can resist\nswipe to start →",
+      "coverText": "Prove you can resist",
       "slideText": [
         {
           "text": "How long till my lips distract you?",
@@ -3137,7 +3136,7 @@
             "ten seconds max",
             "one teasing minute",
             "through one full kiss",
-            "till you cave swipe →"
+            "till you cave"
           ]
         },
         {
@@ -3146,7 +3145,7 @@
             "my waist first",
             "my neck slowly",
             "my thighs maybe",
-            "my lower back swipe →"
+            "my lower back"
           ]
         },
         {
@@ -3155,7 +3154,7 @@
             "slow on lips",
             "quick neck tease",
             "breathless almost-kiss",
-            "soft bite energy swipe →"
+            "soft bite energy"
           ]
         },
         {
@@ -3164,7 +3163,7 @@
             "freeze and blush",
             "kiss me deeper",
             "tease me back",
-            "lose all focus swipe →"
+            "lose all focus"
           ]
         },
         {
@@ -3173,7 +3172,7 @@
             "long back massage",
             "you cook dinner",
             "lose the remote",
-            "five neck kisses swipe →"
+            "five neck kisses"
           ]
         },
         {
@@ -3188,7 +3187,7 @@
       "likes": 8,
       "comments": 0,
       "createdAt": "2026-10-08T12:26:39.000Z",
-      "coverText": "Perfect score gets\nmy kiss e\nswipe to start →",
+      "coverText": "Perfect score gets\nmy kiss e",
       "slideText": [
         {
           "text": "Where do my lips land first?",
@@ -3196,7 +3195,7 @@
             "Your neck first",
             "Your lips first",
             "Your cheek first",
-            "Your shoulder first swipe →"
+            "Your shoulder first"
           ]
         },
         {
@@ -3205,7 +3204,7 @@
             "Ten slow seconds",
             "One whole minute",
             "Till the couch",
-            "Not even close swipe →"
+            "Not even close"
           ]
         },
         {
@@ -3214,7 +3213,7 @@
             "Slow teasing kiss",
             "Neck kisses first",
             "Breathless wall kiss",
-            "One soft peck swipe →"
+            "One soft peck"
           ]
         },
         {
@@ -3223,7 +3222,7 @@
             "Kiss me deeper",
             "Grab my thigh",
             "Whisper something dirty",
-            "Lose all focus swipe →"
+            "Lose all focus"
           ]
         },
         {
@@ -3232,7 +3231,7 @@
             "By the door",
             "On the couch",
             "In the shower",
-            "Edge of bed swipe →"
+            "Edge of bed"
           ]
         },
         {
@@ -3247,25 +3246,25 @@
       "likes": 8,
       "comments": 0,
       "createdAt": "2026-10-08T09:59:31.000Z",
-      "coverText": "Brave enough for\nbed?\nswipe to start →",
+      "coverText": "Brave enough for\nbed?",
       "slideText": [
         {
-          "text": "What do you do the second the bedroom door clicks shut behind me? swipe →"
+          "text": "What do you do the second the bedroom door clicks shut behind me?"
         },
         {
-          "text": "Where would your lips land first if I pull you close by the neck? swipe →"
+          "text": "Where would your lips land first if I pull you close by the neck?"
         },
         {
-          "text": "How long could you tease me before that first kiss turns breathless and needy? swipe →"
+          "text": "How long could you tease me before that first kiss turns breathless and needy?"
         },
         {
-          "text": "When we're on the bed, what touch would make you blush fastest? swipe →"
+          "text": "When we're on the bed, what touch would make you blush fastest?"
         },
         {
-          "text": "Which whisper from me would turn this flirty moment into something seriously spicy? swipe →"
+          "text": "Which whisper from me would turn this flirty moment into something seriously spicy?"
         },
         {
-          "text": "Would you keep kissing me slow, or pull me closer when the tension peaks? swipe →"
+          "text": "Would you keep kissing me slow, or pull me closer when the tension peaks?"
         },
         {
           "text": "WANT 1,000 + MORE? We saved the best for the app. all 9:41 • = ‹ .app • tap the link! followers following posts Relationship app Want more questions. The good ones. Download the app 4 @apps.apple.com/app/-cards Follow + Message"
@@ -3279,19 +3278,19 @@
       "likes": 8,
       "comments": 0,
       "createdAt": "2026-10-08T03:03:28.000Z",
-      "coverText": "Dare in bed tonight?\nswipe to start →",
+      "coverText": "Dare in bed tonight?",
       "slideText": [
         {
-          "text": "What spicy fantasy about me still leaves you breathless in bed? swipe →"
+          "text": "What spicy fantasy about me still leaves you breathless in bed?"
         },
         {
-          "text": "When did you first crave my kiss so badly you couldn't think straight? swipe →"
+          "text": "When did you first crave my kiss so badly you couldn't think straight?"
         },
         {
-          "text": "Where do you want my lips when the teasing gets too tempting? swipe →"
+          "text": "Where do you want my lips when the teasing gets too tempting?"
         },
         {
-          "text": "How would you touch me tonight if you stopped being good for once? swipe →"
+          "text": "How would you touch me tonight if you stopped being good for once?"
         },
         {
           "text": "WANT 1,000 + MORE? We saved the best for the app. 9:41 all • = ‹ .app • tap the link! followers following posts Relationship app Want more questions. The good ones. Download the app 4 @apps.apple.com/app/-cards Follow + Message D"
@@ -3331,25 +3330,25 @@
       "likes": 7,
       "comments": 0,
       "createdAt": "2026-10-12T10:29:11.000Z",
-      "coverText": "Would you rather\ncrave? J\nswipe to start →",
+      "coverText": "Would you rather\ncrave? J",
       "slideText": [
         {
-          "text": "What dirty fantasy about me still makes you blush in bed? swipe →"
+          "text": "What dirty fantasy about me still makes you blush in bed?"
         },
         {
-          "text": "When did you first crave my lips and want to kiss me longer? swipe →"
+          "text": "When did you first crave my lips and want to kiss me longer?"
         },
         {
-          "text": "Where do you want my touch when you need me breathless and weak? swipe →"
+          "text": "Where do you want my touch when you need me breathless and weak?"
         },
         {
-          "text": "Which of my kisses feels most tempting when we're teasing in bed? swipe →"
+          "text": "Which of my kisses feels most tempting when we're teasing in bed?"
         },
         {
-          "text": "How would you start with me if you wanted things extra spicy tonight? swipe →"
+          "text": "How would you start with me if you wanted things extra spicy tonight?"
         },
         {
-          "text": "Would you rather confess your naughtiest craving or show me with a kiss? swipe →"
+          "text": "Would you rather confess your naughtiest craving or show me with a kiss?"
         },
         {
           "text": "WANT 1,000 + MORE? We saved the best for the app. all 9:41 • = ‹ .app • tap the link! followers following posts Relationship app Want more questions. The good ones. Download the app 4 @apps.apple.com/app/-cards Follow + Message"
@@ -3363,41 +3362,41 @@
       "likes": 7,
       "comments": 6,
       "createdAt": "2026-10-12T08:17:05.000Z",
-      "coverText": "At dinner together...\ncute or annoying?\nswipe to start →",
+      "coverText": "At dinner together...\ncute or annoying?",
       "slideText": [
         {
           "text": "Steals a fry off your plate",
           "options": [
             "Cute habit",
-            "Actually annoying swipe →"
+            "Actually annoying"
           ]
         },
         {
           "text": "Orders for you without asking first",
           "options": [
             "Cute habit",
-            "Actually annoying swipe →"
+            "Actually annoying"
           ]
         },
         {
           "text": "Takes one bite before your photo",
           "options": [
             "Cute habit",
-            "Actually annoying swipe →"
+            "Actually annoying"
           ]
         },
         {
           "text": "Makes you try their drink immediately",
           "options": [
             "Cute habit",
-            "Actually annoying swipe →"
+            "Actually annoying"
           ]
         },
         {
           "text": "Asks for a bite of every dish",
           "options": [
             "Cute habit",
-            "Actually annoying swipe →"
+            "Actually annoying"
           ]
         },
         {
@@ -3412,19 +3411,19 @@
       "likes": 7,
       "comments": 0,
       "createdAt": "2026-10-09T12:21:09.000Z",
-      "coverText": "Truth or dare, tease?\nswipe to start →",
+      "coverText": "Truth or dare, tease?",
       "slideText": [
         {
-          "text": "Where do you want my lips first when the teasing turns steamy tonight? swipe →"
+          "text": "Where do you want my lips first when the teasing turns steamy tonight?"
         },
         {
-          "text": "How slow do you want my touch before I kiss your neck again? swipe →"
+          "text": "How slow do you want my touch before I kiss your neck again?"
         },
         {
-          "text": "When would you want me pulling you closer for dirty, breathless pillow talk? swipe →"
+          "text": "When would you want me pulling you closer for dirty, breathless pillow talk?"
         },
         {
-          "text": "What would turn you on faster tonight: my tease, my kiss, or my touch? swipe →"
+          "text": "What would turn you on faster tonight: my tease, my kiss, or my touch?"
         },
         {
           "text": "WANT 1,000 + MORE? We saved the best for the app. all 9:41 • = ‹ .app • tap the link! followers following posts Relationship app Want more questions. The good ones. Download the app 4 @apps.apple.com/app/-cards Follow + Message"
@@ -3438,25 +3437,25 @@
       "likes": 7,
       "comments": 0,
       "createdAt": "2026-10-08T11:13:12.000Z",
-      "coverText": "Brave enough for\npillow talk?\nswipe to start →",
+      "coverText": "Brave enough for\npillow talk?",
       "slideText": [
         {
-          "text": "What do you crave me doing first when we're alone in bed? swipe →"
+          "text": "What do you crave me doing first when we're alone in bed?"
         },
         {
-          "text": "When did you first realize my touch could make you blush and breathless? swipe →"
+          "text": "When did you first realize my touch could make you blush and breathless?"
         },
         {
-          "text": "Where do you want my lips when the teasing gets slow and spicy? swipe →"
+          "text": "Where do you want my lips when the teasing gets slow and spicy?"
         },
         {
-          "text": "How would you describe your favorite fantasy about me in the bedroom? swipe →"
+          "text": "How would you describe your favorite fantasy about me in the bedroom?"
         },
         {
-          "text": "Which part of my teasing still turns you on faster than anything else? swipe →"
+          "text": "Which part of my teasing still turns you on faster than anything else?"
         },
         {
-          "text": "Would you rather kiss me slow first or have me tease your neck? swipe →"
+          "text": "Would you rather kiss me slow first or have me tease your neck?"
         },
         {
           "text": "WANT 1,000 + MORE? We saved the best for the app. all 9:41 • = ‹ .app • tap the link! followers following posts Relationship app Want more questions. The good ones. Download the app 4 @apps.apple.com/app/-cards Follow + Message"
@@ -3495,7 +3494,7 @@
           "options": [
             "A gorgeous stranger flirting with you",
             "Your celebrity crush making a move",
-            "Your ex saying she misses you Q search for deep questions. couple convos. * Get"
+            "Your ex saying she misses you"
           ]
         }
       ]
@@ -3530,41 +3529,41 @@
       "likes": 6,
       "comments": 5,
       "createdAt": "2026-10-12T11:33:19.000Z",
-      "coverText": "Craving Kisses or\nTeasing? J\nswipe to start →",
+      "coverText": "Craving Kisses or\nTeasing? J",
       "slideText": [
         {
           "text": "First thing in the morning.",
           "options": [
             "Craving kisses",
-            "Flirty teasing swipe →"
+            "Flirty teasing"
           ]
         },
         {
           "text": "Pinned against the counter.",
           "options": [
             "Craving kisses",
-            "Flirty teasing swipe →"
+            "Flirty teasing"
           ]
         },
         {
           "text": "Right before we fall asleep.",
           "options": [
             "Craving kisses",
-            "Flirty teasing swipe →"
+            "Flirty teasing"
           ]
         },
         {
           "text": "Halfway through a long hug.",
           "options": [
             "Craving kisses",
-            "Flirty teasing swipe →"
+            "Flirty teasing"
           ]
         },
         {
           "text": "One minute before bed.",
           "options": [
             "Craving kisses",
-            "Flirty teasing swipe →"
+            "Flirty teasing"
           ]
         },
         {
@@ -3625,7 +3624,7 @@
       "likes": 6,
       "comments": 6,
       "createdAt": "2026-10-11T12:33:52.000Z",
-      "coverText": "When our lips\nlinger...\nswipe to start →",
+      "coverText": "When our lips\nlinger...",
       "slideText": [
         {
           "text": "Where would you kiss me first?",
@@ -3633,7 +3632,7 @@
             "My lips slowly",
             "My neck first",
             "My thigh teasingly",
-            "My shoulder gently swipe →"
+            "My shoulder gently"
           ]
         },
         {
@@ -3642,7 +3641,7 @@
             "Right away",
             "After one kiss",
             "After some teasing",
-            "When I blush swipe →"
+            "When I blush"
           ]
         },
         {
@@ -3651,7 +3650,7 @@
             "Hands on my waist",
             "Fingers through hair",
             "Kisses on your neck",
-            "My thigh on yours swipe →"
+            "My thigh on yours"
           ]
         },
         {
@@ -3660,7 +3659,7 @@
             "Slow eye contact",
             "Whispered dirty talk",
             "A teasing bite",
-            "Your hand lingering swipe →"
+            "Your hand lingering"
           ]
         },
         {
@@ -3669,7 +3668,7 @@
             "Me from your lips",
             "You from my touch",
             "Both at once",
-            "Whoever gets teased swipe →"
+            "Whoever gets teased"
           ]
         },
         {
@@ -3678,7 +3677,7 @@
             "Long couch kisses",
             "Neck kisses first",
             "Steamy shower detour",
-            "Breathless pillow talk swipe →"
+            "Breathless pillow talk"
           ]
         },
         {
@@ -3693,25 +3692,25 @@
       "likes": 6,
       "comments": 1,
       "createdAt": "2026-10-11T10:57:24.000Z",
-      "coverText": "Alone till bed?\n(would you rather)\nswipe to start →",
+      "coverText": "Alone till bed?\n(would you rather)",
       "slideText": [
         {
-          "text": "Would you rather have my lips on your neck or my tease in your ear first? swipe →"
+          "text": "Would you rather have my lips on your neck or my tease in your ear first?"
         },
         {
-          "text": "Which turns you on more, a slow shower kiss or breathless pillow talk? swipe →"
+          "text": "Which turns you on more, a slow shower kiss or breathless pillow talk?"
         },
         {
-          "text": "How would you tempt me more, with flirty touch or dirty little whispers? swipe →"
+          "text": "How would you tempt me more, with flirty touch or dirty little whispers?"
         },
         {
-          "text": "Where would you crave me most, against the bedroom door or under soft sheets? swipe →"
+          "text": "Where would you crave me most, against the bedroom door or under soft sheets?"
         },
         {
-          "text": "When do you want me most, right after a kiss or after a steamy cuddle? swipe →"
+          "text": "When do you want me most, right after a kiss or after a steamy cuddle?"
         },
         {
-          "text": "Do you want tonight more teasing and blushes, or instant chemistry and touch? swipe →"
+          "text": "Do you want tonight more teasing and blushes, or instant chemistry and touch?"
         },
         {
           "text": "WANT 1,000 + MORE? We saved the best for the app. all 9:41 • = ‹ .app • tap the link! followers following posts Relationship app Want more questions. The good ones. Download the app 4 @apps.apple.com/app/-cards Follow + Message"
@@ -3834,25 +3833,25 @@
       "likes": 5,
       "comments": 0,
       "createdAt": "2026-10-11T12:01:24.000Z",
-      "coverText": "Slow or steamy\nkisses? J\nswipe to start →",
+      "coverText": "Slow or steamy\nkisses? J",
       "slideText": [
         {
-          "text": "What do you do first when my lips find your neck at the door? swipe →"
+          "text": "What do you do first when my lips find your neck at the door?"
         },
         {
-          "text": "Where would you pull me closer when the bedroom gets quiet and tempting? swipe →"
+          "text": "Where would you pull me closer when the bedroom gets quiet and tempting?"
         },
         {
-          "text": "How long would you tease me before you finally kiss me breathless? swipe →"
+          "text": "How long would you tease me before you finally kiss me breathless?"
         },
         {
-          "text": "When my hands find your thighs, what would you whisper to turn me on? swipe →"
+          "text": "When my hands find your thighs, what would you whisper to turn me on?"
         },
         {
-          "text": "Which kiss would make you blush faster: slow on your neck or deep at midnight? swipe →"
+          "text": "Which kiss would make you blush faster: slow on your neck or deep at midnight?"
         },
         {
-          "text": "Would you keep it flirty and spicy, or lose control the second we hit bed? swipe →"
+          "text": "Would you keep it flirty and spicy, or lose control the second we hit bed?"
         },
         {
           "text": "WANT 1,000 + MORE? We saved the best for the app. all 9:41 • = ‹ .app • tap the link! followers following posts Relationship app Want more questions. The good ones. Download the app 4 @apps.apple.com/app/-cards Follow + Message"
@@ -3866,7 +3865,7 @@
       "likes": 5,
       "comments": 0,
       "createdAt": "2026-10-10T12:08:00.000Z",
-      "coverText": "Bet you miss my\nlips?\nswipe to start →",
+      "coverText": "Bet you miss my\nlips?",
       "slideText": [
         {
           "text": "When I kiss you slow, what gives me away first?",
@@ -3874,7 +3873,7 @@
             "my needy eyes",
             "my grabby hands",
             "my shaky breath",
-            "my smug smile swipe →"
+            "my smug smile"
           ]
         },
         {
@@ -3883,16 +3882,16 @@
             "hand on your neck",
             "lips by your ear",
             "thigh against yours",
-            "fingers on your chest swipe →"
+            "fingers on your chest"
           ]
         },
         {
-          "text": "If 1 pull you closer, what feels most like me?",
+          "text": "If I pull you closer, what feels most like me?",
           "options": [
             "bossy little tease",
             "can't-wait energy",
             "soft but dangerous",
-            "quiet obsessed stare swipe →"
+            "quiet obsessed stare"
           ]
         },
         {
@@ -3901,7 +3900,7 @@
             "in my kisses",
             "in my touch",
             "in my voice",
-            "in my stare swipe →"
+            "in my stare"
           ]
         },
         {
@@ -3910,7 +3909,7 @@
             "my lips on yours",
             "my hands wandering",
             "my teasing whispers",
-            "my pull into bed swipe →"
+            "my pull into bed"
           ]
         },
         {
@@ -3948,14 +3947,14 @@
       "likes": 4,
       "comments": 1,
       "createdAt": "2026-10-13T07:09:27.000Z",
-      "coverText": "Cute or biased-\ngrade me?\nswipe to start →",
+      "coverText": "Cute or biased-\ngrade me?",
       "slideText": [
         {
           "text": "Planning our dates",
           "options": [
             "10/10",
             "7/10",
-            "needs work swipe →"
+            "needs work"
           ]
         },
         {
@@ -3963,7 +3962,7 @@
           "options": [
             "10/10",
             "7/10",
-            "needs work swipe →"
+            "needs work"
           ]
         },
         {
@@ -3971,7 +3970,7 @@
           "options": [
             "10/10",
             "7/10",
-            "needs work swipe →"
+            "needs work"
           ]
         },
         {
@@ -3979,7 +3978,7 @@
           "options": [
             "10/10",
             "7/10",
-            "needs work swipe →"
+            "needs work"
           ]
         },
         {
@@ -3987,7 +3986,7 @@
           "options": [
             "10/10",
             "7/10",
-            "needs work swipe →"
+            "needs work"
           ]
         },
         {
@@ -3995,7 +3994,7 @@
           "options": [
             "10/10",
             "7/10",
-            "needs work swipe →"
+            "needs work"
           ]
         },
         {
@@ -4010,25 +4009,25 @@
       "likes": 4,
       "comments": 0,
       "createdAt": "2026-10-12T11:01:23.000Z",
-      "coverText": "Touch or tease\ntonight?\nswipe to start →",
+      "coverText": "Touch or tease\ntonight?",
       "slideText": [
         {
-          "text": "Where do you want my lips the second we're alone tonight? swipe →"
+          "text": "Where do you want my lips the second we're alone tonight?"
         },
         {
-          "text": "How slow do you want my touch before I kiss you again? swipe →"
+          "text": "How slow do you want my touch before I kiss you again?"
         },
         {
-          "text": "What kind of kiss would make you blush fastest tonight? swipe →"
+          "text": "What kind of kiss would make you blush fastest tonight?"
         },
         {
-          "text": "When do you want me to start teasing you, before bed or later? swipe →"
+          "text": "When do you want me to start teasing you, before bed or later?"
         },
         {
-          "text": "Which part of your neck are you craving my lips on first? swipe →"
+          "text": "Which part of your neck are you craving my lips on first?"
         },
         {
-          "text": "Would you rather end tonight with cuddles first or dirty pillow talk? swipe →"
+          "text": "Would you rather end tonight with cuddles first or dirty pillow talk?"
         },
         {
           "text": "WANT 1,000 + MORE? We saved the best for the app. all 9:41 • = ‹ .app • tap the link! followers following posts Relationship app Want more questions. The good ones. Download the app 4 @apps.apple.com/app/-cards Follow + Message"
@@ -4149,25 +4148,25 @@
       "likes": 3,
       "comments": 0,
       "createdAt": "2026-10-08T11:48:21.000Z",
-      "coverText": "What would she\ncrave?\n(flirty\nedition\nswipe to start →",
+      "coverText": "What would she\ncrave?\n(flirty\nedition",
       "slideText": [
         {
-          "text": "Would you rather feel my lips on your neck or my touch on your thigh? swipe →"
+          "text": "Would you rather feel my lips on your neck or my touch on your thigh?"
         },
         {
-          "text": "What would make you blush faster, a teasing kiss or dirty pillow talk? swipe →"
+          "text": "What would make you blush faster, a teasing kiss or dirty pillow talk?"
         },
         {
-          "text": "Which sounds more tempting tonight, a steamy shower or a slow cuddle in bed? swipe →"
+          "text": "Which sounds more tempting tonight, a steamy shower or a slow cuddle in bed?"
         },
         {
-          "text": "How do you want me to tease you first, with kisses or with whispers? swipe →"
+          "text": "How do you want me to tease you first, with kisses or with whispers?"
         },
         {
-          "text": "When do you crave me most, right before bed or right after a shower? swipe →"
+          "text": "When do you crave me most, right before bed or right after a shower?"
         },
         {
-          "text": "Where would you want my touch longest, your neck, your thighs, or your lips? swipe →"
+          "text": "Where would you want my touch longest, your neck, your thighs, or your lips?"
         },
         {
           "text": "WANT 1,000 + MORE? We saved the best for the app. all 9:41 • = ‹ .app • tap the link! followers following posts Relationship app Want more questions. The good ones. Download the app 4 @apps.apple.com/app/-cards Follow + Message"
@@ -4207,25 +4206,25 @@
       "likes": 2,
       "comments": 0,
       "createdAt": "2026-10-10T11:29:50.000Z",
-      "coverText": "Handle this touch?\nswipe to start →",
+      "coverText": "Handle this touch?",
       "slideText": [
         {
-          "text": "Where do you want my lips first when we finally get alone tonight? swipe →"
+          "text": "Where do you want my lips first when we finally get alone tonight?"
         },
         {
-          "text": "How slow do you want my kisses before I make you blush and breathless? swipe →"
+          "text": "How slow do you want my kisses before I make you blush and breathless?"
         },
         {
-          "text": "Which touch would tease you most right now and leave you craving more of me? swipe →"
+          "text": "Which touch would tease you most right now and leave you craving more of me?"
         },
         {
-          "text": "When would you want me pulling you closer for spicy kisses tonight? swipe →"
+          "text": "When would you want me pulling you closer for spicy kisses tonight?"
         },
         {
-          "text": "What would turn you on faster tonight: my neck kisses or my teasing touch? swipe →"
+          "text": "What would turn you on faster tonight: my neck kisses or my teasing touch?"
         },
         {
-          "text": "Would you want cuddles first, or should I start with flirty kisses and tension? swipe →"
+          "text": "Would you want cuddles first, or should I start with flirty kisses and tension?"
         },
         {
           "text": "WANT 1,000 + MORE? We saved the best for the app. all 9:41 • = ‹ .app • tap the link! followers following posts Relationship app Want more questions. The good ones. Download the app 4 @apps.apple.com/app/-cards Follow + Message"

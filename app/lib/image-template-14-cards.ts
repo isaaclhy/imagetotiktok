@@ -3,7 +3,6 @@ import {
   IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO,
   IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO,
   IMAGE_TEMPLATE2_Q5_TAB_INDEX,
-  IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO,
   imageTemplate2Q5PromoLayout,
 } from '@/app/lib/image-template-2-cover';
 
@@ -28,17 +27,33 @@ export const IMAGE_TEMPLATE14_CARD_INSET_X = 0.085;
 export const IMAGE_TEMPLATE14_CARD_INSET_Y = 0.07;
 /** Corner radius as a share of the frame width. */
 export const IMAGE_TEMPLATE14_CARD_RADIUS_RATIO = 0.1;
+/** Soft zoomed-in bloom around the card so the cut edge is not razor-sharp. */
+export const IMAGE_TEMPLATE14_EDGE_SCALE = 1.055;
+export const IMAGE_TEMPLATE14_EDGE_BLUR_RATIO = 0.016;
 export const IMAGE_TEMPLATE14_MARK = 'spill it';
 export const IMAGE_TEMPLATE14_GRAIN_SRC = '/image-templates/template-14-grain.png';
 export const IMAGE_TEMPLATE14_SLIDE_COUNT = 6;
 export const IMAGE_TEMPLATE14_FONT_STACK =
   '"Libre Baskerville", Georgia, "Times New Roman", serif';
 export const IMAGE_TEMPLATE14_COVER_SIZE_RATIO = 0.072;
-export const IMAGE_TEMPLATE14_QUESTION_SIZE_RATIO = 0.058;
+export const IMAGE_TEMPLATE14_QUESTION_SIZE_RATIO = 0.062;
+export const IMAGE_TEMPLATE14_QUESTION_MIN_SIZE_RATIO = 0.04;
+/** Last-slide question sits in the upper half of the card, above the App Store promo. */
+export const IMAGE_TEMPLATE14_CTA_TEXT_CENTER_RATIO = 0.36;
+export const IMAGE_TEMPLATE14_CTA_TEXT_MAX_HEIGHT_RATIO = 0.46;
 export const IMAGE_TEMPLATE14_MARK_SIZE_RATIO = 0.028;
 export const IMAGE_TEMPLATE14_MARK_Y_RATIO = 0.88;
 export const IMAGE_TEMPLATE14_TEXT_MAX_WIDTH_RATIO = 0.78;
 export const IMAGE_TEMPLATE14_LINE_HEIGHT = 1.28;
+
+/** Keep the usual question size; only pull the last-slide type down if it is very long. */
+export function template14QuestionSizeRatio(text: string, isCta = false): number {
+  if (!isCta) return IMAGE_TEMPLATE14_QUESTION_SIZE_RATIO;
+  const chars = text.replace(/\s+/g, ' ').trim().length;
+  if (chars > 160) return 0.05;
+  if (chars > 110) return 0.054;
+  return IMAGE_TEMPLATE14_QUESTION_SIZE_RATIO;
+}
 
 export function template14CardRect(frameWidth: number, frameHeight: number): {
   x: number;
@@ -147,6 +162,16 @@ export function paintTemplate14Slide(
   const card = template14CardRect(frameWidth, frameHeight);
   ctx.fillStyle = IMAGE_TEMPLATE14_FRAME_BG;
   ctx.fillRect(0, 0, frameWidth, frameHeight);
+  const blurPx = frameWidth * IMAGE_TEMPLATE14_EDGE_BLUR_RATIO;
+  ctx.save();
+  ctx.filter = `blur(${blurPx}px)`;
+  ctx.translate(frameWidth / 2, frameHeight / 2);
+  ctx.scale(IMAGE_TEMPLATE14_EDGE_SCALE, IMAGE_TEMPLATE14_EDGE_SCALE);
+  ctx.translate(-frameWidth / 2, -frameHeight / 2);
+  traceRoundRect(ctx, card.x, card.y, card.width, card.height, card.radius);
+  ctx.fillStyle = options.backgroundColor;
+  ctx.fill();
+  ctx.restore();
   ctx.save();
   traceRoundRect(ctx, card.x, card.y, card.width, card.height, card.radius);
   ctx.clip();
@@ -167,18 +192,32 @@ export function paintTemplate14Slide(
   const isCover = options.tabIndex === 0;
   const isQ5 = options.tabIndex === IMAGE_TEMPLATE2_Q5_TAB_INDEX;
   const textColor = template14TextForBackground(options.backgroundColor);
-  const fontSize = Math.round(
-    frameWidth * (isCover ? IMAGE_TEMPLATE14_COVER_SIZE_RATIO : IMAGE_TEMPLATE14_QUESTION_SIZE_RATIO)
+  const maxWidth = card.width * IMAGE_TEMPLATE14_TEXT_MAX_WIDTH_RATIO;
+  let fontSize = Math.round(
+    frameWidth *
+      (isCover
+        ? IMAGE_TEMPLATE14_COVER_SIZE_RATIO
+        : template14QuestionSizeRatio(options.text, isQ5))
   );
+  const minSize = Math.round(frameWidth * IMAGE_TEMPLATE14_QUESTION_MIN_SIZE_RATIO);
+  const maxBlockH = isQ5
+    ? card.height * IMAGE_TEMPLATE14_CTA_TEXT_MAX_HEIGHT_RATIO
+    : card.height * 0.72;
   ctx.font = `400 ${fontSize}px ${IMAGE_TEMPLATE14_FONT_STACK}`;
+  let lines = wrapLines(ctx, options.text, maxWidth);
+  let lineHeight = fontSize * IMAGE_TEMPLATE14_LINE_HEIGHT;
+  while (fontSize > minSize && lines.length * lineHeight > maxBlockH) {
+    fontSize -= 1;
+    ctx.font = `400 ${fontSize}px ${IMAGE_TEMPLATE14_FONT_STACK}`;
+    lines = wrapLines(ctx, options.text, maxWidth);
+    lineHeight = fontSize * IMAGE_TEMPLATE14_LINE_HEIGHT;
+  }
   ctx.fillStyle = textColor;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  const lines = wrapLines(ctx, options.text, card.width * IMAGE_TEMPLATE14_TEXT_MAX_WIDTH_RATIO);
-  const lineHeight = fontSize * IMAGE_TEMPLATE14_LINE_HEIGHT;
   const blockH = lines.length * lineHeight;
   const centerY =
-    card.y + card.height * (isQ5 ? IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO : 0.5);
+    card.y + card.height * (isQ5 ? IMAGE_TEMPLATE14_CTA_TEXT_CENTER_RATIO : 0.5);
   let y = centerY - blockH / 2 + lineHeight / 2;
   for (const line of lines) {
     ctx.fillText(line, frameWidth / 2, y);
@@ -186,28 +225,19 @@ export function paintTemplate14Slide(
   }
 
   if (isQ5 && options.promo) {
-    const labelSize = Math.round(card.height * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO);
-    const labelGap = card.height * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO;
+    const labelSize = Math.round(frameHeight * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO);
+    const labelGap = frameHeight * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO;
     const layout = imageTemplate2Q5PromoLayout(
-      card.width,
-      card.height,
-      centerY + blockH / 2 + labelSize + labelGap - card.y
+      frameWidth,
+      frameHeight,
+      centerY + blockH / 2 + labelSize + labelGap
     );
-    const promoX = card.x + layout.x;
-    const promoY = card.y + layout.y;
-    ctx.save();
-    traceRoundRect(ctx, card.x, card.y, card.width, card.height, card.radius);
-    ctx.clip();
-    ctx.drawImage(options.promo, promoX, promoY, layout.width, layout.height);
-    ctx.restore();
+    ctx.drawImage(options.promo, layout.x, layout.y, layout.width, layout.height);
     ctx.font = `700 ${labelSize}px "TikTok Sans", system-ui, sans-serif`;
-    ctx.fillStyle =
-      textColor === IMAGE_TEMPLATE14_TEXT_ON_DARK
-        ? IMAGE_TEMPLATE14_TEXT_ON_DARK
-        : 'rgba(255,255,255,0.95)';
+    ctx.fillStyle = '#FFFFFF';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
-    ctx.fillText(IMAGE_TEMPLATE2_Q5_PROMO_LABEL, frameWidth / 2, promoY - labelGap);
+    ctx.fillText(IMAGE_TEMPLATE2_Q5_PROMO_LABEL, frameWidth / 2, layout.y - labelGap);
     return;
   }
 

@@ -5,9 +5,9 @@ import { SettingsMenuPanel } from '@/app/components/SettingsMenuPanel';
 import { STUDIO_APPS, type StudioAppId } from '@/app/lib/apps';
 
 interface SidebarProps {
-  contentTab: 'image' | 'video' | 'character' | 'copycat' | 'prompt' | 'automate';
+  contentTab: 'image' | 'video' | 'character' | 'copycat' | 'logo' | 'prompt' | 'automate';
   onContentTabChange: (
-    tab: 'image' | 'video' | 'character' | 'copycat' | 'prompt' | 'automate'
+    tab: 'image' | 'video' | 'character' | 'copycat' | 'logo' | 'prompt' | 'automate'
   ) => void;
   selectedAppId: StudioAppId;
   onSelectedAppIdChange: (appId: StudioAppId) => void;
@@ -62,6 +62,20 @@ const TABS = [
           strokeLinejoin="round"
           strokeWidth={2}
           d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+        />
+      </svg>
+    ),
+  },
+  {
+    id: 'logo' as const,
+    label: 'Logo generator',
+    icon: (
+      <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 21a9 9 0 100-18 9 9 0 000 18zM8.5 13.5c1.2 1.4 2.4 2 3.5 2s2.3-.6 3.5-2"
         />
       </svg>
     ),

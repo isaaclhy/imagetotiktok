@@ -33,6 +33,9 @@ export const IMAGE_TEMPLATE10_PINTEREST_QUESTION_QUERIES = [
   'couples cute moments',
 ] as const;
 
+/** Template 15 Copycat cover. */
+export const IMAGE_TEMPLATE15_PINTEREST_QUERY = 'couples romantic blurry';
+
 /** Template 11 — same query for cover + Q1–Q5. */
 export const IMAGE_TEMPLATE11_PINTEREST_QUERY = 'cute celebrity couples moments';
 export const IMAGE_TEMPLATE11_PINTEREST_QUESTION_QUERIES = [
