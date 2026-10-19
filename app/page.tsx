@@ -4680,10 +4680,6 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       ]!)
     : imageTabFrameBg;
   const imageTemplate2SquiggleColor = squiggleColorForBackground(activeImageFrameBg);
-  const videoTemplate2HighlightColor = squiggleColorForBackground(
-    videoTemplate2HighlightBg ?? VIDEO_TEMPLATE2_HIGHLIGHT_BACKGROUND
-  );
-  const videoTemplate2TitleHighlightParts = null;
   const activeVideoTemplate =
     contentTab === 'video' && selectedVideoTemplateId !== null
       ? videoTemplateCards.find((c) => c.id === selectedVideoTemplateId)
@@ -8689,24 +8685,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                         textShadow: '0 2px 14px rgba(0, 0, 0, 0.45)',
                                       }}
                                     >
-                                      {videoTemplate2TitleHighlightParts ? (
-                                        <>
-                                          {videoTemplate2TitleHighlightParts.before}
-                                          <span
-                                            className="inline-block rounded-[0.08em] px-[0.12em] py-[0.1em]"
-                                            style={{
-                                              backgroundColor: videoTemplate2HighlightColor,
-                                              color: TITLE_HIGHLIGHT_TEXT_COLOR,
-                                              transform: `rotate(${TITLE_HIGHLIGHT_TILT_RAD}rad)`,
-                                            }}
-                                          >
-                                            {videoTemplate2TitleHighlightParts.word}
-                                          </span>
-                                          {videoTemplate2TitleHighlightParts.after}
-                                        </>
-                                      ) : (
-                                        videoOverlayCaption
-                                      )}
+                                      {videoOverlayCaption}
                                     </p>
                                   ) : null}
                                   {videoTemplate2Questions.length > 0 ? (
