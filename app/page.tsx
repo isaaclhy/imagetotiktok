@@ -139,6 +139,7 @@ import {
   IMAGE_TEMPLATE12_SLIDE_COUNT,
   pickTemplate12Scenes,
 } from '@/app/lib/image-template-12-couples';
+import { stripImageMetadata } from '@/app/lib/strip-image-metadata';
 import {
   IMAGE_TEMPLATE13_BG,
   IMAGE_TEMPLATE13_COVER_SRC,
@@ -271,7 +272,6 @@ import {
   pickVideoTemplate4Label,
   pickVideoTemplate4Question,
   VIDEO_TEMPLATE4_PEXELS_QUERY,
-  VIDEO_TEMPLATE4_VIDEO_FILTER,
 } from '@/app/lib/video-template-4-ocean';
 import {
   pexelsVideoProxySrc,
@@ -4920,8 +4920,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         if (exportTemplateId === 12 && i === IMAGE_TEMPLATE2_Q5_TAB_INDEX) {
           blob = await compositeTemplate12Q5Promo(blob);
         }
+        blob = await stripImageMetadata(blob);
         generatedEntries.push({
-          path: `template-${exportTemplateId}-${names[i]}.png`,
+          path: `template-${exportTemplateId}-${names[i]}.jpg`,
           blob,
         });
       }
@@ -6088,7 +6089,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       const blob = await exportCouplesNatureVideo({
         videoSrc,
         maxDurationSec: VIDEO_TEMPLATE2_MAX_DURATION_SEC,
-        backgroundFilter: VIDEO_TEMPLATE4_VIDEO_FILTER,
+        backgroundFilter: 'none',
         paintOverlay: (ctx, w, h) =>
           paintVideoTemplate4Overlay(ctx, w, h, {
             label: videoTemplate4Label,
@@ -8522,9 +8523,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               style={
                                 isCouplesNatureVideoTemplate
                                   ? { filter: COUPLES_NATURE_VIDEO_FILTER }
-                                  : isOceanSunsetVideoTemplate
-                                    ? { filter: VIDEO_TEMPLATE4_VIDEO_FILTER }
-                                    : undefined
+                                  : undefined
                               }
                               poster={template2PlaybackPosterSrc || undefined}
                             />
@@ -8624,15 +8623,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             ) : isOceanSunsetVideoTemplate ? (
                               <div className="absolute inset-0 z-10 pointer-events-none">
                                 <div
-                                  className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,150,70,0.28)_0%,rgba(255,90,50,0.12)_42%,rgba(90,20,50,0.28)_100%)]"
+                                  className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,142,64,0.26)_0%,rgba(255,112,56,0.14)_28%,rgba(210,72,58,0.08)_55%,rgba(120,32,48,0.14)_78%,rgba(68,14,36,0.24)_100%)]"
                                   aria-hidden
                                 />
                                 <div
-                                  className="absolute inset-x-0 top-[18%] h-[38%] bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.55)_0%,rgba(0,0,0,0)_72%)]"
-                                  aria-hidden
-                                />
-                                <div
-                                  className="absolute inset-x-0 bottom-[14%] h-[22%] bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.4)_0%,rgba(0,0,0,0)_70%)]"
+                                  className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_42%,rgba(0,0,0,0)_0%,rgba(0,0,0,0.08)_62%,rgba(0,0,0,0.28)_100%)]"
                                   aria-hidden
                                 />
                                 <div className="absolute inset-x-[11%] top-[38%] z-10 flex -translate-y-1/2 flex-col items-center text-center text-white">

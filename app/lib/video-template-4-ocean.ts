@@ -5,9 +5,6 @@ import {
 } from '@/app/lib/constants';
 
 export const VIDEO_TEMPLATE4_PEXELS_QUERY = 'ocean sunset';
-/** Warm golden-hour grade for the ocean sunset clip. */
-export const VIDEO_TEMPLATE4_VIDEO_FILTER =
-  'brightness(1.02) contrast(1.12) saturate(1.45) sepia(0.32) hue-rotate(-18deg)';
 export const VIDEO_TEMPLATE4_LABELS = [
   'Question for the boys:',
   'Question for the girls:',
@@ -65,35 +62,27 @@ export function paintVideoTemplate4Overlay(
   options: { label: string; question: string }
 ) {
   const sky = ctx.createLinearGradient(0, 0, 0, frameHeight);
-  sky.addColorStop(0, 'rgba(255, 150, 70, 0.28)');
-  sky.addColorStop(0.42, 'rgba(255, 90, 50, 0.12)');
-  sky.addColorStop(1, 'rgba(90, 20, 50, 0.28)');
+  sky.addColorStop(0, 'rgba(255, 142, 64, 0.26)');
+  sky.addColorStop(0.28, 'rgba(255, 112, 56, 0.14)');
+  sky.addColorStop(0.55, 'rgba(210, 72, 58, 0.08)');
+  sky.addColorStop(0.78, 'rgba(120, 32, 48, 0.14)');
+  sky.addColorStop(1, 'rgba(68, 14, 36, 0.24)');
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, frameWidth, frameHeight);
-  const textWash = ctx.createRadialGradient(
+
+  const vignette = ctx.createRadialGradient(
     frameWidth / 2,
-    frameHeight * 0.38,
-    frameWidth * 0.08,
+    frameHeight * 0.42,
+    frameWidth * 0.18,
     frameWidth / 2,
-    frameHeight * 0.38,
-    frameWidth * 0.55
+    frameHeight * 0.5,
+    frameWidth * 0.92
   );
-  textWash.addColorStop(0, 'rgba(0, 0, 0, 0.55)');
-  textWash.addColorStop(1, 'rgba(0, 0, 0, 0)');
-  ctx.fillStyle = textWash;
-  ctx.fillRect(0, frameHeight * 0.18, frameWidth, frameHeight * 0.38);
-  const markWash = ctx.createRadialGradient(
-    frameWidth / 2,
-    frameHeight * 0.76,
-    frameWidth * 0.05,
-    frameWidth / 2,
-    frameHeight * 0.76,
-    frameWidth * 0.42
-  );
-  markWash.addColorStop(0, 'rgba(0, 0, 0, 0.4)');
-  markWash.addColorStop(1, 'rgba(0, 0, 0, 0)');
-  ctx.fillStyle = markWash;
-  ctx.fillRect(0, frameHeight * 0.64, frameWidth, frameHeight * 0.22);
+  vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+  vignette.addColorStop(0.62, 'rgba(0, 0, 0, 0.08)');
+  vignette.addColorStop(1, 'rgba(0, 0, 0, 0.28)');
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, frameWidth, frameHeight);
 
   const maxW = frameWidth * 0.78;
   const labelSize = Math.round(frameWidth * 0.048);
