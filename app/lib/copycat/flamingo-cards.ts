@@ -12,6 +12,15 @@ export type CopycatPost = {
   platform?: 'tiktok' | 'instagram';
 };
 
+export const COPYCAT_MIN_VIEWS = 100_000;
+
+export function filterCopycatPostsByMinViews(
+  posts: CopycatPost[],
+  minViews = COPYCAT_MIN_VIEWS
+): CopycatPost[] {
+  return posts.filter((post) => post.views >= minViews);
+}
+
 export type CopycatCompetitorFeed = {
   handle: string;
   minViews: number;
@@ -311,6 +320,16 @@ export function formatCopycatSlideBody(slide: CopycatSlideText): string {
       `${OPTION_LETTERS[index] ?? String(index + 1)}. ${cleanCopycatDisplayText(option)}`
   );
   return `${question}\n\n${lines.join('\n')}`;
+}
+
+/** Split a formatted slide body into the question and a. b. c. options. */
+export function splitCopycatQuestionAndOptions(text: string): {
+  question: string;
+  options: string;
+} {
+  const match = text.match(/^([\s\S]*?)\n\n((?:[a-z0-9]\.\s[\s\S]*))$/i);
+  if (!match) return { question: text, options: '' };
+  return { question: match[1]!.trimEnd(), options: match[2]! };
 }
 
 /** Cover + question slides for a post (question count follows the source post). */

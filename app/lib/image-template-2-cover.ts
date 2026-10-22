@@ -6,7 +6,10 @@ import {
 import { IMAGE_TEMPLATE2_APP_FOOTER } from '@/app/lib/constants';
 
 /** Matches template-2-cover.jpg picker art (dusty rose). */
+export const IMAGE_TEMPLATE2_TEXT_COLOR = '#2e2e2e';
 export const IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO = 0.062;
+/** Question slides sit a bit larger than the old 0.05 body size. */
+export const IMAGE_TEMPLATE2_QUESTION_SIZE_RATIO = 0.062;
 export const IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT = 600;
 /** Heavy weights read loose at large sizes — tighten like other overlays. */
 export const IMAGE_TEMPLATE2_COVER_LETTER_SPACING = '-0.03em';
@@ -60,6 +63,8 @@ export const IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO = 0.34;
 export const IMAGE_TEMPLATE2_Q5_PROMO_WIDTH_RATIO = 0.9;
 /** Breathing room between the question text and the top of the mock. */
 export const IMAGE_TEMPLATE2_Q5_PROMO_TEXT_GAP_RATIO = 0.04;
+/** Question body sits above center — closer to natural eye level. */
+export const IMAGE_TEMPLATE2_QUESTION_CENTER_RATIO = 0.38;
 /** Q5 lifts its question so the promo block below never crowds it. */
 export const IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO = 0.44;
 /** Social proof line sitting just above the mock. */
@@ -138,6 +143,8 @@ export function drawImageTemplate2CoverSlide(
     letterSpacing?: string;
     /** Override title line-height multiplier. */
     lineHeightMult?: number;
+    /** Template 2 cover is left-aligned; other callers stay centered. */
+    textAlign?: CanvasTextAlign;
   }
 ) {
   const {
@@ -159,6 +166,7 @@ export function drawImageTemplate2CoverSlide(
     subtitleWeight = IMAGE_TEMPLATE2_COVER_SUBTITLE_WEIGHT,
     letterSpacing = IMAGE_TEMPLATE2_COVER_LETTER_SPACING,
     lineHeightMult = IMAGE_TEMPLATE2_COVER_LINE_HEIGHT_MULT,
+    textAlign = 'center',
   } = options;
 
   if (!skipBackground) {
@@ -193,11 +201,15 @@ export function drawImageTemplate2CoverSlide(
     const fontSize = Math.round(frameWidth * titleSizeRatio);
     ctx.font = `${titleWeight} ${fontSize}px ${fontFamily}`;
     ctx.letterSpacing = letterSpacing;
-    ctx.textAlign = 'center';
+    ctx.textAlign = textAlign;
     ctx.textBaseline = 'middle';
     ctx.fillStyle = textColor;
 
     const maxTextWidth = frameWidth * maxTextWidthRatio;
+    const textX =
+      textAlign === 'left'
+        ? (frameWidth - maxTextWidth) / 2
+        : frameWidth / 2;
     const lines = centerText ? wrapLines(ctx, centerText, maxTextWidth) : [];
     const highlight = highlightWord?.trim().toLowerCase() ?? '';
     const lineHeight = fontSize * lineHeightMult;
@@ -218,7 +230,8 @@ export function drawImageTemplate2CoverSlide(
         const before = line.slice(0, idx);
         const word = line.slice(idx, idx + highlight.length);
         const lineWidth = ctx.measureText(line).width;
-        const lineStartX = frameWidth / 2 - lineWidth / 2;
+        const lineStartX =
+          textAlign === 'left' ? textX : frameWidth / 2 - lineWidth / 2;
         // Measure by prefix difference so letter-spacing between the word and
         // its neighbours is accounted for.
         const beforeW = ctx.measureText(before).width;
@@ -228,15 +241,15 @@ export function drawImageTemplate2CoverSlide(
         // Marker band goes down first so the word sits on top of it.
         drawTitleHighlight(ctx, wordX, y, wordW, fontSize, highlightColor);
         ctx.fillStyle = textColor;
-        ctx.fillText(line, frameWidth / 2, y);
+        ctx.fillText(line, textX, y);
 
         ctx.textAlign = 'left';
         ctx.fillStyle = TITLE_HIGHLIGHT_TEXT_COLOR;
         ctx.fillText(word, wordX, y);
-        ctx.textAlign = 'center';
+        ctx.textAlign = textAlign;
         ctx.fillStyle = textColor;
       } else {
-        ctx.fillText(line, frameWidth / 2, y);
+        ctx.fillText(line, textX, y);
       }
       y += lineHeight;
     }
@@ -250,7 +263,7 @@ export function drawImageTemplate2CoverSlide(
       ctx.letterSpacing = '0px';
       ctx.fillStyle = textColor;
       ctx.globalAlpha = 0.88;
-      ctx.fillText(subtitleText, frameWidth / 2, subtitleY);
+      ctx.fillText(subtitleText, textX, subtitleY);
       ctx.globalAlpha = 1;
     }
   }

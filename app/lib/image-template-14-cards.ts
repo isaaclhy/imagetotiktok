@@ -129,7 +129,7 @@ export function template14TextForBackground(backgroundColor: string): string {
   return luminance < 0.45 ? IMAGE_TEMPLATE14_TEXT_ON_DARK : IMAGE_TEMPLATE14_TEXT;
 }
 
-function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+function wrapLine(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
   const words = text.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return [];
   const lines: string[] = [];
@@ -146,6 +146,49 @@ function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number
   return lines;
 }
 
+function wrapPreservingBreaks(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number
+): string[] {
+  const paragraphs = text.replace(/\r\n/g, '\n').split('\n');
+  const lines: string[] = [];
+  for (const paragraph of paragraphs) {
+    if (!paragraph.trim()) {
+      lines.push('');
+      continue;
+    }
+    lines.push(...wrapLine(ctx, paragraph, maxWidth));
+  }
+  return lines;
+}
+
+function paintCardBloom(
+  ctx: CanvasRenderingContext2D,
+  frameWidth: number,
+  frameHeight: number,
+  card: { x: number; y: number; width: number; height: number; radius: number },
+  color: string
+): void {
+  const blurPx = frameWidth * IMAGE_TEMPLATE14_EDGE_BLUR_RATIO;
+  const bloom = document.createElement('canvas');
+  bloom.width = frameWidth;
+  bloom.height = frameHeight;
+  const bloomCtx = bloom.getContext('2d');
+  if (!bloomCtx) return;
+  bloomCtx.translate(frameWidth / 2, frameHeight / 2);
+  bloomCtx.scale(IMAGE_TEMPLATE14_EDGE_SCALE, IMAGE_TEMPLATE14_EDGE_SCALE);
+  bloomCtx.translate(-frameWidth / 2, -frameHeight / 2);
+  traceRoundRect(bloomCtx, card.x, card.y, card.width, card.height, card.radius);
+  bloomCtx.fillStyle = color;
+  bloomCtx.fill();
+  ctx.save();
+  ctx.filter = `blur(${blurPx}px)`;
+  ctx.drawImage(bloom, 0, 0);
+  ctx.filter = 'none';
+  ctx.restore();
+}
+
 /** Cover, question, or Q5 slide. Q5 draws Template 2's label and App Store image. */
 export function paintTemplate14Slide(
   ctx: CanvasRenderingContext2D,
@@ -157,21 +200,13 @@ export function paintTemplate14Slide(
     tabIndex: number;
     grain: CanvasImageSource;
     promo?: CanvasImageSource | null;
+    leftAlign?: boolean;
   }
 ): void {
   const card = template14CardRect(frameWidth, frameHeight);
   ctx.fillStyle = IMAGE_TEMPLATE14_FRAME_BG;
   ctx.fillRect(0, 0, frameWidth, frameHeight);
-  const blurPx = frameWidth * IMAGE_TEMPLATE14_EDGE_BLUR_RATIO;
-  ctx.save();
-  ctx.filter = `blur(${blurPx}px)`;
-  ctx.translate(frameWidth / 2, frameHeight / 2);
-  ctx.scale(IMAGE_TEMPLATE14_EDGE_SCALE, IMAGE_TEMPLATE14_EDGE_SCALE);
-  ctx.translate(-frameWidth / 2, -frameHeight / 2);
-  traceRoundRect(ctx, card.x, card.y, card.width, card.height, card.radius);
-  ctx.fillStyle = options.backgroundColor;
-  ctx.fill();
-  ctx.restore();
+  paintCardBloom(ctx, frameWidth, frameHeight, card, options.backgroundColor);
   ctx.save();
   traceRoundRect(ctx, card.x, card.y, card.width, card.height, card.radius);
   ctx.clip();
@@ -204,23 +239,25 @@ export function paintTemplate14Slide(
     ? card.height * IMAGE_TEMPLATE14_CTA_TEXT_MAX_HEIGHT_RATIO
     : card.height * 0.72;
   ctx.font = `400 ${fontSize}px ${IMAGE_TEMPLATE14_FONT_STACK}`;
-  let lines = wrapLines(ctx, options.text, maxWidth);
+  let lines = wrapPreservingBreaks(ctx, options.text, maxWidth);
   let lineHeight = fontSize * IMAGE_TEMPLATE14_LINE_HEIGHT;
   while (fontSize > minSize && lines.length * lineHeight > maxBlockH) {
     fontSize -= 1;
     ctx.font = `400 ${fontSize}px ${IMAGE_TEMPLATE14_FONT_STACK}`;
-    lines = wrapLines(ctx, options.text, maxWidth);
+    lines = wrapPreservingBreaks(ctx, options.text, maxWidth);
     lineHeight = fontSize * IMAGE_TEMPLATE14_LINE_HEIGHT;
   }
+  const alignLeft = Boolean(options.leftAlign && !isCover && !isQ5);
   ctx.fillStyle = textColor;
-  ctx.textAlign = 'center';
+  ctx.textAlign = alignLeft ? 'left' : 'center';
   ctx.textBaseline = 'middle';
   const blockH = lines.length * lineHeight;
   const centerY =
     card.y + card.height * (isQ5 ? IMAGE_TEMPLATE14_CTA_TEXT_CENTER_RATIO : 0.5);
+  const textX = alignLeft ? card.x + card.width * 0.11 : frameWidth / 2;
   let y = centerY - blockH / 2 + lineHeight / 2;
   for (const line of lines) {
-    ctx.fillText(line, frameWidth / 2, y);
+    ctx.fillText(line, textX, y);
     y += lineHeight;
   }
 

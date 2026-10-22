@@ -70,6 +70,7 @@ import {
   IMAGE_TEMPLATE2_PASTEL_COLORS,
   IMAGE_TEMPLATE2_COVER_SQUIGGLE_ENABLED_DEFAULT,
   IMAGE_TEMPLATE2_APP_FOOTER,
+  IMAGE_TEMPLATE2_TOP_LABEL,
   IMAGE_TEMPLATE2_TYPE_LABELS,
   type AutomateQuestionType,
   type ConcreteQuestionType,
@@ -84,6 +85,7 @@ import {
   IMAGE_TEMPLATE2_COVER_SUBTITLE_WEIGHT,
   IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO,
   IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT,
+  IMAGE_TEMPLATE2_QUESTION_SIZE_RATIO,
   IMAGE_TEMPLATE2_Q5_PROMO_LABEL,
   IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO,
   IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO,
@@ -92,6 +94,8 @@ import {
   IMAGE_TEMPLATE2_Q5_PROMO_WIDTH_RATIO,
   IMAGE_TEMPLATE2_Q5_TAB_INDEX,
   IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO,
+  IMAGE_TEMPLATE2_QUESTION_CENTER_RATIO,
+  IMAGE_TEMPLATE2_TEXT_COLOR,
   imageTemplate2Q5PromoLayout,
   formatImageTemplate2CoverSubtitle,
   pickRandomImageTemplate2CoverSubtitle,
@@ -142,12 +146,23 @@ import {
 import { stripImageMetadata } from '@/app/lib/strip-image-metadata';
 import {
   IMAGE_TEMPLATE13_BG,
+  IMAGE_TEMPLATE13_COVER_SIZE,
   IMAGE_TEMPLATE13_COVER_SRC,
   IMAGE_TEMPLATE13_COVER_TEXTS,
   IMAGE_TEMPLATE13_DEFAULT_SCREEN_TEXT,
-  nextTemplate13CoverText,
+  IMAGE_TEMPLATE13_FONT_WEIGHT,
+  IMAGE_TEMPLATE13_LETTER_SPACING,
+  IMAGE_TEMPLATE13_PROGRESS_H,
+  IMAGE_TEMPLATE13_PROGRESS_INSET,
+  IMAGE_TEMPLATE13_PROGRESS_Y,
+  IMAGE_TEMPLATE13_QUESTION_SIZE,
+  IMAGE_TEMPLATE13_SIDE_PAD,
   IMAGE_TEMPLATE13_SLIDE_COUNT,
   IMAGE_TEMPLATE13_TEXT,
+  IMAGE_TEMPLATE13_TEXT_WIDTH,
+  drawTemplate13ProgressBar,
+  template13ProgressRatio,
+  nextTemplate13CoverText,
 } from '@/app/lib/image-template-13-cover';
 import {
   IMAGE_TEMPLATE14_CARD_INSET_X,
@@ -304,6 +319,8 @@ const CONTENT_TABS: ContentTab[] = [
 const COPYCAT_COMPETITORS = [
   { id: 'flamingo-cards', label: 'Flamingo cards' },
   { id: '21-questions', label: '21 Questions' },
+  { id: 'its-all-about-loving-you', label: "It's all about loving you" },
+  { id: 'try-deepen', label: 'Try deepen' },
 ] as const;
 
 type CopycatCompetitorId = (typeof COPYCAT_COMPETITORS)[number]['id'];
@@ -376,7 +393,7 @@ function parsePositiveInt(raw: string | null): number | null {
 function readAppUrlState(): AppUrlState {
   if (typeof window === 'undefined') {
     return {
-      contentTab: 'image',
+      contentTab: 'copycat',
       selectedAppId: DEFAULT_STUDIO_APP_ID,
       selectedImageTemplateId: null,
       selectedVideoTemplateId: null,
@@ -387,7 +404,7 @@ function readAppUrlState(): AppUrlState {
 
   const params = new URLSearchParams(window.location.search);
   const tabRaw = params.get('tab');
-  const contentTab = CONTENT_TABS.includes(tabRaw as ContentTab) ? (tabRaw as ContentTab) : 'image';
+  const contentTab = CONTENT_TABS.includes(tabRaw as ContentTab) ? (tabRaw as ContentTab) : 'copycat';
   const appRaw = params.get('app');
   const selectedAppId = resolveStudioAppId(appRaw);
 
@@ -1991,7 +2008,7 @@ export default function Home() {
   const [levelName, setLevelName] = useState<string>('');
   const [theme, setTheme] = useState<string>('');
   const [mode, setMode] = useState<'plain' | 'video'>('video');
-  const [contentTab, setContentTab] = useState<ContentTab>('image');
+  const [contentTab, setContentTab] = useState<ContentTab>('copycat');
   const [selectedAppId, setSelectedAppId] = useState<StudioAppId>(DEFAULT_STUDIO_APP_ID);
   const [selectedImageTemplateId, setSelectedImageTemplateId] = useState<number | null>(null);
   const [selectedVideoTemplateId, setSelectedVideoTemplateId] = useState<number | null>(null);
@@ -2089,7 +2106,7 @@ export default function Home() {
   const imageFrameExportFontFamily = '"Comic Sans MS", "Marker Felt", "Chalkboard SE", "Trebuchet MS", sans-serif';
   const imageFrameExportTextColorDefault = '#2f2a31';
   const imageFrameExportGlowColor = 'rgba(255, 255, 255, 0.9)';
-  const pastelCarouselTextColor = '#FFFFFF';
+  const pastelCarouselTextColor = IMAGE_TEMPLATE2_TEXT_COLOR;
   const pastelCarouselFontFamily = TIKTOK_SANS_STACK;
   const pastelCarouselExportFontFamily = TIKTOK_SANS_STACK;
   const [imageTabFunnyQuestions, setImageTabFunnyQuestions] = useState<string[]>([]);
@@ -4770,17 +4787,27 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           const question = (imageTabTexts[tabIndex] ?? '').trim();
           ctx.fillStyle = IMAGE_TEMPLATE13_BG;
           ctx.fillRect(0, 0, frameWidth, frameHeight);
-          const fontSize = 52;
+          drawTemplate13ProgressBar(
+            ctx,
+            frameWidth,
+            frameHeight,
+            template13ProgressRatio(tabIndex, IMAGE_TEMPLATE13_SLIDE_COUNT)
+          );
+          const fontSize = Math.round(
+            frameWidth *
+              (tabIndex === 0 ? IMAGE_TEMPLATE13_COVER_SIZE : IMAGE_TEMPLATE13_QUESTION_SIZE)
+          );
           try {
-            await document.fonts.load(`600 ${fontSize}px "TikTok Sans"`);
+            await document.fonts.load(`${IMAGE_TEMPLATE13_FONT_WEIGHT} ${fontSize}px "TikTok Sans"`);
           } catch {
             /* font may already be ready */
           }
-          ctx.font = `600 ${fontSize}px "TikTok Sans", system-ui, sans-serif`;
+          ctx.font = `${IMAGE_TEMPLATE13_FONT_WEIGHT} ${fontSize}px "TikTok Sans", system-ui, sans-serif`;
+          ctx.letterSpacing = IMAGE_TEMPLATE13_LETTER_SPACING;
           ctx.fillStyle = IMAGE_TEMPLATE13_TEXT;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          const lines = wrapText(ctx, question, frameWidth * 0.78);
+          const lines = wrapText(ctx, question, frameWidth * IMAGE_TEMPLATE13_TEXT_WIDTH);
           const lineHeight = fontSize * 1.3;
           const startY = frameHeight / 2 - ((lines.length - 1) * lineHeight) / 2;
           lines.forEach((line, lineIndex) => {
@@ -5325,7 +5352,13 @@ const imageFrameTitleLine1 = 'Questions to ask your';
             footer: '',
             showProgress: false,
             subtitle: imageTemplate2CoverSubtitle,
+            textAlign: 'left',
           });
+          ctx.font = `700 ${Math.round(frameWidth * 0.03)}px ${pastelCarouselExportFontFamily}`;
+          ctx.fillStyle = IMAGE_TEMPLATE2_TEXT_COLOR;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          ctx.fillText(IMAGE_TEMPLATE2_TOP_LABEL, frameWidth / 2, frameHeight * 0.08);
           return await new Promise<Blob>((resolve, reject) => {
             canvas.toBlob((blob) => {
               if (blob) resolve(blob);
@@ -5337,13 +5370,19 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         ctx.fillStyle = slideBg;
         ctx.fillRect(0, 0, frameWidth, frameHeight);
 
+        ctx.font = `700 ${Math.round(frameWidth * 0.03)}px ${pastelCarouselExportFontFamily}`;
+        ctx.fillStyle = IMAGE_TEMPLATE2_TEXT_COLOR;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(IMAGE_TEMPLATE2_TOP_LABEL, frameWidth / 2, frameHeight * 0.08);
+
         const progress = (tabIndex + 1) / exportSlideTotal;
         const barX = frameWidth * 0.08;
         const barW = frameWidth * 0.84;
         const barY = frameHeight * 0.21;
         const barH = Math.max(8, Math.round(frameHeight * 0.007));
 
-        ctx.fillStyle = 'rgba(255,255,255,0.95)';
+        ctx.fillStyle = IMAGE_TEMPLATE2_TEXT_COLOR;
         ctx.font = `700 ${Math.round(frameHeight * 0.032)}px ${pastelCarouselExportFontFamily}`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'bottom';
@@ -5355,7 +5394,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         ctx.fillRect(barX, barY, barW * progress, barH);
 
         const centerText = textForTab(tabIndex);
-        const fontSize = Math.round(frameWidth * 0.05);
+        const fontSize = Math.round(frameWidth * IMAGE_TEMPLATE2_QUESTION_SIZE_RATIO);
         try {
           await document.fonts.load(`800 ${fontSize}px "TikTok Sans"`);
           await document.fonts.load(`700 ${fontSize}px "TikTok Sans"`);
@@ -5363,21 +5402,20 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           /* font may already be ready */
         }
         ctx.font = `800 ${fontSize}px ${pastelCarouselExportFontFamily}`;
-        ctx.textAlign = 'center';
+        ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = pastelCarouselTextColor;
         const maxTextWidth = frameWidth * 0.6;
+        const textX = (frameWidth - maxTextWidth) / 2;
         const lines = wrapLines(ctx, centerText.replace(/\n/g, ' '), maxTextWidth);
         const lineHeight = fontSize * 1.22;
         const blockH = lines.length * lineHeight;
         const textCenterY =
           frameHeight *
-          (tabIndex === IMAGE_TEMPLATE2_Q5_TAB_INDEX
-            ? IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO
-            : 0.5);
+          IMAGE_TEMPLATE2_QUESTION_CENTER_RATIO;
         let y = textCenterY - blockH / 2 + lineHeight / 2;
         for (const line of lines) {
-          ctx.fillText(line, frameWidth / 2, y);
+          ctx.fillText(line, textX, y);
           y += lineHeight;
         }
 
@@ -5401,7 +5439,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           ctx.drawImage(promo, layout.x, layout.y, layout.width, layout.height);
 
           ctx.font = `700 ${labelSize}px ${pastelCarouselExportFontFamily}`;
-          ctx.fillStyle = 'rgba(255,255,255,0.95)';
+          ctx.fillStyle = IMAGE_TEMPLATE2_TEXT_COLOR;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'bottom';
           ctx.fillText(
@@ -5411,7 +5449,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           );
         } else {
           ctx.font = `700 ${Math.round(frameHeight * 0.03)}px ${pastelCarouselExportFontFamily}`;
-          ctx.fillStyle = 'rgba(255,255,255,0.95)';
+          ctx.fillStyle = IMAGE_TEMPLATE2_TEXT_COLOR;
           ctx.textBaseline = 'bottom';
           ctx.fillText(IMAGE_TEMPLATE2_APP_FOOTER, frameWidth / 2, frameHeight * 0.9);
         }
@@ -6987,7 +7025,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 }}
                               />
                               <p
-                                className="absolute left-1/2 z-10 w-[78%] -translate-x-1/2 -translate-y-1/2 text-center wrap-break-word"
+                                className="absolute left-1/2 z-10 w-[78%] -translate-x-1/2 -translate-y-1/2 text-center whitespace-pre-wrap wrap-break-word"
                                 style={{
                                   top: `${
                                     (selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX
@@ -7076,14 +7114,38 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   </div>
                                 ) : null}
                               </>
-                            ) : selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX ? (
+                            ) : (
                               <>
-                                <div className="absolute inset-0 flex items-center justify-center px-[11%] text-center">
+                                <div
+                                  className="absolute z-20 overflow-hidden rounded-full"
+                                  style={{
+                                    left: `${IMAGE_TEMPLATE13_PROGRESS_INSET * 100}%`,
+                                    right: `${IMAGE_TEMPLATE13_PROGRESS_INSET * 100}%`,
+                                    top: `${IMAGE_TEMPLATE13_PROGRESS_Y * 100}%`,
+                                    height: `${IMAGE_TEMPLATE13_PROGRESS_H * 100}%`,
+                                    backgroundColor: 'rgba(255,255,255,0.35)',
+                                  }}
+                                >
+                                  <div
+                                    className="h-full bg-white"
+                                    style={{
+                                      width: `${template13ProgressRatio(selectedImageBrowserTab, imageTemplateTabCount) * 100}%`,
+                                    }}
+                                  />
+                                </div>
+                            {selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX ? (
+                              <>
+                                <div
+                                  className="absolute inset-0 flex items-center justify-center text-center"
+                                  style={{ paddingLeft: `${IMAGE_TEMPLATE13_SIDE_PAD * 100}%`, paddingRight: `${IMAGE_TEMPLATE13_SIDE_PAD * 100}%` }}
+                                >
                                   <p
-                                    className="w-full wrap-break-word font-semibold text-white"
+                                    className="w-full wrap-break-word text-white"
                                     style={{
                                       fontFamily: pastelCarouselFontFamily,
-                                      fontSize: '4.8cqw',
+                                      fontSize: `${IMAGE_TEMPLATE13_QUESTION_SIZE * 100}cqw`,
+                                      fontWeight: IMAGE_TEMPLATE13_FONT_WEIGHT,
+                                      letterSpacing: IMAGE_TEMPLATE13_LETTER_SPACING,
                                       lineHeight: 1.3,
                                     }}
                                   >
@@ -7127,18 +7189,32 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 </div>
                               </>
                             ) : (
-                              <div className="absolute inset-0 flex items-center justify-center px-[11%] text-center">
+                              <div
+                                className="absolute inset-0 flex items-center justify-center text-center"
+                                style={{
+                                  paddingLeft: `${IMAGE_TEMPLATE13_SIDE_PAD * 100}%`,
+                                  paddingRight: `${IMAGE_TEMPLATE13_SIDE_PAD * 100}%`,
+                                }}
+                              >
                                 <p
-                                  className="w-full wrap-break-word font-semibold text-white"
+                                  className="w-full wrap-break-word text-white"
                                   style={{
                                     fontFamily: pastelCarouselFontFamily,
-                                    fontSize: '4.8cqw',
+                                    fontSize: `${
+                                      (selectedImageBrowserTab === 0
+                                        ? IMAGE_TEMPLATE13_COVER_SIZE
+                                        : IMAGE_TEMPLATE13_QUESTION_SIZE) * 100
+                                    }cqw`,
+                                    fontWeight: IMAGE_TEMPLATE13_FONT_WEIGHT,
+                                    letterSpacing: IMAGE_TEMPLATE13_LETTER_SPACING,
                                     lineHeight: 1.3,
                                   }}
                                 >
                                   {imageFrameTextForActiveTab}
                                 </p>
                               </div>
+                            )}
+                              </>
                             )
                           ) : isCouplesDoodleImageTemplate ? (
                             <>
@@ -7376,11 +7452,22 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                           ) : isPastelCarouselImageTemplate ? (
                             selectedImageBrowserTab === 0 ? (
                               <>
+                              <p
+                                className="absolute inset-x-[8%] top-[8%] z-10 text-center font-bold"
+                                style={{
+                                  color: IMAGE_TEMPLATE2_TEXT_COLOR,
+                                  fontFamily: pastelCarouselFontFamily,
+                                  fontSize: '3cqw',
+                                }}
+                              >
+                                {IMAGE_TEMPLATE2_TOP_LABEL}
+                              </p>
                               <div className="absolute inset-0 z-10 flex items-center justify-center px-[20%] pointer-events-none">
-                                <div className="flex w-full flex-col items-center">
+                                <div className="flex w-full flex-col items-start">
                                 <p
-                                  className="w-full text-center text-white wrap-break-word"
+                                  className="w-full text-left wrap-break-word"
                                   style={{
+                                    color: IMAGE_TEMPLATE2_TEXT_COLOR,
                                     fontFamily: pastelCarouselFontFamily,
                                     fontSize: `${IMAGE_TEMPLATE2_COVER_TITLE_SIZE_RATIO * 100}cqw`,
                                     fontWeight: IMAGE_TEMPLATE2_COVER_TITLE_WEIGHT,
@@ -7409,8 +7496,10 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 </p>
                                 {formatImageTemplate2CoverSubtitle(imageTemplate2CoverSubtitle) ? (
                                   <p
-                                    className="w-full text-center text-white/90 wrap-break-word"
+                                    className="w-full text-left wrap-break-word"
                                     style={{
+                                      color: IMAGE_TEMPLATE2_TEXT_COLOR,
+                                      opacity: 0.88,
                                       fontFamily: pastelCarouselFontFamily,
                                       fontSize: `${IMAGE_TEMPLATE2_COVER_SUBTITLE_SIZE_RATIO * 100}cqw`,
                                       fontWeight: IMAGE_TEMPLATE2_COVER_SUBTITLE_WEIGHT,
@@ -7426,10 +7515,23 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               </>
                             ) : (
                             <>
+                              <p
+                                className="absolute inset-x-[8%] top-[8%] z-10 text-center font-bold"
+                                style={{
+                                  color: IMAGE_TEMPLATE2_TEXT_COLOR,
+                                  fontFamily: pastelCarouselFontFamily,
+                                  fontSize: '3cqw',
+                                }}
+                              >
+                                {IMAGE_TEMPLATE2_TOP_LABEL}
+                              </p>
                               <div className="absolute inset-x-[8%] top-[21%] z-10">
                                 <p
-                                  className="mb-2 text-center text-[11px] sm:text-xs font-bold tracking-wide text-white"
-                                  style={{ fontFamily: pastelCarouselFontFamily }}
+                                  className="mb-2 text-center text-[11px] sm:text-xs font-bold tracking-wide"
+                                  style={{
+                                    color: IMAGE_TEMPLATE2_TEXT_COLOR,
+                                    fontFamily: pastelCarouselFontFamily,
+                                  }}
                                 >
                                   {imageTabTypeLabel}
                                 </p>
@@ -7441,13 +7543,13 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 </div>
                               </div>
                               <p
-                                className="absolute left-1/2 z-10 w-[60%] -translate-x-1/2 -translate-y-1/2 text-center text-base sm:text-lg md:text-xl font-extrabold leading-snug text-white wrap-break-word"
+                                className="absolute left-[20%] z-10 w-[60%] -translate-y-1/2 text-left font-extrabold leading-snug wrap-break-word"
                                 style={{
+                                  color: IMAGE_TEMPLATE2_TEXT_COLOR,
                                   fontFamily: pastelCarouselFontFamily,
+                                  fontSize: `${IMAGE_TEMPLATE2_QUESTION_SIZE_RATIO * 100}cqw`,
                                   top: `${
-                                    (selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX
-                                      ? IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO
-                                      : 0.5) * 100
+                                    IMAGE_TEMPLATE2_QUESTION_CENTER_RATIO * 100
                                   }%`,
                                 }}
                               >
@@ -7456,8 +7558,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               {selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX ? (
                                 <>
                                 <p
-                                  className="absolute inset-x-[6%] z-10 text-center font-bold text-white/95"
+                                  className="absolute inset-x-[6%] z-10 text-center font-bold"
                                   style={{
+                                    color: IMAGE_TEMPLATE2_TEXT_COLOR,
                                     fontFamily: pastelCarouselFontFamily,
                                     // Ratio is frame-height based; the container query unit is width.
                                     fontSize: `${IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO * (4 / 3) * 100}cqw`,
@@ -7479,8 +7582,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 </>
                               ) : (
                                 <p
-                                  className="absolute inset-x-[8%] bottom-[9%] z-10 text-center text-[11px] sm:text-xs font-bold text-white/95"
-                                  style={{ fontFamily: pastelCarouselFontFamily }}
+                                  className="absolute inset-x-[8%] bottom-[9%] z-10 text-center text-[11px] sm:text-xs font-bold"
+                                  style={{
+                                    color: IMAGE_TEMPLATE2_TEXT_COLOR,
+                                    fontFamily: pastelCarouselFontFamily,
+                                  }}
                                 >
                                   {IMAGE_TEMPLATE2_APP_FOOTER}
                                 </p>

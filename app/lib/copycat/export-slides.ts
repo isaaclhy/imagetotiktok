@@ -1,4 +1,5 @@
-import { IMAGE_TEMPLATE2_PASTEL_COLORS } from '@/app/lib/constants';
+import { splitCopycatQuestionAndOptions } from '@/app/lib/copycat/flamingo-cards';
+import { IMAGE_TEMPLATE2_PASTEL_COLORS, IMAGE_TEMPLATE2_TOP_LABEL } from '@/app/lib/constants';
 import {
   IMAGE_TEMPLATE2_Q5_PROMO_LABEL,
   IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO,
@@ -7,6 +8,9 @@ import {
   IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO,
   IMAGE_TEMPLATE2_Q5_TAB_INDEX,
   IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO,
+  IMAGE_TEMPLATE2_QUESTION_CENTER_RATIO,
+  IMAGE_TEMPLATE2_QUESTION_SIZE_RATIO,
+  IMAGE_TEMPLATE2_TEXT_COLOR,
   imageTemplate2Q5PromoLayout,
 } from '@/app/lib/image-template-2-cover';
 import {
@@ -20,7 +24,18 @@ import {
   IMAGE_TEMPLATE8_Q5_SEARCH_TOP_RATIO,
   IMAGE_TEMPLATE8_Q5_SEARCH_WEIGHT,
 } from '@/app/lib/image-template-8-cover';
-import { IMAGE_TEMPLATE13_BG, IMAGE_TEMPLATE13_TEXT } from '@/app/lib/image-template-13-cover';
+import {
+  IMAGE_TEMPLATE13_BG,
+  IMAGE_TEMPLATE13_COVER_SIZE,
+  IMAGE_TEMPLATE13_FONT_WEIGHT,
+  IMAGE_TEMPLATE13_LETTER_SPACING,
+  IMAGE_TEMPLATE13_QUESTION_SIZE,
+  IMAGE_TEMPLATE13_SIDE_PAD,
+  IMAGE_TEMPLATE13_TEXT,
+  IMAGE_TEMPLATE13_TEXT_WIDTH,
+  drawTemplate13ProgressBar,
+  template13ProgressRatio,
+} from '@/app/lib/image-template-13-cover';
 import {
   IMAGE_TEMPLATE14_COLORS,
   IMAGE_TEMPLATE14_FONT_STACK,
@@ -45,7 +60,6 @@ const COPYCAT_APP_NAME = 'Spill It';
 const COPYCAT_COVER_HEARTS = '♥ ♥ ♥';
 const COPYCAT_TEXT_ONLY_COVER_TOP = 0.38;
 const COPYCAT_TEXT_ONLY_COVER_SIZE_T2 = 0.074;
-const COPYCAT_TEXT_ONLY_COVER_SIZE_T13 = 0.066;
 const COPYCAT_TEXT_ONLY_COVER_SIZE_T14 = 0.088;
 
 function drawCopycatAppMark(
@@ -57,6 +71,7 @@ function drawCopycatAppMark(
     color: string;
     font: string;
     textBaseline?: CanvasTextBaseline;
+    heartsLetterSpacing?: string;
   }
 ) {
   const { isCover, color, font } = options;
@@ -66,7 +81,9 @@ function drawCopycatAppMark(
   if (isCover) {
     const heartSize = Math.round(frameWidth * 0.036);
     ctx.font = `400 ${heartSize}px ${TIKTOK}`;
+    ctx.letterSpacing = options.heartsLetterSpacing ?? '0.12em';
     ctx.fillText(COPYCAT_COVER_HEARTS, frameWidth / 2, markY - heartSize * 1.35);
+    ctx.letterSpacing = '0px';
   }
   ctx.font = font;
   ctx.fillText(COPYCAT_APP_NAME, frameWidth / 2, markY);
@@ -130,16 +147,18 @@ function drawWrappedBlock(
   x: number,
   centerY: number,
   lineHeight: number,
-  align: 'center' | 'left'
+  align: 'center' | 'left',
+  paintLine?: (line: string, index: number) => void
 ) {
   ctx.textAlign = align;
   ctx.textBaseline = 'middle';
   const blockH = lines.length * lineHeight;
   let y = centerY - blockH / 2 + lineHeight / 2;
-  for (const line of lines) {
+  lines.forEach((line, index) => {
+    paintLine?.(line, index);
     ctx.fillText(line, x, y);
     y += lineHeight;
-  }
+  });
   return { top: centerY - blockH / 2, bottom: centerY + blockH / 2 };
 }
 
@@ -153,7 +172,8 @@ async function paintSlide(
   slide: CopycatExportSlide,
   tabIndex: number,
   template14Color: string,
-  template15FrameBg?: string
+  template15FrameBg?: string,
+  slideCount = 6
 ): Promise<Blob> {
   const { w, h } = frameSize(templateId);
   const canvas = document.createElement('canvas');
@@ -233,6 +253,7 @@ async function paintSlide(
         tabIndex: slide.isCta ? IMAGE_TEMPLATE2_Q5_TAB_INDEX : 1,
         grain,
         promo,
+        leftAlign: slide.leftAlign,
       });
       if (!slide.isCta) {
         const card = template14CardRect(w, h);
@@ -251,24 +272,27 @@ async function paintSlide(
   if (templateId === 13) {
     ctx.fillStyle = IMAGE_TEMPLATE13_BG;
     ctx.fillRect(0, 0, w, h);
+    drawTemplate13ProgressBar(ctx, w, h, template13ProgressRatio(tabIndex, slideCount));
     try {
-      await document.fonts.load(`600 52px "TikTok Sans"`);
+      await document.fonts.load(`${IMAGE_TEMPLATE13_FONT_WEIGHT} 52px "TikTok Sans"`);
     } catch {
       /* fonts may already be ready */
     }
     if (slide.isCta) {
-      const questionSize = Math.round(w * 0.048);
-      ctx.font = `600 ${questionSize}px ${TIKTOK}`;
+      const questionSize = Math.round(w * IMAGE_TEMPLATE13_QUESTION_SIZE);
+      ctx.font = `${IMAGE_TEMPLATE13_FONT_WEIGHT} ${questionSize}px ${TIKTOK}`;
+      ctx.letterSpacing = IMAGE_TEMPLATE13_LETTER_SPACING;
       ctx.fillStyle = IMAGE_TEMPLATE13_TEXT;
-      const lines = wrapLines(ctx, slide.text, w * 0.78);
+      const lines = wrapLines(ctx, slide.text, w * IMAGE_TEMPLATE13_TEXT_WIDTH);
       drawWrappedBlock(
         ctx,
         lines,
-        w * 0.11,
+        w * IMAGE_TEMPLATE13_SIDE_PAD,
         h * 0.5,
         questionSize * 1.3,
         'left'
       );
+      ctx.letterSpacing = '0px';
       const banner = await loadImage(IMAGE_TEMPLATE8_Q5_BANNER_SRC);
       const fontSize = Math.round(w * IMAGE_TEMPLATE8_Q5_SEARCH_SIZE_RATIO);
       ctx.save();
@@ -283,14 +307,15 @@ async function paintSlide(
       drawImageTemplate8Q5Banner(ctx, w, h, banner);
     } else {
       const fontSize = slide.isCover
-        ? Math.round(w * COPYCAT_TEXT_ONLY_COVER_SIZE_T13)
-        : Math.round(w * 0.048);
-      ctx.font = `600 ${fontSize}px ${TIKTOK}`;
+        ? Math.round(w * IMAGE_TEMPLATE13_COVER_SIZE)
+        : Math.round(w * IMAGE_TEMPLATE13_QUESTION_SIZE);
+      ctx.font = `${IMAGE_TEMPLATE13_FONT_WEIGHT} ${fontSize}px ${TIKTOK}`;
+      ctx.letterSpacing = IMAGE_TEMPLATE13_LETTER_SPACING;
       ctx.fillStyle = IMAGE_TEMPLATE13_TEXT;
-      const maxW = w * 0.78;
+      const maxW = w * IMAGE_TEMPLATE13_TEXT_WIDTH;
       const lines = wrapLines(ctx, slide.text, maxW);
       const lineHeight = fontSize * 1.3;
-      const x = slide.leftAlign ? w * 0.11 : w / 2;
+      const x = slide.leftAlign ? w * IMAGE_TEMPLATE13_SIDE_PAD : w / 2;
       const centerY = h * (slide.isCta ? 0.5 : COPYCAT_TEXT_ONLY_COVER_TOP);
       drawWrappedBlock(ctx, lines, x, centerY, lineHeight, slide.leftAlign ? 'left' : 'center');
       drawCopycatAppMark(ctx, w, h * 0.91, {
@@ -308,26 +333,37 @@ async function paintSlide(
       IMAGE_TEMPLATE2_PASTEL_COLORS[tabIndex % IMAGE_TEMPLATE2_PASTEL_COLORS.length]!;
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = IMAGE_TEMPLATE2_TEXT_COLOR;
+    ctx.font = `700 ${Math.round(w * 0.03)}px ${TIKTOK}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(IMAGE_TEMPLATE2_TOP_LABEL, w / 2, h * 0.08);
     try {
       await document.fonts.load(`800 ${Math.round(w * 0.062)}px "TikTok Sans"`);
+      await document.fonts.load(`500 ${Math.round(w * 0.062)}px "TikTok Sans"`);
     } catch {
       /* fonts may already be ready */
     }
     const fontSize = slide.isCover
       ? Math.round(w * COPYCAT_TEXT_ONLY_COVER_SIZE_T2)
-      : Math.round(w * 0.05);
-    ctx.font = `800 ${fontSize}px ${TIKTOK}`;
-    ctx.fillStyle = '#FFFFFF';
+      : Math.round(w * IMAGE_TEMPLATE2_QUESTION_SIZE_RATIO);
+    const questionFont = `800 ${fontSize}px ${TIKTOK}`;
+    const optionFont = `500 ${fontSize}px ${TIKTOK}`;
+    ctx.fillStyle = IMAGE_TEMPLATE2_TEXT_COLOR;
     const maxW = slide.leftAlign ? w * 0.76 : w * 0.6;
-    const lines = wrapLines(ctx, slide.text, maxW);
+    const { question, options } = splitCopycatQuestionAndOptions(slide.text);
+    ctx.font = questionFont;
+    const questionLines = wrapLines(ctx, question, maxW);
+    ctx.font = optionFont;
+    const optionLines = options ? ['', ...wrapLines(ctx, options, maxW)] : [];
+    const lines = [...questionLines, ...optionLines];
+    const questionLineCount = questionLines.length;
     const lineHeight = fontSize * 1.2;
     const centerY =
       h *
-      (slide.isCta
-        ? IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO
-        : slide.isCover
+      (slide.isCover
           ? COPYCAT_TEXT_ONLY_COVER_TOP
-          : 0.5);
+          : IMAGE_TEMPLATE2_QUESTION_CENTER_RATIO);
     const x = slide.leftAlign ? w * 0.12 : w / 2;
     const block = drawWrappedBlock(
       ctx,
@@ -335,7 +371,10 @@ async function paintSlide(
       x,
       centerY,
       lineHeight,
-      slide.leftAlign ? 'left' : 'center'
+      slide.leftAlign ? 'left' : 'center',
+      (_line, index) => {
+        ctx.font = index < questionLineCount ? questionFont : optionFont;
+      }
     );
     if (slide.isCta) {
       const promo = await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC);
@@ -344,16 +383,17 @@ async function paintSlide(
       const layout = imageTemplate2Q5PromoLayout(w, h, block.bottom + labelSize + labelGap);
       ctx.drawImage(promo, layout.x, layout.y, layout.width, layout.height);
       ctx.font = `700 ${labelSize}px ${TIKTOK}`;
-      ctx.fillStyle = 'rgba(255,255,255,0.95)';
+      ctx.fillStyle = IMAGE_TEMPLATE2_TEXT_COLOR;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
       ctx.fillText(IMAGE_TEMPLATE2_Q5_PROMO_LABEL, w / 2, layout.y - labelGap);
     } else {
       drawCopycatAppMark(ctx, w, h * 0.91, {
         isCover: slide.isCover,
-        color: 'rgba(255,255,255,0.95)',
+        color: IMAGE_TEMPLATE2_TEXT_COLOR,
         font: `700 ${Math.round(w * 0.03)}px ${TIKTOK}`,
         textBaseline: 'bottom',
+        heartsLetterSpacing: '0.02em',
       });
     }
     return canvasBlob(canvas);
@@ -451,7 +491,8 @@ export async function exportCopycatSlidesZip(options: {
       slide,
       i,
       color,
-      options.template15FrameBg
+      options.template15FrameBg,
+      options.slides.length
     );
     const name = i === 0 ? 'cover' : `q${i}`;
     zip.file(`template-${options.templateId}-${name}.png`, blob);

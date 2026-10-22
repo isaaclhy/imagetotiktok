@@ -26,7 +26,7 @@ export const CARD_BG_FALLBACK_PALETTE = [
 
 /** Pastel backgrounds for Spill It Image Template 2 (carousel). Mid-tone so white text stays readable. */
 export const IMAGE_TEMPLATE2_PASTEL_COLORS = [
-  '#D48A9C', // dusty rose
+  '#E0A3B2', // dusty rose
   '#A48BC4', // muted lilac
   '#7AADD0', // soft blue
   '#78B898', // sage green
@@ -67,6 +67,7 @@ export const IMAGE_TEMPLATE2_COVER_BACKGROUND = IMAGE_TEMPLATE2_PASTEL_COLORS[0]
 export const IMAGE_TEMPLATE2_COVER_SQUIGGLE_ENABLED_DEFAULT = true;
 
 export const IMAGE_TEMPLATE2_APP_FOOTER = 'Spill It - Couples Questions';
+export const IMAGE_TEMPLATE2_TOP_LABEL = 'Couples Questions';
 
 export const IMAGE_TEMPLATE2_TYPE_LABELS: Record<
   'funny' | 'flirty' | 'me_or_you' | 'brave',

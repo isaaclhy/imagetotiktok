@@ -4,6 +4,43 @@ export const IMAGE_TEMPLATE13_COVER_SRC = '/image-templates/template-13-cover.jp
 export const IMAGE_TEMPLATE13_BG = '#520817';
 export const IMAGE_TEMPLATE13_TEXT = '#FFFFFF';
 export const IMAGE_TEMPLATE13_SLIDE_COUNT = 6;
+/** Inset from the left and right edges of every text slide. */
+export const IMAGE_TEMPLATE13_SIDE_PAD = 0.15;
+export const IMAGE_TEMPLATE13_TEXT_WIDTH = 1 - IMAGE_TEMPLATE13_SIDE_PAD * 2;
+export const IMAGE_TEMPLATE13_COVER_SIZE = 0.084;
+export const IMAGE_TEMPLATE13_QUESTION_SIZE = 0.07;
+export const IMAGE_TEMPLATE13_FONT_WEIGHT = 800;
+export const IMAGE_TEMPLATE13_LETTER_SPACING = '0em';
+export const IMAGE_TEMPLATE13_PROGRESS_Y = 0.055;
+export const IMAGE_TEMPLATE13_PROGRESS_H = 0.01;
+export const IMAGE_TEMPLATE13_PROGRESS_INSET = IMAGE_TEMPLATE13_SIDE_PAD;
+
+export function template13ProgressRatio(index: number, total: number): number {
+  return Math.min(1, Math.max(0, (index + 1) / Math.max(1, total)));
+}
+
+export function drawTemplate13ProgressBar(
+  ctx: CanvasRenderingContext2D,
+  frameWidth: number,
+  frameHeight: number,
+  progress: number
+): void {
+  const barX = frameWidth * IMAGE_TEMPLATE13_PROGRESS_INSET;
+  const barW = frameWidth * (1 - IMAGE_TEMPLATE13_PROGRESS_INSET * 2);
+  const barY = frameHeight * IMAGE_TEMPLATE13_PROGRESS_Y;
+  const barH = Math.max(5, Math.round(frameHeight * IMAGE_TEMPLATE13_PROGRESS_H));
+  const fill = Math.min(1, Math.max(0, progress));
+  const radius = barH / 2;
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.beginPath();
+  ctx.roundRect(barX, barY, barW, barH, radius);
+  ctx.fill();
+  const fillW = Math.max(barH, barW * fill);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.beginPath();
+  ctx.roundRect(barX, barY, fillW, barH, radius);
+  ctx.fill();
+}
 export const IMAGE_TEMPLATE13_COVER_TEXTS = [
   '5 ragebait questions to ask your babe tonight',
   'babe, answer these if you love me?',
