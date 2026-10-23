@@ -6,8 +6,7 @@ import {
 
 export const VIDEO_TEMPLATE4_PEXELS_QUERY = 'ocean sunset';
 export const VIDEO_TEMPLATE4_LABELS = [
-  'Question for the boys:',
-  'Question for the girls:',
+  'Questions for your boyfriend:',
 ] as const;
 export type VideoTemplate4Label = (typeof VIDEO_TEMPLATE4_LABELS)[number];
 
@@ -26,8 +25,8 @@ function pickFrom<T extends string>(pool: readonly T[], exclude?: string): T {
   return list[Math.floor(Math.random() * list.length)]!;
 }
 
-export function pickVideoTemplate4Label(exclude?: string): VideoTemplate4Label {
-  return pickFrom(VIDEO_TEMPLATE4_LABELS, exclude);
+export function pickVideoTemplate4Label(_exclude?: string): VideoTemplate4Label {
+  return VIDEO_TEMPLATE4_LABELS[0];
 }
 
 export function pickVideoTemplate4Question(exclude?: string): string {
