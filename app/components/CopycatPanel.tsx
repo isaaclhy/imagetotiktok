@@ -33,20 +33,16 @@ import {
   IMAGE_TEMPLATE6_TEXT_COLOR,
 } from '@/app/lib/image-template-6-kawaii';
 import {
-  IMAGE_TEMPLATE8_Q5_BANNER_ASPECT,
-  IMAGE_TEMPLATE8_Q5_BANNER_GAP_RATIO,
-  IMAGE_TEMPLATE8_Q5_BANNER_RADIUS_RATIO,
-  IMAGE_TEMPLATE8_Q5_BANNER_SRC,
-  IMAGE_TEMPLATE8_Q5_BANNER_WIDTH_RATIO,
-  IMAGE_TEMPLATE8_Q5_SEARCH_SIZE_RATIO,
-  IMAGE_TEMPLATE8_Q5_SEARCH_TOP_RATIO,
-  IMAGE_TEMPLATE8_Q5_SEARCH_WEIGHT,
-} from '@/app/lib/image-template-8-cover';
-import {
   IMAGE_TEMPLATE13_BG,
   IMAGE_TEMPLATE13_COVER_SIZE,
   IMAGE_TEMPLATE13_FONT_WEIGHT,
   IMAGE_TEMPLATE13_LETTER_SPACING,
+  IMAGE_TEMPLATE13_OPTION_GAP,
+  IMAGE_TEMPLATE13_OPTION_SIZE,
+  IMAGE_TEMPLATE13_OPTION_WEIGHT,
+  IMAGE_TEMPLATE13_PROMO_LABEL_GAP,
+  IMAGE_TEMPLATE13_PROMO_LABEL_SIZE,
+  IMAGE_TEMPLATE13_PROMO_VISIBLE,
   IMAGE_TEMPLATE13_PROGRESS_H,
   IMAGE_TEMPLATE13_PROGRESS_INSET,
   IMAGE_TEMPLATE13_PROGRESS_Y,
@@ -525,62 +521,72 @@ function CopycatSlidePreview({
             {text}
           </p>
         ) : (
-          <p
-            className={`absolute z-10 -translate-y-1/2 whitespace-pre-wrap wrap-break-word text-white ${
-              alignLeft || showTemplate13Cta
-                ? 'text-left'
-                : 'left-1/2 -translate-x-1/2 text-center'
-            }`}
-            style={{
-              top: `${(showTemplate13Cta ? 0.5 : COPYCAT_TEXT_ONLY_COVER_TOP) * 100}%`,
-              left:
-                alignLeft || showTemplate13Cta
-                  ? `${IMAGE_TEMPLATE13_SIDE_PAD * 100}%`
-                  : undefined,
-              width: `${IMAGE_TEMPLATE13_TEXT_WIDTH * 100}%`,
-              fontFamily: TIKTOK_SANS_STACK,
-              fontSize: `${IMAGE_TEMPLATE13_QUESTION_SIZE * 100}cqw`,
-              fontWeight: IMAGE_TEMPLATE13_FONT_WEIGHT,
-              letterSpacing: IMAGE_TEMPLATE13_LETTER_SPACING,
-              lineHeight: 1.3,
-              textAlign: alignLeft || showTemplate13Cta ? 'left' : 'center',
-            }}
-          >
-            {text}
-          </p>
+          (() => {
+            const { question, options } = splitCopycatQuestionAndOptions(text);
+            const t13AlignLeft = alignLeft && Boolean(options);
+            return (
+              <div
+                className={`absolute z-10 -translate-y-1/2 whitespace-pre-wrap wrap-break-word text-white ${
+                  t13AlignLeft ? 'text-left' : 'left-1/2 -translate-x-1/2 text-center'
+                }`}
+                style={{
+                  top: `${COPYCAT_TEXT_ONLY_COVER_TOP * 100}%`,
+                  left: t13AlignLeft ? `${IMAGE_TEMPLATE13_SIDE_PAD * 100}%` : undefined,
+                  width: `${IMAGE_TEMPLATE13_TEXT_WIDTH * 100}%`,
+                  fontFamily: TIKTOK_SANS_STACK,
+                  letterSpacing: IMAGE_TEMPLATE13_LETTER_SPACING,
+                  textAlign: t13AlignLeft ? 'left' : 'center',
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: `${IMAGE_TEMPLATE13_QUESTION_SIZE * 100}cqw`,
+                    fontWeight: IMAGE_TEMPLATE13_FONT_WEIGHT,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {question}
+                </p>
+                {options ? (
+                  <p
+                    style={{
+                      marginTop: `${IMAGE_TEMPLATE13_QUESTION_SIZE * 1.3 * IMAGE_TEMPLATE13_OPTION_GAP * 100}cqw`,
+                      fontSize: `${IMAGE_TEMPLATE13_OPTION_SIZE * 100}cqw`,
+                      fontWeight: IMAGE_TEMPLATE13_OPTION_WEIGHT,
+                      lineHeight: 1.35,
+                    }}
+                  >
+                    {options}
+                  </p>
+                ) : null}
+              </div>
+            );
+          })()
         )}
         {showTemplate13Cta ? (
-          <div
-            className="absolute left-0 right-0 z-20 flex flex-col items-center px-[6%]"
-            style={{ top: `${IMAGE_TEMPLATE8_Q5_SEARCH_TOP_RATIO * 100}%` }}
-          >
+          <>
             <p
-              className="w-full text-center text-white wrap-break-word"
+              className="absolute inset-x-0 z-10 text-center font-bold text-white"
               style={{
                 fontFamily: TIKTOK_SANS_STACK,
-                fontSize: `${IMAGE_TEMPLATE8_Q5_SEARCH_SIZE_RATIO * 100}cqw`,
-                fontWeight: IMAGE_TEMPLATE8_Q5_SEARCH_WEIGHT,
-                lineHeight: 1.25,
-                textShadow: '0 1px 8px rgba(0,0,0,0.55)',
+                fontSize: `${IMAGE_TEMPLATE13_PROMO_LABEL_SIZE * 100}cqw`,
+                lineHeight: 1,
+                bottom: `calc(${IMAGE_TEMPLATE13_PROMO_VISIBLE * 100}% + ${IMAGE_TEMPLATE13_PROMO_LABEL_GAP * 100}cqw)`,
               }}
             >
               {IMAGE_TEMPLATE2_Q5_PROMO_LABEL}
             </p>
             <img
-              src={IMAGE_TEMPLATE8_Q5_BANNER_SRC}
-              alt="Spill It - Couples Questions"
-              className="overflow-hidden"
+              src={IMAGE_TEMPLATE2_Q5_PROMO_SRC}
+              alt="Spill It on the App Store"
+              className="absolute left-1/2 z-10 -translate-x-1/2"
               style={{
-                width: `${IMAGE_TEMPLATE8_Q5_BANNER_WIDTH_RATIO * 100}%`,
-                marginTop: `${IMAGE_TEMPLATE8_Q5_BANNER_GAP_RATIO * 100}%`,
-                borderRadius: `${
-                  ((IMAGE_TEMPLATE8_Q5_BANNER_WIDTH_RATIO * IMAGE_TEMPLATE8_Q5_BANNER_RADIUS_RATIO) /
-                    IMAGE_TEMPLATE8_Q5_BANNER_ASPECT) *
-                  100
-                }cqw`,
+                width: `${IMAGE_TEMPLATE2_Q5_PROMO_WIDTH_RATIO * 100}%`,
+                maxWidth: 'none',
+                top: `${(1 - IMAGE_TEMPLATE13_PROMO_VISIBLE) * 100}%`,
               }}
             />
-          </div>
+          </>
         ) : showSpillItMark ? (
           <CopycatAppMarkFooter
             isCover={isCover}

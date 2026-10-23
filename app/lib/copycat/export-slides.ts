@@ -4,8 +4,10 @@ import {
   IMAGE_TEMPLATE2_Q5_PROMO_LABEL,
   IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO,
   IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO,
+  IMAGE_TEMPLATE2_Q5_PROMO_ASPECT,
   IMAGE_TEMPLATE2_Q5_PROMO_SRC,
   IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO,
+  IMAGE_TEMPLATE2_Q5_PROMO_WIDTH_RATIO,
   IMAGE_TEMPLATE2_Q5_TAB_INDEX,
   IMAGE_TEMPLATE2_Q5_TEXT_CENTER_RATIO,
   IMAGE_TEMPLATE2_QUESTION_CENTER_RATIO,
@@ -18,22 +20,24 @@ import {
   IMAGE_TEMPLATE6_TEXT_COLOR,
 } from '@/app/lib/image-template-6-kawaii';
 import {
-  drawImageTemplate8Q5Banner,
-  IMAGE_TEMPLATE8_Q5_BANNER_SRC,
-  IMAGE_TEMPLATE8_Q5_SEARCH_SIZE_RATIO,
-  IMAGE_TEMPLATE8_Q5_SEARCH_TOP_RATIO,
-  IMAGE_TEMPLATE8_Q5_SEARCH_WEIGHT,
-} from '@/app/lib/image-template-8-cover';
-import {
   IMAGE_TEMPLATE13_BG,
+  IMAGE_TEMPLATE13_CONTENT_BOTTOM,
   IMAGE_TEMPLATE13_COVER_SIZE,
   IMAGE_TEMPLATE13_FONT_WEIGHT,
   IMAGE_TEMPLATE13_LETTER_SPACING,
+  IMAGE_TEMPLATE13_OPTION_GAP,
+  IMAGE_TEMPLATE13_OPTION_SIZE,
+  IMAGE_TEMPLATE13_OPTION_WEIGHT,
+  IMAGE_TEMPLATE13_PROMO_LABEL_GAP,
+  IMAGE_TEMPLATE13_PROMO_LABEL_SIZE,
+  IMAGE_TEMPLATE13_PROMO_TEXT_GAP,
+  IMAGE_TEMPLATE13_PROMO_VISIBLE,
   IMAGE_TEMPLATE13_QUESTION_SIZE,
   IMAGE_TEMPLATE13_SIDE_PAD,
   IMAGE_TEMPLATE13_TEXT,
   IMAGE_TEMPLATE13_TEXT_WIDTH,
   drawTemplate13ProgressBar,
+  template13ContentTop,
   template13ProgressRatio,
 } from '@/app/lib/image-template-13-cover';
 import {
@@ -275,55 +279,80 @@ async function paintSlide(
     drawTemplate13ProgressBar(ctx, w, h, template13ProgressRatio(tabIndex, slideCount));
     try {
       await document.fonts.load(`${IMAGE_TEMPLATE13_FONT_WEIGHT} 52px "TikTok Sans"`);
+      await document.fonts.load(`${IMAGE_TEMPLATE13_OPTION_WEIGHT} 52px "TikTok Sans"`);
     } catch {
       /* fonts may already be ready */
     }
-    if (slide.isCta) {
-      const questionSize = Math.round(w * IMAGE_TEMPLATE13_QUESTION_SIZE);
-      ctx.font = `${IMAGE_TEMPLATE13_FONT_WEIGHT} ${questionSize}px ${TIKTOK}`;
-      ctx.letterSpacing = IMAGE_TEMPLATE13_LETTER_SPACING;
-      ctx.fillStyle = IMAGE_TEMPLATE13_TEXT;
-      const lines = wrapLines(ctx, slide.text, w * IMAGE_TEMPLATE13_TEXT_WIDTH);
-      drawWrappedBlock(
-        ctx,
-        lines,
-        w * IMAGE_TEMPLATE13_SIDE_PAD,
-        h * 0.5,
-        questionSize * 1.3,
-        'left'
-      );
-      ctx.letterSpacing = '0px';
-      const banner = await loadImage(IMAGE_TEMPLATE8_Q5_BANNER_SRC);
-      const fontSize = Math.round(w * IMAGE_TEMPLATE8_Q5_SEARCH_SIZE_RATIO);
-      ctx.save();
-      ctx.font = `${IMAGE_TEMPLATE8_Q5_SEARCH_WEIGHT} ${fontSize}px ${TIKTOK}`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      ctx.fillStyle = '#FFFFFF';
-      ctx.shadowColor = 'rgba(0,0,0,0.55)';
-      ctx.shadowBlur = Math.max(4, w * 0.008);
-      ctx.fillText(IMAGE_TEMPLATE2_Q5_PROMO_LABEL, w / 2, h * IMAGE_TEMPLATE8_Q5_SEARCH_TOP_RATIO);
-      ctx.restore();
-      drawImageTemplate8Q5Banner(ctx, w, h, banner);
-    } else {
+    {
       const fontSize = slide.isCover
         ? Math.round(w * IMAGE_TEMPLATE13_COVER_SIZE)
         : Math.round(w * IMAGE_TEMPLATE13_QUESTION_SIZE);
-      ctx.font = `${IMAGE_TEMPLATE13_FONT_WEIGHT} ${fontSize}px ${TIKTOK}`;
+      const optionSize = Math.round(w * IMAGE_TEMPLATE13_OPTION_SIZE);
+      const questionFont = `${IMAGE_TEMPLATE13_FONT_WEIGHT} ${fontSize}px ${TIKTOK}`;
+      const optionFont = `${IMAGE_TEMPLATE13_OPTION_WEIGHT} ${optionSize}px ${TIKTOK}`;
       ctx.letterSpacing = IMAGE_TEMPLATE13_LETTER_SPACING;
       ctx.fillStyle = IMAGE_TEMPLATE13_TEXT;
       const maxW = w * IMAGE_TEMPLATE13_TEXT_WIDTH;
-      const lines = wrapLines(ctx, slide.text, maxW);
-      const lineHeight = fontSize * 1.3;
-      const x = slide.leftAlign ? w * IMAGE_TEMPLATE13_SIDE_PAD : w / 2;
-      const centerY = h * (slide.isCta ? 0.5 : COPYCAT_TEXT_ONLY_COVER_TOP);
-      drawWrappedBlock(ctx, lines, x, centerY, lineHeight, slide.leftAlign ? 'left' : 'center');
-      drawCopycatAppMark(ctx, w, h * 0.91, {
-        isCover: slide.isCover,
-        color: 'rgba(255,255,255,0.95)',
-        font: `600 ${Math.round(w * 0.032)}px ${TIKTOK}`,
-        textBaseline: 'bottom',
-      });
+      const { question, options } = slide.isCover
+        ? { question: slide.text, options: '' }
+        : splitCopycatQuestionAndOptions(slide.text);
+      ctx.font = questionFont;
+      const questionLines = wrapLines(ctx, question, maxW);
+      ctx.font = optionFont;
+      const optionLines = options ? wrapLines(ctx, options, maxW) : [];
+      const questionLineH = fontSize * 1.3;
+      const optionLineH = optionSize * 1.35;
+      const gap = optionLines.length ? questionLineH * IMAGE_TEMPLATE13_OPTION_GAP : 0;
+      const textH =
+        questionLines.length * questionLineH + gap + optionLines.length * optionLineH;
+      const promoLabelSize = Math.round(w * IMAGE_TEMPLATE13_PROMO_LABEL_SIZE);
+      const promoLabelGap = w * IMAGE_TEMPLATE13_PROMO_LABEL_GAP;
+      const promoW = w * IMAGE_TEMPLATE2_Q5_PROMO_WIDTH_RATIO;
+      const promoH = promoW / IMAGE_TEMPLATE2_Q5_PROMO_ASPECT;
+      const promoDefaultY = h * (1 - IMAGE_TEMPLATE13_PROMO_VISIBLE);
+      const promoReserve =
+        promoLabelSize + promoLabelGap + h * IMAGE_TEMPLATE13_PROMO_TEXT_GAP;
+      const blockH = textH;
+      const alignLeft = slide.leftAlign && optionLines.length > 0;
+      const x = alignLeft ? w * IMAGE_TEMPLATE13_SIDE_PAD : w / 2;
+      const minTop = template13ContentTop(h);
+      const maxBottom = slide.isCta
+        ? promoDefaultY - promoReserve
+        : h * IMAGE_TEMPLATE13_CONTENT_BOTTOM;
+      let top = h * COPYCAT_TEXT_ONLY_COVER_TOP - blockH / 2;
+      if (top + blockH > maxBottom) top = maxBottom - blockH;
+      if (top < minTop) top = minTop;
+      ctx.textAlign = alignLeft ? 'left' : 'center';
+      ctx.textBaseline = 'middle';
+      let y = top;
+      ctx.font = questionFont;
+      for (const line of questionLines) {
+        ctx.fillText(line, x, y + questionLineH / 2);
+        y += questionLineH;
+      }
+      y += gap;
+      ctx.font = optionFont;
+      for (const line of optionLines) {
+        ctx.fillText(line, x, y + optionLineH / 2);
+        y += optionLineH;
+      }
+      ctx.letterSpacing = '0px';
+      if (slide.isCta) {
+        const promo = await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC);
+        const promoY = Math.max(promoDefaultY, y + promoReserve);
+        ctx.drawImage(promo, (w - promoW) / 2, promoY, promoW, promoH);
+        ctx.font = `700 ${promoLabelSize}px ${TIKTOK}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(IMAGE_TEMPLATE2_Q5_PROMO_LABEL, w / 2, promoY - promoLabelGap);
+      } else {
+        drawCopycatAppMark(ctx, w, h * 0.91, {
+          isCover: slide.isCover,
+          color: 'rgba(255,255,255,0.95)',
+          font: `600 ${Math.round(w * 0.032)}px ${TIKTOK}`,
+          textBaseline: 'bottom',
+        });
+      }
     }
     return canvasBlob(canvas);
   }

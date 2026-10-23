@@ -9,11 +9,35 @@ export const IMAGE_TEMPLATE13_SIDE_PAD = 0.15;
 export const IMAGE_TEMPLATE13_TEXT_WIDTH = 1 - IMAGE_TEMPLATE13_SIDE_PAD * 2;
 export const IMAGE_TEMPLATE13_COVER_SIZE = 0.084;
 export const IMAGE_TEMPLATE13_QUESTION_SIZE = 0.07;
-export const IMAGE_TEMPLATE13_FONT_WEIGHT = 800;
+export const IMAGE_TEMPLATE13_FONT_WEIGHT = 700;
+/** Multiple-choice answers under a question: smaller and lighter than the question. */
+export const IMAGE_TEMPLATE13_OPTION_SIZE = 0.05;
+export const IMAGE_TEMPLATE13_OPTION_WEIGHT = 500;
+/** Gap between the question and its options, in question line heights. */
+export const IMAGE_TEMPLATE13_OPTION_GAP = 0.6;
 export const IMAGE_TEMPLATE13_LETTER_SPACING = '0em';
-export const IMAGE_TEMPLATE13_PROGRESS_Y = 0.055;
-export const IMAGE_TEMPLATE13_PROGRESS_H = 0.01;
+export const IMAGE_TEMPLATE13_PROGRESS_Y = 0.08;
+export const IMAGE_TEMPLATE13_PROGRESS_H = 0.013;
 export const IMAGE_TEMPLATE13_PROGRESS_INSET = IMAGE_TEMPLATE13_SIDE_PAD;
+/** Text never rises above this gap under the progress bar, or below the footer line. */
+export const IMAGE_TEMPLATE13_CONTENT_GAP = 0.03;
+export const IMAGE_TEMPLATE13_CONTENT_BOTTOM = 0.86;
+/**
+ * CTA: the template 2 App Store mock, pinned to the bottom with only its top part on screen.
+ * Sizes are fractions of frame width so the label matches template 2's on a taller frame.
+ */
+export const IMAGE_TEMPLATE13_PROMO_VISIBLE = 0.3;
+export const IMAGE_TEMPLATE13_PROMO_LABEL_SIZE = 0.04;
+export const IMAGE_TEMPLATE13_PROMO_LABEL_GAP = 0.03;
+/** Space kept between the CTA text and the promo label, as a fraction of frame height. */
+export const IMAGE_TEMPLATE13_PROMO_TEXT_GAP = 0.03;
+
+export function template13ContentTop(frameHeight: number): number {
+  const barH = Math.max(5, Math.round(frameHeight * IMAGE_TEMPLATE13_PROGRESS_H));
+  return (
+    frameHeight * (IMAGE_TEMPLATE13_PROGRESS_Y + IMAGE_TEMPLATE13_CONTENT_GAP) + barH
+  );
+}
 
 export function template13ProgressRatio(index: number, total: number): number {
   return Math.min(1, Math.max(0, (index + 1) / Math.max(1, total)));
