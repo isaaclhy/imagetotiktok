@@ -175,6 +175,9 @@ import {
   IMAGE_TEMPLATE14_FRAME_BG,
   IMAGE_TEMPLATE14_GRAIN_SRC,
   IMAGE_TEMPLATE14_LINE_HEIGHT,
+  IMAGE_TEMPLATE14_OPTION_GAP,
+  IMAGE_TEMPLATE14_OPTION_SIZE_RATIO,
+  IMAGE_TEMPLATE14_OPTION_TOP_RATIO,
   IMAGE_TEMPLATE14_MARK,
   IMAGE_TEMPLATE14_MARK_SIZE_RATIO,
   IMAGE_TEMPLATE14_MARK_Y_RATIO,
@@ -185,6 +188,15 @@ import {
   paintTemplate14Slide,
   template14TextForBackground,
 } from '@/app/lib/image-template-14-cards';
+import { NotesQuestionsPreview } from '@/app/components/NotesQuestionsPreview';
+import {
+  IMAGE_TEMPLATE16_BG,
+  IMAGE_TEMPLATE16_ICON_SRC,
+  IMAGE_TEMPLATE16_QUESTION_COUNT,
+  IMAGE_TEMPLATE16_SLIDE_COUNT,
+  isImageTemplate16Id,
+  paintTemplate16Slide,
+} from '@/app/lib/image-template-16-notes';
 import {
   CHARACTER_IMAGE_QUALITIES,
   type CharacterImageQuality,
@@ -265,7 +277,9 @@ import { exportFabAffirmationMontage } from '@/app/lib/export-fab-affirmation-mo
 import { Sidebar } from '@/app/components/Sidebar';
 import { CharacterStudio } from '@/app/components/CharacterStudio';
 import { CopycatPanel } from '@/app/components/CopycatPanel';
+import { splitCopycatQuestionAndOptions } from '@/app/lib/copycat/flamingo-cards';
 import { LogoGeneratorPanel } from '@/app/components/LogoGeneratorPanel';
+import { StripMetadataPanel } from '@/app/components/StripMetadataPanel';
 import { FabNotesOverlay } from '@/app/components/FabNotesOverlay';
 import { FabMontagePreview } from '@/app/components/FabMontagePreview';
 import { NightyParticleOverlay } from '@/app/components/NightyParticleOverlay';
@@ -284,9 +298,10 @@ import { exportCouplesNatureVideo, warmCouplesNatureExport, warmCouplesNatureVid
 import { fetchRandomCouplesNatureVideo } from '@/app/lib/couples-nature/fetch-video';
 import {
   paintVideoTemplate4Overlay,
-  pickVideoTemplate4Label,
-  pickVideoTemplate4Question,
+  pickVideoTemplate4Content,
+  VIDEO_TEMPLATE4_COMPETITORS,
   VIDEO_TEMPLATE4_PEXELS_QUERY,
+  type VideoTemplate4CompetitorFilter,
 } from '@/app/lib/video-template-4-ocean';
 import {
   pexelsVideoProxySrc,
@@ -294,8 +309,26 @@ import {
 } from '@/app/lib/pexels-video-client';
 import { transcodeWebmToMp4 } from '@/app/lib/webm-to-mp4';
 import { INSTAGRAM_CAROUSEL_MAX } from '@/app/lib/instagram';
+import {
+  FreshBakedDonutDetail,
+  FreshBakedDonutGallery,
+} from '@/app/components/FreshBakedDonutPreview';
+import {
+  FRESH_BAKED_DONUT_POSTS,
+  freshBakedDonutCaptionSource,
+  freshBakedDonutSelectedPost,
+} from '@/app/lib/video-template-fresh-baked-donut';
+import { exportFreshBakedDonutClip } from '@/app/lib/video-template-fresh-baked-donut/export';
 
-type ContentTab = 'image' | 'video' | 'character' | 'copycat' | 'logo' | 'prompt' | 'automate';
+type ContentTab =
+  | 'image'
+  | 'video'
+  | 'character'
+  | 'copycat'
+  | 'logo'
+  | 'prompt'
+  | 'automate'
+  | 'strip-metadata';
 
 type AppUrlState = {
   contentTab: ContentTab;
@@ -314,6 +347,7 @@ const CONTENT_TABS: ContentTab[] = [
   'logo',
   'prompt',
   'automate',
+  'strip-metadata',
 ];
 
 const COPYCAT_COMPETITORS = [
@@ -331,7 +365,7 @@ const COPYCAT_COMPETITORS = [
 type CopycatCompetitorId = (typeof COPYCAT_COMPETITORS)[number]['id'];
 
 /** Spill It image templates available inside Copycat. */
-const COPYCAT_TEMPLATE_IDS = [1, 2, 6, 13, 14, 15] as const;
+const COPYCAT_TEMPLATE_IDS = [1, 2, 6, 13, 14, 15, 16] as const;
 type CopycatTemplateId = (typeof COPYCAT_TEMPLATE_IDS)[number];
 
 function isKawaiiStyleTemplateId(templateId: number | null | undefined): boolean {
@@ -2021,10 +2055,13 @@ export default function Home() {
   /** TikTok-style overlay on video templates (white fill, black stroke). */
   const [videoOverlayCaption, setVideoOverlayCaption] = useState('Your text here');
   const [videoTemplate2Questions, setVideoTemplate2Questions] = useState<string[]>([]);
-  const [videoTemplate4Label, setVideoTemplate4Label] = useState(() => pickVideoTemplate4Label());
-  const [videoTemplate4Question, setVideoTemplate4Question] = useState(() =>
-    pickVideoTemplate4Question()
+  const [videoTemplate4CompetitorId, setVideoTemplate4CompetitorId] =
+    useState<VideoTemplate4CompetitorFilter>('all');
+  const [videoTemplate4Content, setVideoTemplate4Content] = useState(() =>
+    pickVideoTemplate4Content()
   );
+  const videoTemplate4Label = videoTemplate4Content.label;
+  const videoTemplate4Questions = videoTemplate4Content.questions;
   const [videoTemplate2QuestionType, setVideoTemplate2QuestionType] =
     useState<AutomateQuestionType>('random');
   const [videoTemplate2Description, setVideoTemplate2Description] = useState('');
@@ -2080,6 +2117,9 @@ export default function Home() {
   const [isFabMontageLoading, setIsFabMontageLoading] = useState(false);
   const [isFabMontageTtsLoading, setIsFabMontageTtsLoading] = useState(false);
   const [fabMontageError, setFabMontageError] = useState<string | null>(null);
+  const [freshBakedDonutSelectedId, setFreshBakedDonutSelectedId] = useState<string | null>(null);
+  const [freshBakedDonutPosts, setFreshBakedDonutPosts] = useState(FRESH_BAKED_DONUT_POSTS);
+  const [freshBakedDonutDeletingId, setFreshBakedDonutDeletingId] = useState<string | null>(null);
   const [isVideoExporting, setIsVideoExporting] = useState(false);
   const [showVideoDownloadModal, setShowVideoDownloadModal] = useState(false);
   const [videoDownloadCount, setVideoDownloadCount] = useState('1');
@@ -2212,6 +2252,8 @@ export default function Home() {
     selectedAppId === 'spill-it' && isImageTemplate13Id(selectedImageTemplateId);
   const isColorCardImageTemplate =
     selectedAppId === 'spill-it' && isImageTemplate14Id(selectedImageTemplateId);
+  const isNotesQuestionsImageTemplate =
+    selectedAppId === 'spill-it' && isImageTemplate16Id(selectedImageTemplateId);
   const isPinterestCoverImageTemplate =
     selectedAppId === 'spill-it' && isPinterestCoverImageTemplateId(selectedImageTemplateId);
   const isCouplesCuteMomentsImageTemplate =
@@ -2231,7 +2273,9 @@ export default function Home() {
     : imageFrameExportTextColorDefault;
   const isPastelCarouselImageTemplate =
     selectedAppId === 'spill-it' && selectedImageTemplateId === 2;
-  const imageTemplateQuestionCount = 5;
+  const imageTemplateQuestionCount = isNotesQuestionsImageTemplate
+    ? IMAGE_TEMPLATE16_QUESTION_COUNT
+    : 5;
   // Template 1 / 2 / 6 / 7 / 8 / 9 end on Q5 — no CTA.
   const hasImageTemplateCtaTab =
     !isPastelCarouselImageTemplate &&
@@ -2241,7 +2285,8 @@ export default function Home() {
     !isPinterestCoverOnlyImageTemplate &&
     !isCouplesDoodleImageTemplate &&
     !isMaroonLockscreenImageTemplate &&
-    !isColorCardImageTemplate;
+    !isColorCardImageTemplate &&
+    !isNotesQuestionsImageTemplate;
   const imageTemplateCtaTabIndex = hasImageTemplateCtaTab
     ? imageTemplateQuestionCount + 1
     : -1;
@@ -2250,6 +2295,12 @@ export default function Home() {
   const isCouplesNatureVideoTemplate = selectedAppId === 'spill-it' && selectedVideoTemplateId === 2;
   const isSpillItNotesVideoTemplate = selectedAppId === 'spill-it' && selectedVideoTemplateId === 3;
   const isOceanSunsetVideoTemplate = selectedAppId === 'spill-it' && selectedVideoTemplateId === 4;
+  const isFreshBakedDonutVideoTemplate =
+    selectedAppId === 'spill-it' && selectedVideoTemplateId === 5;
+  const selectedFreshBakedDonut = freshBakedDonutSelectedPost(
+    freshBakedDonutSelectedId,
+    freshBakedDonutPosts
+  );
   const isFabAffirmationVideoTemplate = selectedAppId === 'fab' && selectedVideoTemplateId === 1;
   const isNightyParticleVideoTemplate = selectedAppId === 'nighty' && selectedVideoTemplateId === 1;
   const isNightyRainVideoTemplate = selectedAppId === 'nighty' && selectedVideoTemplateId === 2;
@@ -2316,7 +2367,8 @@ export default function Home() {
       (isKawaiiLayoutImageTemplate ||
         isPastelCarouselImageTemplate ||
         isPinterestCoverImageTemplate ||
-        isPinterestCoverOnlyImageTemplate) &&
+        isPinterestCoverOnlyImageTemplate ||
+        isNotesQuestionsImageTemplate) &&
       selectedImageBrowserTab >= imageTemplateTabCount
     ) {
       setSelectedImageBrowserTab(0);
@@ -2326,6 +2378,7 @@ export default function Home() {
     isPastelCarouselImageTemplate,
     isPinterestCoverImageTemplate,
     isPinterestCoverOnlyImageTemplate,
+    isNotesQuestionsImageTemplate,
     imageTemplateTabCount,
     selectedImageBrowserTab,
   ]);
@@ -2360,12 +2413,12 @@ export default function Home() {
     return { cover: title, questions };
   };
 
-  const regenerateVideoTemplate4Content = () => {
-    const label = pickVideoTemplate4Label(videoTemplate4Label);
-    const question = pickVideoTemplate4Question(videoTemplate4Question);
-    setVideoTemplate4Label(label);
-    setVideoTemplate4Question(question);
-    return { cover: label, questions: [question] };
+  const regenerateVideoTemplate4Content = (
+    competitorId: VideoTemplate4CompetitorFilter = videoTemplate4CompetitorId
+  ) => {
+    const next = pickVideoTemplate4Content(videoTemplate4Content, competitorId);
+    setVideoTemplate4Content(next);
+    return { cover: next.label, questions: next.questions };
   };
 
   const applyVideoTemplate2QuestionType = (type: AutomateQuestionType) => {
@@ -2460,6 +2513,7 @@ export default function Home() {
             isCouplesDoodleImageTemplate ||
             isMaroonLockscreenImageTemplate ||
             isColorCardImageTemplate ||
+            isNotesQuestionsImageTemplate ||
             isPinterestCoverImageTemplate ||
             isCouplesSelfieImageTemplate ||
             isTopDownSelfieImageTemplate
@@ -2500,12 +2554,36 @@ export default function Home() {
     }
   };
 
+  const handleDeleteFreshBakedDonut = async (id: string) => {
+    if (freshBakedDonutDeletingId) return;
+    setFreshBakedDonutDeletingId(id);
+    setVideoExportError(null);
+    try {
+      const res = await fetch('/api/fresh-baked-donut/posts', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      const data = (await res.json().catch(() => null)) as { error?: string } | null;
+      if (!res.ok) throw new Error(data?.error || 'Failed to delete clip');
+      setFreshBakedDonutPosts((current) => current.filter((post) => post.id !== id));
+      if (freshBakedDonutSelectedId === id) setFreshBakedDonutSelectedId(null);
+    } catch (e) {
+      setVideoExportError(e instanceof Error ? e.message : 'Failed to delete clip');
+    } finally {
+      setFreshBakedDonutDeletingId(null);
+    }
+  };
+
   const getVideoTemplateCaptionSource = () => {
     if (isOceanSunsetVideoTemplate) {
       return {
         cover: videoTemplate4Label.trim(),
-        questions: [videoTemplate4Question.trim()].filter(Boolean),
+        questions: videoTemplate4Questions.map((q) => q.trim()).filter(Boolean),
       };
+    }
+    if (isFreshBakedDonutVideoTemplate) {
+      return freshBakedDonutCaptionSource(selectedFreshBakedDonut);
     }
     if (isCouplesNatureVideoTemplate || isSpillItNotesVideoTemplate) {
       return {
@@ -2755,6 +2833,8 @@ export default function Home() {
       const source = regenerateVideoTemplate4Content();
       void handleRegenerateVideoTemplate2Video();
       void handleGenerateVideoTemplate2Description(source);
+    } else if (isFreshBakedDonutVideoTemplate) {
+      setFreshBakedDonutSelectedId(null);
     } else if (isFabAffirmationVideoTemplate) {
       const source = regenerateFabMontageContent();
       void fetchFabMontageVideos(false);
@@ -2770,6 +2850,7 @@ export default function Home() {
     isNightyParticleVideoTemplate,
     isNightyRainVideoTemplate,
     isOceanSunsetVideoTemplate,
+    isFreshBakedDonutVideoTemplate,
     isFabAffirmationVideoTemplate,
     selectedVideoTemplateId,
   ]);
@@ -4385,6 +4466,21 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       return;
     }
 
+    if (selectedAppId === 'spill-it' && isImageTemplate16Id(tid)) {
+      const title = pickTitleForType(
+        'funny',
+        selectedImageTemplateId === 16 ? imageTabTexts[0] : undefined
+      );
+      const questions = pickQuestionsForType('funny', IMAGE_TEMPLATE16_QUESTION_COUNT);
+      setImageTabFunnyQuestions(questions);
+      setImageTabFrameBg(IMAGE_TEMPLATE16_BG);
+      setImageTabPastelBgs([]);
+      setImageTabTypeLabel('Funny Questions');
+      setImageTabSources(Array.from({ length: IMAGE_TEMPLATE16_SLIDE_COUNT }, () => ''));
+      setImageTabTexts([title, ...questions]);
+      return;
+    }
+
     if (selectedAppId === 'spill-it' && isImageTemplate14Id(tid)) {
       const title = pickTitleForType(
         'funny',
@@ -4465,7 +4561,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     tabIndex === 0
       ? isBearsKawaiiImageTemplate
         ? pickTitleForType(concreteTypeFromImageLabel(imageTabTypeLabel))
-        : isCouplesCuteMomentsImageTemplate
+        : isCouplesCuteMomentsImageTemplate || isNotesQuestionsImageTemplate
           ? pickTitleForType('funny')
           : isKawaiiLayoutImageTemplate || isPinterestCoverImageTemplate
           ? pickRandomDailyFunnyTitle()
@@ -4897,6 +4993,44 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           }, 'image/png');
         });
         entries.push({ path: `template-14-${names[i]}.png`, blob });
+      }
+      return { entries, isKawaiiTemplate: false };
+    }
+    if (exportTemplateId === 16) {
+      const names = ['cover', 'q1', 'q2', 'q3', 'q4'] as const;
+      const frameWidth = 1080;
+      const frameHeight = 1920;
+      const loadImage = (src: string, label: string) =>
+        new Promise<HTMLImageElement>((resolve, reject) => {
+          const el = new Image();
+          el.onload = () => resolve(el);
+          el.onerror = () => reject(new Error(`Failed to load ${label}`));
+          el.src = src;
+        });
+      const [icon, promo] = await Promise.all([
+        loadImage(IMAGE_TEMPLATE16_ICON_SRC, 'the Spill It icon'),
+        loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC, 'the App Store image'),
+      ]);
+      const entries = [];
+      for (let i = 0; i < IMAGE_TEMPLATE16_SLIDE_COUNT; i++) {
+        const canvas = document.createElement('canvas');
+        canvas.width = frameWidth;
+        canvas.height = frameHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Failed to prepare the slide');
+        paintTemplate16Slide(ctx, frameWidth, frameHeight, {
+          text: (imageTabTexts[i] ?? '').trim(),
+          tabIndex: i,
+          icon,
+          promo: i === IMAGE_TEMPLATE16_QUESTION_COUNT ? promo : null,
+        });
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((next) => {
+            if (next) resolve(next);
+            else reject(new Error('Failed to export the slide'));
+          }, 'image/png');
+        });
+        entries.push({ path: `template-16-${names[i] ?? `q${i}`}.png`, blob });
       }
       return { entries, isKawaiiTemplate: false };
     }
@@ -6122,10 +6256,24 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       }
     };
 
+    if (isFreshBakedDonutVideoTemplate) {
+      const selected = selectedFreshBakedDonut;
+      if (!selected) {
+        throw new Error('Select a video first.');
+      }
+      const blob = await exportFreshBakedDonutClip(selected);
+      return {
+        blob,
+        extension: 'mp4',
+        baseName: `fresh-baked-donut-${selected.id}-${today}`,
+      };
+    }
+
     if (isOceanSunsetVideoTemplate) {
       const videoSrc = requireVideoSrc();
       try {
         await document.fonts.load('800 48px "TikTok Sans"');
+        await document.fonts.load('700 48px "TikTok Sans"');
       } catch {
         /* font may already be ready */
       }
@@ -6136,7 +6284,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         paintOverlay: (ctx, w, h) =>
           paintVideoTemplate4Overlay(ctx, w, h, {
             label: videoTemplate4Label,
-            question: videoTemplate4Question,
+            questions: videoTemplate4Questions,
           }),
       });
       return { blob, extension: 'mp4', baseName: `ocean-sunset-${today}` };
@@ -6499,6 +6647,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
               />
             )}
             {contentTab === 'logo' && <LogoGeneratorPanel />}
+            {contentTab === 'strip-metadata' && <StripMetadataPanel />}
             {contentTab === 'copycat' && (
               <div className="lg:col-span-2 h-auto lg:h-full min-h-0 min-w-0 max-w-full overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6">
                 <div className="mb-4 flex flex-col gap-4 sm:mb-6">
@@ -6724,6 +6873,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         isCouplesDoodleImageTemplate ||
                         isMaroonLockscreenImageTemplate ||
                         isColorCardImageTemplate ||
+                        isNotesQuestionsImageTemplate ||
                         isPastelCarouselImageTemplate ||
                         isPinterestCoverImageTemplate ||
                         isPinterestCoverOnlyImageTemplate ? (
@@ -6977,13 +7127,15 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                           className={`@container relative w-full max-w-sm mx-auto md:mx-0 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden min-w-0 ${
                             isCouplesDoodleImageTemplate
                               ? 'aspect-[2/3]'
-                              : isMaroonLockscreenImageTemplate
+                              : isMaroonLockscreenImageTemplate || isNotesQuestionsImageTemplate
                                 ? 'aspect-[9/16]'
                                 : 'aspect-3/4'
                           }`}
                           style={{
                             backgroundColor: isColorCardImageTemplate
                               ? IMAGE_TEMPLATE14_FRAME_BG
+                              : isNotesQuestionsImageTemplate
+                              ? IMAGE_TEMPLATE16_BG
                               : isMaroonLockscreenImageTemplate
                               ? IMAGE_TEMPLATE13_BG
                               : isCouplesDoodleImageTemplate
@@ -6993,7 +7145,12 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               : activeImageFrameBg,
                           }}
                         >
-                          {isColorCardImageTemplate ? (
+                          {isNotesQuestionsImageTemplate ? (
+                            <NotesQuestionsPreview
+                              text={imageFrameTextForActiveTab}
+                              tabIndex={selectedImageBrowserTab}
+                            />
+                          ) : isColorCardImageTemplate ? (
                             <>
                             <div
                               className="pointer-events-none absolute"
@@ -7010,7 +7167,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               aria-hidden
                             />
                             <div
-                              className="absolute overflow-hidden"
+                              className="pointer-events-none absolute overflow-hidden"
                               style={{
                                 left: `${IMAGE_TEMPLATE14_CARD_INSET_X * 100}%`,
                                 top: `${IMAGE_TEMPLATE14_CARD_INSET_Y * 100}%`,
@@ -7019,9 +7176,10 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 borderRadius: `${IMAGE_TEMPLATE14_CARD_RADIUS_RATIO * 100}cqw`,
                                 backgroundColor: activeImageFrameBg,
                               }}
+                              aria-hidden
                             >
                               <div
-                                className="pointer-events-none absolute inset-0"
+                                className="absolute inset-0"
                                 style={{
                                   backgroundImage: `url(${IMAGE_TEMPLATE14_GRAIN_SRC})`,
                                   backgroundSize: '80px',
@@ -7029,26 +7187,39 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   mixBlendMode: 'multiply',
                                 }}
                               />
-                              <p
-                                className="absolute left-1/2 z-10 w-[78%] -translate-x-1/2 -translate-y-1/2 text-center whitespace-pre-wrap wrap-break-word"
+                            </div>
+                            <div
+                              className="absolute z-10"
+                              style={{
+                                left: `${IMAGE_TEMPLATE14_CARD_INSET_X * 100}%`,
+                                top: `${IMAGE_TEMPLATE14_CARD_INSET_Y * 100}%`,
+                                width: `${(1 - IMAGE_TEMPLATE14_CARD_INSET_X * 2) * 100}%`,
+                                height: `${(1 - IMAGE_TEMPLATE14_CARD_INSET_Y * 2) * 100}%`,
+                              }}
+                            >
+                              {(() => {
+                                const isCoverTab = selectedImageBrowserTab === 0;
+                                const { question, options } = isCoverTab
+                                  ? { question: imageFrameTextForActiveTab, options: '' }
+                                  : splitCopycatQuestionAndOptions(imageFrameTextForActiveTab);
+                                const hasOptions = Boolean(options);
+                                return (
+                              <div
+                                className={`absolute z-10 w-[78%] whitespace-pre-wrap wrap-break-word ${
+                                  hasOptions
+                                    ? 'left-[11%] text-left'
+                                    : 'left-1/2 -translate-x-1/2 -translate-y-1/2 text-center'
+                                }`}
                                 style={{
                                   top: `${
-                                    (selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX
-                                      ? IMAGE_TEMPLATE14_CTA_TEXT_CENTER_RATIO
-                                      : 0.5) * 100
+                                    (hasOptions
+                                      ? IMAGE_TEMPLATE14_OPTION_TOP_RATIO
+                                      : selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX
+                                        ? IMAGE_TEMPLATE14_CTA_TEXT_CENTER_RATIO
+                                        : 0.5) * 100
                                   }%`,
                                   color: template14TextForBackground(activeImageFrameBg),
                                   fontFamily: IMAGE_TEMPLATE14_FONT_STACK,
-                                  fontSize: `${
-                                    (selectedImageBrowserTab === 0
-                                      ? IMAGE_TEMPLATE14_COVER_SIZE_RATIO
-                                      : template14QuestionSizeRatio(
-                                          imageFrameTextForActiveTab,
-                                          selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX
-                                        )) * 100
-                                  }cqw`,
-                                  fontWeight: 400,
-                                  lineHeight: IMAGE_TEMPLATE14_LINE_HEIGHT,
                                   maxHeight:
                                     selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX
                                       ? `${IMAGE_TEMPLATE14_CTA_TEXT_MAX_HEIGHT_RATIO * 100}%`
@@ -7059,8 +7230,39 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                       : undefined,
                                 }}
                               >
-                                {imageFrameTextForActiveTab}
-                              </p>
+                                <p
+                                  className="m-0"
+                                  style={{
+                                    fontSize: `${
+                                      (isCoverTab
+                                        ? IMAGE_TEMPLATE14_COVER_SIZE_RATIO
+                                        : template14QuestionSizeRatio(
+                                            question,
+                                            selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX
+                                          )) * 100
+                                    }cqw`,
+                                    fontWeight: 400,
+                                    lineHeight: IMAGE_TEMPLATE14_LINE_HEIGHT,
+                                  }}
+                                >
+                                  {question}
+                                </p>
+                                {hasOptions ? (
+                                  <p
+                                    className="m-0"
+                                    style={{
+                                      marginTop: `${IMAGE_TEMPLATE14_OPTION_GAP}em`,
+                                      fontSize: `${IMAGE_TEMPLATE14_OPTION_SIZE_RATIO * 100}cqw`,
+                                      fontWeight: 400,
+                                      lineHeight: IMAGE_TEMPLATE14_LINE_HEIGHT,
+                                    }}
+                                  >
+                                    {options}
+                                  </p>
+                                ) : null}
+                              </div>
+                                );
+                              })()}
                               {selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX ? null : (
                                 <p
                                   className="absolute inset-x-[8%] z-10 text-center"
@@ -7875,6 +8077,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         isKawaiiImageTemplate ||
                         isCouplesDoodleImageTemplate ||
                         isMaroonLockscreenImageTemplate ||
+                        isNotesQuestionsImageTemplate ||
                         isCouplesSelfieImageTemplate ||
                         isTopDownSelfieImageTemplate ? (
                           <div className="w-full md:w-80 md:self-start space-y-4">
@@ -7981,7 +8184,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                       const pool = [...FUNNY_QUESTIONS];
                                       const current = imageFrameTextForActiveTab;
                                       if (
-                                        isColorCardImageTemplate &&
+                                        (isColorCardImageTemplate ||
+                                          isNotesQuestionsImageTemplate) &&
                                         selectedImageBrowserTab === 0
                                       ) {
                                         const next = [...imageTabTexts];
@@ -8076,6 +8280,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             isCouplesDoodleImageTemplate ||
                             isMaroonLockscreenImageTemplate ||
                             isColorCardImageTemplate ||
+                            isNotesQuestionsImageTemplate ||
                             isPinterestCoverImageTemplate ||
                             isCouplesSelfieImageTemplate ||
                             isTopDownSelfieImageTemplate ? (
@@ -8175,7 +8380,13 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                     <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-zinc-200 dark:border-zinc-700 min-w-0">
                       <button
                         type="button"
-                        onClick={() => setSelectedVideoTemplateId(null)}
+                        onClick={() => {
+                          if (isFreshBakedDonutVideoTemplate && freshBakedDonutSelectedId) {
+                            setFreshBakedDonutSelectedId(null);
+                            return;
+                          }
+                          setSelectedVideoTemplateId(null);
+                        }}
                         className="text-xs px-2 py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                       >
                         Back
@@ -8316,7 +8527,10 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                           type="button"
                           onClick={handleDownloadVideoTemplate}
                           disabled={
-                            isFabAffirmationVideoTemplate
+                            isFreshBakedDonutVideoTemplate
+                              ? isVideoExporting ||
+                                !selectedFreshBakedDonut
+                              : isFabAffirmationVideoTemplate
                               ? isVideoExporting ||
                                 isFabMontageLoading ||
                                 isFabMontageTtsLoading ||
@@ -8371,7 +8585,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             isInstagramPosting ||
                             isVideoExporting ||
                             isVideoTemplate2VideoLoading ||
-                            (isFabAffirmationVideoTemplate
+                            (isFreshBakedDonutVideoTemplate
+                              ? !selectedFreshBakedDonut
+                              : isFabAffirmationVideoTemplate
                               ? isFabMontageLoading ||
                                 isFabMontageTtsLoading ||
                                 fabMontageVideoSrcs.length < FAB_AFFIRMATION_CLIP_COUNT ||
@@ -8461,7 +8677,83 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                       </p>
                     ) : null}
                     <div className="p-3 sm:p-4 md:p-6 w-full min-w-0 max-w-full box-border">
-                      {isFabAffirmationVideoTemplate ? (
+                      {isFreshBakedDonutVideoTemplate ? (
+                        selectedFreshBakedDonut ? (
+                        <div className="flex flex-col md:flex-row items-start gap-4 min-w-0 w-full">
+                          <FreshBakedDonutDetail
+                            post={selectedFreshBakedDonut}
+                          />
+                          <div className="flex-1 min-w-0 w-full space-y-3">
+                            <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                              Clip details
+                            </p>
+                            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                              Download this clip, or go back to pick another from the grid.
+                            </p>
+                            <div>
+                              <div className="mb-2 flex items-center justify-between gap-2">
+                                <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                                  Description
+                                </label>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => void handleGenerateVideoTemplate2Description()}
+                                    disabled={isGeneratingVideoTemplate2Description}
+                                    className="text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {isGeneratingVideoTemplate2Description
+                                      ? 'Generating…'
+                                      : videoTemplate2Description
+                                        ? 'Regenerate'
+                                        : 'Generate'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const text = videoTemplate2Description.trim();
+                                      if (!text) return;
+                                      void navigator.clipboard.writeText(text).catch(() => {});
+                                    }}
+                                    disabled={!videoTemplate2Description.trim()}
+                                    className="text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    Copy
+                                  </button>
+                                </div>
+                              </div>
+                              <textarea
+                                value={videoTemplate2Description}
+                                onChange={(e) => setVideoTemplate2Description(e.target.value)}
+                                placeholder="lazy gen z caption shows up here…"
+                                rows={3}
+                                className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-zinc-400 resize-y min-h-[4.5rem]"
+                              />
+                              {videoTemplate2DescriptionError ? (
+                                <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                                  {videoTemplate2DescriptionError}
+                                </p>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+                        ) : (
+                          <FreshBakedDonutGallery
+                            posts={freshBakedDonutPosts}
+                            deletingId={freshBakedDonutDeletingId}
+                            disabled={isVideoExporting}
+                            onDelete={(id) => void handleDeleteFreshBakedDonut(id)}
+                            onSelect={(id) => {
+                              setFreshBakedDonutSelectedId(id);
+                              void handleGenerateVideoTemplate2Description(
+                                freshBakedDonutCaptionSource(
+                                  freshBakedDonutSelectedPost(id, freshBakedDonutPosts)
+                                )
+                              );
+                            }}
+                          />
+                        )
+                      ) : isFabAffirmationVideoTemplate ? (
                         <div className="flex flex-col md:flex-row items-start gap-4 min-w-0 w-full">
                           <FabMontagePreview
                             videoSrcs={fabMontageVideoSrcs}
@@ -8741,9 +9033,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_42%,rgba(0,0,0,0)_0%,rgba(0,0,0,0.08)_62%,rgba(0,0,0,0.28)_100%)]"
                                   aria-hidden
                                 />
-                                <div className="absolute inset-x-[11%] top-[38%] z-10 flex -translate-y-1/2 flex-col items-center text-center text-white">
+                                <div className="absolute inset-x-[11%] top-[16%] z-10 flex flex-col items-start text-left text-white">
                                   <p
-                                    className="w-full text-base leading-[1.2] sm:text-lg md:text-xl"
+                                    className="w-full text-xl leading-[1.15] sm:text-2xl md:text-3xl"
                                     style={{
                                       fontFamily: TIKTOK_SANS_STACK,
                                       fontWeight: 800,
@@ -8753,17 +9045,23 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   >
                                     {videoTemplate4Label}
                                   </p>
-                                  <p
-                                    className="mt-2 w-full text-sm leading-[1.25] sm:text-[15px] md:text-base"
-                                    style={{
-                                      fontFamily: TIKTOK_SANS_STACK,
-                                      fontWeight: 800,
-                                      textShadow:
-                                        '0 1px 2px rgba(0,0,0,0.85), 0 4px 18px rgba(0,0,0,0.7)',
-                                    }}
-                                  >
-                                    {videoTemplate4Question}
-                                  </p>
+                                  {videoTemplate4Questions.length > 0 ? (
+                                    <ol className="mt-5 w-full list-none space-y-2.5 text-sm leading-[1.25] sm:text-[15px] md:text-base">
+                                      {videoTemplate4Questions.map((question, i) => (
+                                        <li
+                                          key={`${i}-${question.slice(0, 16)}`}
+                                          style={{
+                                            fontFamily: TIKTOK_SANS_STACK,
+                                            fontWeight: 700,
+                                            textShadow:
+                                              '0 1px 2px rgba(0,0,0,0.85), 0 4px 18px rgba(0,0,0,0.7)',
+                                          }}
+                                        >
+                                          {i + 1}. {question}
+                                        </li>
+                                      ))}
+                                    </ol>
+                                  ) : null}
                                 </div>
                                 <div
                                   className="absolute inset-x-[8%] bottom-[22%] z-10 flex flex-col items-center text-center text-white/95"
@@ -8994,17 +9292,57 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 </div>
                               </div>
                               {isOceanSunsetVideoTemplate ? (
-                                <div className="space-y-2">
+                                <div className="space-y-3">
+                                  <div>
+                                    <label
+                                      htmlFor="ocean-sunset-competitor"
+                                      className="mb-1 block text-[11px] font-medium text-zinc-500 dark:text-zinc-400"
+                                    >
+                                      Competitor
+                                    </label>
+                                    <select
+                                      id="ocean-sunset-competitor"
+                                      value={videoTemplate4CompetitorId}
+                                      onChange={(e) => {
+                                        const next = e.target.value as VideoTemplate4CompetitorFilter;
+                                        setVideoTemplate4CompetitorId(next);
+                                        regenerateVideoTemplate4Content(next);
+                                      }}
+                                      className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-800 dark:text-zinc-200"
+                                    >
+                                      <option value="all">All competitors</option>
+                                      {VIDEO_TEMPLATE4_COMPETITORS.map((competitor) => (
+                                        <option key={competitor.id} value={competitor.id}>
+                                          {competitor.label}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
                                   <p className="text-sm text-zinc-800 dark:text-zinc-200">
                                     {videoTemplate4Label}
                                   </p>
-                                  <input
-                                    type="text"
-                                    value={videoTemplate4Question}
-                                    onChange={(e) => setVideoTemplate4Question(e.target.value)}
-                                    placeholder="Question…"
-                                    className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-zinc-400"
-                                  />
+                                  <div className="space-y-2">
+                                    {videoTemplate4Questions.map((question, i) => (
+                                      <div key={i}>
+                                        <label className="mb-1 block text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+                                          Q{i + 1}
+                                        </label>
+                                        <input
+                                          type="text"
+                                          value={question}
+                                          onChange={(e) =>
+                                            setVideoTemplate4Content((current) => {
+                                              const questions = [...current.questions];
+                                              questions[i] = e.target.value;
+                                              return { ...current, questions };
+                                            })
+                                          }
+                                          placeholder={`Question ${i + 1}…`}
+                                          className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-zinc-400"
+                                        />
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
                               ) : (
                               <input

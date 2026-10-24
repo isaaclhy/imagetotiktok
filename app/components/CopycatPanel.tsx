@@ -91,6 +91,9 @@ import {
   IMAGE_TEMPLATE14_FRAME_BG,
   IMAGE_TEMPLATE14_GRAIN_SRC,
   IMAGE_TEMPLATE14_LINE_HEIGHT,
+  IMAGE_TEMPLATE14_OPTION_GAP,
+  IMAGE_TEMPLATE14_OPTION_SIZE_RATIO,
+  IMAGE_TEMPLATE14_OPTION_TOP_RATIO,
   IMAGE_TEMPLATE14_MARK_SIZE_RATIO,
   IMAGE_TEMPLATE14_MARK_Y_RATIO,
   IMAGE_TEMPLATE14_CTA_TEXT_CENTER_RATIO,
@@ -98,6 +101,7 @@ import {
   template14QuestionSizeRatio,
   template14TextForBackground,
 } from '@/app/lib/image-template-14-cards';
+import { NotesQuestionsPreview } from '@/app/components/NotesQuestionsPreview';
 
 const TIKTOK_SANS_STACK = '"TikTok Sans", system-ui, -apple-system, sans-serif';
 const COPYCAT_APP_NAME = 'Spill It';
@@ -107,7 +111,7 @@ const COPYCAT_TEXT_ONLY_COVER_TOP = 0.38;
 const COPYCAT_TEXT_ONLY_COVER_SIZE_T2 = 0.074;
 const COPYCAT_TEXT_ONLY_COVER_SIZE_T14 = 0.088;
 
-export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15;
+export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16;
 
 function CopycatAppMarkFooter({
   isCover,
@@ -218,7 +222,7 @@ function pickTemplate14Color(exclude?: string): string {
 }
 
 function templateFrameAspect(templateId: CopycatTemplateId): string {
-  if (templateId === 13 || templateId === 15) return 'aspect-[9/16]';
+  if (templateId === 13 || templateId === 15 || templateId === 16) return 'aspect-[9/16]';
   return 'aspect-3/4';
 }
 
@@ -249,7 +253,8 @@ function CopycatSlidePreview({
       templateId === 2 ||
       templateId === 6 ||
       templateId === 14 ||
-      templateId === 15) &&
+      templateId === 15 ||
+      templateId === 16) &&
     isCtaSlide;
   const showTemplate13Cta = templateId === 13 && isCtaSlide;
   const showSpillItMark =
@@ -262,6 +267,19 @@ function CopycatSlidePreview({
   const bodyAlignClass = alignLeft
     ? 'left-[11%] w-[78%] -translate-y-1/2 text-left'
     : 'left-1/2 w-[78%] -translate-x-1/2 -translate-y-1/2 text-center';
+
+  if (templateId === 16) {
+    return (
+      <div className="@container relative w-full max-w-sm mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-[9/16] bg-white">
+        <NotesQuestionsPreview
+          text={text}
+          tabIndex={tabIndex}
+          questionCount={Math.max(1, slideCount - 1)}
+          showCta={isCtaSlide}
+        />
+      </div>
+    );
+  }
 
   if (templateId === 15) {
     if (isCover) {
@@ -408,7 +426,7 @@ function CopycatSlidePreview({
           aria-hidden
         />
         <div
-          className="absolute overflow-hidden"
+          className="pointer-events-none absolute overflow-hidden"
           style={{
             left: `${IMAGE_TEMPLATE14_CARD_INSET_X * 100}%`,
             top: `${IMAGE_TEMPLATE14_CARD_INSET_Y * 100}%`,
@@ -417,9 +435,10 @@ function CopycatSlidePreview({
             borderRadius: `${IMAGE_TEMPLATE14_CARD_RADIUS_RATIO * 100}cqw`,
             backgroundColor: card14Bg,
           }}
+          aria-hidden
         >
           <div
-            className="pointer-events-none absolute inset-0"
+            className="absolute inset-0"
             style={{
               backgroundImage: `url(${IMAGE_TEMPLATE14_GRAIN_SRC})`,
               backgroundSize: '80px',
@@ -427,29 +446,74 @@ function CopycatSlidePreview({
               mixBlendMode: 'multiply',
             }}
           />
-          <p
-            className={`absolute z-10 whitespace-pre-wrap wrap-break-word ${bodyAlignClass}`}
+        </div>
+        <div
+          className="absolute z-10"
+          style={{
+            left: `${IMAGE_TEMPLATE14_CARD_INSET_X * 100}%`,
+            top: `${IMAGE_TEMPLATE14_CARD_INSET_Y * 100}%`,
+            width: `${(1 - IMAGE_TEMPLATE14_CARD_INSET_X * 2) * 100}%`,
+            height: `${(1 - IMAGE_TEMPLATE14_CARD_INSET_Y * 2) * 100}%`,
+          }}
+        >
+          {(() => {
+            const { question, options } = isCover
+              ? { question: text, options: '' }
+              : splitCopycatQuestionAndOptions(text);
+            const hasOptions = Boolean(options);
+            return (
+          <div
+            className={`absolute z-10 wrap-break-word ${
+              hasOptions || alignLeft
+                ? hasOptions
+                  ? 'left-[11%] w-[78%] text-left'
+                  : 'left-[11%] w-[78%] -translate-y-1/2 text-left'
+                : bodyAlignClass
+            }`}
             style={{
-              top: `${(showTemplate2StyleCta
-                ? IMAGE_TEMPLATE14_CTA_TEXT_CENTER_RATIO
-                : isCover
-                  ? COPYCAT_TEXT_ONLY_COVER_TOP
-                  : 0.5) * 100}%`,
+              top: `${(hasOptions
+                ? IMAGE_TEMPLATE14_OPTION_TOP_RATIO
+                : showTemplate2StyleCta
+                  ? IMAGE_TEMPLATE14_CTA_TEXT_CENTER_RATIO
+                  : isCover
+                    ? COPYCAT_TEXT_ONLY_COVER_TOP
+                    : 0.5) * 100}%`,
               color: card14Text,
               fontFamily: IMAGE_TEMPLATE14_FONT_STACK,
-              fontSize: `${(isCover
-                ? COPYCAT_TEXT_ONLY_COVER_SIZE_T14
-                : template14QuestionSizeRatio(text, showTemplate2StyleCta)) * 100}cqw`,
-              fontWeight: 400,
-              lineHeight: IMAGE_TEMPLATE14_LINE_HEIGHT,
               maxHeight: showTemplate2StyleCta
                 ? `${IMAGE_TEMPLATE14_CTA_TEXT_MAX_HEIGHT_RATIO * 100}%`
                 : undefined,
               overflow: showTemplate2StyleCta ? 'hidden' : undefined,
             }}
           >
-            {text}
-          </p>
+            <p
+              className="m-0 whitespace-pre-wrap"
+              style={{
+                fontSize: `${(isCover
+                  ? COPYCAT_TEXT_ONLY_COVER_SIZE_T14
+                  : template14QuestionSizeRatio(question, showTemplate2StyleCta)) * 100}cqw`,
+                fontWeight: 400,
+                lineHeight: IMAGE_TEMPLATE14_LINE_HEIGHT,
+              }}
+            >
+              {question}
+            </p>
+            {hasOptions ? (
+              <p
+                className="m-0 whitespace-pre-wrap"
+                style={{
+                  marginTop: `${IMAGE_TEMPLATE14_OPTION_GAP}em`,
+                  fontSize: `${IMAGE_TEMPLATE14_OPTION_SIZE_RATIO * 100}cqw`,
+                  fontWeight: 400,
+                  lineHeight: IMAGE_TEMPLATE14_LINE_HEIGHT,
+                }}
+              >
+                {options}
+              </p>
+            ) : null}
+          </div>
+            );
+          })()}
           {showTemplate2StyleCta ? null : (
             <CopycatAppMarkFooter
               isCover={isCover}

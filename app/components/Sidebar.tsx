@@ -5,9 +5,25 @@ import { SettingsMenuPanel } from '@/app/components/SettingsMenuPanel';
 import { STUDIO_APPS, type StudioAppId } from '@/app/lib/apps';
 
 interface SidebarProps {
-  contentTab: 'image' | 'video' | 'character' | 'copycat' | 'logo' | 'prompt' | 'automate';
+  contentTab:
+    | 'image'
+    | 'video'
+    | 'character'
+    | 'copycat'
+    | 'logo'
+    | 'prompt'
+    | 'automate'
+    | 'strip-metadata';
   onContentTabChange: (
-    tab: 'image' | 'video' | 'character' | 'copycat' | 'logo' | 'prompt' | 'automate'
+    tab:
+      | 'image'
+      | 'video'
+      | 'character'
+      | 'copycat'
+      | 'logo'
+      | 'prompt'
+      | 'automate'
+      | 'strip-metadata'
   ) => void;
   selectedAppId: StudioAppId;
   onSelectedAppIdChange: (appId: StudioAppId) => void;
@@ -86,6 +102,20 @@ const TABS = [
     icon: (
       <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    ),
+  },
+  {
+    id: 'strip-metadata' as const,
+    label: 'Strip metadata',
+    icon: (
+      <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M9 12h6m-7 8h8a2 2 0 002-2V8.828a2 2 0 00-.586-1.414l-2.828-2.828A2 2 0 0013.172 4H8a2 2 0 00-2 2v12a2 2 0 002 2z"
+        />
       </svg>
     ),
   },
@@ -366,8 +396,7 @@ export function Sidebar({
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex fixed left-0 top-0 h-screen w-56 shrink-0 flex-col p-3 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 z-10">
         <h1 className="text-xl font-bold text-black dark:text-zinc-50 px-4 py-3 flex-shrink-0">Bleamies</h1>
-        {navLinks}
-        <div className="flex-1 min-h-4" />
+        <div className="min-h-0 flex-1 overflow-y-auto">{navLinks}</div>
         {footer}
       </aside>
 

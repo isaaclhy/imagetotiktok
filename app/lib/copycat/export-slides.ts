@@ -56,6 +56,11 @@ import {
   paintTemplate15Cover,
   paintTemplate15QuestionCard,
 } from '@/app/lib/image-template-15-cards';
+import {
+  IMAGE_TEMPLATE16_CTA_TAB,
+  IMAGE_TEMPLATE16_ICON_SRC,
+  paintTemplate16Slide,
+} from '@/app/lib/image-template-16-notes';
 
 const TIKTOK = '"TikTok Sans", system-ui, sans-serif';
 const COMIC =
@@ -93,7 +98,7 @@ function drawCopycatAppMark(
   ctx.fillText(COPYCAT_APP_NAME, frameWidth / 2, markY);
 }
 
-export type CopycatExportTemplateId = 1 | 2 | 6 | 13 | 14 | 15;
+export type CopycatExportTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16;
 
 export type CopycatExportSlide = {
   text: string;
@@ -167,7 +172,7 @@ function drawWrappedBlock(
 }
 
 function frameSize(templateId: CopycatExportTemplateId): { w: number; h: number } {
-  if (templateId === 13 || templateId === 15) return { w: 1080, h: 1920 };
+  if (templateId === 13 || templateId === 15 || templateId === 16) return { w: 1080, h: 1920 };
   return { w: 1080, h: 1440 };
 }
 
@@ -185,6 +190,19 @@ async function paintSlide(
   canvas.height = h;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Failed to prepare canvas');
+
+  if (templateId === 16) {
+    const icon = await loadImage(IMAGE_TEMPLATE16_ICON_SRC);
+    const promo = slide.isCta ? await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC) : null;
+    paintTemplate16Slide(ctx, w, h, {
+      text: slide.text,
+      tabIndex: slide.isCover ? 0 : slide.isCta ? IMAGE_TEMPLATE16_CTA_TAB : Math.max(1, tabIndex),
+      icon,
+      promo,
+      questionCount: Math.max(1, slideCount - 1),
+    });
+    return canvasBlob(canvas);
+  }
 
   if (templateId === 15) {
     try {
@@ -228,6 +246,7 @@ async function paintSlide(
         tabIndex: 1,
         grain,
         promo: null,
+        skipMark: true,
       });
       const card = template14CardRect(w, h);
       const textColor = template14TextForBackground(template14Color);
@@ -258,6 +277,7 @@ async function paintSlide(
         grain,
         promo,
         leftAlign: slide.leftAlign,
+        skipMark: !slide.isCta,
       });
       if (!slide.isCta) {
         const card = template14CardRect(w, h);

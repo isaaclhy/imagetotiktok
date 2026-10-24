@@ -1,36 +1,142 @@
 import {
-  BRAVE_QUESTIONS,
-  FLIRTY_QUESTIONS,
-  FUNNY_QUESTIONS,
-} from '@/app/lib/constants';
+  cleanCopycatDisplayText,
+  FLAMINGO_CARDS_FEED,
+  isCopycatPromoNoiseSlide,
+  splitCopycatQuestionAndOptions,
+  type CopycatPost,
+  type CopycatSlideText,
+} from '@/app/lib/copycat/flamingo-cards';
+import { getCoupleCardsPosts } from '@/app/lib/copycat/couple-cards';
+import { getFlamingoCardsPosts } from '@/app/lib/copycat/flamingo-convos';
+import { getGoldenThoughtsDailyPosts } from '@/app/lib/copycat/goldenthoughtsdaily';
+import { getHhTalkPosts } from '@/app/lib/copycat/hhtalk';
+import { getItsAllAboutLovingYouPosts } from '@/app/lib/copycat/itsallaboutlovingyou';
+import { getLvrsbaePosts } from '@/app/lib/copycat/lvrsbae';
+import { getQuestions21Posts } from '@/app/lib/copycat/questions-21';
+import { getSpillCardsAppPosts } from '@/app/lib/copycat/spillcardsapp';
+import { getTryDeepenPosts } from '@/app/lib/copycat/trydeepen';
 
 export const VIDEO_TEMPLATE4_PEXELS_QUERY = 'ocean sunset';
 export const VIDEO_TEMPLATE4_LABELS = [
   'Questions for your boyfriend:',
 ] as const;
-export type VideoTemplate4Label = (typeof VIDEO_TEMPLATE4_LABELS)[number];
+export type VideoTemplate4Label = string;
+
+export const VIDEO_TEMPLATE4_COMPETITORS = [
+  { id: 'flamingo-cards', label: 'Flamingo cards' },
+  { id: '21-questions', label: '21 Questions' },
+  { id: 'its-all-about-loving-you', label: "It's all about loving you" },
+  { id: 'try-deepen', label: 'Try deepen' },
+  { id: 'couple-cards', label: 'Couples Cards' },
+  { id: 'hh-talk', label: 'HH Talk' },
+  { id: 'golden-thoughts-daily', label: 'Golden Thoughts Daily' },
+  { id: 'lvrsbae', label: '.lvrsbae' },
+  { id: 'spill-cards-app', label: 'Spill Cards App' },
+] as const;
+
+export type VideoTemplate4CompetitorId = (typeof VIDEO_TEMPLATE4_COMPETITORS)[number]['id'];
+export type VideoTemplate4CompetitorFilter = VideoTemplate4CompetitorId | 'all';
 
 const FONT = '"TikTok Sans", system-ui, -apple-system, sans-serif';
-const OPTIONLESS_QUESTIONS = [
-  ...FUNNY_QUESTIONS,
-  ...FLIRTY_QUESTIONS,
-  ...BRAVE_QUESTIONS,
-];
 
-function pickFrom<T extends string>(pool: readonly T[], exclude?: string): T {
-  const filtered = exclude
-    ? pool.filter((item) => item !== exclude)
-    : [...pool];
+export type VideoTemplate4Content = { label: string; questions: string[] };
+
+function slideHasOptions(slide: CopycatSlideText): boolean {
+  if (slide.options?.length) return true;
+  if (splitCopycatQuestionAndOptions(slide.text).options) return true;
+  return /(?:^|\n)\s*[a-d]\.\s+\S/i.test(slide.text);
+}
+
+function questionSlides(post: CopycatPost): CopycatSlideText[] {
+  return post.slideText.filter(
+    (slide) => !isCopycatPromoNoiseSlide(slide) && slide.text.trim()
+  );
+}
+
+function isQuestionsOnlyPost(post: CopycatPost): boolean {
+  const slides = questionSlides(post);
+  return slides.length > 0 && slides.every((slide) => !slideHasOptions(slide));
+}
+
+function postsForCompetitor(id: VideoTemplate4CompetitorId): CopycatPost[] {
+  switch (id) {
+    case 'flamingo-cards':
+      return getFlamingoCardsPosts(FLAMINGO_CARDS_FEED.posts);
+    case '21-questions':
+      return getQuestions21Posts();
+    case 'its-all-about-loving-you':
+      return getItsAllAboutLovingYouPosts();
+    case 'try-deepen':
+      return getTryDeepenPosts();
+    case 'couple-cards':
+      return getCoupleCardsPosts();
+    case 'hh-talk':
+      return getHhTalkPosts();
+    case 'golden-thoughts-daily':
+      return getGoldenThoughtsDailyPosts();
+    case 'lvrsbae':
+      return getLvrsbaePosts();
+    case 'spill-cards-app':
+      return getSpillCardsAppPosts();
+  }
+}
+
+function competitorPosts(filter: VideoTemplate4CompetitorFilter = 'all'): CopycatPost[] {
+  if (filter !== 'all') return postsForCompetitor(filter);
+  const seen = new Set<string>();
+  const posts: CopycatPost[] = [];
+  for (const competitor of VIDEO_TEMPLATE4_COMPETITORS) {
+    for (const post of postsForCompetitor(competitor.id)) {
+      if (seen.has(post.id)) continue;
+      seen.add(post.id);
+      posts.push(post);
+    }
+  }
+  return posts;
+}
+
+function questionSetsFromPosts(posts: CopycatPost[]): VideoTemplate4Content[] {
+  const sets: VideoTemplate4Content[] = [];
+  for (const post of posts) {
+    if (!isQuestionsOnlyPost(post)) continue;
+    const cover = cleanCopycatDisplayText(post.coverText);
+    if (!cover) continue;
+    const questions = questionSlides(post)
+      .map((slide) => cleanCopycatDisplayText(slide.text))
+      .filter((question) => question && question !== cover);
+    if (!questions.length) continue;
+    sets.push({ label: cover, questions });
+  }
+  return sets;
+}
+
+function questionSetsFor(
+  competitorId: VideoTemplate4CompetitorFilter = 'all'
+): VideoTemplate4Content[] {
+  return questionSetsFromPosts(competitorPosts(competitorId));
+}
+
+function pickVideoTemplate4Set(
+  exclude?: VideoTemplate4Content,
+  competitorId: VideoTemplate4CompetitorFilter = 'all'
+): VideoTemplate4Content {
+  const pool = questionSetsFor(competitorId);
+  if (pool.length === 0) {
+    return {
+      label: VIDEO_TEMPLATE4_LABELS[0],
+      questions: ['What is your favorite thing about us?'],
+    };
+  }
+  const filtered = exclude ? pool.filter((set) => set.label !== exclude.label) : pool;
   const list = filtered.length > 0 ? filtered : pool;
   return list[Math.floor(Math.random() * list.length)]!;
 }
 
-export function pickVideoTemplate4Label(_exclude?: string): VideoTemplate4Label {
-  return VIDEO_TEMPLATE4_LABELS[0];
-}
-
-export function pickVideoTemplate4Question(exclude?: string): string {
-  return pickFrom(OPTIONLESS_QUESTIONS, exclude);
+export function pickVideoTemplate4Content(
+  exclude?: VideoTemplate4Content,
+  competitorId: VideoTemplate4CompetitorFilter = 'all'
+): VideoTemplate4Content {
+  return pickVideoTemplate4Set(exclude, competitorId);
 }
 
 function wrapLines(
@@ -58,7 +164,7 @@ export function paintVideoTemplate4Overlay(
   ctx: CanvasRenderingContext2D,
   frameWidth: number,
   frameHeight: number,
-  options: { label: string; question: string }
+  options: { label: string; questions: string[] }
 ) {
   const sky = ctx.createLinearGradient(0, 0, 0, frameHeight);
   sky.addColorStop(0, 'rgba(255, 142, 64, 0.26)');
@@ -83,36 +189,68 @@ export function paintVideoTemplate4Overlay(
   ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, frameWidth, frameHeight);
 
+  const questions = options.questions.map((q) => q.trim()).filter(Boolean);
+  const left = frameWidth * 0.11;
   const maxW = frameWidth * 0.78;
-  const labelSize = Math.round(frameWidth * 0.048);
-  const questionSize = Math.round(frameWidth * 0.034);
-  const labelLineH = labelSize * 1.2;
-  const questionLineH = questionSize * 1.22;
+  const minTop = frameHeight * 0.16;
+  const maxBottom = frameHeight * 0.72;
+  const maxBlock = maxBottom - minTop;
 
-  ctx.textAlign = 'center';
+  let labelSize = Math.round(frameWidth * 0.062);
+  let questionSize = Math.round(frameWidth * 0.03);
+  let labelLines: string[] = [];
+  let questionBlocks: string[][] = [];
+  let labelLineH = labelSize * 1.18;
+  let questionLineH = questionSize * 1.2;
+  let questionGap = questionSize * 0.85;
+  let titleGap = questionSize * 1.15;
+  let blockH = 0;
+
+  for (let step = 0; step < 10; step++) {
+    labelLineH = labelSize * 1.18;
+    questionLineH = questionSize * 1.2;
+    questionGap = questionSize * 0.85;
+    titleGap = Math.max(labelSize * 0.7, questionSize * 1.15);
+    ctx.font = `800 ${labelSize}px ${FONT}`;
+    labelLines = wrapLines(ctx, options.label, maxW);
+    ctx.font = `700 ${questionSize}px ${FONT}`;
+    questionBlocks = questions.map((question, i) =>
+      wrapLines(ctx, `${i + 1}. ${question}`, maxW)
+    );
+    const questionH = questionBlocks.reduce(
+      (sum, lines, i) =>
+        sum + lines.length * questionLineH + (i > 0 ? questionGap : 0),
+      0
+    );
+    blockH =
+      labelLines.length * labelLineH + (questionH ? titleGap : 0) + questionH;
+    if (blockH <= maxBlock || questionSize <= Math.round(frameWidth * 0.02)) break;
+    labelSize = Math.max(Math.round(frameWidth * 0.044), labelSize - 2);
+    questionSize = Math.max(Math.round(frameWidth * 0.02), questionSize - 2);
+  }
+
+  ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#FFFFFF';
   ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
   ctx.shadowBlur = Math.max(10, frameWidth * 0.028);
   ctx.shadowOffsetY = Math.max(1, frameWidth * 0.004);
 
-  ctx.font = `800 ${labelSize}px ${FONT}`;
-  const labelLines = wrapLines(ctx, options.label, maxW);
-  ctx.font = `800 ${questionSize}px ${FONT}`;
-  const questionLines = wrapLines(ctx, options.question, maxW);
-  const blockH = labelLines.length * labelLineH + questionLineH * 0.35 + questionLines.length * questionLineH;
-  let y = frameHeight * 0.38 - blockH / 2 + labelLineH / 2;
+  let y = minTop + labelLineH / 2;
 
   ctx.font = `800 ${labelSize}px ${FONT}`;
   for (const line of labelLines) {
-    ctx.fillText(line, frameWidth / 2, y);
+    ctx.fillText(line, left, y);
     y += labelLineH;
   }
-  y += questionLineH * 0.2;
-  ctx.font = `800 ${questionSize}px ${FONT}`;
-  for (const line of questionLines) {
-    ctx.fillText(line, frameWidth / 2, y);
-    y += questionLineH;
+  y += titleGap;
+  ctx.font = `700 ${questionSize}px ${FONT}`;
+  for (const lines of questionBlocks) {
+    for (const line of lines) {
+      ctx.fillText(line, left, y);
+      y += questionLineH;
+    }
+    y += questionGap;
   }
 
   const markY = frameHeight * 0.78;
@@ -121,6 +259,7 @@ export function paintVideoTemplate4Overlay(
   ctx.shadowBlur = Math.max(8, frameWidth * 0.02);
   ctx.shadowOffsetY = 0;
   ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  ctx.textAlign = 'center';
   ctx.font = `400 ${heartSize}px ${FONT}`;
   ctx.fillText('♥ ♥ ♥', frameWidth / 2, markY - heartSize * 1.35);
   ctx.font = `700 ${Math.round(frameWidth * 0.03)}px ${FONT}`;

@@ -166,3 +166,104 @@ export async function encodeJpegSequenceToMp4(
   const bytes = data instanceof Uint8Array ? data : new TextEncoder().encode(String(data));
   return new Blob([bytes as BlobPart], { type: 'video/mp4' });
 }
+
+async function safeDelete(ffmpeg: FFmpeg, name: string): Promise<void> {
+  try {
+    await ffmpeg.deleteFile(name);
+  } catch {
+    /* already gone */
+  }
+}
+
+function blobFromFfmpegData(data: Uint8Array | string, type: string): Blob {
+  const bytes = data instanceof Uint8Array ? data : new TextEncoder().encode(String(data));
+  return new Blob([bytes as BlobPart], { type });
+}
+
+/**
+ * Drop container metadata (title, encoder, XMP / C2PA boxes) while keeping the
+ * same pixels/audio. Remux first; re-encode only if stream copy fails.
+ */
+export async function stripVideoMetadata(
+  source: Blob,
+  filename = 'video.mp4'
+): Promise<{ blob: Blob; filename: string }> {
+  let ffmpeg: FFmpeg;
+  try {
+    ffmpeg = await getFfmpeg();
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : 'unknown error';
+    throw new Error(`Could not start ffmpeg (${detail})`);
+  }
+  const rawExt = (filename.split('.').pop() || 'mp4').toLowerCase();
+  const inExt = ['mp4', 'mov', 'm4v', 'webm', 'mkv'].includes(rawExt) ? rawExt : 'mp4';
+  const outExt = inExt === 'webm' ? 'webm' : 'mp4';
+  const mime = outExt === 'webm' ? 'video/webm' : 'video/mp4';
+  const session = Date.now();
+  const inputName = `strip-in-${session}.${inExt}`;
+  const outputName = `strip-out-${session}.${outExt}`;
+  const stem = filename.replace(/\.[^.]+$/, '') || 'video';
+  const cleanName = `${stem}-clean.${outExt}`;
+
+  await ffmpeg.writeFile(inputName, await fetchFile(source));
+
+  const remux = [
+    '-i',
+    inputName,
+    '-map',
+    '0',
+    '-c',
+    'copy',
+    '-map_metadata',
+    '-1',
+    '-dn',
+    '-fflags',
+    '+bitexact',
+  ];
+  if (outExt === 'mp4') remux.push('-movflags', '+faststart');
+  remux.push(outputName);
+
+  try {
+    await ffmpeg.exec(remux);
+    const data = await ffmpeg.readFile(outputName);
+    const blob = blobFromFfmpegData(data as Uint8Array | string, mime);
+    if (blob.size < 32) throw new Error('empty remux');
+    await safeDelete(ffmpeg, inputName);
+    await safeDelete(ffmpeg, outputName);
+    return { blob, filename: cleanName };
+  } catch {
+    await safeDelete(ffmpeg, outputName);
+  }
+
+  const encode = [
+    '-i',
+    inputName,
+    '-map_metadata',
+    '-1',
+    '-fflags',
+    '+bitexact',
+    '-c:v',
+    'libx264',
+    '-preset',
+    'veryfast',
+    '-crf',
+    '18',
+    '-pix_fmt',
+    'yuv420p',
+    '-c:a',
+    'aac',
+    '-b:a',
+    '192k',
+    '-movflags',
+    '+faststart',
+    outputName,
+  ];
+  await ffmpeg.exec(encode);
+  const encoded = await ffmpeg.readFile(outputName);
+  await safeDelete(ffmpeg, inputName);
+  await safeDelete(ffmpeg, outputName);
+  return {
+    blob: blobFromFfmpegData(encoded as Uint8Array | string, 'video/mp4'),
+    filename: `${stem}-clean.mp4`,
+  };
+}

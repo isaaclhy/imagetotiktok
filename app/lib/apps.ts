@@ -1,3 +1,5 @@
+import { FRESH_BAKED_DONUT_POSTS } from '@/app/lib/video-template-fresh-baked-donut';
+
 export type StudioAppId = 'spill-it' | 'fab' | 'nighty';
 
 export type StudioApp = {
@@ -108,6 +110,12 @@ export const IMAGE_TEMPLATES_BY_APP: Record<StudioAppId, ImageTemplateCard[]> = 
       title: 'Template 15',
       subtitle: '',
     },
+    {
+      id: 16,
+      title: 'Notes questions',
+      subtitle: '',
+      coverSrc: '/image-templates/template-16-cover.png',
+    },
   ],
   fab: [
     { id: 1, title: 'Heart shaped paper', subtitle: '' },
@@ -132,6 +140,12 @@ export const VIDEO_TEMPLATES_BY_APP: Record<StudioAppId, VideoTemplateCard[]> = 
       coverSrc: '/video-templates/iphone-notes-cover.png',
     },
     { id: 4, title: 'Ocean sunset', subtitle: '' },
+    {
+      id: 5,
+      title: 'Fresh Baked Donut',
+      subtitle: '',
+      coverSrc: FRESH_BAKED_DONUT_POSTS[0]?.thumbnailUrl,
+    },
   ],
   fab: [
     { id: 1, title: 'Affirmation montage', subtitle: '' },

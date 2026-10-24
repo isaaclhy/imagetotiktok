@@ -1,3 +1,4 @@
+import { splitCopycatQuestionAndOptions } from '@/app/lib/copycat/flamingo-cards';
 import {
   IMAGE_TEMPLATE2_Q5_PROMO_LABEL,
   IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO,
@@ -26,10 +27,11 @@ export const IMAGE_TEMPLATE14_FRAME_BG = '#000000';
 export const IMAGE_TEMPLATE14_CARD_INSET_X = 0.085;
 export const IMAGE_TEMPLATE14_CARD_INSET_Y = 0.07;
 /** Corner radius as a share of the frame width. */
-export const IMAGE_TEMPLATE14_CARD_RADIUS_RATIO = 0.1;
-/** Soft zoomed-in bloom around the card so the cut edge is not razor-sharp. */
-export const IMAGE_TEMPLATE14_EDGE_SCALE = 1.055;
-export const IMAGE_TEMPLATE14_EDGE_BLUR_RATIO = 0.016;
+export const IMAGE_TEMPLATE14_CARD_RADIUS_RATIO = 0.12;
+/** Soft rim sits just outside the sharp card. */
+export const IMAGE_TEMPLATE14_EDGE_SCALE = 1.012;
+/** Feather on the card silhouette only, as a share of frame width. */
+export const IMAGE_TEMPLATE14_EDGE_BLUR_RATIO = 0.014;
 export const IMAGE_TEMPLATE14_MARK = 'spill it';
 export const IMAGE_TEMPLATE14_GRAIN_SRC = '/image-templates/template-14-grain.png';
 export const IMAGE_TEMPLATE14_SLIDE_COUNT = 6;
@@ -38,6 +40,10 @@ export const IMAGE_TEMPLATE14_FONT_STACK =
 export const IMAGE_TEMPLATE14_COVER_SIZE_RATIO = 0.072;
 export const IMAGE_TEMPLATE14_QUESTION_SIZE_RATIO = 0.062;
 export const IMAGE_TEMPLATE14_QUESTION_MIN_SIZE_RATIO = 0.04;
+export const IMAGE_TEMPLATE14_OPTION_SIZE_RATIO = 0.044;
+export const IMAGE_TEMPLATE14_OPTION_GAP = 0.45;
+/** Question + options start here on the card — eye level, not vertically centered. */
+export const IMAGE_TEMPLATE14_OPTION_TOP_RATIO = 0.2;
 /** Last-slide question sits in the upper half of the card, above the App Store promo. */
 export const IMAGE_TEMPLATE14_CTA_TEXT_CENTER_RATIO = 0.36;
 export const IMAGE_TEMPLATE14_CTA_TEXT_MAX_HEIGHT_RATIO = 0.46;
@@ -163,30 +169,57 @@ function wrapPreservingBreaks(
   return lines;
 }
 
-function paintCardBloom(
+function paintCardFill(
+  ctx: CanvasRenderingContext2D,
+  card: { x: number; y: number; width: number; height: number; radius: number },
+  color: string,
+  grain?: CanvasImageSource
+): void {
+  ctx.save();
+  traceRoundRect(ctx, card.x, card.y, card.width, card.height, card.radius);
+  ctx.clip();
+  ctx.fillStyle = color;
+  ctx.fillRect(card.x, card.y, card.width, card.height);
+  if (grain) {
+    ctx.globalAlpha = 0.85;
+    ctx.globalCompositeOperation = 'multiply';
+    const pattern = ctx.createPattern(grain, 'repeat');
+    if (pattern) {
+      const matrix = new DOMMatrix().scale(0.45);
+      pattern.setTransform(matrix);
+      ctx.fillStyle = pattern;
+      ctx.fillRect(card.x, card.y, card.width, card.height);
+    }
+  }
+  ctx.restore();
+}
+
+/** Soft rim under a sharp card face — matches the flamingo-style defocused corners. */
+function paintSoftCard(
   ctx: CanvasRenderingContext2D,
   frameWidth: number,
   frameHeight: number,
   card: { x: number; y: number; width: number; height: number; radius: number },
-  color: string
+  color: string,
+  grain?: CanvasImageSource
 ): void {
-  const blurPx = frameWidth * IMAGE_TEMPLATE14_EDGE_BLUR_RATIO;
-  const bloom = document.createElement('canvas');
-  bloom.width = frameWidth;
-  bloom.height = frameHeight;
-  const bloomCtx = bloom.getContext('2d');
-  if (!bloomCtx) return;
-  bloomCtx.translate(frameWidth / 2, frameHeight / 2);
-  bloomCtx.scale(IMAGE_TEMPLATE14_EDGE_SCALE, IMAGE_TEMPLATE14_EDGE_SCALE);
-  bloomCtx.translate(-frameWidth / 2, -frameHeight / 2);
-  traceRoundRect(bloomCtx, card.x, card.y, card.width, card.height, card.radius);
-  bloomCtx.fillStyle = color;
-  bloomCtx.fill();
-  ctx.save();
-  ctx.filter = `blur(${blurPx}px)`;
-  ctx.drawImage(bloom, 0, 0);
-  ctx.filter = 'none';
-  ctx.restore();
+  const blurPx = Math.max(6, frameWidth * IMAGE_TEMPLATE14_EDGE_BLUR_RATIO);
+  const layer = document.createElement('canvas');
+  layer.width = frameWidth;
+  layer.height = frameHeight;
+  const layerCtx = layer.getContext('2d');
+  if (layerCtx) {
+    layerCtx.translate(frameWidth / 2, frameHeight / 2);
+    layerCtx.scale(IMAGE_TEMPLATE14_EDGE_SCALE, IMAGE_TEMPLATE14_EDGE_SCALE);
+    layerCtx.translate(-frameWidth / 2, -frameHeight / 2);
+    paintCardFill(layerCtx, card, color);
+    ctx.save();
+    ctx.filter = `blur(${blurPx}px)`;
+    ctx.drawImage(layer, 0, 0);
+    ctx.filter = 'none';
+    ctx.restore();
+  }
+  paintCardFill(ctx, card, color, grain);
 }
 
 /** Cover, question, or Q5 slide. Q5 draws Template 2's label and App Store image. */
@@ -201,64 +234,72 @@ export function paintTemplate14Slide(
     grain: CanvasImageSource;
     promo?: CanvasImageSource | null;
     leftAlign?: boolean;
+    skipMark?: boolean;
   }
 ): void {
   const card = template14CardRect(frameWidth, frameHeight);
   ctx.fillStyle = IMAGE_TEMPLATE14_FRAME_BG;
   ctx.fillRect(0, 0, frameWidth, frameHeight);
-  paintCardBloom(ctx, frameWidth, frameHeight, card, options.backgroundColor);
-  ctx.save();
-  traceRoundRect(ctx, card.x, card.y, card.width, card.height, card.radius);
-  ctx.clip();
-  ctx.fillStyle = options.backgroundColor;
-  ctx.fillRect(card.x, card.y, card.width, card.height);
-  ctx.globalAlpha = 0.85;
-  ctx.globalCompositeOperation = 'multiply';
-  const pattern = ctx.createPattern(options.grain, 'repeat');
-  if (pattern) {
-    // Scale the grain tile so black speckles read denser on the card.
-    const matrix = new DOMMatrix().scale(0.45);
-    pattern.setTransform(matrix);
-    ctx.fillStyle = pattern;
-    ctx.fillRect(card.x, card.y, card.width, card.height);
-  }
-  ctx.restore();
+  paintSoftCard(ctx, frameWidth, frameHeight, card, options.backgroundColor, options.grain);
 
   const isCover = options.tabIndex === 0;
   const isQ5 = options.tabIndex === IMAGE_TEMPLATE2_Q5_TAB_INDEX;
   const textColor = template14TextForBackground(options.backgroundColor);
+  const { question, options: optionText } = isCover
+    ? { question: options.text, options: '' }
+    : splitCopycatQuestionAndOptions(options.text);
   const maxWidth = card.width * IMAGE_TEMPLATE14_TEXT_MAX_WIDTH_RATIO;
   let fontSize = Math.round(
     frameWidth *
       (isCover
         ? IMAGE_TEMPLATE14_COVER_SIZE_RATIO
-        : template14QuestionSizeRatio(options.text, isQ5))
+        : template14QuestionSizeRatio(question, isQ5))
   );
+  const optionSize = Math.round(frameWidth * IMAGE_TEMPLATE14_OPTION_SIZE_RATIO);
   const minSize = Math.round(frameWidth * IMAGE_TEMPLATE14_QUESTION_MIN_SIZE_RATIO);
   const maxBlockH = isQ5
     ? card.height * IMAGE_TEMPLATE14_CTA_TEXT_MAX_HEIGHT_RATIO
     : card.height * 0.72;
   ctx.font = `400 ${fontSize}px ${IMAGE_TEMPLATE14_FONT_STACK}`;
-  let lines = wrapPreservingBreaks(ctx, options.text, maxWidth);
-  let lineHeight = fontSize * IMAGE_TEMPLATE14_LINE_HEIGHT;
-  while (fontSize > minSize && lines.length * lineHeight > maxBlockH) {
+  let questionLines = wrapPreservingBreaks(ctx, question, maxWidth);
+  let questionLineH = fontSize * IMAGE_TEMPLATE14_LINE_HEIGHT;
+  ctx.font = `400 ${optionSize}px ${IMAGE_TEMPLATE14_FONT_STACK}`;
+  const optionLines = optionText ? wrapPreservingBreaks(ctx, optionText, maxWidth) : [];
+  const optionLineH = optionSize * IMAGE_TEMPLATE14_LINE_HEIGHT;
+  const optionGap = optionLines.length ? fontSize * IMAGE_TEMPLATE14_OPTION_GAP : 0;
+  let blockH =
+    questionLines.length * questionLineH + optionGap + optionLines.length * optionLineH;
+  while (fontSize > minSize && blockH > maxBlockH) {
     fontSize -= 1;
     ctx.font = `400 ${fontSize}px ${IMAGE_TEMPLATE14_FONT_STACK}`;
-    lines = wrapPreservingBreaks(ctx, options.text, maxWidth);
-    lineHeight = fontSize * IMAGE_TEMPLATE14_LINE_HEIGHT;
+    questionLines = wrapPreservingBreaks(ctx, question, maxWidth);
+    questionLineH = fontSize * IMAGE_TEMPLATE14_LINE_HEIGHT;
+    blockH =
+      questionLines.length * questionLineH + optionGap + optionLines.length * optionLineH;
   }
-  const alignLeft = Boolean(options.leftAlign && !isCover && !isQ5);
+  const alignLeft = Boolean((options.leftAlign || optionLines.length > 0) && !isCover);
   ctx.fillStyle = textColor;
   ctx.textAlign = alignLeft ? 'left' : 'center';
   ctx.textBaseline = 'middle';
-  const blockH = lines.length * lineHeight;
   const centerY =
     card.y + card.height * (isQ5 ? IMAGE_TEMPLATE14_CTA_TEXT_CENTER_RATIO : 0.5);
   const textX = alignLeft ? card.x + card.width * 0.11 : frameWidth / 2;
-  let y = centerY - blockH / 2 + lineHeight / 2;
-  for (const line of lines) {
+  let y =
+    optionLines.length && !isCover
+      ? card.y + card.height * IMAGE_TEMPLATE14_OPTION_TOP_RATIO + questionLineH / 2
+      : centerY - blockH / 2 + questionLineH / 2;
+  ctx.font = `400 ${fontSize}px ${IMAGE_TEMPLATE14_FONT_STACK}`;
+  for (const line of questionLines) {
     ctx.fillText(line, textX, y);
-    y += lineHeight;
+    y += questionLineH;
+  }
+  if (optionLines.length) {
+    y += optionGap - questionLineH / 2 + optionLineH / 2;
+    ctx.font = `400 ${optionSize}px ${IMAGE_TEMPLATE14_FONT_STACK}`;
+    for (const line of optionLines) {
+      ctx.fillText(line, textX, y);
+      y += optionLineH;
+    }
   }
 
   if (isQ5 && options.promo) {
@@ -277,6 +318,8 @@ export function paintTemplate14Slide(
     ctx.fillText(IMAGE_TEMPLATE2_Q5_PROMO_LABEL, frameWidth / 2, layout.y - labelGap);
     return;
   }
+
+  if (options.skipMark) return;
 
   const markSize = Math.round(frameWidth * IMAGE_TEMPLATE14_MARK_SIZE_RATIO);
   ctx.font = `400 ${markSize}px ${IMAGE_TEMPLATE14_FONT_STACK}`;
