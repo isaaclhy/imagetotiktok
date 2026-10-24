@@ -29,9 +29,9 @@ export const IMAGE_TEMPLATE14_CARD_INSET_Y = 0.07;
 /** Corner radius as a share of the frame width. */
 export const IMAGE_TEMPLATE14_CARD_RADIUS_RATIO = 0.12;
 /** Soft rim sits just outside the sharp card. */
-export const IMAGE_TEMPLATE14_EDGE_SCALE = 1.012;
+export const IMAGE_TEMPLATE14_EDGE_SCALE = 1.02;
 /** Feather on the card silhouette only, as a share of frame width. */
-export const IMAGE_TEMPLATE14_EDGE_BLUR_RATIO = 0.014;
+export const IMAGE_TEMPLATE14_EDGE_BLUR_RATIO = 0.022;
 export const IMAGE_TEMPLATE14_MARK = 'spill it';
 export const IMAGE_TEMPLATE14_GRAIN_SRC = '/image-templates/template-14-grain.png';
 export const IMAGE_TEMPLATE14_SLIDE_COUNT = 6;
@@ -194,6 +194,111 @@ function paintCardFill(
   ctx.restore();
 }
 
+function blurAxis(
+  src: Uint8ClampedArray,
+  dst: Uint8ClampedArray,
+  width: number,
+  height: number,
+  radius: number,
+  horizontal: boolean
+): void {
+  const diameter = radius * 2 + 1;
+  if (horizontal) {
+    for (let y = 0; y < height; y++) {
+      const row = y * width * 4;
+      let sr = 0;
+      let sg = 0;
+      let sb = 0;
+      let sa = 0;
+      for (let k = -radius; k <= radius; k++) {
+        const i = row + Math.min(width - 1, Math.max(0, k)) * 4;
+        sr += src[i]!;
+        sg += src[i + 1]!;
+        sb += src[i + 2]!;
+        sa += src[i + 3]!;
+      }
+      for (let x = 0; x < width; x++) {
+        const out = row + x * 4;
+        dst[out] = sr / diameter;
+        dst[out + 1] = sg / diameter;
+        dst[out + 2] = sb / diameter;
+        dst[out + 3] = sa / diameter;
+        const leave = row + Math.min(width - 1, Math.max(0, x - radius)) * 4;
+        const enter = row + Math.min(width - 1, Math.max(0, x + radius + 1)) * 4;
+        sr += src[enter]! - src[leave]!;
+        sg += src[enter + 1]! - src[leave + 1]!;
+        sb += src[enter + 2]! - src[leave + 2]!;
+        sa += src[enter + 3]! - src[leave + 3]!;
+      }
+    }
+    return;
+  }
+  for (let x = 0; x < width; x++) {
+    let sr = 0;
+    let sg = 0;
+    let sb = 0;
+    let sa = 0;
+    for (let k = -radius; k <= radius; k++) {
+      const i = (Math.min(height - 1, Math.max(0, k)) * width + x) * 4;
+      sr += src[i]!;
+      sg += src[i + 1]!;
+      sb += src[i + 2]!;
+      sa += src[i + 3]!;
+    }
+    for (let y = 0; y < height; y++) {
+      const out = (y * width + x) * 4;
+      dst[out] = sr / diameter;
+      dst[out + 1] = sg / diameter;
+      dst[out + 2] = sb / diameter;
+      dst[out + 3] = sa / diameter;
+      const leave = (Math.min(height - 1, Math.max(0, y - radius)) * width + x) * 4;
+      const enter = (Math.min(height - 1, Math.max(0, y + radius + 1)) * width + x) * 4;
+      sr += src[enter]! - src[leave]!;
+      sg += src[enter + 1]! - src[leave + 1]!;
+      sb += src[enter + 2]! - src[leave + 2]!;
+      sa += src[enter + 3]! - src[leave + 3]!;
+    }
+  }
+}
+
+function premultiply(data: Uint8ClampedArray): void {
+  for (let i = 0; i < data.length; i += 4) {
+    const a = data[i + 3]! / 255;
+    data[i] = data[i]! * a;
+    data[i + 1] = data[i + 1]! * a;
+    data[i + 2] = data[i + 2]! * a;
+  }
+}
+
+function unpremultiply(data: Uint8ClampedArray): void {
+  for (let i = 0; i < data.length; i += 4) {
+    const a = data[i + 3]!;
+    if (a === 0) {
+      data[i] = 0;
+      data[i + 1] = 0;
+      data[i + 2] = 0;
+      continue;
+    }
+    data[i] = (data[i]! * 255) / a;
+    data[i + 1] = (data[i + 1]! * 255) / a;
+    data[i + 2] = (data[i + 2]! * 255) / a;
+  }
+}
+
+function blurCanvas(canvas: HTMLCanvasElement, radius: number): void {
+  const ctx = canvas.getContext('2d');
+  if (!ctx || radius < 1) return;
+  const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const tmp = new Uint8ClampedArray(image.data.length);
+  premultiply(image.data);
+  blurAxis(image.data, tmp, canvas.width, canvas.height, radius, true);
+  blurAxis(tmp, image.data, canvas.width, canvas.height, radius, false);
+  blurAxis(image.data, tmp, canvas.width, canvas.height, radius, true);
+  blurAxis(tmp, image.data, canvas.width, canvas.height, radius, false);
+  unpremultiply(image.data);
+  ctx.putImageData(image, 0, 0);
+}
+
 /** Soft rim under a sharp card face — matches the flamingo-style defocused corners. */
 function paintSoftCard(
   ctx: CanvasRenderingContext2D,
@@ -203,21 +308,27 @@ function paintSoftCard(
   color: string,
   grain?: CanvasImageSource
 ): void {
-  const blurPx = Math.max(6, frameWidth * IMAGE_TEMPLATE14_EDGE_BLUR_RATIO);
+  const radius = Math.max(10, Math.round(frameWidth * IMAGE_TEMPLATE14_EDGE_BLUR_RATIO));
+  const pad = radius * 3;
+  const cx = card.x + card.width / 2;
+  const cy = card.y + card.height / 2;
+  const scaledW = card.width * IMAGE_TEMPLATE14_EDGE_SCALE;
+  const scaledH = card.height * IMAGE_TEMPLATE14_EDGE_SCALE;
+  const layerW = Math.ceil(scaledW) + pad * 2;
+  const layerH = Math.ceil(scaledH) + pad * 2;
+  const originX = cx - scaledW / 2 - pad;
+  const originY = cy - scaledH / 2 - pad;
   const layer = document.createElement('canvas');
-  layer.width = frameWidth;
-  layer.height = frameHeight;
+  layer.width = layerW;
+  layer.height = layerH;
   const layerCtx = layer.getContext('2d');
   if (layerCtx) {
-    layerCtx.translate(frameWidth / 2, frameHeight / 2);
+    layerCtx.translate(cx - originX, cy - originY);
     layerCtx.scale(IMAGE_TEMPLATE14_EDGE_SCALE, IMAGE_TEMPLATE14_EDGE_SCALE);
-    layerCtx.translate(-frameWidth / 2, -frameHeight / 2);
+    layerCtx.translate(-cx, -cy);
     paintCardFill(layerCtx, card, color);
-    ctx.save();
-    ctx.filter = `blur(${blurPx}px)`;
-    ctx.drawImage(layer, 0, 0);
-    ctx.filter = 'none';
-    ctx.restore();
+    blurCanvas(layer, radius);
+    ctx.drawImage(layer, originX, originY);
   }
   paintCardFill(ctx, card, color, grain);
 }

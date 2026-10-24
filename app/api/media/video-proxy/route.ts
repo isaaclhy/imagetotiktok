@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid or missing video URL' }, { status: 400 });
     }
 
-    const upstreamHeaders: HeadersInit = { ...MEDIA_PROXY_UPSTREAM_HEADERS };
+    const upstreamHeaders: Record<string, string> = { ...MEDIA_PROXY_UPSTREAM_HEADERS };
     const range = request.headers.get('range');
     if (range) {
       upstreamHeaders.Range = range;
