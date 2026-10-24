@@ -20,22 +20,22 @@ export const IMAGE_TEMPLATE16_FONT_STACK =
   '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif';
 
 export const IMAGE_TEMPLATE16_SIDE_PAD = 0.07;
-export const IMAGE_TEMPLATE16_HEADER_Y = 0.046;
+export const IMAGE_TEMPLATE16_HEADER_Y = 0.055;
 export const IMAGE_TEMPLATE16_HEADER_SIZE = 0.042;
 export const IMAGE_TEMPLATE16_HEADER_LABEL = 0.034;
-export const IMAGE_TEMPLATE16_BRAND_Y = 0.112;
+export const IMAGE_TEMPLATE16_BRAND_Y = 0.128;
 export const IMAGE_TEMPLATE16_AVATAR = 0.064;
 export const IMAGE_TEMPLATE16_ICON_RADIUS = 0.223;
 export const IMAGE_TEMPLATE16_BRAND_SIZE = 0.038;
 export const IMAGE_TEMPLATE16_BODY_SIZE = 0.072;
-export const IMAGE_TEMPLATE16_BODY_TOP = 0.24;
+export const IMAGE_TEMPLATE16_BODY_TOP = 0.28;
 export const IMAGE_TEMPLATE16_BODY_WEIGHT = 800;
 export const IMAGE_TEMPLATE16_OPTION_SIZE = 0.052;
 export const IMAGE_TEMPLATE16_OPTION_WEIGHT = 500;
 export const IMAGE_TEMPLATE16_OPTION_GAP = 0.55;
 export const IMAGE_TEMPLATE16_LINE_HEIGHT = 1.12;
 export const IMAGE_TEMPLATE16_LETTER_SPACING = -0.03;
-export const IMAGE_TEMPLATE16_FOOTER_Y = 0.9;
+export const IMAGE_TEMPLATE16_FOOTER_Y = 0.88;
 export const IMAGE_TEMPLATE16_FOOTER_SIZE = 0.028;
 export const IMAGE_TEMPLATE16_COVER_SRC = '/image-templates/template-16-cover.png';
 
