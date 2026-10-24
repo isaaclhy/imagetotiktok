@@ -13,6 +13,11 @@ import { getFlamingoCardsPosts } from '@/app/lib/copycat/flamingo-convos';
 import { getQuestions21Posts } from '@/app/lib/copycat/questions-21';
 import { getItsAllAboutLovingYouPosts } from '@/app/lib/copycat/itsallaboutlovingyou';
 import { getTryDeepenPosts } from '@/app/lib/copycat/trydeepen';
+import { getCoupleCardsPosts } from '@/app/lib/copycat/couple-cards';
+import { getHhTalkPosts } from '@/app/lib/copycat/hhtalk';
+import { getGoldenThoughtsDailyPosts } from '@/app/lib/copycat/goldenthoughtsdaily';
+import { getLvrsbaePosts } from '@/app/lib/copycat/lvrsbae';
+import { getSpillCardsAppPosts } from '@/app/lib/copycat/spillcardsapp';
 import { exportCopycatSlidesZip } from '@/app/lib/copycat/export-slides';
 import { IMAGE_TEMPLATE2_PASTEL_COLORS, IMAGE_TEMPLATE2_TOP_LABEL } from '@/app/lib/constants';
 import {
@@ -778,7 +783,17 @@ export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
             ? getItsAllAboutLovingYouPosts()
             : competitorId === 'try-deepen'
               ? getTryDeepenPosts()
-              : [];
+              : competitorId === 'couple-cards'
+                ? getCoupleCardsPosts()
+                : competitorId === 'hh-talk'
+                  ? getHhTalkPosts()
+                  : competitorId === 'golden-thoughts-daily'
+                    ? getGoldenThoughtsDailyPosts()
+                    : competitorId === 'lvrsbae'
+                      ? getLvrsbaePosts()
+                      : competitorId === 'spill-cards-app'
+                        ? getSpillCardsAppPosts()
+                        : [];
     return filterCopycatPostsByMinViews(raw);
   }, [competitorId]);
   const postIds = useMemo(() => posts.map((post) => post.id), [posts]);

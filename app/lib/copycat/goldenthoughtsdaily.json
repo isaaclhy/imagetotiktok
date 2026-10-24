@@ -1,0 +1,83 @@
+{
+  "handle": "goldenthoughtsdaily",
+  "platform": "tiktok",
+  "minViews": 100000,
+  "postCount": 5,
+  "posts": [
+    {
+      "id": "7642330259035114765",
+      "views": 6698550,
+      "likes": 266292,
+      "coverText": "Funny questions to ask your partner",
+      "slideText": [
+        { "text": "What's one thing I do that makes you question my survival instincts?" },
+        { "text": "If I were an animal, what would I realistically be?" },
+        { "text": "What's one place you want us to travel to?" },
+        { "text": "If I got arrested, what would it probably be for?" },
+        { "text": "What's something small I do that makes you happy?" },
+        { "text": "What's my funniest red flag?" },
+        { "text": "If I was a flavor, what flavor would I be?" }
+      ]
+    },
+    {
+      "id": "7640130147579972878",
+      "views": 486292,
+      "likes": 26608,
+      "coverText": "Funny questions to ask your siblings",
+      "slideText": [
+        { "text": "If I got arrested, what would it probably be for?" },
+        { "text": "If I were famous, what would it be for?" },
+        { "text": "Am I the drama or the peacekeeper?" },
+        { "text": "Would you survive if you had to be me for a day?" },
+        { "text": "What would be the reason I'd be returned by a kidnapper?" },
+        { "text": "What's my main skill: chaos, noise, or confusion?" },
+        { "text": "What's my most questionable life choice so far?" }
+      ]
+    },
+    {
+      "id": "7644936504376184095",
+      "views": 198298,
+      "likes": 3674,
+      "coverText": "Funny questions to ask your partner",
+      "slideText": [
+        { "text": "If you had to choose between me and a million dollars, which would you choose?" },
+        { "text": "If we had to switch lives for a day, what's the first thing you'd do as me?" },
+        { "text": "Do you ever listen when I talk, or just nod and pretend?" },
+        { "text": "If you could change one thing about me, what would it be?" },
+        { "text": "Which friend of mine do you like the least?" },
+        { "text": "If we had to rob a bank together, what role would you take?" },
+        { "text": "If I lost all my memories of us, what's the first story you'd tell me?" }
+      ]
+    },
+    {
+      "id": "7646786952699677983",
+      "views": 183412,
+      "likes": 2226,
+      "coverText": "Funny questions to ask your coworkers",
+      "slideText": [
+        { "text": "If you had to invite only one coworker to your wedding, who would it be?" },
+        { "text": "If there were a company Hunger Games, who's making the final three?" },
+        { "text": "If the office got stranded on an island, who would become leader within 24 hours?" },
+        { "text": "Who would be the worst person to be stuck in an elevator with for 8 hours?" },
+        { "text": "Which coworker could get away with a crime just by acting confused?" },
+        { "text": "If you could clone one coworker to make the workplace run better, who would it be?" },
+        { "text": "Who could talk their way out of being arrested?" }
+      ]
+    },
+    {
+      "id": "7645720862670327070",
+      "views": 134508,
+      "likes": 1641,
+      "coverText": "Funny questions to ask your friends",
+      "slideText": [
+        { "text": "If you could read one person's thoughts for a day, whose would you choose?" },
+        { "text": "If you got famous tomorrow, what would you get canceled for?" },
+        { "text": "If our friend group was a TV show, what would it be called?" },
+        { "text": "What's one thing each person in the group would get arrested for?" },
+        { "text": "Who in this group could get away with murder purely because nobody would suspect them?" },
+        { "text": "Who gives the worst advice with the most confidence?" },
+        { "text": "If everyone swapped lives for a month, who would struggle the most?" }
+      ]
+    }
+  ]
+}

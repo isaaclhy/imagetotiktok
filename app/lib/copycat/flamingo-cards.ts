@@ -300,6 +300,7 @@ export function stripCopycatSwipeChrome(text: string): string {
     .replace(/\s*Q\s*deepen[\s\S]*$/i, '')
     .replace(/\s*@yourhandle\b/gi, '')
     .replace(/\s+Deepen\b/g, '')
+    .replace(/^Conversation Starters\s+/i, '')
     .replace(/^Coupl[eé]s Quiz\s+/i, '')
     .replace(/^CO\s+C\s+/i, '')
     .replace(/^[→➜➡›»•\-–—‹«\s]+/, '')
