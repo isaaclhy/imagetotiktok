@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import {
   FRESH_BAKED_DONUT_HANDLE,
   captionWithoutHashtags,
@@ -89,6 +90,46 @@ type FreshBakedDonutDetailProps = {
 };
 
 export function FreshBakedDonutDetail({ post }: FreshBakedDonutDetailProps) {
+  const videoLink = post.reelUrl || post.url;
+  const [publicUrl, setPublicUrl] = useState('');
+  const [publicBusy, setPublicBusy] = useState(false);
+  const [publicError, setPublicError] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    setPublicUrl('');
+    setPublicError('');
+    setCopied(false);
+  }, [post.id]);
+
+  const copyPublicLink = async () => {
+    setPublicBusy(true);
+    setPublicError('');
+    setCopied(false);
+    try {
+      let url = publicUrl;
+      if (!url) {
+        const res = await fetch('/api/fresh-baked-donut/public-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: post.id }),
+        });
+        const data = (await res.json()) as { url?: string; error?: string };
+        if (!res.ok || !data.url) {
+          throw new Error(data.error || 'Failed to host a public link');
+        }
+        url = data.url;
+        setPublicUrl(url);
+      }
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+    } catch (error) {
+      setPublicError(error instanceof Error ? error.message : 'Failed to copy public link');
+    } finally {
+      setPublicBusy(false);
+    }
+  };
+
   return (
     <div className="w-full max-w-sm mx-auto md:mx-0 min-w-0">
       <div className="relative aspect-9/16 w-full overflow-hidden rounded-xl border border-zinc-200 bg-black dark:border-zinc-700">
@@ -110,6 +151,35 @@ export function FreshBakedDonutDetail({ post }: FreshBakedDonutDetailProps) {
       <p className="text-xs text-zinc-500">
         {formatViews(post.views)} views · {Math.round(post.durationSec)}s
       </p>
+      {videoLink ? (
+        <a
+          href={videoLink}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-1 block break-all text-xs text-zinc-600 underline decoration-zinc-300 underline-offset-2 hover:text-zinc-900 dark:text-zinc-400 dark:decoration-zinc-600 dark:hover:text-zinc-200"
+        >
+          {videoLink}
+        </a>
+      ) : null}
+      <button
+        type="button"
+        disabled={publicBusy}
+        onClick={() => void copyPublicLink()}
+        className="mt-3 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-800 hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
+      >
+        {publicBusy ? 'Hosting…' : copied ? 'Copied public link' : 'Copy public link'}
+      </button>
+      {publicUrl ? (
+        <a
+          href={publicUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-1 block break-all text-xs text-zinc-600 underline decoration-zinc-300 underline-offset-2 hover:text-zinc-900 dark:text-zinc-400 dark:decoration-zinc-600 dark:hover:text-zinc-200"
+        >
+          {publicUrl}
+        </a>
+      ) : null}
+      {publicError ? <p className="mt-1 text-xs text-red-600 dark:text-red-400">{publicError}</p> : null}
     </div>
   );
 }
