@@ -70,17 +70,10 @@ export function SplitCoverPreview({ text }: SplitCoverPreviewProps) {
             height: `${IMAGE_TEMPLATE17_ICON_SIZE * 100}cqw`,
           }}
         />
-        <div
-          style={{
-            width: `${IMAGE_TEMPLATE17_LINE_LENGTH * 100}cqw`,
-            height: `${IMAGE_TEMPLATE17_LINE_THICKNESS * 100}cqw`,
-            backgroundColor: IMAGE_TEMPLATE17_TEXT,
-            marginLeft: `${IMAGE_TEMPLATE17_LINE_GAP * 100}cqw`,
-          }}
-        />
         <span
           style={{
             marginLeft: `${IMAGE_TEMPLATE17_BRAND_GAP * 100}cqw`,
+            marginRight: `${IMAGE_TEMPLATE17_LINE_GAP * 100}cqw`,
             color: IMAGE_TEMPLATE17_TEXT,
             fontSize: `${IMAGE_TEMPLATE17_BRAND_SIZE * 100}cqw`,
             fontWeight: 600,
@@ -91,6 +84,13 @@ export function SplitCoverPreview({ text }: SplitCoverPreviewProps) {
         >
           {IMAGE_TEMPLATE17_BRAND}
         </span>
+        <div
+          style={{
+            width: `${IMAGE_TEMPLATE17_LINE_LENGTH * 100}cqw`,
+            height: `${IMAGE_TEMPLATE17_LINE_THICKNESS * 100}cqw`,
+            backgroundColor: IMAGE_TEMPLATE17_TEXT,
+          }}
+        />
       </div>
       <p
         className="absolute left-1/2 z-10 -translate-x-1/2 whitespace-pre-wrap wrap-break-word text-center"

@@ -22,10 +22,12 @@ export const IMAGE_TEMPLATE17_TITLE_LINE_HEIGHT = 1.02;
 export const IMAGE_TEMPLATE17_TITLE_TRACKING = '-0.045em';
 export const IMAGE_TEMPLATE17_TITLE_WIDTH = 0.9;
 export const IMAGE_TEMPLATE17_TITLE_TOP = 0.785;
-export const IMAGE_TEMPLATE17_DIM_START = 0.42;
-export const IMAGE_TEMPLATE17_BLACK_TOP = 0.66;
+export const IMAGE_TEMPLATE17_DIM_START = 0.32;
+export const IMAGE_TEMPLATE17_DIM_MID = 'rgba(0,0,0,0.42)';
+export const IMAGE_TEMPLATE17_DIM_HEAVY = 'rgba(0,0,0,0.82)';
+export const IMAGE_TEMPLATE17_DIM_END = '#000000';
 export const IMAGE_TEMPLATE17_DIM_GRADIENT =
-  'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 12%, rgba(0,0,0,0.55) 26%, #000000 41%, #000000 100%)';
+  `linear-gradient(to bottom, transparent 0%, ${IMAGE_TEMPLATE17_DIM_MID} 38%, ${IMAGE_TEMPLATE17_DIM_HEAVY} 72%, ${IMAGE_TEMPLATE17_DIM_END} 100%)`;
 
 export function isImageTemplate17Id(templateId: number | null | undefined): boolean {
   return templateId === 17;
@@ -77,14 +79,11 @@ function drawCoverImage(
 
 function drawFade(ctx: CanvasRenderingContext2D, width: number, height: number) {
   const startY = height * IMAGE_TEMPLATE17_DIM_START;
-  const blackY = height * IMAGE_TEMPLATE17_BLACK_TOP;
   const gradient = ctx.createLinearGradient(0, startY, 0, height);
-  const blackStop = (blackY - startY) / Math.max(height - startY, 1);
   gradient.addColorStop(0, 'rgba(0,0,0,0)');
-  gradient.addColorStop(blackStop * 0.28, 'rgba(0,0,0,0.18)');
-  gradient.addColorStop(blackStop * 0.62, 'rgba(0,0,0,0.55)');
-  gradient.addColorStop(Math.min(blackStop, 1), '#000000');
-  gradient.addColorStop(1, '#000000');
+  gradient.addColorStop(0.38, IMAGE_TEMPLATE17_DIM_MID);
+  gradient.addColorStop(0.72, IMAGE_TEMPLATE17_DIM_HEAVY);
+  gradient.addColorStop(1, IMAGE_TEMPLATE17_DIM_END);
   ctx.fillStyle = gradient;
   ctx.fillRect(0, startY, width, height - startY);
 }
@@ -105,14 +104,15 @@ function drawBrand(
   const lineW = width * IMAGE_TEMPLATE17_LINE_LENGTH;
   const lineGap = width * IMAGE_TEMPLATE17_LINE_GAP;
   const lineH = Math.max(1, width * IMAGE_TEMPLATE17_LINE_THICKNESS);
-  const groupW = lineW + lineGap + iconSize + lineGap + lineW + gap + labelW;
+  const lockupW = iconSize + gap + labelW;
+  const groupW = lineW + lineGap + lockupW + lineGap + lineW;
   const startX = (width - groupW) / 2;
   const iconX = startX + lineW + lineGap;
   const iconY = seamY - iconSize / 2;
 
   ctx.fillStyle = IMAGE_TEMPLATE17_TEXT;
   ctx.fillRect(startX, seamY - lineH / 2, lineW, lineH);
-  ctx.fillRect(iconX + iconSize + lineGap, seamY - lineH / 2, lineW, lineH);
+  ctx.fillRect(iconX + lockupW + lineGap, seamY - lineH / 2, lineW, lineH);
 
   if (icon) {
     ctx.drawImage(icon, iconX, iconY, iconSize, iconSize);
@@ -124,7 +124,7 @@ function drawBrand(
   ctx.fillStyle = IMAGE_TEMPLATE17_TEXT;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText(IMAGE_TEMPLATE17_BRAND, iconX + iconSize + lineGap + lineW + gap, seamY);
+  ctx.fillText(IMAGE_TEMPLATE17_BRAND, iconX + iconSize + gap, seamY);
   ctx.letterSpacing = '0px';
 }
 
