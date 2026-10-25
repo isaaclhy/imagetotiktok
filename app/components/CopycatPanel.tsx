@@ -10,6 +10,7 @@ import {
   type CopycatPost,
 } from '@/app/lib/copycat/flamingo-cards';
 import { getFlamingoCardsPosts } from '@/app/lib/copycat/flamingo-convos';
+import { getFlamingoConvoPosts } from '@/app/lib/copycat/flamingo-convo';
 import { getQuestions21Posts } from '@/app/lib/copycat/questions-21';
 import { getItsAllAboutLovingYouPosts } from '@/app/lib/copycat/itsallaboutlovingyou';
 import { getTryDeepenPosts } from '@/app/lib/copycat/trydeepen';
@@ -40,6 +41,7 @@ import {
 import {
   IMAGE_TEMPLATE13_BG,
   IMAGE_TEMPLATE13_COVER_SIZE,
+  IMAGE_TEMPLATE13_FONT_STACK,
   IMAGE_TEMPLATE13_FONT_WEIGHT,
   IMAGE_TEMPLATE13_LETTER_SPACING,
   IMAGE_TEMPLATE13_OPTION_GAP,
@@ -57,6 +59,7 @@ import {
   template13ProgressRatio,
 } from '@/app/lib/image-template-13-cover';
 import {
+  IMAGE_TEMPLATE15_COVER_SIZE_RATIO,
   IMAGE_TEMPLATE15_CARD_BG,
   IMAGE_TEMPLATE15_CARD_BORDER,
   IMAGE_TEMPLATE15_CARD_BORDER_RATIO,
@@ -92,6 +95,7 @@ import {
   IMAGE_TEMPLATE14_GRAIN_SRC,
   IMAGE_TEMPLATE14_LINE_HEIGHT,
   IMAGE_TEMPLATE14_OPTION_GAP,
+  IMAGE_TEMPLATE14_OPTION_LINE_HEIGHT,
   IMAGE_TEMPLATE14_OPTION_SIZE_RATIO,
   IMAGE_TEMPLATE14_OPTION_TOP_RATIO,
   IMAGE_TEMPLATE14_MARK_SIZE_RATIO,
@@ -102,6 +106,7 @@ import {
   template14TextForBackground,
 } from '@/app/lib/image-template-14-cards';
 import { NotesQuestionsPreview } from '@/app/components/NotesQuestionsPreview';
+import { SplitCoverPreview } from '@/app/components/SplitCoverPreview';
 
 const TIKTOK_SANS_STACK = '"TikTok Sans", system-ui, -apple-system, sans-serif';
 const COPYCAT_APP_NAME = 'Spill It';
@@ -111,7 +116,7 @@ const COPYCAT_TEXT_ONLY_COVER_TOP = 0.38;
 const COPYCAT_TEXT_ONLY_COVER_SIZE_T2 = 0.074;
 const COPYCAT_TEXT_ONLY_COVER_SIZE_T14 = 0.088;
 
-export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16;
+export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17;
 
 function CopycatAppMarkFooter({
   isCover,
@@ -160,6 +165,7 @@ function CopycatAppMarkFooter({
 type CopycatPanelProps = {
   competitorId: string;
   templateId: CopycatTemplateId;
+  onNewRandomPost?: () => void;
 };
 
 /** Unbiased int in [0, maxExclusive) via crypto (not Math.random). */
@@ -221,8 +227,7 @@ function pickTemplate14Color(exclude?: string): string {
   return colors[cryptoRandomInt(colors.length)]!;
 }
 
-function templateFrameAspect(templateId: CopycatTemplateId): string {
-  if (templateId === 13 || templateId === 15 || templateId === 16) return 'aspect-[9/16]';
+function templateFrameAspect(_templateId: CopycatTemplateId): string {
   return 'aspect-3/4';
 }
 
@@ -258,7 +263,11 @@ function CopycatSlidePreview({
     isCtaSlide;
   const showTemplate13Cta = templateId === 13 && isCtaSlide;
   const showSpillItMark =
-    !showTemplate2StyleCta && !showTemplate13Cta && templateId !== 1 && templateId !== 6;
+    !showTemplate2StyleCta &&
+    !showTemplate13Cta &&
+    templateId !== 1 &&
+    templateId !== 6 &&
+    templateId !== 17;
   const alignLeft = Boolean(leftAlign && !isCover) || templateId === 2;
   const pastelBg =
     IMAGE_TEMPLATE2_PASTEL_COLORS[tabIndex % IMAGE_TEMPLATE2_PASTEL_COLORS.length]!;
@@ -268,9 +277,17 @@ function CopycatSlidePreview({
     ? 'left-[11%] w-[78%] -translate-y-1/2 text-left'
     : 'left-1/2 w-[78%] -translate-x-1/2 -translate-y-1/2 text-center';
 
+  if (templateId === 17) {
+    return (
+      <div className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4 bg-black">
+        <SplitCoverPreview text={text} />
+      </div>
+    );
+  }
+
   if (templateId === 16) {
     return (
-      <div className="@container relative w-full max-w-sm mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-[9/16] bg-white">
+      <div className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4 bg-white">
         <NotesQuestionsPreview
           text={text}
           tabIndex={tabIndex}
@@ -284,7 +301,7 @@ function CopycatSlidePreview({
   if (templateId === 15) {
     if (isCover) {
       return (
-        <div className="@container relative w-full max-w-sm mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-[9/16] bg-[#CDB892]">
+        <div className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4 bg-[#CDB892]">
           {illustrationSrc ? (
             <img
               src={illustrationSrc}
@@ -299,7 +316,7 @@ function CopycatSlidePreview({
             className="absolute left-1/2 top-1/2 z-10 w-[78%] -translate-x-1/2 -translate-y-1/2 whitespace-pre-wrap wrap-break-word text-center text-white"
             style={{
               fontFamily: IMAGE_TEMPLATE15_QUESTION_FONT_STACK,
-              fontSize: '6.8cqw',
+              fontSize: `${IMAGE_TEMPLATE15_COVER_SIZE_RATIO * 100}cqw`,
               fontWeight: 500,
               lineHeight: 1.2,
               textShadow: '0 2px 12px rgba(0,0,0,0.45)',
@@ -323,7 +340,7 @@ function CopycatSlidePreview({
     const cardBorder = `${IMAGE_TEMPLATE15_CARD_BORDER_RATIO * 100}cqw`;
     return (
       <div
-        className="@container relative w-full max-w-sm mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-[9/16]"
+        className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4"
         style={{
           backgroundColor: template15FrameBg ?? IMAGE_TEMPLATE15_FRAME_BG,
         }}
@@ -408,7 +425,7 @@ function CopycatSlidePreview({
   if (templateId === 14) {
     return (
       <div
-        className="@container relative w-full max-w-sm mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4"
+        className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4"
         style={{ backgroundColor: IMAGE_TEMPLATE14_FRAME_BG }}
       >
         <div
@@ -505,7 +522,7 @@ function CopycatSlidePreview({
                   marginTop: `${IMAGE_TEMPLATE14_OPTION_GAP}em`,
                   fontSize: `${IMAGE_TEMPLATE14_OPTION_SIZE_RATIO * 100}cqw`,
                   fontWeight: 400,
-                  lineHeight: IMAGE_TEMPLATE14_LINE_HEIGHT,
+                  lineHeight: IMAGE_TEMPLATE14_OPTION_LINE_HEIGHT,
                 }}
               >
                 {options}
@@ -556,7 +573,7 @@ function CopycatSlidePreview({
   if (templateId === 13) {
     return (
       <div
-        className="@container relative w-full max-w-sm mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-[9/16]"
+        className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4"
         style={{ backgroundColor: IMAGE_TEMPLATE13_BG }}
       >
         <div
@@ -580,7 +597,7 @@ function CopycatSlidePreview({
             style={{
               top: `${COPYCAT_TEXT_ONLY_COVER_TOP * 100}%`,
               width: `${IMAGE_TEMPLATE13_TEXT_WIDTH * 100}%`,
-              fontFamily: TIKTOK_SANS_STACK,
+              fontFamily: IMAGE_TEMPLATE13_FONT_STACK,
               fontSize: `${IMAGE_TEMPLATE13_COVER_SIZE * 100}cqw`,
               fontWeight: IMAGE_TEMPLATE13_FONT_WEIGHT,
               letterSpacing: IMAGE_TEMPLATE13_LETTER_SPACING,
@@ -602,7 +619,7 @@ function CopycatSlidePreview({
                   top: `${COPYCAT_TEXT_ONLY_COVER_TOP * 100}%`,
                   left: t13AlignLeft ? `${IMAGE_TEMPLATE13_SIDE_PAD * 100}%` : undefined,
                   width: `${IMAGE_TEMPLATE13_TEXT_WIDTH * 100}%`,
-                  fontFamily: TIKTOK_SANS_STACK,
+                  fontFamily: IMAGE_TEMPLATE13_FONT_STACK,
                   letterSpacing: IMAGE_TEMPLATE13_LETTER_SPACING,
                   textAlign: t13AlignLeft ? 'left' : 'center',
                 }}
@@ -674,7 +691,7 @@ function CopycatSlidePreview({
     const { question, options } = splitCopycatQuestionAndOptions(text);
     return (
       <div
-        className="@container relative w-full max-w-sm mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4"
+        className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4"
         style={{ backgroundColor: pastelBg }}
       >
         <p
@@ -764,7 +781,7 @@ function CopycatSlidePreview({
       : 'translateX(-50%)';
   return (
     <div
-      className={`@container relative w-full max-w-sm mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 ${templateFrameAspect(templateId)}`}
+      className={`@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 ${templateFrameAspect(templateId)}`}
       style={{ backgroundColor: frameBg }}
     >
       <p
@@ -836,12 +853,18 @@ function CopycatSlidePreview({
   );
 }
 
-export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
+export function CopycatPanel({
+  competitorId,
+  templateId,
+  onNewRandomPost,
+}: CopycatPanelProps) {
   const posts: CopycatPost[] = useMemo(() => {
     const raw =
       competitorId === 'flamingo-cards'
         ? getFlamingoCardsPosts(FLAMINGO_CARDS_FEED.posts)
-        : competitorId === '21-questions'
+        : competitorId === 'flamingo-convo'
+          ? getFlamingoConvoPosts()
+          : competitorId === '21-questions'
           ? getQuestions21Posts()
           : competitorId === 'its-all-about-loving-you'
             ? getItsAllAboutLovingYouPosts()
@@ -858,7 +881,8 @@ export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
                       : competitorId === 'spill-cards-app'
                         ? getSpillCardsAppPosts()
                         : [];
-    return filterCopycatPostsByMinViews(raw);
+    if (competitorId === 'flamingo-cards') return filterCopycatPostsByMinViews(raw);
+    return raw;
   }, [competitorId]);
   const postIds = useMemo(() => posts.map((post) => post.id), [posts]);
 
@@ -1105,7 +1129,7 @@ export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col gap-3">
+    <div className="mx-auto flex w-full max-w-sm flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
           Random post · {slideBodies.length} slides
@@ -1113,7 +1137,10 @@ export function CopycatPanel({ competitorId, templateId }: CopycatPanelProps) {
         <div className="flex shrink-0 items-center gap-1.5">
           <button
             type="button"
-            onClick={reshufflePost}
+            onClick={() => {
+              if (onNewRandomPost) onNewRandomPost();
+              else reshufflePost();
+            }}
             disabled={isDownloading}
             className="rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-1.5 text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:border-zinc-400 dark:hover:border-zinc-500 disabled:opacity-50"
           >

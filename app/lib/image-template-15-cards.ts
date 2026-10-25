@@ -37,9 +37,8 @@ export const IMAGE_TEMPLATE15_CARD_BORDER = '#1A1A1A';
 export const IMAGE_TEMPLATE15_TEXT = '#141414';
 export const IMAGE_TEMPLATE15_MARK = 'SPILL IT';
 export const IMAGE_TEMPLATE15_FONT_STACK =
-  '"Libre Baskerville", Georgia, "Times New Roman", serif';
-export const IMAGE_TEMPLATE15_QUESTION_FONT_STACK =
-  '"TikTok Sans", system-ui, -apple-system, sans-serif';
+  '"Playfair Display", Georgia, "Times New Roman", serif';
+export const IMAGE_TEMPLATE15_QUESTION_FONT_STACK = IMAGE_TEMPLATE15_FONT_STACK;
 
 export const IMAGE_TEMPLATE15_CARD_INSET_X = 0.145;
 export const IMAGE_TEMPLATE15_CARD_INSET_Y = 0.205;
@@ -48,6 +47,7 @@ export const IMAGE_TEMPLATE15_CARD_BORDER_RATIO = 0.016;
 export const IMAGE_TEMPLATE15_MARK_SIZE_RATIO = 0.028;
 export const IMAGE_TEMPLATE15_MARK_TOP_RATIO = 0.085;
 export const IMAGE_TEMPLATE15_MARK_TRACKING = '0.14em';
+export const IMAGE_TEMPLATE15_COVER_SIZE_RATIO = 0.088;
 export const IMAGE_TEMPLATE15_QUESTION_SIZE_RATIO = 0.048;
 /** Top of the question + options, just under the mark — card eye-level band. */
 export const IMAGE_TEMPLATE15_QUESTION_TOP_RATIO = 0.2;
@@ -228,7 +228,7 @@ export function paintTemplate15Cover(
   if (options.image) {
     drawImageCover(ctx, options.image, frameWidth, frameHeight);
   }
-  const fontSize = Math.round(frameWidth * 0.068);
+  const fontSize = Math.round(frameWidth * IMAGE_TEMPLATE15_COVER_SIZE_RATIO);
   ctx.font = `500 ${fontSize}px ${IMAGE_TEMPLATE15_QUESTION_FONT_STACK}`;
   const maxW = frameWidth * 0.78;
   const lines = wrapLines(ctx, options.text, maxW);

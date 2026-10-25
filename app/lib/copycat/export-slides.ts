@@ -23,6 +23,7 @@ import {
   IMAGE_TEMPLATE13_BG,
   IMAGE_TEMPLATE13_CONTENT_BOTTOM,
   IMAGE_TEMPLATE13_COVER_SIZE,
+  IMAGE_TEMPLATE13_FONT_STACK,
   IMAGE_TEMPLATE13_FONT_WEIGHT,
   IMAGE_TEMPLATE13_LETTER_SPACING,
   IMAGE_TEMPLATE13_OPTION_GAP,
@@ -61,6 +62,12 @@ import {
   IMAGE_TEMPLATE16_ICON_SRC,
   paintTemplate16Slide,
 } from '@/app/lib/image-template-16-notes';
+import {
+  IMAGE_TEMPLATE17_COVER_SRC,
+  IMAGE_TEMPLATE17_ICON_SRC,
+  IMAGE_TEMPLATE17_TITLE_WEIGHT,
+  paintTemplate17Slide,
+} from '@/app/lib/image-template-17-split';
 
 const TIKTOK = '"TikTok Sans", system-ui, sans-serif';
 const COMIC =
@@ -98,7 +105,7 @@ function drawCopycatAppMark(
   ctx.fillText(COPYCAT_APP_NAME, frameWidth / 2, markY);
 }
 
-export type CopycatExportTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16;
+export type CopycatExportTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17;
 
 export type CopycatExportSlide = {
   text: string;
@@ -171,8 +178,7 @@ function drawWrappedBlock(
   return { top: centerY - blockH / 2, bottom: centerY + blockH / 2 };
 }
 
-function frameSize(templateId: CopycatExportTemplateId): { w: number; h: number } {
-  if (templateId === 13 || templateId === 15 || templateId === 16) return { w: 1080, h: 1920 };
+function frameSize(_templateId: CopycatExportTemplateId): { w: number; h: number } {
   return { w: 1080, h: 1440 };
 }
 
@@ -191,6 +197,21 @@ async function paintSlide(
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Failed to prepare canvas');
 
+  if (templateId === 17) {
+    try {
+      await document.fonts.load(`${IMAGE_TEMPLATE17_TITLE_WEIGHT} 72px "Inter"`);
+      await document.fonts.load(`600 28px "Inter"`);
+    } catch {
+      /* fonts may already be ready */
+    }
+    const [icon, image] = await Promise.all([
+      loadImage(IMAGE_TEMPLATE17_ICON_SRC),
+      loadImage(IMAGE_TEMPLATE17_COVER_SRC),
+    ]);
+    paintTemplate17Slide(ctx, w, h, { text: slide.text, icon, image });
+    return canvasBlob(canvas);
+  }
+
   if (templateId === 16) {
     const icon = await loadImage(IMAGE_TEMPLATE16_ICON_SRC);
     const promo = slide.isCta ? await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC) : null;
@@ -206,9 +227,9 @@ async function paintSlide(
 
   if (templateId === 15) {
     try {
-      await document.fonts.load(`400 40px "TikTok Sans"`);
-      await document.fonts.load(`500 72px "TikTok Sans"`);
-      await document.fonts.load(`700 36px "TikTok Sans"`);
+      await document.fonts.load(`400 40px "Playfair Display"`);
+      await document.fonts.load(`500 72px "Playfair Display"`);
+      await document.fonts.load(`700 36px "Playfair Display"`);
     } catch {
       /* fonts may already be ready */
     }
@@ -298,8 +319,8 @@ async function paintSlide(
     ctx.fillRect(0, 0, w, h);
     drawTemplate13ProgressBar(ctx, w, h, template13ProgressRatio(tabIndex, slideCount));
     try {
-      await document.fonts.load(`${IMAGE_TEMPLATE13_FONT_WEIGHT} 52px "TikTok Sans"`);
-      await document.fonts.load(`${IMAGE_TEMPLATE13_OPTION_WEIGHT} 52px "TikTok Sans"`);
+      await document.fonts.load(`${IMAGE_TEMPLATE13_FONT_WEIGHT} 52px "Playfair Display"`);
+      await document.fonts.load(`${IMAGE_TEMPLATE13_OPTION_WEIGHT} 52px "Playfair Display"`);
     } catch {
       /* fonts may already be ready */
     }
@@ -308,8 +329,8 @@ async function paintSlide(
         ? Math.round(w * IMAGE_TEMPLATE13_COVER_SIZE)
         : Math.round(w * IMAGE_TEMPLATE13_QUESTION_SIZE);
       const optionSize = Math.round(w * IMAGE_TEMPLATE13_OPTION_SIZE);
-      const questionFont = `${IMAGE_TEMPLATE13_FONT_WEIGHT} ${fontSize}px ${TIKTOK}`;
-      const optionFont = `${IMAGE_TEMPLATE13_OPTION_WEIGHT} ${optionSize}px ${TIKTOK}`;
+      const questionFont = `${IMAGE_TEMPLATE13_FONT_WEIGHT} ${fontSize}px ${IMAGE_TEMPLATE13_FONT_STACK}`;
+      const optionFont = `${IMAGE_TEMPLATE13_OPTION_WEIGHT} ${optionSize}px ${IMAGE_TEMPLATE13_FONT_STACK}`;
       ctx.letterSpacing = IMAGE_TEMPLATE13_LETTER_SPACING;
       ctx.fillStyle = IMAGE_TEMPLATE13_TEXT;
       const maxW = w * IMAGE_TEMPLATE13_TEXT_WIDTH;

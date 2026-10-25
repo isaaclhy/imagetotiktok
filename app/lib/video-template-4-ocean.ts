@@ -8,6 +8,7 @@ import {
 } from '@/app/lib/copycat/flamingo-cards';
 import { getCoupleCardsPosts } from '@/app/lib/copycat/couple-cards';
 import { getFlamingoCardsPosts } from '@/app/lib/copycat/flamingo-convos';
+import { getFlamingoConvoPosts } from '@/app/lib/copycat/flamingo-convo';
 import { getGoldenThoughtsDailyPosts } from '@/app/lib/copycat/goldenthoughtsdaily';
 import { getHhTalkPosts } from '@/app/lib/copycat/hhtalk';
 import { getItsAllAboutLovingYouPosts } from '@/app/lib/copycat/itsallaboutlovingyou';
@@ -24,10 +25,11 @@ export type VideoTemplate4Label = string;
 
 export const VIDEO_TEMPLATE4_COMPETITORS = [
   { id: 'flamingo-cards', label: 'Flamingo cards' },
+  { id: 'flamingo-convo', label: 'Flamingo convo' },
   { id: '21-questions', label: '21 Questions' },
   { id: 'its-all-about-loving-you', label: "It's all about loving you" },
   { id: 'try-deepen', label: 'Try deepen' },
-  { id: 'couple-cards', label: 'Couples Cards' },
+  { id: 'couple-cards', label: 'Couple Cards' },
   { id: 'hh-talk', label: 'HH Talk' },
   { id: 'golden-thoughts-daily', label: 'Golden Thoughts Daily' },
   { id: 'lvrsbae', label: '.lvrsbae' },
@@ -62,6 +64,8 @@ function postsForCompetitor(id: VideoTemplate4CompetitorId): CopycatPost[] {
   switch (id) {
     case 'flamingo-cards':
       return getFlamingoCardsPosts(FLAMINGO_CARDS_FEED.posts);
+    case 'flamingo-convo':
+      return getFlamingoConvoPosts();
     case '21-questions':
       return getQuestions21Posts();
     case 'its-all-about-loving-you':

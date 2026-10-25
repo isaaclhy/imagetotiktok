@@ -38,10 +38,12 @@ export const IMAGE_TEMPLATE14_SLIDE_COUNT = 6;
 export const IMAGE_TEMPLATE14_FONT_STACK =
   '"Libre Baskerville", Georgia, "Times New Roman", serif';
 export const IMAGE_TEMPLATE14_COVER_SIZE_RATIO = 0.072;
-export const IMAGE_TEMPLATE14_QUESTION_SIZE_RATIO = 0.062;
+export const IMAGE_TEMPLATE14_QUESTION_SIZE_RATIO = 0.056;
 export const IMAGE_TEMPLATE14_QUESTION_MIN_SIZE_RATIO = 0.04;
 export const IMAGE_TEMPLATE14_OPTION_SIZE_RATIO = 0.044;
-export const IMAGE_TEMPLATE14_OPTION_GAP = 0.45;
+export const IMAGE_TEMPLATE14_OPTION_GAP = 0.55;
+/** Extra air between a. b. c. lines. */
+export const IMAGE_TEMPLATE14_OPTION_LINE_HEIGHT = 1.55;
 /** Question + options start here on the card — eye level, not vertically centered. */
 export const IMAGE_TEMPLATE14_OPTION_TOP_RATIO = 0.2;
 /** Last-slide question sits in the upper half of the card, above the App Store promo. */
@@ -376,7 +378,7 @@ export function paintTemplate14Slide(
   let questionLineH = fontSize * IMAGE_TEMPLATE14_LINE_HEIGHT;
   ctx.font = `400 ${optionSize}px ${IMAGE_TEMPLATE14_FONT_STACK}`;
   const optionLines = optionText ? wrapPreservingBreaks(ctx, optionText, maxWidth) : [];
-  const optionLineH = optionSize * IMAGE_TEMPLATE14_LINE_HEIGHT;
+  const optionLineH = optionSize * IMAGE_TEMPLATE14_OPTION_LINE_HEIGHT;
   const optionGap = optionLines.length ? fontSize * IMAGE_TEMPLATE14_OPTION_GAP : 0;
   let blockH =
     questionLines.length * questionLineH + optionGap + optionLines.length * optionLineH;

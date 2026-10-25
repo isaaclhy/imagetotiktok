@@ -1,5 +1,6 @@
 import {
   cleanCopycatDisplayText,
+  isCopycatPromoNoiseSlide,
   type CopycatCompetitorFeed,
   type CopycatPost,
   type CopycatSlideText,
@@ -29,13 +30,14 @@ type RawFeed = {
 
 const feed = rawFeed as RawFeed;
 
-function mapSlide(slide: RawSlide): CopycatSlideText {
+function mapSlide(slide: RawSlide): CopycatSlideText | null {
   const text = cleanCopycatDisplayText(slide.text);
-  if (!slide.options?.length) return { text };
-  return {
-    text,
-    options: slide.options.map(cleanCopycatDisplayText),
-  };
+  if (!text) return null;
+  const mapped: CopycatSlideText = slide.options?.length
+    ? { text, options: slide.options.map(cleanCopycatDisplayText).filter(Boolean) }
+    : { text };
+  if (isCopycatPromoNoiseSlide(mapped)) return null;
+  return mapped;
 }
 
 function mapPost(post: RawPost): CopycatPost {
@@ -43,13 +45,13 @@ function mapPost(post: RawPost): CopycatPost {
     id: post.id,
     views: typeof post.views === 'number' ? post.views : post.likes ?? 0,
     coverText: cleanCopycatDisplayText(post.coverText),
-    slideText: post.slideText.map(mapSlide),
+    slideText: post.slideText.map(mapSlide).filter((slide): slide is CopycatSlideText => slide != null),
     handle: feed.handle,
     platform: 'tiktok',
   };
 }
 
-const posts = feed.posts.map(mapPost);
+const posts = feed.posts.map(mapPost).filter((post) => post.slideText.length > 0);
 
 /** TikTok @couple_cards posts used by the Copycat tab. */
 export const COUPLE_CARDS_FEED: CopycatCompetitorFeed = {

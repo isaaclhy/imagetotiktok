@@ -1,216 +1,227 @@
 {
   "handle": "couple_cards",
   "platform": "tiktok",
-  "minViews": 100000,
-  "postCount": 9,
-  "creditsUsed": 4,
-  "creditsRemaining": 22,
+  "postCount": 17,
   "posts": [
     {
-      "id": "7371427848332102944",
-      "views": 2380033,
-      "likes": 126058,
-      "coverText": "5 uncomfortable but healthy questions to ask your partner",
-      "slideText": [
-        {
-          "text": "Do you feel like we're growing together or apart?"
-        },
-        {
-          "text": "What is something you think we don't talk about enough?"
-        },
-        {
-          "text": "How do you really feel about our physical intimacy?"
-        },
-        {
-          "text": "Is there something you've been wanting to do as a couple that we haven't done yet?"
-        },
-        {
-          "text": "Do you feel like I respect your boundaries?"
-        }
-      ]
-    },
-    {
       "id": "7371109319766560033",
-      "views": 1970851,
+      "views": 1970969,
       "likes": 138095,
       "coverText": "5 uncomfortable but healthy questions to ask your partner",
       "slideText": [
-        {
-          "text": "Do you feel like I prioritize our relationship enough?"
-        },
-        {
-          "text": "Have you ever felt taken for granted in our relationship?"
-        },
-        {
-          "text": "What is one thing I can do to make you feel more secure in our relationship?"
-        },
-        {
-          "text": "How do you handle it when you're upset with me?"
-        },
-        {
-          "text": "Are you happy with how we spend our time together?"
-        }
+        { "text": "Do you feel like I prioritize our relationship enough?" },
+        { "text": "Have you ever felt taken for granted in our relationship?" },
+        { "text": "What is one thing I can do to make you feel more secure?" },
+        { "text": "How do you handle it when you're upset with me?" },
+        { "text": "Are you happy with how we spend our time together?" }
       ]
     },
     {
-      "id": "7371023146989800737",
-      "views": 1863424,
-      "likes": 83694,
+      "id": "7371427848332102944",
+      "views": 2380083,
+      "likes": 126058,
       "coverText": "5 uncomfortable but healthy questions to ask your partner",
       "slideText": [
-        {
-          "text": "What is something you need from me that you're not currently getting?"
-        },
-        {
-          "text": "Have I ever hurt you in a way I might not be aware of?"
-        },
-        {
-          "text": "What are your biggest fears about our relationship?"
-        },
-        {
-          "text": "Is there a past relationship issue you haven't fully resolved?"
-        },
-        {
-          "text": "How do you feel about the way we handle conflict?"
-        }
+        { "text": "Do you feel like we're growing together or apart?" },
+        { "text": "What is something you think we don't talk about enough?" },
+        { "text": "How do you really feel about our physical intimacy?" },
+        { "text": "Is there something you've wanted to do as a couple that we haven't done yet?" },
+        { "text": "Do you feel like I respect your boundaries?" }
       ]
     },
     {
       "id": "7372857326077824288",
-      "views": 1759591,
+      "views": 1759623,
       "likes": 107164,
       "coverText": "5 uncomfortable but healthy questions to ask your partner",
       "slideText": [
-        {
-          "text": "Do you feel like you can be completely honest with me?"
-        },
-        {
-          "text": "What is one thing you're afraid will hurt our relationship?"
-        },
-        {
-          "text": "How do you feel about the way we handle jealousy?"
-        },
-        {
-          "text": "Is there something you wish I would do more often to show my love?"
-        },
-        {
-          "text": "Do you feel like we're both putting in equal effort into our relationship?"
-        }
+        { "text": "Do you feel like you can be completely honest with me?" },
+        { "text": "What is one thing you're afraid will hurt our relationship?" },
+        { "text": "How do you feel about the way we handle jealousy?" },
+        { "text": "Is there something you wish I would do more often to show my love?" },
+        { "text": "Do you feel like we're both putting in equal effort?" }
+      ]
+    },
+    {
+      "id": "7371023146989800737",
+      "views": 1863439,
+      "likes": 83694,
+      "coverText": "5 uncomfortable but healthy questions to ask your partner",
+      "slideText": [
+        { "text": "What is something you need from me that you're not getting?" },
+        { "text": "Have I ever hurt you in a way I might not be aware of?" },
+        { "text": "What are your biggest fears about our relationship?" },
+        { "text": "Is there a past relationship issue you haven't fully resolved?" },
+        { "text": "How do you feel about the way we handle conflict?" }
       ]
     },
     {
       "id": "7388195439624883489",
-      "views": 1218676,
-      "likes": 60789,
+      "views": 1218709,
+      "likes": 60790,
       "coverText": "5 uncomfortable but healthy questions to ask your partner",
       "slideText": [
-        {
-          "text": "Do you ever feel like I don't listen to you?"
-        },
-        {
-          "text": "What's a past argument that still bothers you?"
-        },
-        {
-          "text": "How do you feel about the way we handle our social life as a couple?"
-        },
-        {
-          "text": "Is there a part of your past you're afraid to share with me?"
-        },
-        {
-          "text": "Do you feel like we have enough fun together?"
-        }
+        { "text": "Do you ever feel like I don't listen to you?" },
+        { "text": "What's a past argument that still bothers you?" },
+        { "text": "How do you feel about the way we handle our social life?" },
+        { "text": "Is there a part of your past you're afraid to share with me?" },
+        { "text": "Do you feel like we have enough fun together?" }
       ]
     },
     {
       "id": "7381176360040959265",
-      "views": 629308,
-      "likes": 25968,
+      "views": 629332,
+      "likes": 25967,
       "coverText": "5 uncomfortable but healthy questions to ask your partner",
       "slideText": [
-        {
-          "text": "Do you feel like our relationship is balanced in terms of give and take?"
-        },
-        {
-          "text": "What is one thing you think we need to work on as a couple?"
-        },
-        {
-          "text": "How do you feel about the way we handle our individual space?"
-        },
-        {
-          "text": "Is there something you're afraid to lose by being in this relationship?"
-        },
-        {
-          "text": "Do you feel like we have enough deep conversations?"
-        }
+        { "text": "Do you feel like our relationship is balanced in give and take?" },
+        { "text": "What is one thing you think we need to work on as a couple?" },
+        { "text": "How do you feel about the way we handle our individual space?" },
+        { "text": "Is there something you're afraid to lose by being in this relationship?" },
+        { "text": "Do you feel like we have enough deep conversations?" }
       ]
     },
     {
       "id": "7373217621430242593",
-      "views": 203363,
-      "likes": 7752,
+      "views": 203377,
+      "likes": 7753,
       "coverText": "5 uncomfortable but healthy questions to ask your partner",
       "slideText": [
-        {
-          "text": "Do you feel like I respect your opinions?"
-        },
-        {
-          "text": "What is one thing you've been avoiding talking to me about?"
-        },
-        {
-          "text": "How do you feel about the level of spontaneity in our relationship?"
-        },
-        {
-          "text": "Is there a fear you have about our relationship that you've never shared?"
-        },
-        {
-          "text": "Do you feel like we support each other's personal growth?"
-        }
-      ]
-    },
-    {
-      "id": "7388196348207582497",
-      "views": 176738,
-      "likes": 3432,
-      "coverText": "5 uncomfortable but healthy questions to ask your partner",
-      "slideText": [
-        {
-          "text": "Do you feel like we support each other's dreams?"
-        },
-        {
-          "text": "What is one thing you're hesitant to tell me about your family?"
-        },
-        {
-          "text": "Are you happy with the way we celebrate special occasions?"
-        },
-        {
-          "text": "How do you feel about the amount of time we spend apart?"
-        },
-        {
-          "text": "Is there something you need more of from me emotionally?"
-        }
+        { "text": "Do you feel like I respect your opinions?" },
+        { "text": "What is one thing you've been avoiding talking to me about?" },
+        { "text": "How do you feel about the level of spontaneity in our relationship?" },
+        { "text": "Is there a fear you have about our relationship that you've never shared?" },
+        { "text": "Do you feel like we support each other's personal growth?" }
       ]
     },
     {
       "id": "7372643147165289760",
-      "views": 155494,
+      "views": 155514,
       "likes": 4764,
       "coverText": "5 uncomfortable but healthy questions to ask your partner",
       "slideText": [
-        {
-          "text": "Do you ever feel like I don't trust you?"
-        },
-        {
-          "text": "What is one thing you wish we did more often as a couple?"
-        },
-        {
-          "text": "How do you feel about the way we handle stress together?"
-        },
-        {
-          "text": "Is there a promise I've made that I haven't kept?"
-        },
-        {
-          "text": "Do you feel like we're aligned in our values and beliefs?"
-        }
+        { "text": "Do you ever feel like I don't trust you?" },
+        { "text": "What is one thing you wish we did more often as a couple?" },
+        { "text": "How do you feel about the way we handle stress together?" },
+        { "text": "Is there a promise I've made that I haven't kept?" },
+        { "text": "Do you feel like we're aligned in our values and beliefs?" }
+      ]
+    },
+    {
+      "id": "7388196348207582497",
+      "views": 176752,
+      "likes": 3433,
+      "coverText": "5 uncomfortable but healthy questions to ask your partner",
+      "slideText": [
+        { "text": "Do you feel like we support each other's dreams?" },
+        { "text": "What is one thing you're hesitant to tell me about your family?" },
+        { "text": "Are you happy with the way we celebrate special occasions?" },
+        { "text": "How do you feel about the amount of time we spend apart?" },
+        { "text": "Is there something you need more of from me emotionally?" }
+      ]
+    },
+    {
+      "id": "7372192120469277984",
+      "views": 89966,
+      "likes": 2815,
+      "coverText": "5 uncomfortable but healthy questions to ask your partner",
+      "slideText": [
+        { "text": "Do you ever feel like I don't support your career or hobbies enough?" },
+        { "text": "What is one thing you're afraid I'll judge you for?" },
+        { "text": "How do you feel about the way we handle our disagreements?" },
+        { "text": "Are you satisfied with how we divide time between family and each other?" },
+        { "text": "Is there a part of yourself you feel you've had to change for this relationship?" }
+      ]
+    },
+    {
+      "id": "7372217264948481312",
+      "views": 86223,
+      "likes": 1963,
+      "coverText": "5 uncomfortable but healthy questions to ask your partner",
+      "slideText": [
+        { "text": "Do you feel like we have enough emotional intimacy?" },
+        { "text": "What is one thing you've never told me about your childhood?" },
+        { "text": "How do you feel about the way we express love to each other?" },
+        { "text": "Is there something you're afraid to ask me?" },
+        { "text": "Do you feel like I'm attentive to your needs?" }
+      ]
+    },
+    {
+      "id": "7371026129315974432",
+      "views": 63998,
+      "likes": 1802,
+      "coverText": "5 uncomfortable but healthy questions to ask your partner",
+      "slideText": [
+        { "text": "What is a bad habit of mine that affects our relationship?" },
+        { "text": "Do you ever feel like you can't be yourself around me?" },
+        { "text": "Is there a way I can better support you in your personal goals?" },
+        { "text": "How do you really feel about our communication style?" },
+        { "text": "Are there any unresolved issues we need to address?" }
+      ]
+    },
+    {
+      "id": "7371969594283576609",
+      "views": 69634,
+      "likes": 1698,
+      "coverText": "5 uncomfortable but healthy questions to ask your partner",
+      "slideText": [
+        { "text": "Do you ever feel like I'm not fully present when we're together?" },
+        { "text": "What is one thing you wish I understood about you?" },
+        { "text": "How do you feel about our relationship with our friends?" },
+        { "text": "Is there a mistake I've made that you haven't forgiven me for?" },
+        { "text": "Do you feel like we're on the same page about our future?" }
+      ]
+    },
+    {
+      "id": "7372318405065493792",
+      "views": 87462,
+      "likes": 1689,
+      "coverText": "5 uncomfortable but healthy questions to ask your partner",
+      "slideText": [
+        { "text": "Do you feel like we have enough intellectual connection?" },
+        { "text": "What is one way I can improve as your partner?" },
+        { "text": "How do you feel about the level of independence in our relationship?" },
+        { "text": "Is there something you've been holding back in our communication?" },
+        { "text": "Do you feel like our relationship has changed for better or worse?" }
+      ]
+    },
+    {
+      "id": "7371310255742946593",
+      "views": 52889,
+      "likes": 1358,
+      "coverText": "5 uncomfortable but healthy questions to ask your partner",
+      "slideText": [
+        { "text": "What is one thing you're afraid to tell me?" },
+        { "text": "Do you feel like we share household responsibilities equally?" },
+        { "text": "Have I ever made you feel insecure about yourself?" },
+        { "text": "How do you feel about the way we manage our finances?" },
+        { "text": "Is there a dream you've put on hold because of our relationship?" }
+      ]
+    },
+    {
+      "id": "7485023345147153686",
+      "views": 56353,
+      "likes": 1244,
+      "coverText": "5 uncomfortable but healthy questions to ask your partner",
+      "slideText": [
+        { "text": "What's an insecurity you've never told me about?" },
+        { "text": "Is there something you feel is missing in our relationship?" },
+        { "text": "Have you ever had doubts about us?" },
+        { "text": "If you could change one thing about me, what would it be?" },
+        { "text": "Is there something you haven't fully forgiven me for?" }
+      ]
+    },
+    {
+      "id": "7485026652964048150",
+      "views": 53031,
+      "likes": 1071,
+      "coverText": "5 uncomfortable but healthy questions to ask your partner",
+      "slideText": [
+        { "text": "When was the last time you felt alone in our relationship?" },
+        { "text": "Is there a memory from your past that still affects you today?" },
+        { "text": "Do you truly feel heard and understood?" },
+        { "text": "What fears do you have when you think about our future?" },
+        { "text": "Have I ever hurt you in a way you haven't told me about?" }
       ]
     }
   ]

@@ -9,6 +9,8 @@ export const IMAGE_TEMPLATE13_SIDE_PAD = 0.15;
 export const IMAGE_TEMPLATE13_TEXT_WIDTH = 1 - IMAGE_TEMPLATE13_SIDE_PAD * 2;
 export const IMAGE_TEMPLATE13_COVER_SIZE = 0.084;
 export const IMAGE_TEMPLATE13_QUESTION_SIZE = 0.07;
+export const IMAGE_TEMPLATE13_FONT_STACK =
+  '"Playfair Display", Georgia, "Times New Roman", serif';
 export const IMAGE_TEMPLATE13_FONT_WEIGHT = 700;
 /** Multiple-choice answers under a question: smaller and lighter than the question. */
 export const IMAGE_TEMPLATE13_OPTION_SIZE = 0.05;

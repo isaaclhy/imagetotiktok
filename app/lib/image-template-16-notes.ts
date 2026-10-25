@@ -13,29 +13,28 @@ export const IMAGE_TEMPLATE16_BG = '#FFFFFF';
 export const IMAGE_TEMPLATE16_TEXT = '#111111';
 export const IMAGE_TEMPLATE16_MUTED = '#3A3A3A';
 export const IMAGE_TEMPLATE16_GOLD = '#C8A33A';
-export const IMAGE_TEMPLATE16_HIGHLIGHT = '#FFF4C2';
 export const IMAGE_TEMPLATE16_BRAND = 'Spill It';
 export const IMAGE_TEMPLATE16_ICON_SRC = '/spill-it-icon.jpg';
 export const IMAGE_TEMPLATE16_FONT_STACK =
   '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif';
 
 export const IMAGE_TEMPLATE16_SIDE_PAD = 0.07;
-export const IMAGE_TEMPLATE16_HEADER_Y = 0.055;
+export const IMAGE_TEMPLATE16_HEADER_Y = 0.068;
 export const IMAGE_TEMPLATE16_HEADER_SIZE = 0.042;
 export const IMAGE_TEMPLATE16_HEADER_LABEL = 0.034;
-export const IMAGE_TEMPLATE16_BRAND_Y = 0.128;
-export const IMAGE_TEMPLATE16_AVATAR = 0.064;
+export const IMAGE_TEMPLATE16_BRAND_Y = 0.168;
+export const IMAGE_TEMPLATE16_AVATAR = 0.086;
 export const IMAGE_TEMPLATE16_ICON_RADIUS = 0.223;
-export const IMAGE_TEMPLATE16_BRAND_SIZE = 0.038;
+export const IMAGE_TEMPLATE16_BRAND_SIZE = 0.05;
 export const IMAGE_TEMPLATE16_BODY_SIZE = 0.072;
-export const IMAGE_TEMPLATE16_BODY_TOP = 0.28;
+export const IMAGE_TEMPLATE16_BODY_TOP = 0.345;
 export const IMAGE_TEMPLATE16_BODY_WEIGHT = 800;
 export const IMAGE_TEMPLATE16_OPTION_SIZE = 0.052;
 export const IMAGE_TEMPLATE16_OPTION_WEIGHT = 500;
 export const IMAGE_TEMPLATE16_OPTION_GAP = 0.55;
 export const IMAGE_TEMPLATE16_LINE_HEIGHT = 1.12;
 export const IMAGE_TEMPLATE16_LETTER_SPACING = -0.03;
-export const IMAGE_TEMPLATE16_FOOTER_Y = 0.88;
+export const IMAGE_TEMPLATE16_FOOTER_Y = 0.855;
 export const IMAGE_TEMPLATE16_FOOTER_SIZE = 0.028;
 export const IMAGE_TEMPLATE16_COVER_SRC = '/image-templates/template-16-cover.png';
 
@@ -219,7 +218,7 @@ function drawNotesChrome(
   ctx.font = `400 ${Math.round(width * IMAGE_TEMPLATE16_BRAND_SIZE)}px ${IMAGE_TEMPLATE16_FONT_STACK}`;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText(IMAGE_TEMPLATE16_BRAND, pad + avatar + width * 0.02, brandY);
+  ctx.fillText(IMAGE_TEMPLATE16_BRAND, pad + avatar + width * 0.026, brandY);
 }
 
 export function paintTemplate16Slide(
@@ -263,16 +262,7 @@ export function paintTemplate16Slide(
   ctx.fillStyle = IMAGE_TEMPLATE16_TEXT;
   ctx.font = `${IMAGE_TEMPLATE16_BODY_WEIGHT} ${fontSize}px ${IMAGE_TEMPLATE16_FONT_STACK}`;
   questionLines.forEach((line, index) => {
-    const y = startY + index * questionLineH;
-    if (options.tabIndex === 0 && index === 0) {
-      const w = ctx.measureText(line).width;
-      const padX = fontSize * 0.08;
-      const padY = fontSize * 0.06;
-      ctx.fillStyle = IMAGE_TEMPLATE16_HIGHLIGHT;
-      ctx.fillRect(pad - padX, y - padY, w + padX * 2, fontSize + padY * 2);
-      ctx.fillStyle = IMAGE_TEMPLATE16_TEXT;
-    }
-    ctx.fillText(line, pad, y);
+    ctx.fillText(line, pad, startY + index * questionLineH);
   });
 
   const optionsY = startY + questionLines.length * questionLineH + optionGap;

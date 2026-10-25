@@ -79,6 +79,14 @@ body {
 }
 
 @font-face {
+  font-family: "Playfair Display";
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url("/fonts/playfair-display/PlayfairDisplay-Variable.ttf") format("truetype");
+}
+
+@font-face {
   font-family: "Patrick Hand";
   font-style: normal;
   font-weight: 400;

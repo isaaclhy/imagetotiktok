@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import { Geist_Mono } from "next/font/google";
 import { Inter } from "next/font/google";
 import { Libre_Baskerville } from "next/font/google";
+import { Playfair_Display } from "next/font/google";
 import { Nunito } from "next/font/google";
 import { Open_Sans } from "next/font/google";
 import "./globals.css";
@@ -25,6 +26,12 @@ const libreBaskerville = Libre_Baskerville({
   weight: ["400", "700"],
 });
 
+const playfairDisplay = Playfair_Display({
+  variable: "--font-playfair-display",
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+});
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -38,7 +45,7 @@ const geistMono = Geist_Mono({
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -54,7 +61,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${openSans.variable} ${nunito.variable} ${libreBaskerville.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${openSans.variable} ${nunito.variable} ${libreBaskerville.variable} ${playfairDisplay.variable} antialiased`}
       >
         {children}
       </body>

@@ -308,6 +308,11 @@ export function stripCopycatSwipeChrome(text: string): string {
     // App Store status-bar + 21Q listing OCR glued onto last carousel slides.
     .replace(/\s*Cancel\s+[Q\s-]*Card Games[\s\S]*$/i, '')
     .replace(/\s*THE LOVE IAB\s*$/i, '')
+    .replace(/\s+\d+\+{1,}\s*$/g, '')
+    .replace(/\s+(?:WR|WA|WK)\s*$/g, '')
+    .replace(/\s+Y\s*K\s*$/g, '')
+    .replace(/\s+W\s*\*?\s*$/g, '')
+    .replace(/\s*t[ìi]\s*$/i, '')
     .replace(/\s*[→➜➡›»>]+\s*$/g, '')
     // Orphan openers left after stripping " (swipe to start →"
     .replace(/\s*[\(\[]\s*$/g, '')
@@ -370,7 +375,10 @@ export function isCopycatPromoNoiseSlide(slide: CopycatSlideText): boolean {
   return (
     /WANT\s*1,?000/i.test(text) ||
     /Download the app/i.test(text) ||
-    /apps\.apple\.com/i.test(text)
+    /apps\.apple\.com/i.test(text) ||
+    /Feel closer with/i.test(text) ||
+    /couple[_\s-]?cards/i.test(text) ||
+    /^get (the|our) app$/i.test(text)
   );
 }
 

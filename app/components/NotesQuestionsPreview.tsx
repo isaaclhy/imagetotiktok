@@ -22,7 +22,6 @@ import {
   IMAGE_TEMPLATE16_HEADER_LABEL,
   IMAGE_TEMPLATE16_HEADER_SIZE,
   IMAGE_TEMPLATE16_HEADER_Y,
-  IMAGE_TEMPLATE16_HIGHLIGHT,
   IMAGE_TEMPLATE16_LETTER_SPACING,
   IMAGE_TEMPLATE16_LINE_HEIGHT,
   IMAGE_TEMPLATE16_MUTED,
@@ -168,7 +167,7 @@ export function NotesQuestionsPreview({
         />
         <span
           style={{
-            marginLeft: '2.4cqw',
+            marginLeft: '2.8cqw',
             color: IMAGE_TEMPLATE16_MUTED,
             fontSize: `${IMAGE_TEMPLATE16_BRAND_SIZE * 100}cqw`,
           }}
@@ -197,15 +196,7 @@ export function NotesQuestionsPreview({
           >
             {questionLines.map((line, index) => (
               <span key={`${index}-${line}`} className="block">
-                <span
-                  style={
-                    tabIndex === 0 && index === 0
-                      ? { backgroundColor: IMAGE_TEMPLATE16_HIGHLIGHT }
-                      : undefined
-                  }
-                >
-                  {line}
-                </span>
+                {line}
                 {optionLines.length === 0 && index === questionLines.length - 1 ? (
                   <span
                     className="ml-[0.04em] inline-block align-[-0.08em] animate-pulse"

@@ -116,6 +116,12 @@ export const IMAGE_TEMPLATES_BY_APP: Record<StudioAppId, ImageTemplateCard[]> = 
       subtitle: '',
       coverSrc: '/image-templates/template-16-cover.png',
     },
+    {
+      id: 17,
+      title: 'Split cover',
+      subtitle: '',
+      coverSrc: '/image-templates/template-17-cover.jpg',
+    },
   ],
   fab: [
     { id: 1, title: 'Heart shaped paper', subtitle: '' },

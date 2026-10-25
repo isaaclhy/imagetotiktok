@@ -150,6 +150,7 @@ import {
   IMAGE_TEMPLATE13_COVER_SRC,
   IMAGE_TEMPLATE13_COVER_TEXTS,
   IMAGE_TEMPLATE13_DEFAULT_SCREEN_TEXT,
+  IMAGE_TEMPLATE13_FONT_STACK,
   IMAGE_TEMPLATE13_FONT_WEIGHT,
   IMAGE_TEMPLATE13_LETTER_SPACING,
   IMAGE_TEMPLATE13_PROGRESS_H,
@@ -176,6 +177,7 @@ import {
   IMAGE_TEMPLATE14_GRAIN_SRC,
   IMAGE_TEMPLATE14_LINE_HEIGHT,
   IMAGE_TEMPLATE14_OPTION_GAP,
+  IMAGE_TEMPLATE14_OPTION_LINE_HEIGHT,
   IMAGE_TEMPLATE14_OPTION_SIZE_RATIO,
   IMAGE_TEMPLATE14_OPTION_TOP_RATIO,
   IMAGE_TEMPLATE14_MARK,
@@ -352,10 +354,11 @@ const CONTENT_TABS: ContentTab[] = [
 
 const COPYCAT_COMPETITORS = [
   { id: 'flamingo-cards', label: 'Flamingo cards' },
+  { id: 'flamingo-convo', label: 'Flamingo convo' },
   { id: '21-questions', label: '21 Questions' },
   { id: 'its-all-about-loving-you', label: "It's all about loving you" },
   { id: 'try-deepen', label: 'Try deepen' },
-  { id: 'couple-cards', label: 'Couples Cards' },
+  { id: 'couple-cards', label: 'Couple Cards' },
   { id: 'hh-talk', label: 'HH Talk' },
   { id: 'golden-thoughts-daily', label: 'Golden Thoughts Daily' },
   { id: 'lvrsbae', label: '.lvrsbae' },
@@ -364,8 +367,18 @@ const COPYCAT_COMPETITORS = [
 
 type CopycatCompetitorId = (typeof COPYCAT_COMPETITORS)[number]['id'];
 
+function pickRandomCopycatCompetitor(exclude?: CopycatCompetitorId): CopycatCompetitorId {
+  const ids = COPYCAT_COMPETITORS.map((competitor) => competitor.id).filter(
+    (id) => id !== exclude
+  );
+  const pool = ids.length > 0 ? ids : COPYCAT_COMPETITORS.map((competitor) => competitor.id);
+  const buf = new Uint32Array(1);
+  crypto.getRandomValues(buf);
+  return pool[buf[0]! % pool.length]!;
+}
+
 /** Spill It image templates available inside Copycat. */
-const COPYCAT_TEMPLATE_IDS = [1, 2, 6, 13, 14, 15, 16] as const;
+const COPYCAT_TEMPLATE_IDS = [1, 2, 6, 13, 14, 15, 16, 17] as const;
 type CopycatTemplateId = (typeof COPYCAT_TEMPLATE_IDS)[number];
 
 function isKawaiiStyleTemplateId(templateId: number | null | undefined): boolean {
@@ -2138,6 +2151,10 @@ export default function Home() {
     useState<CopycatCompetitorId>('flamingo-cards');
   const [selectedCopycatTemplateId, setSelectedCopycatTemplateId] =
     useState<CopycatTemplateId>(1);
+
+  useEffect(() => {
+    setSelectedCopycatCompetitorId(pickRandomCopycatCompetitor());
+  }, []);
   const [imageTabFrameBg, setImageTabFrameBg] = useState('#FEFEFE');
   const [imageTabPastelBgs, setImageTabPastelBgs] = useState<string[]>([]);
   const [imageTabTypeLabel, setImageTabTypeLabel] = useState('Funny Questions');
@@ -4859,7 +4876,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     if (exportTemplateId === 13) {
       const names = ['cover', 'q1', 'q2', 'q3', 'q4', 'q5'] as const;
       const frameWidth = 1080;
-      const frameHeight = 1920;
+      const frameHeight = 1440;
       const coverSrc = (imageTabSources[0] ?? '').trim();
       const coverBitmap = coverSrc
         ? await createImageBitmap(await (await fetch(coverSrc)).blob())
@@ -4899,11 +4916,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
               (tabIndex === 0 ? IMAGE_TEMPLATE13_COVER_SIZE : IMAGE_TEMPLATE13_QUESTION_SIZE)
           );
           try {
-            await document.fonts.load(`${IMAGE_TEMPLATE13_FONT_WEIGHT} ${fontSize}px "TikTok Sans"`);
+            await document.fonts.load(`${IMAGE_TEMPLATE13_FONT_WEIGHT} ${fontSize}px "Playfair Display"`);
           } catch {
             /* font may already be ready */
           }
-          ctx.font = `${IMAGE_TEMPLATE13_FONT_WEIGHT} ${fontSize}px "TikTok Sans", system-ui, sans-serif`;
+          ctx.font = `${IMAGE_TEMPLATE13_FONT_WEIGHT} ${fontSize}px ${IMAGE_TEMPLATE13_FONT_STACK}`;
           ctx.letterSpacing = IMAGE_TEMPLATE13_LETTER_SPACING;
           ctx.fillStyle = IMAGE_TEMPLATE13_TEXT;
           ctx.textAlign = 'center';
@@ -4999,7 +5016,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     if (exportTemplateId === 16) {
       const names = ['cover', 'q1', 'q2', 'q3', 'q4'] as const;
       const frameWidth = 1080;
-      const frameHeight = 1920;
+      const frameHeight = 1440;
       const loadImage = (src: string, label: string) =>
         new Promise<HTMLImageElement>((resolve, reject) => {
           const el = new Image();
@@ -6682,11 +6699,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         ))}
                       </select>
                     </div>
-                    <div className="w-full max-w-md text-left">
+                    <div className="w-full text-left">
                       <p className="mb-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">
                         Template
                       </p>
-                      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                      <div className="grid grid-cols-3 gap-2 md:grid-cols-8">
                         {COPYCAT_TEMPLATE_IDS.map((templateId) => {
                           const card = getImageTemplatesForApp('spill-it').find(
                             (c) => c.id === templateId
@@ -6696,7 +6713,14 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             <button
                               key={templateId}
                               type="button"
-                              onClick={() => setSelectedCopycatTemplateId(templateId)}
+                              onClick={() => {
+                                if (selectedCopycatTemplateId !== templateId) {
+                                  setSelectedCopycatCompetitorId((competitor) =>
+                                    pickRandomCopycatCompetitor(competitor)
+                                  );
+                                }
+                                setSelectedCopycatTemplateId(templateId);
+                              }}
                               title={card?.title ?? `Template ${templateId}`}
                               className={`min-w-0 rounded-lg border p-1.5 text-left transition-colors sm:p-1 ${
                                 selected
@@ -6730,6 +6754,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                 <CopycatPanel
                   competitorId={selectedCopycatCompetitorId}
                   templateId={selectedCopycatTemplateId}
+                  onNewRandomPost={() =>
+                    setSelectedCopycatCompetitorId((current) =>
+                      pickRandomCopycatCompetitor(current)
+                    )
+                  }
                 />
               </div>
             )}
@@ -7127,9 +7156,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                           className={`@container relative w-full max-w-sm mx-auto md:mx-0 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden min-w-0 ${
                             isCouplesDoodleImageTemplate
                               ? 'aspect-[2/3]'
-                              : isMaroonLockscreenImageTemplate || isNotesQuestionsImageTemplate
-                                ? 'aspect-[9/16]'
-                                : 'aspect-3/4'
+                              : 'aspect-3/4'
                           }`}
                           style={{
                             backgroundColor: isColorCardImageTemplate
@@ -7254,7 +7281,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                       marginTop: `${IMAGE_TEMPLATE14_OPTION_GAP}em`,
                                       fontSize: `${IMAGE_TEMPLATE14_OPTION_SIZE_RATIO * 100}cqw`,
                                       fontWeight: 400,
-                                      lineHeight: IMAGE_TEMPLATE14_LINE_HEIGHT,
+                                      lineHeight: IMAGE_TEMPLATE14_OPTION_LINE_HEIGHT,
                                     }}
                                   >
                                     {options}
@@ -7349,9 +7376,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   <p
                                     className="w-full wrap-break-word text-white"
                                     style={{
-                                      fontFamily: pastelCarouselFontFamily,
-                                      fontSize: `${IMAGE_TEMPLATE13_QUESTION_SIZE * 100}cqw`,
-                                      fontWeight: IMAGE_TEMPLATE13_FONT_WEIGHT,
+                                    fontFamily: IMAGE_TEMPLATE13_FONT_STACK,
+                                    fontSize: `${IMAGE_TEMPLATE13_QUESTION_SIZE * 100}cqw`,
+                                    fontWeight: IMAGE_TEMPLATE13_FONT_WEIGHT,
                                       letterSpacing: IMAGE_TEMPLATE13_LETTER_SPACING,
                                       lineHeight: 1.3,
                                     }}
@@ -7406,7 +7433,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 <p
                                   className="w-full wrap-break-word text-white"
                                   style={{
-                                    fontFamily: pastelCarouselFontFamily,
+                                    fontFamily: IMAGE_TEMPLATE13_FONT_STACK,
                                     fontSize: `${
                                       (selectedImageBrowserTab === 0
                                         ? IMAGE_TEMPLATE13_COVER_SIZE
