@@ -107,6 +107,7 @@ import {
 } from '@/app/lib/image-template-14-cards';
 import { NotesQuestionsPreview } from '@/app/components/NotesQuestionsPreview';
 import { SplitCoverPreview } from '@/app/components/SplitCoverPreview';
+import { template17BackgroundSrcForSlide } from '@/app/lib/copycat/template17-background';
 
 const TIKTOK_SANS_STACK = '"TikTok Sans", system-ui, -apple-system, sans-serif';
 const COPYCAT_APP_NAME = 'Spill It';
@@ -241,6 +242,7 @@ function CopycatSlidePreview({
   illustrationSrc,
   isCtaSlide = false,
   slideCount = 6,
+  backgroundSrc,
 }: {
   templateId: CopycatTemplateId;
   tabIndex: number;
@@ -251,6 +253,7 @@ function CopycatSlidePreview({
   illustrationSrc?: string;
   isCtaSlide?: boolean;
   slideCount?: number;
+  backgroundSrc?: string;
 }) {
   const isCover = tabIndex === 0;
   const showTemplate2StyleCta =
@@ -280,7 +283,7 @@ function CopycatSlidePreview({
   if (templateId === 17) {
     return (
       <div className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4 bg-black">
-        <SplitCoverPreview text={text} />
+        <SplitCoverPreview text={text} backgroundSrc={backgroundSrc} />
       </div>
     );
   }
@@ -1071,6 +1074,10 @@ export function CopycatPanel({
           text,
           isCta,
           isCover,
+          backgroundSrc:
+            templateId === 17
+              ? template17BackgroundSrcForSlide(index > 0 ? questionSlides[index - 1] : undefined)
+              : undefined,
           leftAlign: Boolean(
             templateId === 2 ||
               (index > 0 && questionSlides[index - 1]?.options?.length)
@@ -1211,6 +1218,13 @@ export function CopycatPanel({
         tabIndex={selectedTab}
         slideCount={slideBodies.length}
         text={slideBodies[selectedTab] ?? ''}
+        backgroundSrc={
+          templateId === 17
+            ? template17BackgroundSrcForSlide(
+                selectedTab > 0 ? questionSlides[selectedTab - 1] : undefined
+              )
+            : undefined
+        }
         leftAlign={Boolean(
           templateId === 2 ||
             (selectedTab > 0 && questionSlides[selectedTab - 1]?.options?.length)

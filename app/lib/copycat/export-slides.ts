@@ -113,6 +113,8 @@ export type CopycatExportSlide = {
   illustrationSrc?: string;
   isCta: boolean;
   isCover: boolean;
+  /** Template 17 photo URL. Same path the preview uses; omitted slides use the shared cover. */
+  backgroundSrc?: string;
 };
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -204,9 +206,14 @@ async function paintSlide(
     } catch {
       /* fonts may already be ready */
     }
+    const backgroundSrc = slide.backgroundSrc || IMAGE_TEMPLATE17_COVER_SRC;
     const [icon, image] = await Promise.all([
       loadImage(IMAGE_TEMPLATE17_ICON_SRC),
-      loadImage(IMAGE_TEMPLATE17_COVER_SRC),
+      loadImage(backgroundSrc).catch(() =>
+        backgroundSrc === IMAGE_TEMPLATE17_COVER_SRC
+          ? Promise.reject(new Error(`Failed to load ${backgroundSrc}`))
+          : loadImage(IMAGE_TEMPLATE17_COVER_SRC)
+      ),
     ]);
     paintTemplate17Slide(ctx, w, h, { text: slide.text, icon, image });
     return canvasBlob(canvas);
