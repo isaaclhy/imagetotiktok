@@ -23,6 +23,11 @@ const nextConfig: NextConfig = {
     'remotion',
     'esbuild',
   ],
+  // `/api/openai/character-image` reads `public/<dynamic path>`, so file
+  // tracing pulls in all of `public/`. These JPEGs are static assets only.
+  outputFileTracingExcludes: {
+    '*': ['public/copycat-backgrounds/**/*'],
+  },
 };
 
 export default nextConfig;
