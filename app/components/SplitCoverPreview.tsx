@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import {
   IMAGE_TEMPLATE17_BG,
   IMAGE_TEMPLATE17_BRAND,
@@ -28,19 +29,30 @@ import {
 
 type SplitCoverPreviewProps = {
   text: string;
+  /** Resolved template 17 photo. Falls back to the shared cover if it fails to load. */
+  backgroundSrc?: string;
 };
 
-export function SplitCoverPreview({ text }: SplitCoverPreviewProps) {
+export function SplitCoverPreview({ text, backgroundSrc }: SplitCoverPreviewProps) {
+  const preferred = backgroundSrc || IMAGE_TEMPLATE17_COVER_SRC;
+  const [src, setSrc] = useState(preferred);
+  useEffect(() => {
+    setSrc(preferred);
+  }, [preferred]);
+
   return (
     <div
       className="absolute inset-0 overflow-hidden"
       style={{ backgroundColor: IMAGE_TEMPLATE17_BG, fontFamily: IMAGE_TEMPLATE17_FONT_STACK }}
     >
       <img
-        src={IMAGE_TEMPLATE17_COVER_SRC}
+        src={src}
         alt=""
         className="absolute inset-0 h-full w-full object-cover object-[center_22%]"
         style={{ backgroundColor: IMAGE_TEMPLATE17_PHOTO_PLACEHOLDER }}
+        onError={() => {
+          if (src !== IMAGE_TEMPLATE17_COVER_SRC) setSrc(IMAGE_TEMPLATE17_COVER_SRC);
+        }}
       />
       <div
         className="absolute inset-x-0 bottom-0"
