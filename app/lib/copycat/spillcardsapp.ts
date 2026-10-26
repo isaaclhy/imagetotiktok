@@ -1,5 +1,6 @@
 import {
   cleanCopycatDisplayText,
+  normalizeCopycatPosts,
   type CopycatCompetitorFeed,
   type CopycatPost,
   type CopycatSlideText,
@@ -61,5 +62,5 @@ export const SPILL_CARDS_APP_FEED: CopycatCompetitorFeed = {
 };
 
 export function getSpillCardsAppPosts(): CopycatPost[] {
-  return SPILL_CARDS_APP_FEED.posts;
+  return normalizeCopycatPosts(SPILL_CARDS_APP_FEED.posts);
 }

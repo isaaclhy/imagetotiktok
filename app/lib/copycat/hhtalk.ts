@@ -1,5 +1,6 @@
 import {
   cleanCopycatDisplayText,
+  normalizeCopycatPosts,
   type CopycatCompetitorFeed,
   type CopycatPost,
   type CopycatSlideText,
@@ -61,5 +62,5 @@ export const HH_TALK_FEED: CopycatCompetitorFeed = {
 };
 
 export function getHhTalkPosts(): CopycatPost[] {
-  return HH_TALK_FEED.posts;
+  return normalizeCopycatPosts(HH_TALK_FEED.posts);
 }

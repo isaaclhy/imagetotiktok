@@ -1,5 +1,6 @@
 import {
   cleanCopycatDisplayText,
+  normalizeCopycatPosts,
   type CopycatCompetitorFeed,
   type CopycatPost,
   type CopycatSlideText,
@@ -61,5 +62,5 @@ export const LVRSBAE_FEED: CopycatCompetitorFeed = {
 };
 
 export function getLvrsbaePosts(): CopycatPost[] {
-  return LVRSBAE_FEED.posts;
+  return normalizeCopycatPosts(LVRSBAE_FEED.posts);
 }

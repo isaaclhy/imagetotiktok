@@ -1,5 +1,6 @@
 import {
   cleanCopycatDisplayText,
+  normalizeCopycatPosts,
   type CopycatCompetitorFeed,
   type CopycatPost,
   type CopycatSlideText,
@@ -61,5 +62,5 @@ export const TRY_DEEPEN_FEED: CopycatCompetitorFeed = {
 };
 
 export function getTryDeepenPosts(): CopycatPost[] {
-  return TRY_DEEPEN_FEED.posts;
+  return normalizeCopycatPosts(TRY_DEEPEN_FEED.posts);
 }

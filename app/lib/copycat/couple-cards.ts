@@ -1,6 +1,7 @@
 import {
   cleanCopycatDisplayText,
   isCopycatPromoNoiseSlide,
+  normalizeCopycatPosts,
   type CopycatCompetitorFeed,
   type CopycatPost,
   type CopycatSlideText,
@@ -63,5 +64,5 @@ export const COUPLE_CARDS_FEED: CopycatCompetitorFeed = {
 };
 
 export function getCoupleCardsPosts(): CopycatPost[] {
-  return COUPLE_CARDS_FEED.posts;
+  return normalizeCopycatPosts(COUPLE_CARDS_FEED.posts);
 }

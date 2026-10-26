@@ -1,5 +1,6 @@
 import {
   cleanCopycatDisplayText,
+  normalizeCopycatPosts,
   type CopycatCompetitorFeed,
   type CopycatPost,
   type CopycatSlideText,
@@ -59,5 +60,5 @@ export const QUESTIONS_21_FEED: CopycatCompetitorFeed = {
 };
 
 export function getQuestions21Posts(): CopycatPost[] {
-  return QUESTIONS_21_FEED.posts;
+  return normalizeCopycatPosts(QUESTIONS_21_FEED.posts);
 }

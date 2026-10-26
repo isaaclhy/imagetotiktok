@@ -382,6 +382,153 @@ export function isCopycatPromoNoiseSlide(slide: CopycatSlideText): boolean {
   );
 }
 
+/** Cover + 5 questions = 6 slides. Longer carousels are split into multiple posts. */
+export const COPYCAT_MAX_QUESTION_SLIDES = 5;
+/** Cover + 2 questions = 3 slides — pad those up so Copycat never ships a stub post. */
+export const COPYCAT_MIN_QUESTION_SLIDES = 3;
+
+const QUESTION_COUNT_WORDS: Array<{ pattern: RegExp; value: number }> = [
+  { pattern: /twenty[-\s]?one/i, value: 21 },
+  { pattern: /twenty/i, value: 20 },
+  { pattern: /nineteen/i, value: 19 },
+  { pattern: /eighteen/i, value: 18 },
+  { pattern: /seventeen/i, value: 17 },
+  { pattern: /sixteen/i, value: 16 },
+  { pattern: /fifteen/i, value: 15 },
+  { pattern: /fourteen/i, value: 14 },
+  { pattern: /thirteen/i, value: 13 },
+  { pattern: /twelve/i, value: 12 },
+  { pattern: /eleven/i, value: 11 },
+  { pattern: /ten/i, value: 10 },
+  { pattern: /nine/i, value: 9 },
+  { pattern: /eight/i, value: 8 },
+  { pattern: /seven/i, value: 7 },
+  { pattern: /six/i, value: 6 },
+  { pattern: /five/i, value: 5 },
+  { pattern: /four/i, value: 4 },
+  { pattern: /three/i, value: 3 },
+  { pattern: /two/i, value: 2 },
+  { pattern: /one/i, value: 1 },
+];
+
+const QUESTION_COUNT_WORD = [
+  'zero',
+  'one',
+  'two',
+  'three',
+  'four',
+  'five',
+  'six',
+  'seven',
+  'eight',
+  'nine',
+  'ten',
+] as const;
+
+function cloneCopycatSlide(slide: CopycatSlideText): CopycatSlideText {
+  return slide.options?.length
+    ? { text: slide.text, options: [...slide.options] }
+    : { text: slide.text };
+}
+
+function matchQuestionCountCase(sample: string, count: number): string {
+  const word = QUESTION_COUNT_WORD[count] ?? String(count);
+  if (sample === sample.toUpperCase() && /[A-Z]/.test(sample)) return word.toUpperCase();
+  if (sample[0] && sample[0] === sample[0].toUpperCase()) {
+    return `${word.charAt(0).toUpperCase()}${word.slice(1)}`;
+  }
+  return word;
+}
+
+/** Update covers like "10 questions to ask..." when a split changes the question count. */
+export function rewriteCopycatCoverQuestionCount(cover: string, count: number): string {
+  const digitRe = /\b\d+(?=(?:\s+[^\s]+){0,6}\s+questions?\b)/i;
+  if (digitRe.test(cover)) return cover.replace(digitRe, String(count));
+
+  for (const entry of QUESTION_COUNT_WORDS) {
+    const wordRe = new RegExp(
+      `\\b${entry.pattern.source}\\b(?=(?:\\s+[^\\s]+){0,6}\\s+questions?\\b)`,
+      'i'
+    );
+    if (wordRe.test(cover)) {
+      return cover.replace(wordRe, (match) => matchQuestionCountCase(match, count));
+    }
+  }
+  return cover;
+}
+
+function padCopycatQuestions(
+  questions: CopycatSlideText[],
+  minCount: number
+): CopycatSlideText[] {
+  if (questions.length === 0 || questions.length >= minCount) {
+    return questions.map(cloneCopycatSlide);
+  }
+  const padded = questions.map(cloneCopycatSlide);
+  let index = 0;
+  while (padded.length < minCount) {
+    padded.push(cloneCopycatSlide(questions[index % questions.length]!));
+    index += 1;
+  }
+  return padded;
+}
+
+function chunkCopycatQuestions(questions: CopycatSlideText[]): CopycatSlideText[][] {
+  const total = questions.length;
+  if (total <= COPYCAT_MAX_QUESTION_SLIDES) return [questions.map(cloneCopycatSlide)];
+
+  const chunkCount = Math.ceil(total / COPYCAT_MAX_QUESTION_SLIDES);
+  const base = Math.floor(total / chunkCount);
+  const extra = total % chunkCount;
+  const chunks: CopycatSlideText[][] = [];
+  let cursor = 0;
+  for (let i = 0; i < chunkCount; i++) {
+    const size = base + (i < extra ? 1 : 0);
+    chunks.push(questions.slice(cursor, cursor + size).map(cloneCopycatSlide));
+    cursor += size;
+  }
+  return chunks;
+}
+
+function buildCopycatPostPart(
+  post: CopycatPost,
+  questions: CopycatSlideText[],
+  partIndex: number,
+  partCount: number
+): CopycatPost {
+  const minQuestions =
+    partCount > 1 ? COPYCAT_MAX_QUESTION_SLIDES : COPYCAT_MIN_QUESTION_SLIDES;
+  const slideText = padCopycatQuestions(questions, minQuestions);
+  return {
+    ...post,
+    id: partCount > 1 ? `${post.id}__${partIndex + 1}` : post.id,
+    coverText: rewriteCopycatCoverQuestionCount(post.coverText, slideText.length),
+    slideText,
+  };
+}
+
+/**
+ * Split carousels longer than 6 slides (cover + 5 questions) and pad short leftovers
+ * so Copycat never serves a 2–3 slide stub.
+ */
+export function normalizeCopycatPosts(posts: CopycatPost[]): CopycatPost[] {
+  const next: CopycatPost[] = [];
+  for (const post of posts) {
+    const questions = post.slideText.filter(
+      (slide) => !isCopycatPromoNoiseSlide(slide) && slide.text.trim()
+    );
+    if (questions.length === 0) {
+      next.push(post);
+      continue;
+    }
+    const chunks = chunkCopycatQuestions(questions);
+    chunks.forEach((chunk, index) => {
+      next.push(buildCopycatPostPart(post, chunk, index, chunks.length));
+    });
+  }
+  return next;
+}
+
 export function copycatPostSlideBodiesClean(post: CopycatPost): string[] {
   const slides = post.slideText.filter((slide) => !isCopycatPromoNoiseSlide(slide));
   return [

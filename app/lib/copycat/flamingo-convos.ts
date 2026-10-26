@@ -1,5 +1,6 @@
 import {
   cleanCopycatDisplayText,
+  normalizeCopycatPosts,
   type CopycatCompetitorFeed,
   type CopycatPost,
   type CopycatSlideText,
@@ -94,5 +95,5 @@ export function getFlamingoCardsPosts(tiktokPosts: CopycatPost[]): CopycatPost[]
     handle: post.handle ?? 'flamingokiss1',
     platform: post.platform ?? ('tiktok' as const),
   }));
-  return mergeUniquePosts(tiktok, convoPosts, reelsPosts);
+  return normalizeCopycatPosts(mergeUniquePosts(tiktok, convoPosts, reelsPosts));
 }

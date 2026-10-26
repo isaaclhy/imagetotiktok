@@ -1,6 +1,7 @@
 import {
   cleanCopycatDisplayText,
   isCopycatPromoNoiseSlide,
+  normalizeCopycatPosts,
   type CopycatCompetitorFeed,
   type CopycatPost,
   type CopycatSlideText,
@@ -63,5 +64,5 @@ export const FLAMINGO_CONVO_FEED: CopycatCompetitorFeed = {
 };
 
 export function getFlamingoConvoPosts(): CopycatPost[] {
-  return FLAMINGO_CONVO_FEED.posts;
+  return normalizeCopycatPosts(FLAMINGO_CONVO_FEED.posts);
 }

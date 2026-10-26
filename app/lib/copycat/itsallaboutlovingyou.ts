@@ -1,5 +1,6 @@
 import {
   cleanCopycatDisplayText,
+  normalizeCopycatPosts,
   type CopycatCompetitorFeed,
   type CopycatPost,
   type CopycatSlideText,
@@ -61,5 +62,5 @@ export const ITS_ALL_ABOUT_LOVING_YOU_FEED: CopycatCompetitorFeed = {
 };
 
 export function getItsAllAboutLovingYouPosts(): CopycatPost[] {
-  return ITS_ALL_ABOUT_LOVING_YOU_FEED.posts;
+  return normalizeCopycatPosts(ITS_ALL_ABOUT_LOVING_YOU_FEED.posts);
 }

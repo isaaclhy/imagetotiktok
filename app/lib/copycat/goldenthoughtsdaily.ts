@@ -1,5 +1,6 @@
 import {
   cleanCopycatDisplayText,
+  normalizeCopycatPosts,
   type CopycatCompetitorFeed,
   type CopycatPost,
   type CopycatSlideText,
@@ -61,5 +62,5 @@ export const GOLDEN_THOUGHTS_DAILY_FEED: CopycatCompetitorFeed = {
 };
 
 export function getGoldenThoughtsDailyPosts(): CopycatPost[] {
-  return GOLDEN_THOUGHTS_DAILY_FEED.posts;
+  return normalizeCopycatPosts(GOLDEN_THOUGHTS_DAILY_FEED.posts);
 }
