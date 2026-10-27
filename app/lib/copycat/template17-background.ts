@@ -24,3 +24,19 @@ export function template17BackgroundSrcForSlide(
   if (!TEMPLATE17_BACKGROUND_IDS.has(id)) return IMAGE_TEMPLATE17_COVER_SRC;
   return template17BackgroundUrl(id);
 }
+
+/**
+ * Tab to open after a new random post.
+ * Cover is 0 and has no question id, so it always uses the shared photo.
+ * Question tabs start at 1. Returns the first question that has its own JPEG,
+ * or 0 when this post has none.
+ */
+export function template17TabForQuestions(
+  slides: { text: string; options?: string[] }[] | null | undefined
+): number {
+  if (!slides?.length) return 0;
+  const index = slides.findIndex(
+    (slide) => template17BackgroundSrcForSlide(slide) !== IMAGE_TEMPLATE17_COVER_SRC
+  );
+  return index >= 0 ? index + 1 : 0;
+}
