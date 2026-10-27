@@ -107,7 +107,10 @@ import {
 } from '@/app/lib/image-template-14-cards';
 import { NotesQuestionsPreview } from '@/app/components/NotesQuestionsPreview';
 import { SplitCoverPreview } from '@/app/components/SplitCoverPreview';
-import { template17BackgroundSrcForSlide } from '@/app/lib/copycat/template17-background';
+import {
+  template17BackgroundSrcForSlide,
+  template17TabForQuestions,
+} from '@/app/lib/copycat/template17-background';
 
 const TIKTOK_SANS_STACK = '"TikTok Sans", system-ui, -apple-system, sans-serif';
 const COPYCAT_APP_NAME = 'Spill It';
@@ -956,6 +959,14 @@ export function CopycatPanel({
   useEffect(() => {
     if (selectedTab >= slideBodies.length) setSelectedTab(0);
   }, [selectedTab, slideBodies.length]);
+
+  // New random post lands on the cover, which has no question id and always
+  // uses the shared photo. Open the first question that has its own JPEG.
+  useEffect(() => {
+    if (templateId !== 17) return;
+    const tab = template17TabForQuestions(questionSlides);
+    if (tab > 0) setSelectedTab(tab);
+  }, [selectedPostId, templateId, questionSlides]);
 
   useEffect(() => {
     if (templateId !== 1) return;
