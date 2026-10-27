@@ -1,3 +1,5 @@
+import { pickCopycatCover } from './cover-text';
+
 export type CopycatSlideText = {
   text: string;
   options?: string[];
@@ -346,10 +348,10 @@ export function splitCopycatQuestionAndOptions(text: string): {
   return { question: match[1]!.trimEnd(), options: match[2]! };
 }
 
-/** Cover + question slides for a post (question count follows the source post). */
-export function copycatPostSlideBodies(post: CopycatPost): string[] {
+/** Cover + question slides for a post. Cover copy is the Gen Z line for these questions. */
+export function copycatPostSlideBodies(post: CopycatPost, coverText?: string): string[] {
   return [
-    cleanCopycatDisplayText(post.coverText),
+    resolveCopycatCover(post, coverText),
     ...post.slideText.map(formatCopycatSlideBody),
   ];
 }
@@ -529,10 +531,16 @@ export function normalizeCopycatPosts(posts: CopycatPost[]): CopycatPost[] {
   return next;
 }
 
-export function copycatPostSlideBodiesClean(post: CopycatPost): string[] {
+export function copycatPostSlideBodiesClean(post: CopycatPost, coverText?: string): string[] {
   const slides = post.slideText.filter((slide) => !isCopycatPromoNoiseSlide(slide));
   return [
-    cleanCopycatDisplayText(post.coverText),
+    resolveCopycatCover({ ...post, slideText: slides }, coverText),
     ...slides.map(formatCopycatSlideBody),
   ];
+}
+
+function resolveCopycatCover(post: CopycatPost, coverText?: string): string {
+  const override = coverText?.trim();
+  if (override) return cleanCopycatDisplayText(override);
+  return pickCopycatCover(post);
 }

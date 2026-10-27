@@ -9,6 +9,7 @@ import {
   splitCopycatQuestionAndOptions,
   type CopycatPost,
 } from '@/app/lib/copycat/flamingo-cards';
+import { pickCopycatCover } from '@/app/lib/copycat/cover-text';
 import { getFlamingoCardsPosts } from '@/app/lib/copycat/flamingo-convos';
 import { getFlamingoConvoPosts } from '@/app/lib/copycat/flamingo-convo';
 import { getQuestions21Posts } from '@/app/lib/copycat/questions-21';
@@ -908,6 +909,8 @@ export function CopycatPanel({
   const [isDownloading, setIsDownloading] = useState(false);
   const postBagRef = useRef<string[]>([]);
   const lastPostIdRef = useRef<string | null>(null);
+  const coverCacheRef = useRef<Map<string, string>>(new Map());
+  const lastCoverRef = useRef<string | null>(null);
 
   const selectedPost = useMemo(
     () => posts.find((post) => post.id === selectedPostId) ?? null,
@@ -922,10 +925,12 @@ export function CopycatPanel({
     [selectedPost]
   );
 
-  const slideBodies = useMemo(
-    () => (selectedPost ? copycatPostSlideBodiesClean(selectedPost) : []),
-    [selectedPost]
-  );
+  const slideBodies = useMemo(() => {
+    if (!selectedPost) return [];
+    const cover =
+      coverCacheRef.current.get(selectedPost.id) ?? pickCopycatCover(selectedPost);
+    return copycatPostSlideBodiesClean(selectedPost, cover);
+  }, [selectedPost]);
 
   // CTA is the last question slide itself — never a separate empty tab.
   const ctaTabIndex = slideBodies.length > 1 ? slideBodies.length - 1 : -1;
@@ -939,11 +944,20 @@ export function CopycatPanel({
     const drawn = drawFromBag(postBagRef.current, postIds, lastPostIdRef.current);
     postBagRef.current = drawn.bag;
     lastPostIdRef.current = drawn.next;
+    const nextPost = posts.find((item) => item.id === drawn.next);
+    if (nextPost) {
+      let cover = coverCacheRef.current.get(nextPost.id);
+      if (!cover) {
+        cover = pickCopycatCover(nextPost, { avoid: lastCoverRef.current });
+        coverCacheRef.current.set(nextPost.id, cover);
+      }
+      lastCoverRef.current = cover;
+    }
     setSelectedPostId(drawn.next);
     setSelectedTab(0);
     setTemplate14Color((current) => pickTemplate14Color(current));
     setTemplate15FrameBg((current) => pickTemplate15FrameColor(current));
-  }, [postIds]);
+  }, [postIds, posts]);
 
   // Fresh crypto draw whenever the template or competitor changes (and once on mount).
   useEffect(() => {
