@@ -1,10 +1,9 @@
 import {
   cleanCopycatDisplayText,
+  copycatQuestionSlides,
   FLAMINGO_CARDS_FEED,
-  isCopycatPromoNoiseSlide,
-  splitCopycatQuestionAndOptions,
+  isCopycatQuestionsOnlyPost,
   type CopycatPost,
-  type CopycatSlideText,
 } from '@/app/lib/copycat/flamingo-cards';
 import { getCoupleCardsPosts } from '@/app/lib/copycat/couple-cards';
 import { getFlamingoCardsPosts } from '@/app/lib/copycat/flamingo-convos';
@@ -42,23 +41,6 @@ export type VideoTemplate4CompetitorFilter = VideoTemplate4CompetitorId | 'all';
 const FONT = '"TikTok Sans", system-ui, -apple-system, sans-serif';
 
 export type VideoTemplate4Content = { label: string; questions: string[] };
-
-function slideHasOptions(slide: CopycatSlideText): boolean {
-  if (slide.options?.length) return true;
-  if (splitCopycatQuestionAndOptions(slide.text).options) return true;
-  return /(?:^|\n)\s*[a-d]\.\s+\S/i.test(slide.text);
-}
-
-function questionSlides(post: CopycatPost): CopycatSlideText[] {
-  return post.slideText.filter(
-    (slide) => !isCopycatPromoNoiseSlide(slide) && slide.text.trim()
-  );
-}
-
-function isQuestionsOnlyPost(post: CopycatPost): boolean {
-  const slides = questionSlides(post);
-  return slides.length > 0 && slides.every((slide) => !slideHasOptions(slide));
-}
 
 function postsForCompetitor(id: VideoTemplate4CompetitorId): CopycatPost[] {
   switch (id) {
@@ -102,10 +84,10 @@ function competitorPosts(filter: VideoTemplate4CompetitorFilter = 'all'): Copyca
 function questionSetsFromPosts(posts: CopycatPost[]): VideoTemplate4Content[] {
   const sets: VideoTemplate4Content[] = [];
   for (const post of posts) {
-    if (!isQuestionsOnlyPost(post)) continue;
+    if (!isCopycatQuestionsOnlyPost(post)) continue;
     const cover = cleanCopycatDisplayText(post.coverText);
     if (!cover) continue;
-    const questions = questionSlides(post)
+    const questions = copycatQuestionSlides(post)
       .map((slide) => cleanCopycatDisplayText(slide.text))
       .filter((question) => question && question !== cover);
     if (!questions.length) continue;

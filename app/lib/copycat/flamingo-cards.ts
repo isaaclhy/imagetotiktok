@@ -382,6 +382,30 @@ export function isCopycatPromoNoiseSlide(slide: CopycatSlideText): boolean {
   );
 }
 
+/** True when a slide has a. b. c. choices (structured options or OCR'd into the body). */
+export function copycatSlideHasOptions(slide: CopycatSlideText): boolean {
+  if (slide.options?.length) return true;
+  if (splitCopycatQuestionAndOptions(slide.text).options) return true;
+  return /(?:^|\n)\s*[a-d]\.\s+\S/i.test(slide.text);
+}
+
+/** Non-promo question slides for a post. */
+export function copycatQuestionSlides(post: CopycatPost): CopycatSlideText[] {
+  return post.slideText.filter(
+    (slide) => !isCopycatPromoNoiseSlide(slide) && slide.text.trim()
+  );
+}
+
+/** Posts whose questions are open-ended (no a. b. c. choices on any slide). */
+export function isCopycatQuestionsOnlyPost(post: CopycatPost): boolean {
+  const slides = copycatQuestionSlides(post);
+  return slides.length > 0 && slides.every((slide) => !copycatSlideHasOptions(slide));
+}
+
+export function filterCopycatPostsWithoutOptions(posts: CopycatPost[]): CopycatPost[] {
+  return posts.filter(isCopycatQuestionsOnlyPost);
+}
+
 /** Cover + 5 questions = 6 slides. Longer carousels are split into multiple posts. */
 export const COPYCAT_MAX_QUESTION_SLIDES = 5;
 /** Cover + 2 questions = 3 slides — pad those up so Copycat never ships a stub post. */

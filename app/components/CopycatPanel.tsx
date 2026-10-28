@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   copycatPostSlideBodiesClean,
   filterCopycatPostsByMinViews,
+  filterCopycatPostsWithoutOptions,
   FLAMINGO_CARDS_FEED,
   isCopycatPromoNoiseSlide,
   splitCopycatQuestionAndOptions,
@@ -887,9 +888,12 @@ export function CopycatPanel({
                       : competitorId === 'spill-cards-app'
                         ? getSpillCardsAppPosts()
                         : [];
-    if (competitorId === 'flamingo-cards') return filterCopycatPostsByMinViews(raw);
-    return raw;
-  }, [competitorId]);
+    const byViews =
+      competitorId === 'flamingo-cards' ? filterCopycatPostsByMinViews(raw) : raw;
+    // Split cover only fits open-ended questions — drop multiple-choice posts.
+    if (templateId === 17) return filterCopycatPostsWithoutOptions(byViews);
+    return byViews;
+  }, [competitorId, templateId]);
   const postIds = useMemo(() => posts.map((post) => post.id), [posts]);
 
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
