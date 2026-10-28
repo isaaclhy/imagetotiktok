@@ -51,7 +51,11 @@
       "coverText": "The moment we both blushed",
       "slideText": [
         {
-          "text": "What turns you on, my hair tied or untied?"
+          "text": "What turns you on more?",
+          "options": [
+            "My hair tied",
+            "My hair untied"
+          ]
         },
         {
           "text": "What's the weirdest thing you find attractive about me?"
@@ -84,7 +88,11 @@
           "text": "If someone else offered you the 'perfect' relationship, would you leave me?"
         },
         {
-          "text": "If your mom told you to break up with me tomorrow, would you listen to her or fight for us?"
+          "text": "If your mom told you to break up with me tomorrow, what would you do?",
+          "options": [
+            "Listen to her",
+            "Fight for us"
+          ]
         }
       ]
     },
@@ -162,19 +170,36 @@
       "coverText": "Answer fast. No thinking allowed.",
       "slideText": [
         {
-          "text": "Am I the drama or the peacekeeper?"
+          "text": "Am I the drama or the peacekeeper?",
+          "options": [
+            "The drama",
+            "The peacekeeper"
+          ]
         },
         {
-          "text": "Did you fall for me or did I just grow on you?"
+          "text": "Did you fall for me or did I just grow on you?",
+          "options": [
+            "I fell for you",
+            "You grew on me"
+          ]
         },
         {
           "text": "What's your favorite word or phrase I say often?"
         },
         {
-          "text": "Do you feel like we're growing together or apart?"
+          "text": "Do you feel like we're growing together or apart?",
+          "options": [
+            "Together",
+            "Apart"
+          ]
         },
         {
-          "text": "What's my main skill: chaos, noise, or confusion?"
+          "text": "What's my main skill?",
+          "options": [
+            "Chaos",
+            "Noise",
+            "Confusion"
+          ]
         }
       ]
     },
@@ -300,7 +325,11 @@
           "text": "If you could ask me anything with no fear, what would it be?"
         },
         {
-          "text": "Are you with me because you truly love me, or just because you're scared of starting over?"
+          "text": "Why are you with me?",
+          "options": [
+            "I truly love you",
+            "I'm scared of starting over"
+          ]
         }
       ]
     },
@@ -363,7 +392,11 @@
           "text": "If I asked your best friend what you say about me when I'm not around, what would they tell me?"
         },
         {
-          "text": "If I asked you to choose between gaming for a week or cuddling with me every night — what would you pick?"
+          "text": "What would you pick?",
+          "options": [
+            "Gaming for a week",
+            "Cuddling with me every night"
+          ]
         }
       ]
     },
@@ -531,7 +564,11 @@
           "text": "What's the most important lesson you've learned from our relationship?"
         },
         {
-          "text": "Would you rather redo your worst argument or relive your best memory together?"
+          "text": "Would you rather?",
+          "options": [
+            "Redo your worst argument",
+            "Relive your best memory together"
+          ]
         }
       ]
     }
