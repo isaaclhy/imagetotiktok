@@ -12,10 +12,16 @@ export const IMAGE_TEMPLATE17_FONT_STACK =
 /** Photo fades into a solid black title block so the text stays high-contrast. */
 export const IMAGE_TEMPLATE17_BRAND_Y = 0.75;
 export const IMAGE_TEMPLATE17_ICON_SIZE = 0.05;
+/** App-icon corner radius as a fraction of the icon side. */
+export const IMAGE_TEMPLATE17_ICON_RADIUS = 0.22;
 export const IMAGE_TEMPLATE17_BRAND_SIZE = 0.023;
 export const IMAGE_TEMPLATE17_BRAND_TRACKING = '0.14em';
 export const IMAGE_TEMPLATE17_BRAND_GAP = 0.012;
-export const IMAGE_TEMPLATE17_LINE_LENGTH = 0.055;
+/**
+ * Flanking rules, as a fraction of slide width.
+ * Twice the previous 0.055 length, and still inside the side margins.
+ */
+export const IMAGE_TEMPLATE17_LINE_LENGTH = 0.11;
 export const IMAGE_TEMPLATE17_LINE_GAP = 0.012;
 export const IMAGE_TEMPLATE17_LINE_THICKNESS = 0.0025;
 export const IMAGE_TEMPLATE17_TITLE_SIZE = 0.08;
@@ -390,6 +396,27 @@ function drawFade(ctx: CanvasRenderingContext2D, width: number, height: number) 
   ctx.fillRect(0, startY, width, height - startY);
 }
 
+function drawTemplate17Icon(
+  ctx: CanvasRenderingContext2D,
+  icon: CanvasImageSource | null | undefined,
+  x: number,
+  y: number,
+  size: number
+) {
+  const radius = size * IMAGE_TEMPLATE17_ICON_RADIUS;
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(x, y, size, size, radius);
+  ctx.clip();
+  if (icon) {
+    ctx.drawImage(icon, x, y, size, size);
+  } else {
+    ctx.fillStyle = '#7B5CFF';
+    ctx.fillRect(x, y, size, size);
+  }
+  ctx.restore();
+}
+
 function drawBrand(
   ctx: CanvasRenderingContext2D,
   width: number,
@@ -417,12 +444,7 @@ function drawBrand(
   ctx.fillRect(startX, seamY - lineH / 2, lineW, lineH);
   ctx.fillRect(iconX + lockupW + lineGap, seamY - lineH / 2, lineW, lineH);
 
-  if (icon) {
-    ctx.drawImage(icon, iconX, iconY, iconSize, iconSize);
-  } else {
-    ctx.fillStyle = '#7B5CFF';
-    ctx.fillRect(iconX, iconY, iconSize, iconSize);
-  }
+  drawTemplate17Icon(ctx, icon, iconX, iconY, iconSize);
 
   ctx.fillStyle = IMAGE_TEMPLATE17_TEXT;
   ctx.textAlign = 'left';

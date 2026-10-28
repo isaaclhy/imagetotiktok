@@ -12,6 +12,7 @@ import {
   IMAGE_TEMPLATE17_DIM_GRADIENT,
   IMAGE_TEMPLATE17_DIM_START,
   IMAGE_TEMPLATE17_FONT_STACK,
+  IMAGE_TEMPLATE17_ICON_RADIUS,
   IMAGE_TEMPLATE17_ICON_SIZE,
   IMAGE_TEMPLATE17_ICON_SRC,
   IMAGE_TEMPLATE17_LINE_GAP,
@@ -131,6 +132,7 @@ export function SplitCoverPreview({ text, backgroundSrc }: SplitCoverPreviewProp
           style={{
             width: `${IMAGE_TEMPLATE17_ICON_SIZE * 100}cqw`,
             height: `${IMAGE_TEMPLATE17_ICON_SIZE * 100}cqw`,
+            borderRadius: `${IMAGE_TEMPLATE17_ICON_RADIUS * 100}%`,
           }}
         />
         <span
