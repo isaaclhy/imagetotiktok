@@ -19,6 +19,7 @@ import { getHhTalkPosts } from '@/app/lib/copycat/hhtalk';
 import { getGoldenThoughtsDailyPosts } from '@/app/lib/copycat/goldenthoughtsdaily';
 import { getLvrsbaePosts } from '@/app/lib/copycat/lvrsbae';
 import { getSpillCardsAppPosts } from '@/app/lib/copycat/spillcardsapp';
+import { getHookPosts } from '@/app/lib/copycat/hook-posts';
 import { exportCopycatSlidesZip } from '@/app/lib/copycat/export-slides';
 import { IMAGE_TEMPLATE2_PASTEL_COLORS, IMAGE_TEMPLATE2_TOP_LABEL } from '@/app/lib/constants';
 import {
@@ -169,6 +170,8 @@ function CopycatAppMarkFooter({
 type CopycatPanelProps = {
   competitorId: string;
   templateId: CopycatTemplateId;
+  /** When true, draw only from the curated hook posts, ignoring competitor feeds. */
+  useHookPosts?: boolean;
   onNewRandomPost?: () => void;
 };
 
@@ -862,9 +865,11 @@ function CopycatSlidePreview({
 export function CopycatPanel({
   competitorId,
   templateId,
+  useHookPosts = false,
   onNewRandomPost,
 }: CopycatPanelProps) {
   const posts: CopycatPost[] = useMemo(() => {
+    if (useHookPosts) return getHookPosts();
     const raw =
       competitorId === 'flamingo-cards'
         ? getFlamingoCardsPosts(FLAMINGO_CARDS_FEED.posts)
@@ -889,8 +894,9 @@ export function CopycatPanel({
                         : [];
     if (competitorId === 'flamingo-cards') return filterCopycatPostsByMinViews(raw);
     return raw;
-  }, [competitorId]);
+  }, [competitorId, useHookPosts]);
   const postIds = useMemo(() => posts.map((post) => post.id), [posts]);
+  const postSourceKey = useHookPosts ? 'hook-posts' : competitorId;
 
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState(0);
@@ -945,7 +951,7 @@ export function CopycatPanel({
     setTemplate15FrameBg((current) => pickTemplate15FrameColor(current));
   }, [postIds]);
 
-  // Fresh crypto draw whenever the template or competitor changes (and once on mount).
+  // Fresh crypto draw whenever the template or post source changes (and once on mount).
   useEffect(() => {
     if (postIds.length === 0) {
       setSelectedPostId(null);
@@ -954,7 +960,7 @@ export function CopycatPanel({
     postBagRef.current = [];
     lastPostIdRef.current = null;
     reshufflePost();
-  }, [templateId, competitorId, reshufflePost]);
+  }, [templateId, postSourceKey, reshufflePost]);
 
   useEffect(() => {
     if (selectedTab >= slideBodies.length) setSelectedTab(0);
@@ -1150,14 +1156,14 @@ export function CopycatPanel({
     <div className="mx-auto flex w-full max-w-sm flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
-          Random post · {slideBodies.length} slides
+          {useHookPosts ? 'Hook post' : 'Random post'} · {slideBodies.length} slides
         </p>
         <div className="flex shrink-0 items-center gap-1.5">
           <button
             type="button"
             onClick={() => {
-              if (onNewRandomPost) onNewRandomPost();
-              else reshufflePost();
+              if (useHookPosts || !onNewRandomPost) reshufflePost();
+              else onNewRandomPost();
             }}
             disabled={isDownloading}
             className="rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-1.5 text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:border-zinc-400 dark:hover:border-zinc-500 disabled:opacity-50"

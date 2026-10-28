@@ -2151,6 +2151,7 @@ export default function Home() {
     useState<CopycatCompetitorId>('flamingo-cards');
   const [selectedCopycatTemplateId, setSelectedCopycatTemplateId] =
     useState<CopycatTemplateId>(1);
+  const [copycatHookPosts, setCopycatHookPosts] = useState(false);
 
   useEffect(() => {
     setSelectedCopycatCompetitorId(pickRandomCopycatCompetitor());
@@ -6687,10 +6688,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                       <select
                         id="copycat-competitor"
                         value={selectedCopycatCompetitorId}
+                        disabled={copycatHookPosts}
                         onChange={(e) =>
                           setSelectedCopycatCompetitorId(e.target.value as CopycatCompetitorId)
                         }
-                        className="w-full min-w-0 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-2.5 text-sm font-medium text-zinc-900 dark:text-zinc-100 outline-none focus:border-zinc-400 dark:focus:border-zinc-500 md:min-w-[10.5rem] md:w-auto md:py-2"
+                        className="w-full min-w-0 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-2.5 text-sm font-medium text-zinc-900 dark:text-zinc-100 outline-none focus:border-zinc-400 dark:focus:border-zinc-500 disabled:cursor-not-allowed disabled:opacity-50 md:min-w-[10.5rem] md:w-auto md:py-2"
                       >
                         {COPYCAT_COMPETITORS.map((competitor) => (
                           <option key={competitor.id} value={competitor.id}>
@@ -6698,6 +6700,19 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                           </option>
                         ))}
                       </select>
+                      <label
+                        htmlFor="copycat-hook-posts"
+                        className="mt-3 flex cursor-pointer select-none items-center gap-2 text-sm font-medium text-zinc-800 dark:text-zinc-200"
+                      >
+                        <input
+                          id="copycat-hook-posts"
+                          type="checkbox"
+                          checked={copycatHookPosts}
+                          onChange={(e) => setCopycatHookPosts(e.target.checked)}
+                          className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600"
+                        />
+                        Use hook posts
+                      </label>
                     </div>
                     <div className="w-full text-left">
                       <p className="mb-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">
@@ -6714,7 +6729,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               key={templateId}
                               type="button"
                               onClick={() => {
-                                if (selectedCopycatTemplateId !== templateId) {
+                                if (!copycatHookPosts && selectedCopycatTemplateId !== templateId) {
                                   setSelectedCopycatCompetitorId((competitor) =>
                                     pickRandomCopycatCompetitor(competitor)
                                   );
@@ -6754,6 +6769,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                 <CopycatPanel
                   competitorId={selectedCopycatCompetitorId}
                   templateId={selectedCopycatTemplateId}
+                  useHookPosts={copycatHookPosts}
                   onNewRandomPost={() =>
                     setSelectedCopycatCompetitorId((current) =>
                       pickRandomCopycatCompetitor(current)
