@@ -1,3 +1,5 @@
+import { splitCopycatQuestionAndOptions } from '@/app/lib/copycat/flamingo-cards';
+
 export const IMAGE_TEMPLATE17_BG = '#000000';
 export const IMAGE_TEMPLATE17_PHOTO_PLACEHOLDER = '#2A2A2A';
 export const IMAGE_TEMPLATE17_TEXT = '#FFFFFF';
@@ -22,6 +24,21 @@ export const IMAGE_TEMPLATE17_TITLE_LINE_HEIGHT = 1.02;
 export const IMAGE_TEMPLATE17_TITLE_TRACKING = '-0.045em';
 export const IMAGE_TEMPLATE17_TITLE_WIDTH = 0.9;
 export const IMAGE_TEMPLATE17_TITLE_TOP = 0.785;
+/**
+ * Lowest title size we prefer, as a fraction of slide width.
+ * Longer copy shrinks toward this. If it still cannot fit, the fitter
+ * keeps shrinking so the slide never clips.
+ */
+export const IMAGE_TEMPLATE17_TITLE_MIN_SIZE = 0.03;
+/** Last line box stays above this fraction of the slide height. */
+export const IMAGE_TEMPLATE17_TEXT_BOTTOM = 0.972;
+/** Answer lines are a fraction of the fitted question size. */
+export const IMAGE_TEMPLATE17_OPTION_SCALE = 0.84;
+export const IMAGE_TEMPLATE17_OPTION_WEIGHT = 700;
+export const IMAGE_TEMPLATE17_OPTION_LINE_HEIGHT = 1.12;
+export const IMAGE_TEMPLATE17_OPTION_TRACKING = '-0.03em';
+/** Space between the question and its options, in question ems. */
+export const IMAGE_TEMPLATE17_OPTION_GAP = 0.45;
 export const IMAGE_TEMPLATE17_DIM_START = 0.32;
 export const IMAGE_TEMPLATE17_DIM_MID = 'rgba(0,0,0,0.42)';
 export const IMAGE_TEMPLATE17_DIM_HEAVY = 'rgba(0,0,0,0.82)';
@@ -33,29 +50,314 @@ export function isImageTemplate17Id(templateId: number | null | undefined): bool
   return templateId === 17;
 }
 
-function wrapLines(
+/** First family from `--font-inter` (the self-hosted next/font face), or Inter. */
+export function template17PrimaryFontFamily(): string {
+  if (typeof document === 'undefined') return 'Inter';
+  const raw = getComputedStyle(document.body).getPropertyValue('--font-inter').trim();
+  if (!raw) return 'Inter';
+  const quoted = raw.match(/^['"]([^'"]+)['"]/);
+  const first = quoted?.[1] ?? raw.split(',')[0]?.trim().replace(/^['"]|['"]$/g, '');
+  return first || 'Inter';
+}
+
+/** Canvas/CSS stack that prefers the loaded self-hosted Inter face. */
+export function template17CanvasFontStack(family = template17PrimaryFontFamily()): string {
+  if (!family || family === 'Inter') return IMAGE_TEMPLATE17_FONT_STACK;
+  return `"${family}", ${IMAGE_TEMPLATE17_FONT_STACK}`;
+}
+
+function breakOverflowToken(
   ctx: CanvasRenderingContext2D,
-  text: string,
+  token: string,
   maxWidth: number
 ): string[] {
-  const paragraphs = text.replace(/\r/g, '').split('\n');
+  if (ctx.measureText(token).width <= maxWidth) return [token];
+  const parts: string[] = [];
+  let rest = token;
+  while (rest.length > 0) {
+    if (ctx.measureText(rest).width <= maxWidth) {
+      parts.push(rest);
+      break;
+    }
+    let lo = 1;
+    let hi = rest.length - 1;
+    let best = 1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (ctx.measureText(rest.slice(0, mid)).width <= maxWidth) {
+        best = mid;
+        lo = mid + 1;
+      } else {
+        hi = mid - 1;
+      }
+    }
+    parts.push(rest.slice(0, best));
+    rest = rest.slice(best);
+  }
+  return parts;
+}
+
+function wrapParagraph(
+  ctx: CanvasRenderingContext2D,
+  paragraph: string,
+  maxWidth: number
+): string[] {
+  const words = paragraph.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [];
   const lines: string[] = [];
-  for (const paragraph of paragraphs) {
-    const words = paragraph.trim().split(/\s+/).filter(Boolean);
-    if (words.length === 0) continue;
-    let current = words[0]!;
-    for (let i = 1; i < words.length; i++) {
-      const word = words[i]!;
-      const candidate = `${current} ${word}`;
+  let current = '';
+  for (const word of words) {
+    for (const chunk of breakOverflowToken(ctx, word, maxWidth)) {
+      if (!current) {
+        current = chunk;
+        continue;
+      }
+      const candidate = `${current} ${chunk}`;
       if (ctx.measureText(candidate).width <= maxWidth) current = candidate;
       else {
         lines.push(current);
-        current = word;
+        current = chunk;
       }
     }
-    lines.push(current);
+  }
+  if (current) lines.push(current);
+  return lines;
+}
+
+function wrapBlock(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  const lines: string[] = [];
+  const paragraphs = text.replace(/\r/g, '').split('\n');
+  for (const paragraph of paragraphs) {
+    lines.push(...wrapParagraph(ctx, paragraph, maxWidth));
   }
   return lines;
+}
+
+export type Template17TextLayout = {
+  questionSize: number;
+  optionSize: number;
+  questionLineHeight: number;
+  optionLineHeight: number;
+  gap: number;
+  top: number;
+  /** Bottom of the last line box. */
+  bottom: number;
+  maxWidth: number;
+  questionLines: string[];
+  optionLines: string[];
+  /** True when copy only fit below `IMAGE_TEMPLATE17_TITLE_MIN_SIZE`. */
+  belowSensibleMinimum: boolean;
+};
+
+type Template17MeasuredBlock = {
+  questionLines: string[];
+  optionLines: string[];
+  questionSize: number;
+  optionSize: number;
+  questionLineHeight: number;
+  optionLineHeight: number;
+  gap: number;
+  height: number;
+};
+
+function withTemplate17Font(
+  ctx: CanvasRenderingContext2D,
+  run: () => void
+): void {
+  const previousSpacing = ctx.letterSpacing;
+  const previousAlign = ctx.textAlign;
+  const previousBaseline = ctx.textBaseline;
+  try {
+    run();
+  } finally {
+    ctx.letterSpacing = previousSpacing;
+    ctx.textAlign = previousAlign;
+    ctx.textBaseline = previousBaseline;
+  }
+}
+
+function measureTemplate17Block(
+  ctx: CanvasRenderingContext2D,
+  maxWidth: number,
+  question: string,
+  optionSource: string[],
+  questionSize: number,
+  fontFamily: string
+): Template17MeasuredBlock {
+  const optionSize = Math.max(1, Math.round(questionSize * IMAGE_TEMPLATE17_OPTION_SCALE));
+  ctx.font = `${IMAGE_TEMPLATE17_TITLE_WEIGHT} ${questionSize}px ${fontFamily}`;
+  ctx.letterSpacing = IMAGE_TEMPLATE17_TITLE_TRACKING;
+  const questionLines = question.trim() ? wrapBlock(ctx, question, maxWidth) : [];
+  ctx.font = `${IMAGE_TEMPLATE17_OPTION_WEIGHT} ${optionSize}px ${fontFamily}`;
+  ctx.letterSpacing = IMAGE_TEMPLATE17_OPTION_TRACKING;
+  const optionLines = optionSource.flatMap((line) => wrapParagraph(ctx, line, maxWidth));
+  const questionLineHeight = questionSize * IMAGE_TEMPLATE17_TITLE_LINE_HEIGHT;
+  const optionLineHeight = optionSize * IMAGE_TEMPLATE17_OPTION_LINE_HEIGHT;
+  const gap =
+    questionLines.length > 0 && optionLines.length > 0
+      ? questionSize * IMAGE_TEMPLATE17_OPTION_GAP
+      : 0;
+  const height =
+    questionLines.length * questionLineHeight + gap + optionLines.length * optionLineHeight;
+  return {
+    questionLines,
+    optionLines,
+    questionSize,
+    optionSize,
+    questionLineHeight,
+    optionLineHeight,
+    gap,
+    height,
+  };
+}
+
+/**
+ * Shrink the question (and the smaller option block under it) until the
+ * wrapped copy sits between the brand lockup and the bottom safe edge.
+ * Short titles that already fit stay at `IMAGE_TEMPLATE17_TITLE_SIZE`.
+ */
+export function layoutTemplate17Text(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  text: string,
+  fontFamily: string = IMAGE_TEMPLATE17_FONT_STACK
+): Template17TextLayout {
+  const top = height * IMAGE_TEMPLATE17_TITLE_TOP;
+  const maxWidth = width * IMAGE_TEMPLATE17_TITLE_WIDTH;
+  const maxHeight = Math.max(0, height * IMAGE_TEMPLATE17_TEXT_BOTTOM - top);
+  const empty: Template17TextLayout = {
+    questionSize: Math.round(width * IMAGE_TEMPLATE17_TITLE_SIZE),
+    optionSize: Math.round(width * IMAGE_TEMPLATE17_TITLE_SIZE * IMAGE_TEMPLATE17_OPTION_SCALE),
+    questionLineHeight: 0,
+    optionLineHeight: 0,
+    gap: 0,
+    top,
+    bottom: top,
+    maxWidth,
+    questionLines: [],
+    optionLines: [],
+    belowSensibleMinimum: false,
+  };
+  if (!(width > 0) || !(height > 0)) return empty;
+
+  const { question, options } = splitCopycatQuestionAndOptions(text);
+  const optionSource = options
+    ? options.split('\n').map((line) => line.trim()).filter(Boolean)
+    : [];
+  const sensibleMin = Math.max(1, Math.round(width * IMAGE_TEMPLATE17_TITLE_MIN_SIZE));
+  const maxSize = Math.max(sensibleMin, Math.round(width * IMAGE_TEMPLATE17_TITLE_SIZE));
+
+  let chosen: Template17MeasuredBlock | null = null;
+  let belowSensibleMinimum = false;
+
+  withTemplate17Font(ctx, () => {
+    const fits = (size: number) =>
+      measureTemplate17Block(ctx, maxWidth, question, optionSource, size, fontFamily).height <=
+      maxHeight + 0.25;
+
+    let lo = sensibleMin;
+    let hi = maxSize;
+    let best = sensibleMin;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (fits(mid)) {
+        best = mid;
+        lo = mid + 1;
+      } else {
+        hi = mid - 1;
+      }
+    }
+
+    if (!fits(best)) {
+      belowSensibleMinimum = true;
+      best = sensibleMin;
+      while (best > 1 && !fits(best)) best -= 1;
+    }
+
+    chosen = measureTemplate17Block(ctx, maxWidth, question, optionSource, best, fontFamily);
+  });
+
+  const block = chosen ?? {
+    questionLines: [] as string[],
+    optionLines: [] as string[],
+    questionSize: sensibleMin,
+    optionSize: Math.max(1, Math.round(sensibleMin * IMAGE_TEMPLATE17_OPTION_SCALE)),
+    questionLineHeight: 0,
+    optionLineHeight: 0,
+    gap: 0,
+    height: 0,
+  };
+
+  return {
+    questionSize: block.questionSize,
+    optionSize: block.optionSize,
+    questionLineHeight: block.questionLineHeight,
+    optionLineHeight: block.optionLineHeight,
+    gap: block.gap,
+    top,
+    bottom: top + block.height,
+    maxWidth,
+    questionLines: block.questionLines,
+    optionLines: block.optionLines,
+    belowSensibleMinimum,
+  };
+}
+
+/** Glyph box of a laid-out slide. Uses the same anchors as `paintTemplate17Slide`. */
+export function measureTemplate17Ink(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  layout: Template17TextLayout,
+  fontFamily: string = IMAGE_TEMPLATE17_FONT_STACK
+): { top: number; bottom: number; left: number; right: number } | null {
+  const lines: Array<{ text: string; y: number; size: number; weight: number; tracking: string }> =
+    [];
+  let y = layout.top;
+  for (const line of layout.questionLines) {
+    lines.push({
+      text: line,
+      y,
+      size: layout.questionSize,
+      weight: IMAGE_TEMPLATE17_TITLE_WEIGHT,
+      tracking: IMAGE_TEMPLATE17_TITLE_TRACKING,
+    });
+    y += layout.questionLineHeight;
+  }
+  if (layout.optionLines.length) {
+    y += layout.gap;
+    for (const line of layout.optionLines) {
+      lines.push({
+        text: line,
+        y,
+        size: layout.optionSize,
+        weight: IMAGE_TEMPLATE17_OPTION_WEIGHT,
+        tracking: IMAGE_TEMPLATE17_OPTION_TRACKING,
+      });
+      y += layout.optionLineHeight;
+    }
+  }
+  if (lines.length === 0) return null;
+
+  let top = Number.POSITIVE_INFINITY;
+  let bottom = Number.NEGATIVE_INFINITY;
+  let left = Number.POSITIVE_INFINITY;
+  let right = Number.NEGATIVE_INFINITY;
+  const x = width / 2;
+  withTemplate17Font(ctx, () => {
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    for (const line of lines) {
+      ctx.font = `${line.weight} ${line.size}px ${fontFamily}`;
+      ctx.letterSpacing = line.tracking;
+      const metrics = ctx.measureText(line.text);
+      top = Math.min(top, line.y - metrics.actualBoundingBoxAscent);
+      bottom = Math.max(bottom, line.y + metrics.actualBoundingBoxDescent);
+      left = Math.min(left, x - metrics.actualBoundingBoxLeft);
+      right = Math.max(right, x + metrics.actualBoundingBoxRight);
+    }
+  });
+  return { top, bottom, left, right };
 }
 
 function drawCoverImage(
@@ -92,12 +394,13 @@ function drawBrand(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
-  icon?: CanvasImageSource | null
+  icon?: CanvasImageSource | null,
+  fontFamily: string = IMAGE_TEMPLATE17_FONT_STACK
 ) {
   const seamY = height * IMAGE_TEMPLATE17_BRAND_Y;
   const iconSize = width * IMAGE_TEMPLATE17_ICON_SIZE;
   const brandSize = Math.round(width * IMAGE_TEMPLATE17_BRAND_SIZE);
-  ctx.font = `600 ${brandSize}px ${IMAGE_TEMPLATE17_FONT_STACK}`;
+  ctx.font = `600 ${brandSize}px ${fontFamily}`;
   ctx.letterSpacing = IMAGE_TEMPLATE17_BRAND_TRACKING;
   const labelW = ctx.measureText(IMAGE_TEMPLATE17_BRAND).width;
   const gap = width * IMAGE_TEMPLATE17_BRAND_GAP;
@@ -136,27 +439,35 @@ export function paintTemplate17Slide(
     text: string;
     icon?: CanvasImageSource | null;
     image?: CanvasImageSource | null;
+    fontFamily?: string;
   }
 ): void {
+  const fontFamily = options.fontFamily || template17CanvasFontStack();
   ctx.fillStyle = IMAGE_TEMPLATE17_BG;
   ctx.fillRect(0, 0, width, height);
   drawCoverImage(ctx, width, height, options.image);
   drawFade(ctx, width, height);
-  drawBrand(ctx, width, height, options.icon);
+  drawBrand(ctx, width, height, options.icon, fontFamily);
 
-  const fontSize = Math.round(width * IMAGE_TEMPLATE17_TITLE_SIZE);
+  const layout = layoutTemplate17Text(ctx, width, height, options.text, fontFamily);
   ctx.fillStyle = IMAGE_TEMPLATE17_TEXT;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  ctx.font = `${IMAGE_TEMPLATE17_TITLE_WEIGHT} ${fontSize}px ${IMAGE_TEMPLATE17_FONT_STACK}`;
+  ctx.font = `${IMAGE_TEMPLATE17_TITLE_WEIGHT} ${layout.questionSize}px ${fontFamily}`;
   ctx.letterSpacing = IMAGE_TEMPLATE17_TITLE_TRACKING;
-  const maxW = width * IMAGE_TEMPLATE17_TITLE_WIDTH;
-  const lines = wrapLines(ctx, options.text, maxW);
-  const lineH = fontSize * IMAGE_TEMPLATE17_TITLE_LINE_HEIGHT;
-  let y = height * IMAGE_TEMPLATE17_TITLE_TOP;
-  for (const line of lines) {
+  let y = layout.top;
+  for (const line of layout.questionLines) {
     ctx.fillText(line, width / 2, y);
-    y += lineH;
+    y += layout.questionLineHeight;
+  }
+  if (layout.optionLines.length) {
+    y += layout.gap;
+    ctx.font = `${IMAGE_TEMPLATE17_OPTION_WEIGHT} ${layout.optionSize}px ${fontFamily}`;
+    ctx.letterSpacing = IMAGE_TEMPLATE17_OPTION_TRACKING;
+    for (const line of layout.optionLines) {
+      ctx.fillText(line, width / 2, y);
+      y += layout.optionLineHeight;
+    }
   }
   ctx.letterSpacing = '0px';
 }

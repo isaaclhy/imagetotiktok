@@ -65,8 +65,11 @@ import {
 import {
   IMAGE_TEMPLATE17_COVER_SRC,
   IMAGE_TEMPLATE17_ICON_SRC,
+  IMAGE_TEMPLATE17_OPTION_WEIGHT,
   IMAGE_TEMPLATE17_TITLE_WEIGHT,
   paintTemplate17Slide,
+  template17CanvasFontStack,
+  template17PrimaryFontFamily,
 } from '@/app/lib/image-template-17-split';
 
 const TIKTOK = '"TikTok Sans", system-ui, sans-serif';
@@ -200,9 +203,12 @@ async function paintSlide(
   if (!ctx) throw new Error('Failed to prepare canvas');
 
   if (templateId === 17) {
+    const family = template17PrimaryFontFamily();
+    const fontFamily = template17CanvasFontStack(family);
     try {
-      await document.fonts.load(`${IMAGE_TEMPLATE17_TITLE_WEIGHT} 72px "Inter"`);
-      await document.fonts.load(`600 28px "Inter"`);
+      await document.fonts.load(`${IMAGE_TEMPLATE17_TITLE_WEIGHT} 72px "${family}"`);
+      await document.fonts.load(`${IMAGE_TEMPLATE17_OPTION_WEIGHT} 48px "${family}"`);
+      await document.fonts.load(`600 28px "${family}"`);
     } catch {
       /* fonts may already be ready */
     }
@@ -215,7 +221,7 @@ async function paintSlide(
           : loadImage(IMAGE_TEMPLATE17_COVER_SRC)
       ),
     ]);
-    paintTemplate17Slide(ctx, w, h, { text: slide.text, icon, image });
+    paintTemplate17Slide(ctx, w, h, { text: slide.text, icon, image, fontFamily });
     return canvasBlob(canvas);
   }
 
