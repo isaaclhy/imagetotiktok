@@ -1,51 +1,75 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
-import { Geist_Mono } from "next/font/google";
-import { Inter } from "next/font/google";
-import { Libre_Baskerville } from "next/font/google";
-import { Playfair_Display } from "next/font/google";
-import { Nunito } from "next/font/google";
-import { Open_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const openSans = Open_Sans({
+/**
+ * Self-hosted latin faces. `next/font/google` downloads from fonts.googleapis.com
+ * during `next build`, and a failed fetch aborts the Vercel build
+ * (BUILD_UTILS_SPAWN_1) before compilation finishes. These files are the
+ * variable woff2 files that CSS endpoint serves for the weights below.
+ */
+const openSans = localFont({
+  src: "./fonts/open-sans/open-sans-latin.woff2",
+  weight: "400 700",
+  style: "normal",
+  display: "swap",
   variable: "--font-open-sans",
-  subsets: ["latin"],
-  weight: ["400", "600", "700"],
+  adjustFontFallback: "Arial",
+  declarations: [{ prop: "font-stretch", value: "100%" }],
 });
 
-const nunito = Nunito({
+const nunito = localFont({
+  src: "./fonts/nunito/nunito-latin.woff2",
+  weight: "600 900",
+  style: "normal",
+  display: "swap",
   variable: "--font-nunito",
-  subsets: ["latin"],
-  weight: ["600", "700", "800", "900"],
+  adjustFontFallback: "Arial",
 });
 
-const libreBaskerville = Libre_Baskerville({
+const libreBaskerville = localFont({
+  src: "./fonts/libre-baskerville/libre-baskerville-latin.woff2",
+  weight: "400 700",
+  style: "normal",
+  display: "swap",
   variable: "--font-libre-baskerville",
-  subsets: ["latin"],
-  weight: ["400", "700"],
+  adjustFontFallback: "Times New Roman",
 });
 
-const playfairDisplay = Playfair_Display({
+const playfairDisplay = localFont({
+  src: "./fonts/playfair-display/playfair-display-latin.woff2",
+  weight: "400 700",
+  style: "normal",
+  display: "swap",
   variable: "--font-playfair-display",
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
+  adjustFontFallback: "Times New Roman",
 });
 
-const geistSans = Geist({
+const geistSans = localFont({
+  src: "./fonts/geist/geist-latin.woff2",
+  weight: "100 900",
+  style: "normal",
+  display: "swap",
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  adjustFontFallback: "Arial",
 });
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+  src: "./fonts/geist-mono/geist-mono-latin.woff2",
+  weight: "100 900",
+  style: "normal",
+  display: "swap",
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  adjustFontFallback: "Arial",
 });
 
-const inter = Inter({
+const inter = localFont({
+  src: "./fonts/inter/inter-latin.woff2",
+  weight: "400 800",
+  style: "normal",
+  display: "swap",
   variable: "--font-inter",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  adjustFontFallback: "Arial",
 });
 
 export const metadata: Metadata = {
