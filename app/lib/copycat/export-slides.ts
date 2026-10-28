@@ -116,7 +116,7 @@ export type CopycatExportSlide = {
   illustrationSrc?: string;
   isCta: boolean;
   isCover: boolean;
-  /** Template 17 photo URL. Same path the preview uses; omitted slides use the shared cover. */
+  /** Template 17 photo URL. Same path the preview uses. Covers omit it and use the shared cover. */
   backgroundSrc?: string;
 };
 

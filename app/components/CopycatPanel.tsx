@@ -109,7 +109,7 @@ import {
 import { NotesQuestionsPreview } from '@/app/components/NotesQuestionsPreview';
 import { SplitCoverPreview } from '@/app/components/SplitCoverPreview';
 import {
-  template17BackgroundSrcForSlide,
+  template17BackgroundSrcAt,
   template17TabForQuestions,
 } from '@/app/lib/copycat/template17-background';
 
@@ -1092,9 +1092,7 @@ export function CopycatPanel({
           isCta,
           isCover,
           backgroundSrc:
-            templateId === 17
-              ? template17BackgroundSrcForSlide(index > 0 ? questionSlides[index - 1] : undefined)
-              : undefined,
+            templateId === 17 ? template17BackgroundSrcAt(questionSlides, index) : undefined,
           leftAlign: Boolean(
             templateId === 2 ||
               (index > 0 && questionSlides[index - 1]?.options?.length)
@@ -1236,11 +1234,7 @@ export function CopycatPanel({
         slideCount={slideBodies.length}
         text={slideBodies[selectedTab] ?? ''}
         backgroundSrc={
-          templateId === 17
-            ? template17BackgroundSrcForSlide(
-                selectedTab > 0 ? questionSlides[selectedTab - 1] : undefined
-              )
-            : undefined
+          templateId === 17 ? template17BackgroundSrcAt(questionSlides, selectedTab) : undefined
         }
         leftAlign={Boolean(
           templateId === 2 ||
