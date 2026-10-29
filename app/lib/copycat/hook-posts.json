@@ -1,7 +1,7 @@
 {
   "handle": "hook-posts",
   "platform": "tiktok",
-  "postCount": 25,
+  "postCount": 36,
   "minViews": 0,
   "posts": [
     {
@@ -569,6 +569,350 @@
             "Redo your worst argument",
             "Relive your best memory together"
           ]
+        }
+      ]
+    },
+    {
+      "id": "hook-26",
+      "coverText": "Rage bait questions: did he pass? 😭",
+      "slideText": [
+        {
+          "text": "If I had an identical twin, you'd:",
+          "options": [
+            "Know the difference",
+            "Probably panic",
+            "Ask them out for a date"
+          ]
+        },
+        {
+          "text": "If your celebrity crush wanted you for one night, are you saying no?"
+        },
+        {
+          "text": "If I gained 30kg, would you still find me equally attractive?"
+        },
+        {
+          "text": "If someone offered you $10 million to forget everything about me, would you take it?"
+        },
+        {
+          "text": "If your dream person existed, why are you still choosing me?"
+        }
+      ]
+    },
+    {
+      "id": "hook-27",
+      "coverText": "Cute or cringe? Say it at the same time",
+      "slideText": [
+        {
+          "text": "Wearing your hoodie everywhere.",
+          "options": [
+            "Cute",
+            "Cringe"
+          ]
+        },
+        {
+          "text": "Calling each other \"my baby.\"",
+          "options": [
+            "Cute",
+            "Cringe"
+          ]
+        },
+        {
+          "text": "Putting my initials in your bio.",
+          "options": [
+            "Cute",
+            "Cringe"
+          ]
+        },
+        {
+          "text": "Spoonfeeding each other at a restaurant.",
+          "options": [
+            "Cute",
+            "Cringe"
+          ]
+        },
+        {
+          "text": "Still flirting with each other after years together.",
+          "options": [
+            "Cute",
+            "Cringe"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hook-28",
+      "coverText": "The bare minimum shouldn't feel this rare",
+      "slideText": [
+        {
+          "text": "They carry your bag for you.",
+          "options": [
+            "Bare minimum",
+            "Princess treatment"
+          ]
+        },
+        {
+          "text": "They remember your usual coffee order without asking.",
+          "options": [
+            "Bare minimum",
+            "Princess treatment"
+          ]
+        },
+        {
+          "text": "They walk on the side of the sidewalk closest to the road.",
+          "options": [
+            "Bare minimum",
+            "Princess treatment"
+          ]
+        },
+        {
+          "text": "They give you updates on whatever they're doing.",
+          "options": [
+            "Bare minimum",
+            "I'm spoiled"
+          ]
+        },
+        {
+          "text": "They notice you're cold and give you their jacket without you asking.",
+          "options": [
+            "Bare minimum",
+            "Princess treatment"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hook-29",
+      "coverText": "Read this before your next date night",
+      "slideText": [
+        {
+          "text": "Date night?",
+          "options": [
+            "Staying in",
+            "Going out"
+          ]
+        },
+        {
+          "text": "Would you let me plan our next date night?",
+          "options": [
+            "Yes",
+            "No"
+          ]
+        },
+        {
+          "text": "What should our next date be?"
+        },
+        {
+          "text": "What's one fantasy date night with me that you'd love to actually live out?"
+        },
+        {
+          "text": "What's one thing I could do on date night that would make you forget the actual date?"
+        }
+      ]
+    },
+    {
+      "id": "hook-30",
+      "coverText": "Not all angels are in heaven… one is dating me",
+      "slideText": [
+        {
+          "text": "What makes your heart melt the fastest?",
+          "options": [
+            "A forehead kiss",
+            "A tight hug",
+            "A sincere compliment",
+            "Hearing \"I love you\""
+          ]
+        },
+        {
+          "text": "What's the cutest thing I do without even noticing?",
+          "options": [
+            "My random faces",
+            "My little hand gestures",
+            "My excited voice",
+            "My happy dances"
+          ]
+        },
+        {
+          "text": "What's a compliment you think about giving me when you see me, but don't always say out loud?"
+        },
+        {
+          "text": "What's something about me that you secretly admire but never say out loud?"
+        },
+        {
+          "text": "What do you silently thank me for but rarely say out loud?"
+        }
+      ]
+    },
+    {
+      "id": "hook-31",
+      "coverText": "My reaction to his answers 😐",
+      "slideText": [
+        {
+          "text": "If I disappeared in a grocery store, where would you look first?",
+          "options": [
+            "Snack aisle",
+            "Beauty aisle",
+            "Random clearance sale"
+          ]
+        },
+        {
+          "text": "If I disappeared for 24 hours and came back as a chicken, what would you do?"
+        },
+        {
+          "text": "What's the most cringe thing I've ever said or done?"
+        },
+        {
+          "text": "What's something I'm convinced I'm good at but you disagree?"
+        },
+        {
+          "text": "What's something I do that annoys you, but you'd NEVER say out loud?"
+        }
+      ]
+    },
+    {
+      "id": "hook-32",
+      "coverText": "If we agree on all 5, we're soulmates",
+      "slideText": [
+        {
+          "text": "Who's the crybaby?",
+          "options": [
+            "You",
+            "Me"
+          ]
+        },
+        {
+          "text": "Who would take longer in the bathroom?",
+          "options": [
+            "Me",
+            "You",
+            "Both",
+            "Depends who's getting ready"
+          ]
+        },
+        {
+          "text": "Who sends more romantic messages?",
+          "options": [
+            "You",
+            "Me"
+          ]
+        },
+        {
+          "text": "When money gets tight, who leads?",
+          "options": [
+            "Me",
+            "You",
+            "Team up"
+          ]
+        },
+        {
+          "text": "Who would be the stricter parent?",
+          "options": [
+            "Me",
+            "You",
+            "Depends who's watching",
+            "Neither of us"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hook-33",
+      "coverText": "Raised to never say \"I love you\" out loud",
+      "slideText": [
+        {
+          "text": "What's your favorite way to say \"I love you\" without words?"
+        },
+        {
+          "text": "What's your favorite way I say \"I love you\" without saying it?"
+        },
+        {
+          "text": "Did you ever almost say \"I love you\" to me before you actually said it?"
+        },
+        {
+          "text": "How do you feel about the way we express love to each other?"
+        },
+        {
+          "text": "What's an emotion you often feel but rarely express?"
+        }
+      ]
+    },
+    {
+      "id": "hook-34",
+      "coverText": "What you'd miss if I was gone tomorrow",
+      "slideText": [
+        {
+          "text": "What would you miss first if I disappeared for a week?",
+          "options": [
+            "My texts",
+            "My voice",
+            "My hugs",
+            "My random updates"
+          ]
+        },
+        {
+          "text": "Which of my habits would you secretly miss if I stopped?",
+          "options": [
+            "My texts",
+            "My teasing",
+            "My check-ins",
+            "My random updates"
+          ]
+        },
+        {
+          "text": "What's one annoying thing I do that you'd actually miss if I stopped?"
+        },
+        {
+          "text": "What would you miss about me that nobody else could recreate?"
+        },
+        {
+          "text": "If I were gone tomorrow, what would you regret not telling me today?"
+        }
+      ]
+    },
+    {
+      "id": "hook-35",
+      "coverText": "Point at who's more likely. No lying 👉",
+      "slideText": [
+        {
+          "text": "Who's more likely to fall asleep during a movie?"
+        },
+        {
+          "text": "Who's more likely to plan a surprise date?"
+        },
+        {
+          "text": "Who's more likely to overthink a dry text?"
+        },
+        {
+          "text": "Who's more likely to start an argument over something tiny?"
+        },
+        {
+          "text": "Who's more likely to say \"I love you\" first?"
+        }
+      ]
+    },
+    {
+      "id": "hook-36",
+      "coverText": "The orange peel test, but make it questions 🍊",
+      "slideText": [
+        {
+          "text": "When you've had a long day, what's the sweetest thing I could do for you?"
+        },
+        {
+          "text": "What's one thing I understood about you without you asking?",
+          "options": [
+            "Your mood",
+            "Your fears",
+            "Your needs",
+            "Your silence"
+          ]
+        },
+        {
+          "text": "Is there anything I do for you that makes you happy every time I do it?"
+        },
+        {
+          "text": "What do you wish I noticed about you without you asking?"
+        },
+        {
+          "text": "What do I do for you that no one else ever has?"
         }
       ]
     }
