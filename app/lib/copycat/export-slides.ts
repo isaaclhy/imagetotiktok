@@ -71,6 +71,10 @@ import {
   template17CanvasFontStack,
   template17PrimaryFontFamily,
 } from '@/app/lib/image-template-17-split';
+import {
+  IMAGE_TEMPLATE18_FONT_WEIGHT,
+  paintTemplate18Slide,
+} from '@/app/lib/image-template-18-pastel';
 
 const TIKTOK = '"TikTok Sans", system-ui, sans-serif';
 const COMIC =
@@ -108,7 +112,7 @@ function drawCopycatAppMark(
   ctx.fillText(COPYCAT_APP_NAME, frameWidth / 2, markY);
 }
 
-export type CopycatExportTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17;
+export type CopycatExportTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18;
 
 export type CopycatExportSlide = {
   text: string;
@@ -222,6 +226,26 @@ async function paintSlide(
       ),
     ]);
     paintTemplate17Slide(ctx, w, h, { text: slide.text, icon, image, fontFamily });
+    return canvasBlob(canvas);
+  }
+
+  if (templateId === 18) {
+    try {
+      await document.fonts.load(
+        `${IMAGE_TEMPLATE18_FONT_WEIGHT} 72px "Libre Baskerville"`
+      );
+      await document.fonts.load('700 36px "TikTok Sans"');
+    } catch {
+      /* fonts may already be ready */
+    }
+    const promo = slide.isCta ? await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC) : null;
+    paintTemplate18Slide(ctx, w, h, {
+      text: slide.text,
+      tabIndex,
+      slideCount,
+      isCta: slide.isCta,
+      promo,
+    });
     return canvasBlob(canvas);
   }
 
