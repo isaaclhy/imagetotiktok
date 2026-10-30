@@ -29,16 +29,17 @@ export const IMAGE_TEMPLATE18_FOOTER = IMAGE_TEMPLATE2_APP_FOOTER;
 /** Full-bleed frame behind the card. */
 export const IMAGE_TEMPLATE18_CANVAS_BG = '#000000';
 /**
- * Corner of the card, before the outward bulge.
- * Edge midpoints push past this toward the canvas so the sides bow out.
+ * Black gap at the middle of each side, as a fraction of frame width.
+ * The same pixel thickness is used on the top and bottom.
  */
-export const IMAGE_TEMPLATE18_CARD_INSET_X = 0.052;
-export const IMAGE_TEMPLATE18_CARD_INSET_Y = 0.04;
-/** Cubic control offset. The visible bow is about three quarters of this. */
-export const IMAGE_TEMPLATE18_CARD_BULGE_X = 0.018;
-export const IMAGE_TEMPLATE18_CARD_BULGE_Y = 0.013;
-/** Corner radius as a fraction of the frame width. */
-export const IMAGE_TEMPLATE18_CARD_RADIUS = 0.062;
+export const IMAGE_TEMPLATE18_CARD_MARGIN = 0.025;
+/**
+ * How far the middle of each side bows outward from the straight edge,
+ * as a fraction of frame width. About 1% — a slight convex bow, not a wave.
+ */
+export const IMAGE_TEMPLATE18_CARD_BULGE = 0.01;
+/** Corner radius on a 1080-wide frame. Barely rounded; scales with width. */
+export const IMAGE_TEMPLATE18_CARD_RADIUS_AT_1080 = 10;
 
 export const IMAGE_TEMPLATE18_PROGRESS_H = 0.0065;
 export const IMAGE_TEMPLATE18_PROGRESS_GAP = 0.012;
@@ -96,20 +97,24 @@ export type Template18Card = {
   bulgeY: number;
 };
 
-/** Axis-aligned corner box. Edge midpoints bulge outward from these sides. */
+/**
+ * Corner box of an almost-rectangular card.
+ * Each side's midpoint bows outward by `bulge` (1% of width), so the black
+ * margin is thinnest there and only a little wider at the corners.
+ */
 export function template18Card(width: number, height: number): Template18Card {
-  const left = width * IMAGE_TEMPLATE18_CARD_INSET_X;
-  const right = width - left;
-  const top = height * IMAGE_TEMPLATE18_CARD_INSET_Y;
-  const bottom = height - top;
+  const margin = width * IMAGE_TEMPLATE18_CARD_MARGIN;
+  const bulge = width * IMAGE_TEMPLATE18_CARD_BULGE;
+  const inset = margin + bulge;
+  const radius = Math.min((IMAGE_TEMPLATE18_CARD_RADIUS_AT_1080 / 1080) * width, margin);
   return {
-    left,
-    right,
-    top,
-    bottom,
-    radius: Math.min(width * IMAGE_TEMPLATE18_CARD_RADIUS, (right - left) * 0.22),
-    bulgeX: width * IMAGE_TEMPLATE18_CARD_BULGE_X,
-    bulgeY: height * IMAGE_TEMPLATE18_CARD_BULGE_Y,
+    left: inset,
+    right: width - inset,
+    top: inset,
+    bottom: height - inset,
+    radius,
+    bulgeX: bulge,
+    bulgeY: bulge,
   };
 }
 
@@ -403,10 +408,10 @@ export function drawTemplate18Vignette(
   const gradient = ctx.createRadialGradient(cx, cy, outer * 0.05, cx, cy, outer);
   gradient.addColorStop(0, 'rgba(0,0,0,0)');
   gradient.addColorStop(0.36, 'rgba(0,0,0,0.02)');
-  gradient.addColorStop(0.55, 'rgba(0,0,0,0.1)');
-  gradient.addColorStop(0.72, 'rgba(0,0,0,0.22)');
-  gradient.addColorStop(0.86, 'rgba(0,0,0,0.36)');
-  gradient.addColorStop(1, 'rgba(0,0,0,0.52)');
+  gradient.addColorStop(0.55, 'rgba(0,0,0,0.08)');
+  gradient.addColorStop(0.72, 'rgba(0,0,0,0.18)');
+  gradient.addColorStop(0.86, 'rgba(0,0,0,0.32)');
+  gradient.addColorStop(1, 'rgba(0,0,0,0.46)');
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 }
