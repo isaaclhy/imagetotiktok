@@ -7260,10 +7260,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             backgroundColor: isColorCardImageTemplate
                               ? IMAGE_TEMPLATE14_FRAME_BG
                               : isPastelSlideshowImageTemplate
-                              ? template18Background(
-                                  selectedImageBrowserTab,
-                                  selectedImageBrowserTab === IMAGE_TEMPLATE18_CTA_TAB
-                                )
+                              ? '#000000'
                               : isNotesQuestionsImageTemplate
                               ? IMAGE_TEMPLATE16_BG
                               : isMaroonLockscreenImageTemplate

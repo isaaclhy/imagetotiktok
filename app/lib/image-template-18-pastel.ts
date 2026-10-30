@@ -26,19 +26,26 @@ export const IMAGE_TEMPLATE18_FONT_WEIGHT = 400;
 export const IMAGE_TEMPLATE18_LINE_HEIGHT = 1.28;
 export const IMAGE_TEMPLATE18_FOOTER = IMAGE_TEMPLATE2_APP_FOOTER;
 
-/** Soft dark edge, strongest in the corners, over a flat pastel fill. */
-export const IMAGE_TEMPLATE18_VIGNETTE =
-  'radial-gradient(ellipse at center, rgba(40,18,14,0) 28%, rgba(32,12,10,0.08) 52%, rgba(20,8,8,0.3) 76%, rgba(12,4,4,0.58) 100%)';
+/** Full-bleed frame behind the card. */
+export const IMAGE_TEMPLATE18_CANVAS_BG = '#000000';
+/**
+ * Corner of the card, before the outward bulge.
+ * Edge midpoints push past this toward the canvas so the sides bow out.
+ */
+export const IMAGE_TEMPLATE18_CARD_INSET_X = 0.052;
+export const IMAGE_TEMPLATE18_CARD_INSET_Y = 0.04;
+/** Cubic control offset. The visible bow is about three quarters of this. */
+export const IMAGE_TEMPLATE18_CARD_BULGE_X = 0.018;
+export const IMAGE_TEMPLATE18_CARD_BULGE_Y = 0.013;
+/** Corner radius as a fraction of the frame width. */
+export const IMAGE_TEMPLATE18_CARD_RADIUS = 0.062;
 
-export const IMAGE_TEMPLATE18_PROGRESS_Y = 0.055;
 export const IMAGE_TEMPLATE18_PROGRESS_H = 0.0065;
-export const IMAGE_TEMPLATE18_PROGRESS_INSET = 0.08;
 export const IMAGE_TEMPLATE18_PROGRESS_GAP = 0.012;
 /** The active segment is only partly filled, like a story bar mid-slide. */
 export const IMAGE_TEMPLATE18_PROGRESS_ACTIVE = 0.62;
 export const IMAGE_TEMPLATE18_PROGRESS_TRACK = 'rgba(55, 42, 36, 0.18)';
 
-export const IMAGE_TEMPLATE18_FOOTER_Y = 0.915;
 export const IMAGE_TEMPLATE18_FOOTER_SIZE = 0.026;
 
 /**
@@ -79,6 +86,50 @@ export function template18Accent(tabIndex: number, isCta: boolean): string {
   return template18SlideStyle(tabIndex).accent;
 }
 
+export type Template18Card = {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+  radius: number;
+  bulgeX: number;
+  bulgeY: number;
+};
+
+/** Axis-aligned corner box. Edge midpoints bulge outward from these sides. */
+export function template18Card(width: number, height: number): Template18Card {
+  const left = width * IMAGE_TEMPLATE18_CARD_INSET_X;
+  const right = width - left;
+  const top = height * IMAGE_TEMPLATE18_CARD_INSET_Y;
+  const bottom = height - top;
+  return {
+    left,
+    right,
+    top,
+    bottom,
+    radius: Math.min(width * IMAGE_TEMPLATE18_CARD_RADIUS, (right - left) * 0.22),
+    bulgeX: width * IMAGE_TEMPLATE18_CARD_BULGE_X,
+    bulgeY: height * IMAGE_TEMPLATE18_CARD_BULGE_Y,
+  };
+}
+
+/** Promo geometry in full-frame coordinates, sized to the card so it stays on the pastel. */
+export function template18PromoLayout(
+  width: number,
+  height: number
+): { x: number; y: number; width: number; height: number } {
+  const card = template18Card(width, height);
+  const innerW = card.right - card.left;
+  const innerH = card.bottom - card.top;
+  const layout = imageTemplate2Q5PromoLayout(innerW, innerH, 0);
+  return {
+    x: card.left + layout.x,
+    y: card.top + layout.y,
+    width: layout.width,
+    height: layout.height,
+  };
+}
+
 export type Template18Kind = 'cover' | 'question' | 'cta';
 
 export function template18Kind(tabIndex: number, isCta: boolean): Template18Kind {
@@ -100,31 +151,34 @@ function template18TextBand(
   height: number,
   kind: Template18Kind
 ): Template18Band {
-  const maxWidth = width * 0.76;
+  const card = template18Card(width, height);
+  const maxWidth = (card.right - card.left) * 0.84;
+  const belowBar = card.top + height * 0.055;
+  const aboveFooter = card.bottom - height * 0.07;
   if (kind === 'cover') {
     return {
-      top: height * 0.16,
-      bottom: height * 0.84,
+      top: card.top + height * 0.07,
+      bottom: aboveFooter,
       maxWidth,
       preferred: 0.072,
       min: 0.034,
     };
   }
   if (kind === 'cta') {
-    const promo = imageTemplate2Q5PromoLayout(width, height, 0);
+    const promo = template18PromoLayout(width, height);
     const labelSize = height * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO;
     const labelGap = height * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO;
     return {
-      top: height * 0.12,
-      bottom: promo.y - labelGap - labelSize - height * 0.028,
-      maxWidth: width * 0.78,
+      top: belowBar,
+      bottom: promo.y - labelGap - labelSize - height * 0.02,
+      maxWidth,
       preferred: 0.05,
       min: 0.028,
     };
   }
   return {
-    top: height * 0.14,
-    bottom: height * 0.82,
+    top: belowBar,
+    bottom: aboveFooter,
     maxWidth,
     preferred: 0.056,
     min: 0.03,
@@ -264,21 +318,95 @@ export function layoutTemplate18Text(
   };
 }
 
+/**
+ * Rounded card whose sides bow outward.
+ * Each edge uses sin² so the tangent is flat where it meets the corner arc.
+ */
+export function traceTemplate18Card(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number
+): void {
+  const { left, right, top, bottom, radius, bulgeX, bulgeY } = template18Card(width, height);
+  const r = radius;
+  const edgeSteps = 48;
+  const cornerSteps = 20;
+  const bow = (t: number) => Math.sin(Math.PI * t) ** 2;
+
+  const points: Array<[number, number]> = [];
+  const push = (x: number, y: number) => {
+    const last = points[points.length - 1];
+    if (last && Math.abs(last[0] - x) < 0.01 && Math.abs(last[1] - y) < 0.01) return;
+    points.push([x, y]);
+  };
+
+  for (let i = 0; i <= edgeSteps; i++) {
+    const t = i / edgeSteps;
+    const x = left + r + t * (right - left - 2 * r);
+    push(x, top - bow(t) * bulgeY);
+  }
+  for (let i = 1; i <= cornerSteps; i++) {
+    const a = -Math.PI / 2 + (Math.PI / 2) * (i / cornerSteps);
+    push(right - r + Math.cos(a) * r, top + r + Math.sin(a) * r);
+  }
+  for (let i = 1; i <= edgeSteps; i++) {
+    const t = i / edgeSteps;
+    const y = top + r + t * (bottom - top - 2 * r);
+    push(right + bow(t) * bulgeX, y);
+  }
+  for (let i = 1; i <= cornerSteps; i++) {
+    const a = 0 + (Math.PI / 2) * (i / cornerSteps);
+    push(right - r + Math.cos(a) * r, bottom - r + Math.sin(a) * r);
+  }
+  for (let i = 1; i <= edgeSteps; i++) {
+    const t = i / edgeSteps;
+    const x = right - r - t * (right - left - 2 * r);
+    push(x, bottom + bow(t) * bulgeY);
+  }
+  for (let i = 1; i <= cornerSteps; i++) {
+    const a = Math.PI / 2 + (Math.PI / 2) * (i / cornerSteps);
+    push(left + r + Math.cos(a) * r, bottom - r + Math.sin(a) * r);
+  }
+  for (let i = 1; i <= edgeSteps; i++) {
+    const t = i / edgeSteps;
+    const y = bottom - r - t * (bottom - top - 2 * r);
+    push(left - bow(t) * bulgeX, y);
+  }
+  for (let i = 1; i <= cornerSteps; i++) {
+    const a = Math.PI + (Math.PI / 2) * (i / cornerSteps);
+    push(left + r + Math.cos(a) * r, top + r + Math.sin(a) * r);
+  }
+
+  const first = points[0];
+  if (!first) return;
+  ctx.moveTo(first[0], first[1]);
+  for (let i = 1; i < points.length; i++) {
+    const point = points[i]!;
+    ctx.lineTo(point[0], point[1]);
+  }
+  ctx.closePath();
+}
+
+/**
+ * Radial darkening clipped by the caller.
+ * Corners of the card land near the outer stop (~45–50% darker than the centre).
+ */
 export function drawTemplate18Vignette(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number
 ): void {
+  const card = template18Card(width, height);
   const cx = width / 2;
   const cy = height / 2;
-  const outer = Math.hypot(width, height) * 0.56;
-  const inner = Math.min(width, height) * 0.34;
-  const gradient = ctx.createRadialGradient(cx, cy, inner, cx, cy, outer);
-  gradient.addColorStop(0, 'rgba(40,18,14,0)');
-  gradient.addColorStop(0.3, 'rgba(32,12,10,0.04)');
-  gradient.addColorStop(0.62, 'rgba(24,8,8,0.2)');
-  gradient.addColorStop(0.84, 'rgba(16,6,6,0.4)');
-  gradient.addColorStop(1, 'rgba(10,4,4,0.58)');
+  const outer = Math.hypot(cx - card.left, cy - card.top);
+  const gradient = ctx.createRadialGradient(cx, cy, outer * 0.05, cx, cy, outer);
+  gradient.addColorStop(0, 'rgba(0,0,0,0)');
+  gradient.addColorStop(0.36, 'rgba(0,0,0,0.02)');
+  gradient.addColorStop(0.55, 'rgba(0,0,0,0.1)');
+  gradient.addColorStop(0.72, 'rgba(0,0,0,0.22)');
+  gradient.addColorStop(0.86, 'rgba(0,0,0,0.36)');
+  gradient.addColorStop(1, 'rgba(0,0,0,0.52)');
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 }
@@ -292,11 +420,12 @@ export function drawTemplate18Progress(
   accent: string
 ): void {
   if (questionCount <= 0 || questionIndex <= 0) return;
-  const inset = width * IMAGE_TEMPLATE18_PROGRESS_INSET;
+  const card = template18Card(width, height);
+  const inset = card.left + width * 0.06;
   const gap = width * IMAGE_TEMPLATE18_PROGRESS_GAP;
   const barH = Math.max(3, Math.round(height * IMAGE_TEMPLATE18_PROGRESS_H));
-  const y = height * IMAGE_TEMPLATE18_PROGRESS_Y;
-  const totalW = width - inset * 2;
+  const y = card.top + height * 0.026;
+  const totalW = card.right - card.left - width * 0.12;
   const segW = (totalW - gap * (questionCount - 1)) / questionCount;
   const radius = barH / 2;
   for (let i = 0; i < questionCount; i++) {
@@ -338,6 +467,13 @@ export function paintTemplate18Slide(
   const fontFamily = options.fontFamily || IMAGE_TEMPLATE18_FONT_STACK;
   const questionCount = Math.max(0, slideCount - 1);
 
+  ctx.fillStyle = IMAGE_TEMPLATE18_CANVAS_BG;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.save();
+  ctx.beginPath();
+  traceTemplate18Card(ctx, width, height);
+  ctx.clip();
   ctx.fillStyle = template18Background(options.tabIndex, isCta);
   ctx.fillRect(0, 0, width, height);
   drawTemplate18Vignette(ctx, width, height);
@@ -367,10 +503,12 @@ export function paintTemplate18Slide(
     }
   }
 
+  const card = template18Card(width, height);
+
   if (kind === 'cta' && options.promo) {
     const labelSize = Math.round(height * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO);
     const labelGap = height * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO;
-    const promo = imageTemplate2Q5PromoLayout(width, height, 0);
+    const promo = template18PromoLayout(width, height);
     ctx.drawImage(options.promo, promo.x, promo.y, promo.width, promo.height);
     ctx.letterSpacing = '0px';
     ctx.font = `700 ${labelSize}px ${IMAGE_TEMPLATE18_SANS_STACK}`;
@@ -378,6 +516,7 @@ export function paintTemplate18Slide(
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
     ctx.fillText(IMAGE_TEMPLATE2_Q5_PROMO_LABEL, width / 2, promo.y - labelGap);
+    ctx.restore();
     return;
   }
 
@@ -386,5 +525,6 @@ export function paintTemplate18Slide(
   ctx.font = `700 ${Math.round(width * IMAGE_TEMPLATE18_FOOTER_SIZE)}px ${IMAGE_TEMPLATE18_SANS_STACK}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(IMAGE_TEMPLATE18_FOOTER, width / 2, height * IMAGE_TEMPLATE18_FOOTER_Y);
+  ctx.fillText(IMAGE_TEMPLATE18_FOOTER, width / 2, card.bottom - height * 0.042);
+  ctx.restore();
 }

@@ -289,7 +289,7 @@ function CopycatSlidePreview({
 
   if (templateId === 18) {
     return (
-      <div className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4">
+      <div className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4 bg-black">
         <PastelSlideshowPreview
           text={text}
           tabIndex={tabIndex}
