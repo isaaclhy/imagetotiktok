@@ -1,8 +1,8 @@
 {
   "handle": "trydeepen",
   "platform": "tiktok",
-  "minViews": 100000,
-  "postCount": 18,
+  "minViews": 50000,
+  "postCount": 26,
   "creditsUsed": 3,
   "creditsRemaining": 95,
   "posts": [
@@ -522,6 +522,244 @@
             "Why you love me",
             "An inside joke"
           ]
+        }
+      ]
+    },
+    {
+      "id": "7701735943069388053",
+      "views": 59000,
+      "likes": 2930,
+      "coverText": "Uncomfortable but healthy questions to ask your man",
+      "slideText": [
+        {
+          "text": "If someone told you I wasn't the right person for you, what would you say to defend us?"
+        },
+        {
+          "text": "What's one small thing I do that means so much more to you than I realize?"
+        },
+        {
+          "text": "What's a secret about yourself you've never shared with anyone but wish you could tell me?"
+        },
+        {
+          "text": "Do you think I see you for who you really are, or just who I want you to be?"
+        }
+      ]
+    },
+    {
+      "id": "7699096825726340373",
+      "views": 135000,
+      "likes": 2998,
+      "coverText": "How jealous is your boyfriend, really?",
+      "slideText": [
+        {
+          "text": "A guy buys me a drink at the bar. What do you do?",
+          "options": [
+            "Laugh, I trust you",
+            "Walk over and say hi",
+            "Drink it yourself",
+            "\"We're leaving.\""
+          ]
+        },
+        {
+          "text": "My ex likes my photo at 2am. What's your move?",
+          "options": [
+            "Ignore it",
+            "Like his photo back",
+            "Ask me about it, calmly",
+            "Not calmly"
+          ]
+        },
+        {
+          "text": "I say a coworker is \"really funny.\" What do you hear?",
+          "options": [
+            "Nothing, cool",
+            "\"How funny\"",
+            "\"What's his name?\"",
+            "I already found his Instagram"
+          ]
+        },
+        {
+          "text": "Be honest, how jealous do you get over me?",
+          "options": [
+            "Never",
+            "A little, it's cute",
+            "More than I show",
+            "You don't want to know"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7697326110203333895",
+      "views": 55800,
+      "likes": 1985,
+      "coverText": "5 weird questions to ask your boyfriend",
+      "slideText": [
+        {
+          "text": "What do you think I'd complain about the most as an old lady?"
+        },
+        {
+          "text": "What's the littlest thing you think I'd actually cry over?"
+        },
+        {
+          "text": "What's the weirdest thing I do without realizing it?"
+        },
+        {
+          "text": "If I started a fight with a stranger, what do you think it would be over?"
+        },
+        {
+          "text": "Which version of me scares you the most: tired me, hungry me, or bored me?"
+        }
+      ]
+    },
+    {
+      "id": "7695464922586565908",
+      "views": 78400,
+      "likes": 3018,
+      "coverText": "7 questions for couples to talk all night long",
+      "slideText": [
+        {
+          "text": "What's something you'd miss about me if I suddenly disappeared from your life tomorrow?"
+        },
+        {
+          "text": "If I let you go through my messages for one minute, where would you look first?"
+        },
+        {
+          "text": "What's one promise you know you couldn't keep if I asked you to make it?"
+        },
+        {
+          "text": "If you had to pick one memory of us to live in, but you lost all the others, which would it be?"
+        },
+        {
+          "text": "Is there one mistake you secretly think I'll never forgive you for, even if I said it was okay?"
+        },
+        {
+          "text": "Do you ever wish I was just a little more like someone else?"
+        },
+        {
+          "text": "If I suddenly stopped trying, what's the first thing you'd notice missing?"
+        }
+      ]
+    },
+    {
+      "id": "7694873226115173633",
+      "views": 62300,
+      "likes": 2043,
+      "coverText": "5 extra fun questions",
+      "slideText": [
+        {
+          "text": "What am I better at than anyone else you've met?",
+          "options": [
+            "Listening",
+            "Jokes",
+            "Planning",
+            "Vibes"
+          ]
+        },
+        {
+          "text": "If you could ban me from doing one thing, what would it be?",
+          "options": [
+            "Late-night scrolling",
+            "Overthinking",
+            "Interrupting",
+            "Snoozing alarms"
+          ]
+        },
+        {
+          "text": "What is the most \"me\" moment you have ever seen?",
+          "options": [
+            "Laughing at my own joke",
+            "Fixing everyone's plan",
+            "Group therapist mode",
+            "Making a playlist"
+          ]
+        },
+        {
+          "text": "What is one habit of mine you secretly find funny?",
+          "options": [
+            "Repeating myself",
+            "Dramatic sighs",
+            "Random dancing",
+            "Talking to myself"
+          ]
+        },
+        {
+          "text": "What kind of mood do I bring into a room first?",
+          "options": [
+            "Calm energy",
+            "Chaos",
+            "Comfort",
+            "Fun"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7693786704490024244",
+      "views": 55200,
+      "likes": 2003,
+      "coverText": "Only ask your partner these questions if you think you're actually in love",
+      "slideText": [
+        {
+          "text": "Would you choose me again if you knew everything you know now?"
+        },
+        {
+          "text": "What's something you've learned about love from being with me?"
+        },
+        {
+          "text": "What moment of ours would you want to relive?"
+        },
+        {
+          "text": "What do I give you that you didn't know you needed?"
+        },
+        {
+          "text": "Who's the first person you told about me?"
+        }
+      ]
+    },
+    {
+      "id": "7684725436005272839",
+      "views": 89200,
+      "likes": 3407,
+      "coverText": "5 cute questions to ask your partner",
+      "slideText": [
+        {
+          "text": "What's one of the first moments with me that made you think, \"This could be something special\"?"
+        },
+        {
+          "text": "Is there a little routine or habit we have that you hope never changes?"
+        },
+        {
+          "text": "What's something I could surprise you with that you'd really enjoy?"
+        },
+        {
+          "text": "What's something you can't wait to experience together in the future?"
+        },
+        {
+          "text": "What do you think has been one of our most important moments together so far?"
+        }
+      ]
+    },
+    {
+      "id": "7681620035202485511",
+      "views": 53600,
+      "likes": 1513,
+      "coverText": "5 funny questions for late-night laughs",
+      "slideText": [
+        {
+          "text": "If I was cloned and there were two of me, would that be your paradise or your nightmare?"
+        },
+        {
+          "text": "What is the absolute dumbest argument we've ever had that we still remember?"
+        },
+        {
+          "text": "If you had to rate my driving skills on a scale of 1 to 10 without lying, what would it be?"
+        },
+        {
+          "text": "What's a weird food combination I eat that makes you question my choices?"
+        },
+        {
+          "text": "If our lives were a comedy show, what would the title of the current season be?"
         }
       ]
     }
