@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   copycatPostSlideBodiesClean,
   filterCopycatPostsByMinViews,
@@ -210,6 +210,37 @@ function shuffleCrypto<T>(items: readonly T[]): T[] {
     arr[j] = tmp;
   }
   return arr;
+}
+
+type ScrollHold = {
+  windowX: number;
+  windowY: number;
+  anchors: { el: HTMLElement; top: number; left: number }[];
+};
+
+/** Scrollable ancestors of the control the user just tapped, plus the window. */
+function captureScrollHold(start: HTMLElement): ScrollHold {
+  const anchors: ScrollHold['anchors'] = [];
+  let node: HTMLElement | null = start;
+  while (node) {
+    const { overflowY, overflowX } = getComputedStyle(node);
+    const scrollsY = overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay';
+    const scrollsX = overflowX === 'auto' || overflowX === 'scroll' || overflowX === 'overlay';
+    if (scrollsY || scrollsX) {
+      anchors.push({ el: node, top: node.scrollTop, left: node.scrollLeft });
+    }
+    node = node.parentElement;
+  }
+  return { windowX: window.scrollX, windowY: window.scrollY, anchors };
+}
+
+function restoreScrollHold(hold: ScrollHold) {
+  window.scrollTo(hold.windowX, hold.windowY);
+  for (const anchor of hold.anchors) {
+    if (!anchor.el.isConnected) continue;
+    anchor.el.scrollTop = anchor.top;
+    anchor.el.scrollLeft = anchor.left;
+  }
 }
 
 /** Draw next id from a without-replacement bag; reshuffle when empty (never repeats last if possible). */
@@ -942,7 +973,6 @@ export function CopycatPanel({
   const postIds = useMemo(() => posts.map((post) => post.id), [posts]);
   const postSourceKey = useHookPosts ? 'hook-posts' : competitorId;
 
-  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState(0);
   const [template14Color, setTemplate14Color] = useState(() => pickTemplate14Color());
   const [template18Style, setTemplate18Style] = useState<Template18StyleId>(
@@ -965,6 +995,50 @@ export function CopycatPanel({
   const [isDownloading, setIsDownloading] = useState(false);
   const postBagRef = useRef<string[]>([]);
   const lastPostIdRef = useRef<string | null>(null);
+  const pendingScrollRef = useRef<ScrollHold | null>(null);
+  const postEpoch = `${templateId}:${postSourceKey}`;
+  // Null until the first client draw so SSR and hydration both render the placeholder.
+  const [selection, setSelection] = useState<{
+    epoch: string;
+    postId: string | null;
+    bag: string[];
+  } | null>(null);
+  // Keeps a single crypto draw if React restarts this render after setSelection.
+  const immediateDrawRef = useRef<{ epoch: string; postId: string; bag: string[] } | null>(null);
+
+  let selectedPostId = selection && selection.epoch === postEpoch ? selection.postId : null;
+  let selectedBag = selection && selection.epoch === postEpoch ? selection.bag : [];
+
+  // Source/template switches used to commit one frame of "Picking a random post…"
+  // before the effect drew the next id. That shorter tree clamps scrollTop, and
+  // WebKit does not unclamp when the preview returns — so the pane jumps upward.
+  // Draw during render instead, and feed that id into this pass so the placeholder
+  // never paints. The initial mount stays in an effect (selection === null).
+  if (selection && selection.epoch !== postEpoch) {
+    if (postIds.length === 0) {
+      selectedPostId = null;
+      selectedBag = [];
+      immediateDrawRef.current = null;
+      setSelection({ epoch: postEpoch, postId: null, bag: [] });
+    } else {
+      let drawn = immediateDrawRef.current;
+      if (!drawn || drawn.epoch !== postEpoch) {
+        const next = drawFromBag([], postIds, null);
+        drawn = { epoch: postEpoch, postId: next.next, bag: next.bag };
+        immediateDrawRef.current = drawn;
+      }
+      selectedPostId = drawn.postId;
+      selectedBag = drawn.bag;
+      setSelection({ epoch: postEpoch, postId: drawn.postId, bag: drawn.bag });
+    }
+    setSelectedTab(0);
+    setTemplate14Color((current) => pickTemplate14Color(current));
+    setTemplate15FrameBg((current) => pickTemplate15FrameColor(current));
+    setTemplate18PastelBody(shuffleTemplate18PastelBody());
+  }
+
+  postBagRef.current = selectedBag;
+  lastPostIdRef.current = selectedPostId;
 
   const selectedPost = useMemo(
     () => posts.find((post) => post.id === selectedPostId) ?? null,
@@ -998,29 +1072,50 @@ export function CopycatPanel({
 
   const reshufflePost = useCallback(() => {
     if (postIds.length === 0) {
-      setSelectedPostId(null);
+      postBagRef.current = [];
+      lastPostIdRef.current = null;
+      setSelection({ epoch: postEpoch, postId: null, bag: [] });
       return;
     }
     const drawn = drawFromBag(postBagRef.current, postIds, lastPostIdRef.current);
     postBagRef.current = drawn.bag;
     lastPostIdRef.current = drawn.next;
-    setSelectedPostId(drawn.next);
+    immediateDrawRef.current = { epoch: postEpoch, postId: drawn.next, bag: drawn.bag };
+    setSelection({ epoch: postEpoch, postId: drawn.next, bag: drawn.bag });
     setSelectedTab(0);
     setTemplate14Color((current) => pickTemplate14Color(current));
     setTemplate15FrameBg((current) => pickTemplate15FrameColor(current));
     setTemplate18PastelBody(shuffleTemplate18PastelBody());
-  }, [postIds]);
+  }, [postIds, postEpoch]);
 
-  // Fresh crypto draw whenever the template or post source changes (and once on mount).
+  // First draw only. Later source/template changes are applied during render above
+  // so the preview never unmounts between posts.
   useEffect(() => {
+    if (selection && selection.epoch === postEpoch) return;
     if (postIds.length === 0) {
-      setSelectedPostId(null);
+      postBagRef.current = [];
+      lastPostIdRef.current = null;
+      setSelection({ epoch: postEpoch, postId: null, bag: [] });
       return;
     }
-    postBagRef.current = [];
-    lastPostIdRef.current = null;
-    reshufflePost();
-  }, [templateId, postSourceKey, reshufflePost]);
+    const drawn = drawFromBag([], postIds, null);
+    postBagRef.current = drawn.bag;
+    lastPostIdRef.current = drawn.next;
+    immediateDrawRef.current = { epoch: postEpoch, postId: drawn.next, bag: drawn.bag };
+    setSelection({ epoch: postEpoch, postId: drawn.next, bag: drawn.bag });
+    setSelectedTab(0);
+    setTemplate14Color((current) => pickTemplate14Color(current));
+    setTemplate15FrameBg((current) => pickTemplate15FrameColor(current));
+    setTemplate18PastelBody(shuffleTemplate18PastelBody());
+  }, [postEpoch, postIds, selection]);
+
+  // Re-apply the scroll offset from the last "New random post" tap before paint,
+  // including when the new post has a different slide count.
+  useLayoutEffect(() => {
+    const hold = pendingScrollRef.current;
+    if (!hold) return;
+    restoreScrollHold(hold);
+  }, [selectedPostId, slideBodies.length]);
 
   useEffect(() => {
     if (selectedTab >= slideBodies.length) setSelectedTab(0);
@@ -1225,9 +1320,23 @@ export function CopycatPanel({
         <div className="flex shrink-0 items-center gap-1.5">
           <button
             type="button"
-            onClick={() => {
+            onClick={(event) => {
+              const hold = captureScrollHold(event.currentTarget);
+              pendingScrollRef.current = hold;
               if (useHookPosts || !onNewRandomPost) reshufflePost();
               else onNewRandomPost();
+              // Layout effect restores before paint. These frames cover WebKit
+              // clamping scrollTop when the next post is shorter, then leaving
+              // it there after the following post is taller again.
+              requestAnimationFrame(() => {
+                if (pendingScrollRef.current !== hold) return;
+                restoreScrollHold(hold);
+                requestAnimationFrame(() => {
+                  if (pendingScrollRef.current !== hold) return;
+                  restoreScrollHold(hold);
+                  pendingScrollRef.current = null;
+                });
+              });
             }}
             disabled={isDownloading}
             className="rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-1.5 text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:border-zinc-400 dark:hover:border-zinc-500 disabled:opacity-50"
