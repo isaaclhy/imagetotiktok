@@ -82,7 +82,7 @@ export function OceanSlideshowPreview({
   }, [text, isCover, isCta]);
 
   return (
-    <div className="absolute inset-0" style={{ backgroundColor: '#0A4F78' }}>
+    <div className="absolute inset-0" style={{ backgroundColor: '#064B74' }}>
       <canvas
         ref={canvasRef}
         className="block h-full w-full"

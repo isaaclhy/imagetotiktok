@@ -30,9 +30,9 @@ const QUESTION = [
 ].join('\n');
 
 const REFS = {
-  cover: '/home/ubuntu/.cursor/projects/workspace/uploads/ref-cover_cca8.jpg',
-  question: '/home/ubuntu/.cursor/projects/workspace/uploads/ref-q1_8ef0.jpg',
-  cta: '/home/ubuntu/.cursor/projects/workspace/uploads/ref-cta_b20a.jpg',
+  cover: 'docs/image-template-20/ref-cover.png',
+  question: 'docs/image-template-20/ref-question.png',
+  cta: 'docs/image-template-20/ref-cta.png',
 };
 
 async function renderSlide(opts: {
@@ -128,6 +128,15 @@ async function main() {
   const question = await renderSlide({ text: QUESTION });
   const cta = await renderSlide({ text: '', isCta: true, promo });
   const q5 = await renderSlide({ text: QUESTION, isCta: true, promo });
+  const longQuestion = [
+    'If I said I bought something crazy that you have never seen before, what would you guess?',
+    '',
+    'a. Something ridiculously expensive that we cannot afford',
+    'b. Something completely useless but still funny',
+    'c. Something random I saw on TikTok at 2am',
+    'd. Something embarrassing that you would hide from everyone',
+  ].join('\n');
+  const qLong = await renderSlide({ text: longQuestion, isCta: true, promo });
   const { writeFileSync } = await import('fs');
   const more = [
     [
@@ -162,6 +171,7 @@ async function main() {
   writeFileSync(`${outDir}/q4.png`, q4.toBuffer('image/png'));
   writeFileSync(`${outDir}/cta.png`, cta.toBuffer('image/png'));
   writeFileSync(`${outDir}/q5-with-cta.png`, q5.toBuffer('image/png'));
+  writeFileSync(`${outDir}/q5-long.png`, qLong.toBuffer('image/png'));
   writeFileSync(`${outDir}/product-cover.png`, productCover.toBuffer('image/png'));
   writeFileSync(
     'public/image-templates/template-20-cover.jpg',
@@ -170,6 +180,8 @@ async function main() {
   report('cover', cover);
   report('question', question);
   report('cta', cta);
+  report('q5', q5);
+  report('qlong', qLong);
   await sideBySide(REFS.cover, cover, `${outDir}/side-cover.png`);
   await sideBySide(REFS.question, question, `${outDir}/side-question.png`);
   await sideBySide(REFS.cta, cta, `${outDir}/side-cta.png`);

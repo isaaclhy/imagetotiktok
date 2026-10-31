@@ -5,10 +5,11 @@ import { IMAGE_TEMPLATE2_Q5_PROMO_LABEL } from '@/app/lib/image-template-2-cover
 /**
  * Ocean slideshow (image template 20).
  *
- * Full-bleed deep teal, no card. Measured from the 2160×2880 reference slides
- * and scaled to the 1080×1440 export. The field is flat through the middle
- * and falls off in an ellipse that touches the middle of each edge, so the
- * corners go to a near-black blue. Fine grain sits on top of that field.
+ * Full-bleed deep teal, no card. Measured from the reference slides at
+ * 1080×1440. The field stays a flat #064B74 through the middle and only
+ * darkens in the outer band (about the outer 15% of the width, a little
+ * tighter on the top and bottom). Corners settle near #041620. Fine grain
+ * sits on top of that field. There is no central hotspot.
  *
  * Cover + five questions. The last question keeps its copy and closes with
  * template 2's App Store promo. There is no extra empty CTA tab.
@@ -27,22 +28,38 @@ export const IMAGE_TEMPLATE20_FOOTER_FONT_STACK =
 export const IMAGE_TEMPLATE20_FOOTER = IMAGE_TEMPLATE2_APP_FOOTER;
 export const IMAGE_TEMPLATE20_CTA_LABEL = IMAGE_TEMPLATE2_Q5_PROMO_LABEL;
 
+/** Median of the flat inner field on the reference slides. */
+const FIELD_FLAT: Rgb = [6, 75, 116];
+/** Side edges. The top and bottom stay a touch lighter than the left and right. */
+const FIELD_EDGE_X: Rgb = [5, 35, 53];
+const FIELD_EDGE_Y: Rgb = [5, 37, 55];
+/** Darkest corner. Sits near #00172A. */
+const FIELD_CORNER: Rgb = [4, 22, 32];
+
 /**
- * Elliptical distance, 1 at the middle of each edge. Stops follow the
- * reference midline: flat through ~0.55, then a soft falloff to the frame.
+ * How far the edge darkening reaches, as a fraction of that side.
+ * 1 at the outer pixel, 0 once the field is flat. Horizontal is done by
+ * ~17% of the width; vertical is tighter, done by ~13% of the height.
  */
-const FIELD: ReadonlyArray<readonly [number, readonly [number, number, number]]> = [
-  [0, [8, 78, 118]],
-  [0.55, [8, 78, 118]],
-  [0.68, [6, 74, 112]],
-  [0.75, [6, 70, 105]],
-  [0.82, [6, 61, 92]],
-  [0.88, [6, 52, 76]],
-  [0.93, [6, 44, 66]],
-  [0.97, [5, 36, 55]],
-  [1, [4, 32, 46]],
-  [1.2, [5, 26, 38]],
-  [1.45, [6, 24, 35]],
+const SHADE_X: ReadonlyArray<readonly [number, number]> = [
+  [0, 1],
+  [0.02, 0.85],
+  [0.042, 0.675],
+  [0.062, 0.5],
+  [0.083, 0.35],
+  [0.104, 0.2],
+  [0.125, 0.125],
+  [0.145, 0.05],
+  [0.167, 0],
+];
+const SHADE_Y: ReadonlyArray<readonly [number, number]> = [
+  [0, 1],
+  [0.021, 0.789],
+  [0.042, 0.553],
+  [0.062, 0.342],
+  [0.083, 0.158],
+  [0.104, 0.079],
+  [0.125, 0],
 ];
 
 /** Cover title, as a fraction of frame width. Matches the reference ink. */
@@ -66,9 +83,19 @@ export const IMAGE_TEMPLATE20_FOOTER_SIZE = 0.0352;
 export const IMAGE_TEMPLATE20_FOOTER_Y = 0.862;
 
 export const IMAGE_TEMPLATE20_CTA_SIZE = 0.0555;
-export const IMAGE_TEMPLATE20_PROMO_WIDTH = 0.64;
-export const IMAGE_TEMPLATE20_PROMO_TOP = 0.448;
-export const IMAGE_TEMPLATE20_CTA_GAP = 0.016;
+/** Clear air between the last option's ink and the CTA heading. */
+const CTA_OPTION_TO_LABEL = 0.05;
+/** Air between the heading and the top of the phone. */
+const CTA_LABEL_TO_PROMO = 0.014;
+/** The phone mock stays fully inside the frame. */
+const CTA_BOTTOM_PAD = 0.02;
+/** Largest phone width. The whole mock, including its lower bezel, stays on the slide. */
+const CTA_PROMO_MAX_WIDTH = 0.58;
+/** Question block on the CTA slide sits higher than a normal question. */
+const CTA_QUESTION_TOP = 0.105;
+const CTA_QUESTION_TOP_MIN = 0.048;
+/** Smallest phone we still try to keep when the question is long. */
+const CTA_PROMO_MIN_HEIGHT = 0.36;
 
 const PROMO_ASPECT = 611 / 1024;
 
@@ -82,24 +109,30 @@ function clampByte(n: number): number {
   return n < 0 ? 0 : n > 255 ? 255 : n | 0;
 }
 
-function fieldColor(t: number): Rgb {
-  const stops = FIELD;
-  if (t <= stops[0]![0]) return stops[0]![1];
+function shadeAt(stops: ReadonlyArray<readonly [number, number]>, distance: number): number {
+  const first = stops[0]!;
+  if (distance <= first[0]) return first[1];
   const last = stops[stops.length - 1]!;
-  if (t >= last[0]) return last[1];
+  if (distance >= last[0]) return last[1];
   for (let i = 1; i < stops.length; i++) {
     const next = stops[i]!;
     const prev = stops[i - 1]!;
-    if (t > next[0]) continue;
+    if (distance > next[0]) continue;
     const span = next[0] - prev[0] || 1;
-    const u = (t - prev[0]) / span;
-    return [
-      prev[1][0] + (next[1][0] - prev[1][0]) * u,
-      prev[1][1] + (next[1][1] - prev[1][1]) * u,
-      prev[1][2] + (next[1][2] - prev[1][2]) * u,
-    ];
+    const u = (distance - prev[0]) / span;
+    return prev[1] + (next[1] - prev[1]) * u;
   }
   return last[1];
+}
+
+function mixRgb(a: Rgb, b: Rgb, t: number): Rgb {
+  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+}
+
+/** Flat centre. Each edge darkens on its own, and the two stack in the corners. */
+function fieldAt(shadeX: number, shadeY: number): Rgb {
+  if (shadeX >= shadeY) return mixRgb(mixRgb(FIELD_FLAT, FIELD_EDGE_X, shadeX), FIELD_CORNER, shadeY);
+  return mixRgb(mixRgb(FIELD_FLAT, FIELD_EDGE_Y, shadeY), FIELD_CORNER, shadeX);
 }
 
 function hash32(n: number): number {
@@ -127,16 +160,12 @@ function paintBackground(ctx: CanvasRenderingContext2D, width: number, height: n
   let pixels = backgroundCache.get(key);
   if (!pixels) {
     pixels = new Uint8ClampedArray(width * height * 4);
-    const hx = width / 2;
-    const hy = height / 2;
     for (let y = 0; y < height; y++) {
-      // Vertical falloff is a little slower than the sides on the reference.
-      const ny = ((y + 0.5 - hy) / hy) * 0.975;
-      const ny2 = ny * ny;
+      const dy = Math.min(y + 0.5, height - (y + 0.5)) / height;
+      const shadeY = shadeAt(SHADE_Y, dy);
       for (let x = 0; x < width; x++) {
-        const nx = (x + 0.5 - hx) / hx;
-        const t = Math.sqrt(nx * nx + ny2);
-        const [r, g, b] = fieldColor(t);
+        const dx = Math.min(x + 0.5, width - (x + 0.5)) / width;
+        const [r, g, b] = fieldAt(shadeAt(SHADE_X, dx), shadeY);
         const luma = 0.2 * r + 0.7 * g + 0.1 * b;
         const delta = grainDelta(y * width + x, luma);
         const o = (y * width + x) * 4;
@@ -301,13 +330,6 @@ function paintFooter(
   ctx.fillText(IMAGE_TEMPLATE20_FOOTER, width / 2, baseline);
 }
 
-function promoLayout(width: number, height: number, top: number) {
-  const promoWidth = width * IMAGE_TEMPLATE20_PROMO_WIDTH;
-  const promoHeight = promoWidth / PROMO_ASPECT;
-  const x = (width - promoWidth) / 2;
-  return { x, y: top, width: promoWidth, height: promoHeight };
-}
-
 function paintCta(
   ctx: CanvasRenderingContext2D,
   width: number,
@@ -317,33 +339,41 @@ function paintCta(
   promo: CanvasImageSource
 ) {
   const labelSize = Math.round(width * IMAGE_TEMPLATE20_CTA_SIZE);
-  const gap = height * IMAGE_TEMPLATE20_CTA_GAP;
-  let promoTop = height * IMAGE_TEMPLATE20_PROMO_TOP;
+  ctx.font = `700 ${labelSize}px ${fontFamily}`;
+  const labelAscent = inkAscent(ctx, 'H');
+  const labelDescent = inkDescent(ctx, 'Hgy');
+  const optionGap = height * CTA_OPTION_TO_LABEL;
+  const labelGap = height * CTA_LABEL_TO_PROMO;
+  const bottomPad = height * CTA_BOTTOM_PAD;
   const question = text.trim();
-  if (question) {
-    const fitted = fitQuestionAbove(
-      ctx,
-      width,
-      height,
-      question,
-      fontFamily,
-      promoTop - gap - labelSize * 1.15
-    );
-    paintQuestionLines(ctx, width, fitted);
-    const blockBottom = fitted.bottom;
-    const minTop = blockBottom + gap + labelSize + gap;
-    if (minTop > promoTop) promoTop = minTop;
-  }
+  const layout = question
+    ? fitCtaQuestion(ctx, width, height, question, fontFamily, {
+        labelAscent,
+        labelDescent,
+        optionGap,
+        labelGap,
+        bottomPad,
+      })
+    : null;
 
-  const layout = promoLayout(width, height, promoTop);
-  ctx.drawImage(promo, layout.x, layout.y, layout.width, layout.height);
+  const blockBottom = layout ? layout.bottom : height * 0.22;
+  const minPromoTop =
+    blockBottom + (layout ? optionGap : height * 0.06) + labelAscent + labelDescent + labelGap;
+  const available = Math.max(1, height - bottomPad - minPromoTop);
+  const maxWidth = width * CTA_PROMO_MAX_WIDTH;
+  const promoHeight = Math.min(available, maxWidth / PROMO_ASPECT);
+  const promoWidth = promoHeight * PROMO_ASPECT;
+  const promoY = height - bottomPad - promoHeight;
+  const promoX = (width - promoWidth) / 2;
+
+  if (layout) paintQuestionLines(ctx, width, layout);
 
   ctx.font = `700 ${labelSize}px ${fontFamily}`;
   ctx.fillStyle = IMAGE_TEMPLATE20_TEXT;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
-  const descent = inkDescent(ctx, 'Hgy');
-  ctx.fillText(IMAGE_TEMPLATE20_CTA_LABEL, width / 2, layout.y - gap - descent);
+  ctx.fillText(IMAGE_TEMPLATE20_CTA_LABEL, width / 2, promoY - labelGap - labelDescent);
+  ctx.drawImage(promo, promoX, promoY, promoWidth, promoHeight);
 }
 
 type QuestionLayout = {
@@ -379,17 +409,23 @@ function layoutQuestion(
   const optionLeading = fontSize * IMAGE_TEMPLATE20_OPTION_LEADING;
   const ascent = inkAscent(ctx);
   const descent = inkDescent(ctx);
-  const optionGap = parsed.length && questionLines.length ? fontSize * IMAGE_TEMPLATE20_OPTION_GAP : 0;
+  let optionLines = 0;
+  for (const option of parsed) {
+    optionLines += countOptionLines(ctx, option, fontSize, fontFamily, maxWidth);
+  }
+  const optionGap = optionLines && questionLines.length ? fontSize * IMAGE_TEMPLATE20_OPTION_GAP : 0;
   const firstBaseline = inkTop + ascent;
-  const questionBlock = questionLines.length * questionLeading;
-  const optionBlock = parsed.length * optionLeading;
-  const bottom =
-    firstBaseline -
-    ascent +
-    questionBlock +
-    optionGap +
-    optionBlock -
-    (parsed.length ? optionLeading - descent - ascent : questionLeading - descent - ascent);
+  let endBaseline = firstBaseline;
+  if (optionLines) {
+    endBaseline =
+      firstBaseline +
+      questionLines.length * questionLeading +
+      optionGap +
+      (optionLines - 1) * optionLeading;
+  } else if (questionLines.length) {
+    endBaseline = firstBaseline + (questionLines.length - 1) * questionLeading;
+  }
+  const bottom = endBaseline + descent;
   return {
     fontSize,
     questionLines,
@@ -405,22 +441,82 @@ function layoutQuestion(
   };
 }
 
-function fitQuestionAbove(
+function countOptionLines(
+  ctx: CanvasRenderingContext2D,
+  option: OptionLine,
+  fontSize: number,
+  fontFamily: string,
+  maxWidth: number
+): number {
+  if (!option.letter) {
+    ctx.font = `400 ${fontSize}px ${fontFamily}`;
+    return Math.max(1, wrapLines(ctx, option.text, maxWidth).length);
+  }
+  ctx.font = `700 ${fontSize}px ${fontFamily}`;
+  const markWidth = ctx.measureText(`${option.letter}.`).width;
+  ctx.font = `400 ${fontSize}px ${fontFamily}`;
+  const avail = Math.max(1, maxWidth - markWidth - ctx.measureText(' ').width);
+  const wrapped = option.text.trim() ? wrapLines(ctx, option.text, avail) : [''];
+  return Math.max(1, wrapped.length);
+}
+
+function ctaRoomBelow(
+  height: number,
+  metrics: {
+    labelAscent: number;
+    labelDescent: number;
+    optionGap: number;
+    labelGap: number;
+    bottomPad: number;
+  },
+  promoHeight: number
+): number {
+  return (
+    height -
+    metrics.optionGap -
+    metrics.labelAscent -
+    metrics.labelDescent -
+    metrics.labelGap -
+    metrics.bottomPad -
+    promoHeight
+  );
+}
+
+/** Shrink and lift the question until the heading and the full phone still fit. */
+function fitCtaQuestion(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
   text: string,
   fontFamily: string,
-  limit: number
+  metrics: {
+    labelAscent: number;
+    labelDescent: number;
+    optionGap: number;
+    labelGap: number;
+    bottomPad: number;
+  }
 ): QuestionLayout {
   let fontSize = Math.round(width * IMAGE_TEMPLATE20_QUESTION_SIZE);
-  const minSize = Math.round(width * 0.028);
-  let inkTop = height * 0.1;
+  const minSize = Math.round(width * 0.024);
+  let inkTop = height * CTA_QUESTION_TOP;
+  const floor = height * CTA_QUESTION_TOP_MIN;
+  const minPromo = height * CTA_PROMO_MIN_HEIGHT;
   let layout = layoutQuestion(ctx, width, height, text, fontFamily, fontSize, inkTop);
-  while (layout.bottom > limit && fontSize > minSize) {
+  while (layout.bottom > ctaRoomBelow(height, metrics, minPromo) && fontSize > minSize) {
     fontSize -= 2;
-    inkTop = height * 0.08;
+    const drop = (Math.round(width * IMAGE_TEMPLATE20_QUESTION_SIZE) - fontSize) / width;
+    inkTop = Math.max(floor, height * (CTA_QUESTION_TOP - drop * 0.45));
     layout = layoutQuestion(ctx, width, height, text, fontFamily, fontSize, inkTop);
+  }
+  if (layout.bottom > ctaRoomBelow(height, metrics, minPromo)) {
+    const room = ctaRoomBelow(height, metrics, height * 0.28);
+    const block = Math.max(1, layout.bottom - inkTop);
+    if (block > room) {
+      fontSize = Math.max(16, Math.floor(fontSize * (room / block)));
+      inkTop = floor;
+      layout = layoutQuestion(ctx, width, height, text, fontFamily, fontSize, inkTop);
+    }
   }
   return layout;
 }
