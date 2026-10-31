@@ -1,4 +1,5 @@
 import { IMAGE_TEMPLATE2_APP_FOOTER } from '@/app/lib/constants';
+import { splitCopycatQuestionAndOptions } from '@/app/lib/copycat/flamingo-cards';
 import {
   IMAGE_TEMPLATE2_Q5_PROMO_LABEL,
   IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO,
@@ -68,9 +69,11 @@ export const IMAGE_TEMPLATE18_PROGRESS_TRACK = 'rgba(55, 42, 36, 0.18)';
 export const IMAGE_TEMPLATE18_FOOTER_SIZE = 0.026;
 
 /**
- * One pastel per studio slide, in the order of the reference posts:
- * mint cover, then light blue, lavender, pink, beige, and a yellow close.
- * Accent colours tint that slide's progress bar.
+ * Canonical pastel order: mint, light blue, lavender, pink, beige, then the
+ * yellow close. A generation shuffles the first five so the cover is not
+ * always mint. The yellow close stays on the CTA. Each tone's accent tints
+ * that colour's progress bar, and the question/footer ink travels with the
+ * tone so it stays correct on whichever slide the colour lands on.
  */
 export const IMAGE_TEMPLATE18_SLIDES = [
   { bg: '#C7E8D8', accent: '#C4A15A' },
@@ -288,6 +291,82 @@ export function template18FooterColor(style: Template18StyleId, tabIndex = 0): s
   if (style === 'dark-moody') return '#F4F5F3';
   if (style === 'deep-red') return '#F3E4E6';
   return '#F3DBDC';
+}
+
+/**
+ * One Pastel ground. Question and footer ink are part of the tone — the
+ * original pastel uses the same brown on every light ground, and that ink
+ * moves with the colour when a generation shuffles the order.
+ */
+export type Template18PastelTone = {
+  bg: string;
+  accent: string;
+  text: string;
+  footer: string;
+};
+
+function template18PastelTone(slide: { bg: string; accent: string }): Template18PastelTone {
+  return {
+    bg: slide.bg,
+    accent: slide.accent,
+    text: IMAGE_TEMPLATE18_TEXT,
+    footer: IMAGE_TEMPLATE18_TEXT,
+  };
+}
+
+/** Yellow close. Always the CTA, never part of the shuffled body. */
+export function template18PastelClosingTone(): Template18PastelTone {
+  return template18PastelTone(IMAGE_TEMPLATE18_SLIDES[IMAGE_TEMPLATE18_SLIDES.length - 1]!);
+}
+
+/** Mint, blue, lavender, pink, beige — the grounds a generation may reorder. */
+export function template18PastelBodyTones(): Template18PastelTone[] {
+  return IMAGE_TEMPLATE18_SLIDES.slice(0, -1).map((slide) => template18PastelTone(slide));
+}
+
+/** New order for one generation. The closing colour is not included. */
+export function shuffleTemplate18PastelBody(
+  random: () => number = Math.random
+): Template18PastelTone[] {
+  const body = template18PastelBodyTones();
+  for (let i = body.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    const swap = body[i]!;
+    body[i] = body[j]!;
+    body[j] = swap;
+  }
+  return body;
+}
+
+/**
+ * Full slide list for a generation. Every slide but the last uses `bodyOrder`.
+ * The last slide is the CTA and keeps the closing colour. A single slide
+ * (no CTA) uses the first shuffled ground.
+ */
+export function template18PastelSlidesForCount(
+  bodyOrder: readonly Template18PastelTone[],
+  slideCount: number
+): Template18PastelTone[] {
+  const closing = template18PastelClosingTone();
+  const body = bodyOrder.length > 0 ? bodyOrder : template18PastelBodyTones();
+  const count = Math.max(1, Math.round(slideCount) || 1);
+  return Array.from({ length: count }, (_, index) => {
+    const isClosing = count > 1 && index === count - 1;
+    return isClosing ? closing : body[index % body.length]!;
+  });
+}
+
+/** Pastel ground for a slide. CTA is always the closing colour. Other styles do not use this. */
+export function resolveTemplate18PastelTone(
+  tabIndex: number,
+  isCta: boolean,
+  slides?: readonly Template18PastelTone[] | null
+): Template18PastelTone {
+  if (isCta) return template18PastelClosingTone();
+  if (slides && tabIndex >= 0 && tabIndex < slides.length) return slides[tabIndex]!;
+  const body = template18PastelBodyTones();
+  const index = ((tabIndex % body.length) + body.length) % body.length;
+  return body[index]!;
 }
 
 export type Template18Card = {
@@ -540,7 +619,132 @@ export type Template18TextLayout = {
   top: number;
   maxWidth: number;
   fontWeight: number;
+  /** Choice slides are left-aligned. Everything else stays centered. */
+  align?: 'center' | 'left';
+  /** Left edge when `align` is `left`. Centered slides ignore this. */
+  x?: number;
+  /** Index of the first `a.` / `b.` line. A gap is inserted before it. */
+  optionStart?: number;
+  optionGap?: number;
 };
+
+/** Inset of a choice block from each side of the card, as a fraction of card width. */
+const IMAGE_TEMPLATE18_CHOICE_PAD = 0.08;
+/** Extra air between the question and the first option, as a fraction of the font size. */
+const IMAGE_TEMPLATE18_CHOICE_GAP = 0.62;
+
+function layoutTemplate18Choices(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  text: string,
+  kind: Template18Kind,
+  fontFamily: string,
+  style: Template18StyleId
+): Template18TextLayout {
+  const { question, options } = splitCopycatQuestionAndOptions(text);
+  const card = template18Card(width, height, style);
+  const innerW = Math.max(1, card.right - card.left);
+  const pad = innerW * IMAGE_TEMPLATE18_CHOICE_PAD;
+  const maxWidth = Math.max(1, innerW - pad * 2);
+  const x = Math.round(card.left + pad);
+  const fontWeight = IMAGE_TEMPLATE18_FONT_WEIGHT;
+  const leading = template18LineHeight(style);
+  // Closing question: same vertical slot as today's CTA copy, above the promo.
+  // Other questions sit between the progress bar and the footer.
+  let topLimit: number;
+  let bottomLimit: number;
+  let preferred: number;
+  let minRatio: number;
+  if (kind === 'cta') {
+    const band = template18TextBand(width, height, 'cta', style);
+    topLimit = band.top;
+    bottomLimit = band.bottom;
+    preferred = band.preferred;
+    minRatio = band.min;
+  } else {
+    const hasBar = template18HasProgress(style);
+    topLimit = hasBar ? card.top + height * 0.055 : card.top + height * 0.07;
+    bottomLimit = style === 'pastel' ? card.bottom - height * 0.07 : height * 0.8;
+    preferred = template18QuestionPreferred(style);
+    minRatio = 0.02;
+  }
+  const room = bottomLimit - topLimit;
+  const maxSize = Math.max(1, Math.round(width * preferred));
+  const minSize = Math.max(1, Math.round(width * minRatio));
+  const empty: Template18TextLayout = {
+    lines: [],
+    fontSize: maxSize,
+    lineHeight: maxSize * leading,
+    top: topLimit,
+    maxWidth,
+    fontWeight,
+    align: 'left',
+    x,
+    optionStart: -1,
+    optionGap: 0,
+  };
+  if (!text.trim() || !(width > 0) || !(height > 0) || room <= 0) return empty;
+
+  const optionSource = options
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const measure = (size: number) => {
+    ctx.font = `${fontWeight} ${size}px ${fontFamily}`;
+    setLetterSpacing(ctx, '0px');
+    const questionLines = question.trim() ? wrapTemplate18Lines(ctx, question, maxWidth) : [];
+    const optionLines = optionSource.flatMap((line) => wrapTemplate18Lines(ctx, line, maxWidth));
+    const lineHeight = size * leading;
+    const optionGap =
+      questionLines.length > 0 && optionLines.length > 0 ? size * IMAGE_TEMPLATE18_CHOICE_GAP : 0;
+    const block = questionLines.length * lineHeight + optionGap + optionLines.length * lineHeight;
+    return { questionLines, optionLines, lineHeight, optionGap, block };
+  };
+
+  let chosenSize = minSize;
+  let chosen = measure(minSize);
+  let lo = minSize;
+  let hi = maxSize;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    const next = measure(mid);
+    if (
+      (next.questionLines.length > 0 || next.optionLines.length > 0) &&
+      next.block <= room + 0.5
+    ) {
+      chosenSize = mid;
+      chosen = next;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+
+  const lines = [...chosen.questionLines, ...chosen.optionLines];
+  const block = chosen.block;
+  let top = topLimit + Math.max(0, (room - block) / 2);
+  const center = template18TextCenter(style, kind);
+  if (center != null) {
+    const ideal = center * height - block / 2;
+    const maxTop = Math.max(topLimit, bottomLimit - block);
+    top = Math.min(maxTop, Math.max(topLimit, ideal));
+  }
+
+  return {
+    lines,
+    fontSize: chosenSize,
+    lineHeight: chosen.lineHeight,
+    top,
+    maxWidth,
+    fontWeight,
+    align: 'left',
+    x,
+    optionStart: chosen.optionLines.length > 0 ? chosen.questionLines.length : -1,
+    optionGap: chosen.optionGap,
+  };
+}
 
 function setLetterSpacing(ctx: CanvasRenderingContext2D, value: string) {
   if ('letterSpacing' in ctx) ctx.letterSpacing = value;
@@ -915,6 +1119,11 @@ export function paintTemplate18Slide(
     style?: Template18StyleId;
     /** Honoured for the original pastel style. Other styles follow the reference. */
     scanlines?: boolean;
+    /**
+     * Pastel grounds for this generation, one entry per slide.
+     * Used only when `style` is `pastel`. The CTA is still forced onto the closing colour.
+     */
+    pastelSlides?: readonly Template18PastelTone[];
   }
 ): void {
   const style = options.style ?? IMAGE_TEMPLATE18_DEFAULT_STYLE;
@@ -922,7 +1131,14 @@ export function paintTemplate18Slide(
   const isCta = options.isCta ?? options.tabIndex === IMAGE_TEMPLATE18_CTA_TAB;
   const kind = template18Kind(options.tabIndex, isCta);
   const questionCount = Math.max(0, slideCount - 1);
-  const textColor = template18TextColor(style, options.tabIndex);
+  const pastelTone =
+    style === 'pastel'
+      ? resolveTemplate18PastelTone(options.tabIndex, isCta, options.pastelSlides)
+      : null;
+  const textColor = pastelTone?.text ?? template18TextColor(style, options.tabIndex);
+  const footerColor = pastelTone?.footer ?? template18FooterColor(style, options.tabIndex);
+  const background = pastelTone?.bg ?? template18Background(options.tabIndex, isCta, style);
+  const accent = pastelTone?.accent ?? template18Accent(options.tabIndex, isCta, style);
   const bodyFont =
     options.fontFamily ||
     (style === 'pastel' ? IMAGE_TEMPLATE18_PASTEL_FONT_STACK : IMAGE_TEMPLATE18_FONT_STACK);
@@ -935,7 +1151,7 @@ export function paintTemplate18Slide(
   ctx.beginPath();
   traceTemplate18Card(ctx, width, height, style);
   ctx.clip();
-  ctx.fillStyle = template18Background(options.tabIndex, isCta, style);
+  ctx.fillStyle = background;
   ctx.fillRect(0, 0, width, height);
   drawTemplate18Vignette(ctx, width, height, style);
   if (style === 'deep-red') drawTemplate18Grain(ctx, width, height, 0.22);
@@ -948,32 +1164,50 @@ export function paintTemplate18Slide(
       height,
       options.tabIndex,
       questionCount,
-      template18Accent(options.tabIndex, isCta, style),
+      accent,
       style
     );
   }
 
-  const layout = layoutTemplate18Text(ctx, width, height, options.text, kind, bodyFont, style);
+  // Cover stays centered. A question body — including the closing question
+  // above the promo — is left-aligned only when it has a. b. c. lines.
+  const hasChoices =
+    kind !== 'cover' && splitCopycatQuestionAndOptions(options.text).options.trim().length > 0;
+  const layout = hasChoices
+    ? layoutTemplate18Choices(ctx, width, height, options.text, kind, bodyFont, style)
+    : layoutTemplate18Text(ctx, width, height, options.text, kind, bodyFont, style);
   if (layout.lines.length > 0) {
     ctx.fillStyle = textColor;
     ctx.font = `${layout.fontWeight} ${layout.fontSize}px ${bodyFont}`;
     setLetterSpacing(ctx, '0px');
-    ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    let y = layout.top;
-    const italicLast = style === 'deep-red' && kind === 'cover' && layout.lines.length > 1;
-    layout.lines.forEach((line, index) => {
-      const italic = italicLast && index === layout.lines.length - 1;
-      if (italic) {
-        ctx.save();
-        ctx.font = `italic ${layout.fontWeight} ${layout.fontSize}px ${bodyFont}`;
-        ctx.fillText(line, width / 2, y);
-        ctx.restore();
-      } else {
-        ctx.fillText(line, width / 2, y);
-      }
-      y += layout.lineHeight;
-    });
+    if (layout.align === 'left') {
+      ctx.textAlign = 'left';
+      let y = layout.top;
+      const optionStart = layout.optionStart ?? -1;
+      const optionGap = layout.optionGap ?? 0;
+      layout.lines.forEach((line, index) => {
+        if (index === optionStart) y += optionGap;
+        ctx.fillText(line, layout.x ?? 0, y);
+        y += layout.lineHeight;
+      });
+    } else {
+      ctx.textAlign = 'center';
+      let y = layout.top;
+      const italicLast = style === 'deep-red' && kind === 'cover' && layout.lines.length > 1;
+      layout.lines.forEach((line, index) => {
+        const italic = italicLast && index === layout.lines.length - 1;
+        if (italic) {
+          ctx.save();
+          ctx.font = `italic ${layout.fontWeight} ${layout.fontSize}px ${bodyFont}`;
+          ctx.fillText(line, width / 2, y);
+          ctx.restore();
+        } else {
+          ctx.fillText(line, width / 2, y);
+        }
+        y += layout.lineHeight;
+      });
+    }
   }
 
   const card = template18Card(width, height, style);
@@ -998,7 +1232,7 @@ export function paintTemplate18Slide(
   }
 
   setLetterSpacing(ctx, '0px');
-  ctx.fillStyle = template18FooterColor(style, options.tabIndex);
+  ctx.fillStyle = footerColor;
   ctx.font = `${style === 'pastel' ? 700 : 600} ${template18FooterSize(width, style)}px ${
     style === 'pastel' ? '"TikTok Sans", system-ui, sans-serif' : IMAGE_TEMPLATE18_SANS_STACK
   }`;

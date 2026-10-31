@@ -8,6 +8,7 @@ import {
   IMAGE_TEMPLATE18_SLIDE_COUNT,
   paintTemplate18Slide,
   template18CanvasBackground,
+  type Template18PastelTone,
   type Template18StyleId,
 } from '@/app/lib/image-template-18-pastel';
 
@@ -39,6 +40,8 @@ type PastelSlideshowPreviewProps = {
   styleId?: Template18StyleId;
   /** Original pastel only. Other styles follow the reference posts. */
   scanlines?: boolean;
+  /** Shuffled Pastel grounds for this generation. Ignored by the other styles. */
+  pastelSlides?: readonly Template18PastelTone[];
 };
 
 /**
@@ -52,6 +55,7 @@ export function PastelSlideshowPreview({
   isCta,
   styleId = IMAGE_TEMPLATE18_DEFAULT_STYLE,
   scanlines = true,
+  pastelSlides,
 }: PastelSlideshowPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cta = isCta ?? tabIndex === IMAGE_TEMPLATE18_CTA_TAB;
@@ -86,6 +90,7 @@ export function PastelSlideshowPreview({
         promo,
         style: styleId,
         scanlines,
+        pastelSlides,
       });
     };
 
@@ -93,7 +98,7 @@ export function PastelSlideshowPreview({
     return () => {
       cancelled = true;
     };
-  }, [text, tabIndex, slideCount, cta, styleId, scanlines]);
+  }, [text, tabIndex, slideCount, cta, styleId, scanlines, pastelSlides]);
 
   return (
     <div
