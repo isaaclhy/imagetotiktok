@@ -107,6 +107,7 @@ import {
   template14TextForBackground,
 } from '@/app/lib/image-template-14-cards';
 import { NotesQuestionsPreview } from '@/app/components/NotesQuestionsPreview';
+import { PastelSlideshowPreview } from '@/app/components/PastelSlideshowPreview';
 import { SplitCoverPreview } from '@/app/components/SplitCoverPreview';
 import {
   template17BackgroundSrcAt,
@@ -121,7 +122,7 @@ const COPYCAT_TEXT_ONLY_COVER_TOP = 0.38;
 const COPYCAT_TEXT_ONLY_COVER_SIZE_T2 = 0.074;
 const COPYCAT_TEXT_ONLY_COVER_SIZE_T14 = 0.088;
 
-export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17;
+export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18;
 
 function CopycatAppMarkFooter({
   isCover,
@@ -276,7 +277,8 @@ function CopycatSlidePreview({
     !showTemplate13Cta &&
     templateId !== 1 &&
     templateId !== 6 &&
-    templateId !== 17;
+    templateId !== 17 &&
+    templateId !== 18;
   const alignLeft = Boolean(leftAlign && !isCover) || templateId === 2;
   const pastelBg =
     IMAGE_TEMPLATE2_PASTEL_COLORS[tabIndex % IMAGE_TEMPLATE2_PASTEL_COLORS.length]!;
@@ -285,6 +287,19 @@ function CopycatSlidePreview({
   const bodyAlignClass = alignLeft
     ? 'left-[11%] w-[78%] -translate-y-1/2 text-left'
     : 'left-1/2 w-[78%] -translate-x-1/2 -translate-y-1/2 text-center';
+
+  if (templateId === 18) {
+    return (
+      <div className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4 bg-black">
+        <PastelSlideshowPreview
+          text={text}
+          tabIndex={tabIndex}
+          slideCount={slideCount}
+          isCta={isCtaSlide}
+        />
+      </div>
+    );
+  }
 
   if (templateId === 17) {
     return (
