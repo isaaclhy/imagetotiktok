@@ -77,7 +77,6 @@ import {
 } from '@/app/lib/image-template-18-pastel';
 import {
   IMAGE_TEMPLATE19_FONT_STACK,
-  IMAGE_TEMPLATE19_GRAIN_SRC,
   IMAGE_TEMPLATE19_LABEL_FONT_STACK,
   paintTemplate19Slide,
 } from '@/app/lib/image-template-19-glow';
@@ -227,22 +226,18 @@ async function paintSlide(
     const serif = concreteFontFamily(IMAGE_TEMPLATE19_FONT_STACK);
     const label = concreteFontFamily(IMAGE_TEMPLATE19_LABEL_FONT_STACK);
     try {
-      await document.fonts.load(`400 72px ${serif}`);
-      await document.fonts.load(`500 36px ${label}`);
-      await document.fonts.load(`700 36px ${label}`);
+      await document.fonts.load(`400 96px ${serif}`);
+      await document.fonts.load(`600 40px ${label}`);
       await document.fonts.load(`700 48px ${label}`);
     } catch {
       /* fonts may already be ready */
     }
-    const [grain, promo] = await Promise.all([
-      loadImage(IMAGE_TEMPLATE19_GRAIN_SRC),
-      slide.isCta ? loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC) : Promise.resolve(null),
-    ]);
+    const promo = slide.isCta ? await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC) : null;
     paintTemplate19Slide(ctx, w, h, {
       text: slide.text,
-      grain,
       fontFamily: serif,
       labelFontFamily: label,
+      isCover: slide.isCover,
       isCta: slide.isCta,
       promo,
     });

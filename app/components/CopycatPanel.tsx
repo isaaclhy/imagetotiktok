@@ -108,27 +108,12 @@ import {
 } from '@/app/lib/image-template-14-cards';
 import { NotesQuestionsPreview } from '@/app/components/NotesQuestionsPreview';
 import { PastelSlideshowPreview } from '@/app/components/PastelSlideshowPreview';
+import { RedGlowPreview } from '@/app/components/RedGlowPreview';
 import { SplitCoverPreview } from '@/app/components/SplitCoverPreview';
 import {
   template17BackgroundSrcAt,
   template17TabForQuestions,
 } from '@/app/lib/copycat/template17-background';
-import {
-  IMAGE_TEMPLATE19_FONT_STACK,
-  IMAGE_TEMPLATE19_GLOW_BACKGROUND,
-  IMAGE_TEMPLATE19_GRAIN_SRC,
-  IMAGE_TEMPLATE19_LABEL,
-  IMAGE_TEMPLATE19_LABEL_COLOR,
-  IMAGE_TEMPLATE19_LABEL_FONT_STACK,
-  IMAGE_TEMPLATE19_LABEL_SIZE,
-  IMAGE_TEMPLATE19_CTA_TEXT_Y,
-  IMAGE_TEMPLATE19_LABEL_Y,
-  IMAGE_TEMPLATE19_LINE_HEIGHT,
-  IMAGE_TEMPLATE19_TEXT,
-  IMAGE_TEMPLATE19_TEXT_SIZE,
-  IMAGE_TEMPLATE19_TEXT_WIDTH,
-  IMAGE_TEMPLATE19_TEXT_Y,
-} from '@/app/lib/image-template-19-glow';
 
 const TIKTOK_SANS_STACK = '"TikTok Sans", system-ui, -apple-system, sans-serif';
 const COPYCAT_APP_NAME = 'Spill It';
@@ -307,73 +292,7 @@ function CopycatSlidePreview({
   if (templateId === 19) {
     return (
       <div className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4 bg-black">
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{ background: IMAGE_TEMPLATE19_GLOW_BACKGROUND }}
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            backgroundImage: `url(${IMAGE_TEMPLATE19_GRAIN_SRC})`,
-            backgroundSize: '120px',
-            opacity: 0.4,
-            mixBlendMode: 'overlay',
-          }}
-          aria-hidden
-        />
-        <p
-          className="absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 whitespace-pre-wrap wrap-break-word text-center"
-          style={{
-            top: `${(isCtaSlide ? IMAGE_TEMPLATE19_CTA_TEXT_Y : IMAGE_TEMPLATE19_TEXT_Y) * 100}%`,
-            width: `${IMAGE_TEMPLATE19_TEXT_WIDTH * 100}%`,
-            color: IMAGE_TEMPLATE19_TEXT,
-            fontFamily: IMAGE_TEMPLATE19_FONT_STACK,
-            fontSize: `${IMAGE_TEMPLATE19_TEXT_SIZE * 100}cqw`,
-            fontWeight: 400,
-            lineHeight: IMAGE_TEMPLATE19_LINE_HEIGHT,
-          }}
-        >
-          {text}
-        </p>
-        {isCtaSlide ? (
-          <>
-            <p
-              className="absolute inset-x-[6%] z-10 text-center font-bold"
-              style={{
-                color: '#FFFFFF',
-                fontFamily: TIKTOK_SANS_STACK,
-                fontSize: `${IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO * (4 / 3) * 100}cqw`,
-                bottom: `${(IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO + IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO) * 100}%`,
-              }}
-            >
-              {IMAGE_TEMPLATE2_Q5_PROMO_LABEL}
-            </p>
-            <img
-              src={IMAGE_TEMPLATE2_Q5_PROMO_SRC}
-              alt="Spill It on the App Store"
-              className="absolute left-1/2 z-10 -translate-x-1/2"
-              style={{
-                width: `${IMAGE_TEMPLATE2_Q5_PROMO_WIDTH_RATIO * 100}%`,
-                maxWidth: 'none',
-                top: `${(1 - IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO) * 100}%`,
-              }}
-            />
-          </>
-        ) : (
-          <p
-            className="absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 text-center"
-            style={{
-              top: `${IMAGE_TEMPLATE19_LABEL_Y * 100}%`,
-              color: IMAGE_TEMPLATE19_LABEL_COLOR,
-              fontFamily: IMAGE_TEMPLATE19_LABEL_FONT_STACK,
-              fontSize: `${IMAGE_TEMPLATE19_LABEL_SIZE * 100}cqw`,
-              fontWeight: 500,
-            }}
-          >
-            {IMAGE_TEMPLATE19_LABEL}
-          </p>
-        )}
+        <RedGlowPreview text={text} isCover={isCover} isCta={isCtaSlide} />
       </div>
     );
   }
