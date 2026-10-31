@@ -1,7 +1,7 @@
 {
   "handle": "hook-posts",
   "platform": "tiktok",
-  "postCount": 49,
+  "postCount": 62,
   "minViews": 0,
   "posts": [
     {
@@ -1338,6 +1338,433 @@
         },
         {
           "text": "If I told you to plan a date that ends with us not wanting to say goodbye, what's the plan?"
+        }
+      ]
+    },
+    {
+      "id": "hook-50",
+      "coverText": "Stop the wedding, but let them answer these first 💍",
+      "slideText": [
+        {
+          "text": "Who plans the wedding?",
+          "options": [
+            "Me",
+            "You",
+            "Both"
+          ]
+        },
+        {
+          "text": "For the wedding, what matters most?",
+          "options": [
+            "Great food only",
+            "Best playlist ever",
+            "Pretty little details"
+          ]
+        },
+        {
+          "text": "What part of marrying me would make you tear up first?",
+          "options": [
+            "Seeing me at the altar",
+            "Hearing my vows",
+            "Putting on our rings",
+            "Realizing this is forever"
+          ]
+        },
+        {
+          "text": "What are you afraid marriage might change between us?"
+        },
+        {
+          "text": "If you had to propose tomorrow, what would genuinely make you hesitate?"
+        }
+      ]
+    },
+    {
+      "id": "hook-51",
+      "coverText": "Casual things we asked each other on the first date",
+      "slideText": [
+        {
+          "text": "What was I wearing on our first date?"
+        },
+        {
+          "text": "What did you really think after our first date?"
+        },
+        {
+          "text": "What was the biggest \"green flag\" you noticed about me on our very first date?"
+        },
+        {
+          "text": "If you had to relive our first date, what would you do differently?"
+        },
+        {
+          "text": "Was there a moment when talking to me stopped feeling casual?"
+        }
+      ]
+    },
+    {
+      "id": "hook-52",
+      "coverText": "Marriage material test: 5 questions, no retakes",
+      "slideText": [
+        {
+          "text": "They save you the last bite because they know you wanted it.",
+          "options": [
+            "True love",
+            "Cute",
+            "Marriage material",
+            "Nobody does that for free"
+          ]
+        },
+        {
+          "text": "How would we handle money after marriage?",
+          "options": [
+            "Combine everything",
+            "Keep some money separate",
+            "Split expenses equally",
+            "Contribute based on income"
+          ]
+        },
+        {
+          "text": "How involved should family be in our marriage?",
+          "options": [
+            "Very involved",
+            "Close, but with boundaries",
+            "Only when we ask for help",
+            "Mostly separate from our decisions"
+          ]
+        },
+        {
+          "text": "Would you marry me tomorrow?",
+          "options": [
+            "Yes",
+            "No"
+          ]
+        },
+        {
+          "text": "Are you sure, without a doubt, that you want to spend the rest of your life with me?"
+        }
+      ]
+    },
+    {
+      "id": "hook-53",
+      "coverText": "Things you should definitely ghost 👻 (not these questions)",
+      "slideText": [
+        {
+          "text": "They completely ghost you for a day because they needed alone time.",
+          "options": [
+            "Minor offense",
+            "Major offense"
+          ]
+        },
+        {
+          "text": "If I became a ghost, how long before you'd start dating someone else?"
+        },
+        {
+          "text": "What's something you did in the past that still haunts you a little?"
+        },
+        {
+          "text": "Is there a part of your past you're afraid to share with me?"
+        },
+        {
+          "text": "If we ended, what would haunt you most?"
+        }
+      ]
+    },
+    {
+      "id": "hook-54",
+      "coverText": "WTF is small talk?? We only ask these",
+      "slideText": [
+        {
+          "text": "Do you feel like we have enough deep conversations?"
+        },
+        {
+          "text": "What's something you've always wondered but never asked me?"
+        },
+        {
+          "text": "What's something you've noticed about me but never said out loud?"
+        },
+        {
+          "text": "What's one truth about our relationship you think we both know but rarely say out loud?"
+        },
+        {
+          "text": "What's something you've wanted to tell me but held back?"
+        }
+      ]
+    },
+    {
+      "id": "hook-55",
+      "coverText": "Money can't buy love, but these questions are free",
+      "slideText": [
+        {
+          "text": "What would we accidentally spend way too much money on?",
+          "options": [
+            "Food",
+            "Furniture",
+            "Decor",
+            "Stuff for the kitchen"
+          ]
+        },
+        {
+          "text": "Money talks, how do we handle it?",
+          "options": [
+            "One shared budget",
+            "Separate but clear",
+            "Yours, mine, ours"
+          ]
+        },
+        {
+          "text": "If you had to buy me one thing to cheer me up, what would it be?"
+        },
+        {
+          "text": "What makes loving me worth it?",
+          "options": [
+            "My loyalty",
+            "My heart",
+            "The way I love you",
+            "Everything together"
+          ]
+        },
+        {
+          "text": "If someone offered you $1 million to never see or speak to me again, would you take it?"
+        }
+      ]
+    },
+    {
+      "id": "hook-56",
+      "coverText": "Our relationship battery: 1% to 100% after these 🔋",
+      "slideText": [
+        {
+          "text": "What's the fastest way to make me happy?",
+          "options": [
+            "Make me laugh",
+            "Hug me",
+            "Give attention"
+          ]
+        },
+        {
+          "text": "Which would you rather receive from me after a long day?",
+          "options": [
+            "A hug",
+            "A kiss",
+            "A compliment",
+            "Extra attention"
+          ]
+        },
+        {
+          "text": "If we start feeling disconnected, what should we do first?",
+          "options": [
+            "Talk about it",
+            "Spend more intentional time together",
+            "Change our routine",
+            "Get outside help if we need it"
+          ]
+        },
+        {
+          "text": "What do you want more of in our relationship?",
+          "options": [
+            "More dates together",
+            "More deep conversations",
+            "More affection",
+            "More spontaneous adventures"
+          ]
+        },
+        {
+          "text": "When do you feel most disconnected from me?"
+        }
+      ]
+    },
+    {
+      "id": "hook-57",
+      "coverText": "Bird test failed 🐦 so now they answer these",
+      "slideText": [
+        {
+          "text": "What's the first thing you noticed about me?",
+          "options": [
+            "Smile",
+            "Eyes",
+            "Voice",
+            "Style"
+          ]
+        },
+        {
+          "text": "What's something about me only you seem to notice?"
+        },
+        {
+          "text": "How can you tell I need attention?",
+          "options": [
+            "I get clingy",
+            "I tease you",
+            "I text first"
+          ]
+        },
+        {
+          "text": "What little thing do I do that you'd notice immediately if I suddenly stopped?"
+        },
+        {
+          "text": "How do you know when I'm having a bad day without me saying a word?"
+        }
+      ]
+    },
+    {
+      "id": "hook-58",
+      "coverText": "Toggle on: brutally honest mode 🔛",
+      "slideText": [
+        {
+          "text": "Be honest — am I actually your type, or did I just become your type?"
+        },
+        {
+          "text": "What's one thing about me that always annoys you, but you've never told me?"
+        },
+        {
+          "text": "Have you ever lied to me to avoid an argument?"
+        },
+        {
+          "text": "Which truth from me would hurt the most?",
+          "options": [
+            "\"I'm tired.\"",
+            "\"I'm unhappy.\"",
+            "\"I've changed.\"",
+            "\"I need space.\""
+          ]
+        },
+        {
+          "text": "What's one lie you've told me that you regret, and why haven't you come clean?"
+        }
+      ]
+    },
+    {
+      "id": "hook-59",
+      "coverText": "Mid-argument, I asked this instead 😏",
+      "slideText": [
+        {
+          "text": "Who starts random arguments?",
+          "options": [
+            "You",
+            "Me"
+          ]
+        },
+        {
+          "text": "What would we argue about first?",
+          "options": [
+            "Dishes",
+            "Cleaning",
+            "Food",
+            "Who used the last toilet paper roll"
+          ]
+        },
+        {
+          "text": "If we argued before bed, what would you do?",
+          "options": [
+            "Sleep on the couch",
+            "Ignore you",
+            "Wait for you to apologize",
+            "Fix it before we sleep"
+          ]
+        },
+        {
+          "text": "If we argue, what should happen first?",
+          "options": [
+            "Talk immediately",
+            "Cool down first",
+            "Apologize before anything else",
+            "Give each other space, then talk"
+          ]
+        },
+        {
+          "text": "What's a past argument that still bothers you?"
+        }
+      ]
+    },
+    {
+      "id": "hook-60",
+      "coverText": "Signs they're actually in love with you ✅",
+      "slideText": [
+        {
+          "text": "Who fell in love first?"
+        },
+        {
+          "text": "When did you realize you were in love with me?"
+        },
+        {
+          "text": "What's one thing I do that makes you fall in love with me all over again?"
+        },
+        {
+          "text": "What are you really in love with?",
+          "options": [
+            "Who you are",
+            "Who you're becoming",
+            "All of you"
+          ]
+        },
+        {
+          "text": "Do you love who I am right now, or are you in love with my potential?"
+        }
+      ]
+    },
+    {
+      "id": "hook-61",
+      "coverText": "I've been asking my partner the wrong questions for two years",
+      "slideText": [
+        {
+          "text": "What is one thing you've never told me about your childhood?"
+        },
+        {
+          "text": "What have you wanted from me but never asked for?",
+          "options": [
+            "More affection",
+            "More teasing",
+            "More initiative"
+          ]
+        },
+        {
+          "text": "What's something you're afraid I might never fully understand about you?"
+        },
+        {
+          "text": "What are your biggest fears about our relationship?"
+        },
+        {
+          "text": "What part of yourself do you hold back in this relationship?"
+        }
+      ]
+    },
+    {
+      "id": "hook-62",
+      "coverText": "Vacation is fun until question #5 😩",
+      "slideText": [
+        {
+          "text": "Dream vacation?",
+          "options": [
+            "Beach getaway",
+            "City adventure"
+          ]
+        },
+        {
+          "text": "Taking a million pictures together on vacation.",
+          "options": [
+            "Cute",
+            "Cringe"
+          ]
+        },
+        {
+          "text": "Anniversary trips, what's more our style?",
+          "options": [
+            "Fancy hotel weekend",
+            "Cabin in nature",
+            "New country adventure"
+          ]
+        },
+        {
+          "text": "On vacation, someone asks to take my photo. You?",
+          "options": [
+            "Sure, that's harmless",
+            "Why do they care",
+            "Nope I'll take it"
+          ]
+        },
+        {
+          "text": "On vacation, someone asks for my Instagram. You?",
+          "options": [
+            "No big deal",
+            "Kinda rude",
+            "Absolutely not"
+          ]
         }
       ]
     }
