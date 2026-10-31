@@ -13,8 +13,9 @@ import {
  * App Store promo — there is no extra empty CTA tab.
  *
  * Styles share that slide count and question bank. "Pastel" is the original
- * look. The other styles are the @trydeepen card treatments measured from the
- * 2160×2880 posts (export is 1080×1440, so pixel sizes are halved).
+ * look. The other styles are the @trydeepen bulged-card treatments measured
+ * from the 2160×2880 posts (export is 1080×1440, so pixel sizes are halved).
+ * The red rounded card lives on image template 22.
  */
 export const IMAGE_TEMPLATE18_QUESTION_COUNT = 5;
 export const IMAGE_TEMPLATE18_SLIDE_COUNT = IMAGE_TEMPLATE18_QUESTION_COUNT + 1;
@@ -45,7 +46,7 @@ export const IMAGE_TEMPLATE18_CARD_MARGIN = 0.025;
  * as a fraction of frame width. About 1% — a slight convex bow, not a wave.
  */
 export const IMAGE_TEMPLATE18_CARD_BULGE = 0.01;
-/** Corner radius on a 1080-wide frame. The bulged card is square; only the red rounded style uses a radius. */
+/** Corner radius on a 1080-wide frame. The bulged card is square. */
 export const IMAGE_TEMPLATE18_CARD_RADIUS_AT_1080 = 10;
 
 /**
@@ -84,12 +85,7 @@ export const IMAGE_TEMPLATE18_SLIDES = [
   { bg: '#F6E7A4', accent: '#C46A3A' },
 ] as const;
 
-export type Template18StyleId =
-  | 'pastel'
-  | 'pastel-true'
-  | 'dark-moody'
-  | 'deep-red'
-  | 'red-rounded';
+export type Template18StyleId = 'pastel' | 'pastel-true' | 'dark-moody' | 'deep-red';
 
 export const IMAGE_TEMPLATE18_STYLE_OPTIONS: ReadonlyArray<{
   id: Template18StyleId;
@@ -99,7 +95,6 @@ export const IMAGE_TEMPLATE18_STYLE_OPTIONS: ReadonlyArray<{
   { id: 'pastel-true', label: 'Pastel (true)' },
   { id: 'dark-moody', label: 'Dark moody' },
   { id: 'deep-red', label: 'Deep red' },
-  { id: 'red-rounded', label: 'Red rounded card' },
 ];
 
 export const IMAGE_TEMPLATE18_DEFAULT_STYLE: Template18StyleId = 'pastel';
@@ -164,10 +159,6 @@ export const IMAGE_TEMPLATE18_DEEP_RED_SLIDES = [
   { bg: '#7E2218', sample: '#6A0F0E' },
 ] as const;
 
-export const IMAGE_TEMPLATE18_ROUNDED_CARD = '#740605';
-export const IMAGE_TEMPLATE18_ROUNDED_FRAME_INNER = '#2B1615';
-export const IMAGE_TEMPLATE18_ROUNDED_FRAME_OUTER = '#1C0706';
-
 export const IMAGE_TEMPLATE18_PASTEL_TRUE_TEXT = '#2C2A28';
 export const IMAGE_TEMPLATE18_OFFWHITE = '#F4F1EA';
 export const IMAGE_TEMPLATE18_WHITE = '#FFFFFF';
@@ -180,9 +171,9 @@ export function isTemplate18StyleId(value: string): value is Template18StyleId {
   return IMAGE_TEMPLATE18_STYLE_OPTIONS.some((option) => option.id === value);
 }
 
-/** Bulged-card styles keep the black frame. The red card sits on a maroon frame. */
-export function template18CanvasBackground(style: Template18StyleId = 'pastel'): string {
-  return style === 'red-rounded' ? IMAGE_TEMPLATE18_ROUNDED_FRAME_OUTER : IMAGE_TEMPLATE18_CANVAS_BG;
+/** Bulged-card styles sit on the black frame. */
+export function template18CanvasBackground(_style: Template18StyleId = 'pastel'): string {
+  return IMAGE_TEMPLATE18_CANVAS_BG;
 }
 
 export function template18HasProgress(style: Template18StyleId): boolean {
@@ -191,13 +182,12 @@ export function template18HasProgress(style: Template18StyleId): boolean {
 
 /**
  * Scanlines are part of every bulged-card style. Only the original pastel
- * exposes them as a toggle (default on). The rounded red card has none.
+ * exposes them as a toggle (default on).
  */
 export function resolveTemplate18Scanlines(
   style: Template18StyleId,
   toggle = true
 ): boolean {
-  if (style === 'red-rounded') return false;
   if (style === 'pastel') return toggle;
   return true;
 }
@@ -218,7 +208,6 @@ export function template18SlideStyle(
   if (style === 'pastel-true') return toneAt(IMAGE_TEMPLATE18_PASTEL_TRUE_SLIDES, tabIndex, '#C4A15A');
   if (style === 'dark-moody') return toneAt(IMAGE_TEMPLATE18_DARK_SLIDES, tabIndex, '#FFFFFF');
   if (style === 'deep-red') return toneAt(IMAGE_TEMPLATE18_DEEP_RED_SLIDES, tabIndex, '#FFFFFF');
-  if (style === 'red-rounded') return { bg: IMAGE_TEMPLATE18_ROUNDED_CARD, accent: '#FFFFFF' };
   return toneAt(IMAGE_TEMPLATE18_SLIDES, tabIndex, '#C4A15A');
 }
 
@@ -228,7 +217,6 @@ export function template18Background(
   isCta: boolean,
   style: Template18StyleId = 'pastel'
 ): string {
-  if (style === 'red-rounded') return IMAGE_TEMPLATE18_ROUNDED_CARD;
   if (style === 'pastel-true') {
     if (isCta) return IMAGE_TEMPLATE18_PASTEL_TRUE_SLIDES[IMAGE_TEMPLATE18_PASTEL_TRUE_SLIDES.length - 1]!.bg;
     return template18SlideStyle(tabIndex, style).bg;
@@ -281,16 +269,14 @@ export function template18TextColor(style: Template18StyleId, tabIndex = 0): str
   if (style === 'pastel') return IMAGE_TEMPLATE18_TEXT;
   if (style === 'pastel-true') return slideHex(IMAGE_TEMPLATE18_PASTEL_TRUE_TEXT_SLIDES, tabIndex);
   if (style === 'dark-moody') return '#F6F7F5';
-  if (style === 'deep-red') return '#F6EBEE';
-  return '#F3DBDC';
+  return '#F6EBEE';
 }
 
 export function template18FooterColor(style: Template18StyleId, tabIndex = 0): string {
   if (style === 'pastel') return IMAGE_TEMPLATE18_TEXT;
   if (style === 'pastel-true') return slideHex(IMAGE_TEMPLATE18_PASTEL_TRUE_FOOTER_SLIDES, tabIndex);
   if (style === 'dark-moody') return '#F4F5F3';
-  if (style === 'deep-red') return '#F3E4E6';
-  return '#F3DBDC';
+  return '#F3E4E6';
 }
 
 /**
@@ -377,35 +363,19 @@ export type Template18Card = {
   radius: number;
   bulgeX: number;
   bulgeY: number;
-  shape: 'bulge' | 'round';
+  shape: 'bulge';
 };
 
 /**
  * Corner box of an almost-rectangular card.
  * Each side's midpoint bows outward by `bulge` (1% of width), so the black
  * margin is thinnest there and only a little wider at the corners.
- * The red rounded style is a separate shape: nearly-square corners (~2.5% of
- * width) on a maroon frame, with no bow.
  */
 export function template18Card(
   width: number,
   height: number,
-  style: Template18StyleId = 'pastel'
+  _style: Template18StyleId = 'pastel'
 ): Template18Card {
-  if (style === 'red-rounded') {
-    const insetX = width * 0.055;
-    const insetY = height * 0.045;
-    return {
-      left: insetX,
-      right: width - insetX,
-      top: insetY,
-      bottom: height - insetY,
-      radius: width * 0.018,
-      bulgeX: 0,
-      bulgeY: 0,
-      shape: 'round',
-    };
-  }
   const bulgeX = width * IMAGE_TEMPLATE18_BULGE_X;
   const bulgeY = height * IMAGE_TEMPLATE18_BULGE_Y;
   const leftCenter = width * IMAGE_TEMPLATE18_EDGE_LEFT;
@@ -466,15 +436,13 @@ function template18CoverPreferred(style: Template18StyleId): number {
   if (style === 'pastel') return 0.072;
   if (style === 'dark-moody') return 0.07;
   if (style === 'deep-red') return 0.062;
-  if (style === 'pastel-true') return 0.07;
-  return 0.05;
+  return 0.07;
 }
 
 function template18QuestionPreferred(style: Template18StyleId): number {
   if (style === 'pastel-true') return 0.052;
   if (style === 'dark-moody') return 0.05;
   if (style === 'deep-red') return 0.05;
-  if (style === 'red-rounded') return 0.044;
   return 0.056;
 }
 
@@ -484,7 +452,6 @@ function template18TextCenter(style: Template18StyleId, kind: Template18Kind): n
   if (style === 'pastel-true') return kind === 'cover' ? 0.504 : 0.492;
   if (style === 'dark-moody') return kind === 'cover' ? 0.477 : 0.483;
   if (style === 'deep-red') return kind === 'cover' ? 0.475 : 0.455;
-  if (style === 'red-rounded') return kind === 'cover' ? 0.508 : 0.538;
   return 0.48;
 }
 
@@ -830,12 +797,6 @@ export function traceTemplate18Card(
   style: Template18StyleId = 'pastel'
 ): void {
   const card = template18Card(width, height, style);
-  if (card.shape === 'round') {
-    const w = card.right - card.left;
-    const h = card.bottom - card.top;
-    ctx.roundRect(card.left, card.top, w, h, card.radius);
-    return;
-  }
   const { left, right, top, bottom, bulgeX, bulgeY } = card;
   const spanX = right - left;
   const spanY = bottom - top;
@@ -877,7 +838,6 @@ export function drawTemplate18Vignette(
   const cx = width / 2;
   const cy = height / 2;
   const outer = Math.hypot(cx - card.left, cy - card.top);
-  if (style === 'red-rounded') return;
   const gradient = ctx.createRadialGradient(cx, cy, outer * 0.05, cx, cy, outer);
   // Sampled on the pastel reference: flat through the inner half, then a
   // smooth ring down to about 0.75 at the sharp corner. Deep red stops a
@@ -1025,30 +985,6 @@ export function drawTemplate18Scanlines(
   ctx.restore();
 }
 
-function drawRoundedSoftEdge(ctx: CanvasRenderingContext2D, card: Template18Card, width: number) {
-  const w = card.right - card.left;
-  const h = card.bottom - card.top;
-  const steps = 22;
-  const maxGrow = width * 0.04;
-  for (let i = steps; i >= 1; i--) {
-    const t = i / steps;
-    const grow = t * maxGrow;
-    const r = Math.round(116 * (1 - t) + 48 * t);
-    const g = Math.round(6 * (1 - t) + 5 * t);
-    const b = Math.round(5 * (1 - t) + 5 * t);
-    ctx.fillStyle = `rgb(${r},${g},${b})`;
-    ctx.beginPath();
-    ctx.roundRect(
-      card.left - grow,
-      card.top - grow,
-      w + grow * 2,
-      h + grow * 2,
-      card.radius + grow * 0.35
-    );
-    ctx.fill();
-  }
-}
-
 /** 1–2 px yellow fringe on the left edge and blue on the right, like the reference. */
 function drawTemplate18Fringe(ctx: CanvasRenderingContext2D, width: number, height: number) {
   const image = ctx.getImageData(0, 0, width, height);
@@ -1074,23 +1010,7 @@ function drawTemplate18Fringe(ctx: CanvasRenderingContext2D, width: number, heig
   ctx.putImageData(image, 0, 0);
 }
 
-function drawTemplate18Frame(ctx: CanvasRenderingContext2D, width: number, height: number, style: Template18StyleId) {
-  if (style === 'red-rounded') {
-    const gradient = ctx.createRadialGradient(
-      width / 2,
-      height / 2,
-      width * 0.2,
-      width / 2,
-      height / 2,
-      Math.hypot(width, height) * 0.55
-    );
-    gradient.addColorStop(0, IMAGE_TEMPLATE18_ROUNDED_FRAME_INNER);
-    gradient.addColorStop(1, IMAGE_TEMPLATE18_ROUNDED_FRAME_OUTER);
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, width, height);
-    drawRoundedSoftEdge(ctx, template18Card(width, height, style), width);
-    return;
-  }
+function drawTemplate18Frame(ctx: CanvasRenderingContext2D, width: number, height: number) {
   ctx.fillStyle = IMAGE_TEMPLATE18_CANVAS_BG;
   ctx.fillRect(0, 0, width, height);
 }
@@ -1144,8 +1064,7 @@ export function paintTemplate18Slide(
     (style === 'pastel' ? IMAGE_TEMPLATE18_PASTEL_FONT_STACK : IMAGE_TEMPLATE18_FONT_STACK);
   const scanlines = resolveTemplate18Scanlines(style, options.scanlines !== false);
 
-  drawTemplate18Frame(ctx, width, height, style);
-  if (style === 'red-rounded') drawTemplate18Grain(ctx, width, height, 0.2);
+  drawTemplate18Frame(ctx, width, height);
 
   ctx.save();
   ctx.beginPath();
@@ -1155,7 +1074,6 @@ export function paintTemplate18Slide(
   ctx.fillRect(0, 0, width, height);
   drawTemplate18Vignette(ctx, width, height, style);
   if (style === 'deep-red') drawTemplate18Grain(ctx, width, height, 0.22);
-  else if (style === 'red-rounded') drawTemplate18Grain(ctx, width, height, 0.14);
 
   if (kind !== 'cover') {
     drawTemplate18Progress(
@@ -1227,7 +1145,7 @@ export function paintTemplate18Slide(
     ctx.fillText(IMAGE_TEMPLATE2_Q5_PROMO_LABEL, width / 2, promo.y - labelGap);
     if (scanlines) drawTemplate18Scanlines(ctx, width, height, template18ScanlineFactor(style));
     ctx.restore();
-    if (style !== 'red-rounded') drawTemplate18Fringe(ctx, width, height);
+    drawTemplate18Fringe(ctx, width, height);
     return;
   }
 
@@ -1241,5 +1159,5 @@ export function paintTemplate18Slide(
   ctx.fillText(IMAGE_TEMPLATE18_FOOTER, width / 2, template18FooterY(height, card, style));
   if (scanlines) drawTemplate18Scanlines(ctx, width, height, template18ScanlineFactor(style));
   ctx.restore();
-  if (style !== 'red-rounded') drawTemplate18Fringe(ctx, width, height);
+  drawTemplate18Fringe(ctx, width, height);
 }
