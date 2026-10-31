@@ -73,8 +73,8 @@ const SHADE_Y: ReadonlyArray<readonly [number, number]> = [
 export const IMAGE_TEMPLATE20_COVER_SIZE = 0.061;
 export const IMAGE_TEMPLATE20_COVER_LEADING = 1.46;
 export const IMAGE_TEMPLATE20_COVER_WIDTH = 0.7;
-/** Vertical centre of the cover ink block. */
-export const IMAGE_TEMPLATE20_COVER_CENTER = 0.55;
+/** Vertical centre of the cover ink block. The title sits in the middle of the slide. */
+export const IMAGE_TEMPLATE20_COVER_CENTER = 0.5;
 
 /** Question body. Left edge and ink top measured on the reference questions. */
 export const IMAGE_TEMPLATE20_QUESTION_SIZE = 0.0426;
