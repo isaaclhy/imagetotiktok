@@ -128,6 +128,11 @@ export const IMAGE_TEMPLATES_BY_APP: Record<StudioAppId, ImageTemplateCard[]> = 
       subtitle: '',
       coverSrc: '/image-templates/template-18-cover.png',
     },
+    {
+      id: 19,
+      title: 'Red glow',
+      subtitle: '',
+    },
   ],
   fab: [
     { id: 1, title: 'Heart shaped paper', subtitle: '' },
@@ -157,6 +162,11 @@ export const VIDEO_TEMPLATES_BY_APP: Record<StudioAppId, VideoTemplateCard[]> = 
       title: 'Fresh Baked Donut',
       subtitle: '',
       coverSrc: FRESH_BAKED_DONUT_POSTS[0]?.thumbnailUrl,
+    },
+    {
+      id: 6,
+      title: 'Cinematic',
+      subtitle: '',
     },
   ],
   fab: [
