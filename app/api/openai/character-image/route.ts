@@ -42,11 +42,17 @@ async function loadImageFile(
     bytes = Buffer.from(await res.arrayBuffer());
     mimeType = res.headers.get('Content-Type')?.split(';')[0]?.trim() || mimeType;
   } else {
+    // Only character covers are read from disk. A dynamic path under `public/`
+    // makes file tracing bundle the entire directory, including static assets.
     const rel = original.replace(/^\/+/, '');
-    const filePath = path.join(process.cwd(), 'public', rel);
+    const fileName = path.basename(rel);
+    if (rel !== `characters/${fileName}`) {
+      throw new Error('Local images must live in public/characters');
+    }
+    const filePath = path.join(process.cwd(), 'public', 'characters', fileName);
     bytes = await fs.readFile(filePath);
-    if (rel.endsWith('.png')) mimeType = 'image/png';
-    else if (rel.endsWith('.webp')) mimeType = 'image/webp';
+    if (fileName.endsWith('.png')) mimeType = 'image/png';
+    else if (fileName.endsWith('.webp')) mimeType = 'image/webp';
   }
 
   return toFile(bytes, `${fallbackName}.${extForMime(mimeType)}`, { type: mimeType });

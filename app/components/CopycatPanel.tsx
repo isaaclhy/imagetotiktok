@@ -19,6 +19,7 @@ import { getHhTalkPosts } from '@/app/lib/copycat/hhtalk';
 import { getGoldenThoughtsDailyPosts } from '@/app/lib/copycat/goldenthoughtsdaily';
 import { getLvrsbaePosts } from '@/app/lib/copycat/lvrsbae';
 import { getSpillCardsAppPosts } from '@/app/lib/copycat/spillcardsapp';
+import { getHookPosts } from '@/app/lib/copycat/hook-posts';
 import { exportCopycatSlidesZip } from '@/app/lib/copycat/export-slides';
 import { IMAGE_TEMPLATE2_PASTEL_COLORS, IMAGE_TEMPLATE2_TOP_LABEL } from '@/app/lib/constants';
 import {
@@ -106,23 +107,28 @@ import {
   template14TextForBackground,
 } from '@/app/lib/image-template-14-cards';
 import { NotesQuestionsPreview } from '@/app/components/NotesQuestionsPreview';
-import { SplitCoverPreview, SplitQuestionPreview } from '@/app/components/SplitCoverPreview';
+import { PastelSlideshowPreview } from '@/app/components/PastelSlideshowPreview';
+import { SplitCoverPreview } from '@/app/components/SplitCoverPreview';
 import {
-  IMAGE_TEMPLATE18_FONT_STACK,
-  IMAGE_TEMPLATE18_GLOW_BACKGROUND,
-  IMAGE_TEMPLATE18_GRAIN_SRC,
-  IMAGE_TEMPLATE18_LABEL,
-  IMAGE_TEMPLATE18_LABEL_COLOR,
-  IMAGE_TEMPLATE18_LABEL_FONT_STACK,
-  IMAGE_TEMPLATE18_LABEL_SIZE,
-  IMAGE_TEMPLATE18_CTA_TEXT_Y,
-  IMAGE_TEMPLATE18_LABEL_Y,
-  IMAGE_TEMPLATE18_LINE_HEIGHT,
-  IMAGE_TEMPLATE18_TEXT,
-  IMAGE_TEMPLATE18_TEXT_SIZE,
-  IMAGE_TEMPLATE18_TEXT_WIDTH,
-  IMAGE_TEMPLATE18_TEXT_Y,
-} from '@/app/lib/image-template-18-glow';
+  template17BackgroundSrcAt,
+  template17TabForQuestions,
+} from '@/app/lib/copycat/template17-background';
+import {
+  IMAGE_TEMPLATE19_FONT_STACK,
+  IMAGE_TEMPLATE19_GLOW_BACKGROUND,
+  IMAGE_TEMPLATE19_GRAIN_SRC,
+  IMAGE_TEMPLATE19_LABEL,
+  IMAGE_TEMPLATE19_LABEL_COLOR,
+  IMAGE_TEMPLATE19_LABEL_FONT_STACK,
+  IMAGE_TEMPLATE19_LABEL_SIZE,
+  IMAGE_TEMPLATE19_CTA_TEXT_Y,
+  IMAGE_TEMPLATE19_LABEL_Y,
+  IMAGE_TEMPLATE19_LINE_HEIGHT,
+  IMAGE_TEMPLATE19_TEXT,
+  IMAGE_TEMPLATE19_TEXT_SIZE,
+  IMAGE_TEMPLATE19_TEXT_WIDTH,
+  IMAGE_TEMPLATE19_TEXT_Y,
+} from '@/app/lib/image-template-19-glow';
 
 const TIKTOK_SANS_STACK = '"TikTok Sans", system-ui, -apple-system, sans-serif';
 const COPYCAT_APP_NAME = 'Spill It';
@@ -132,7 +138,7 @@ const COPYCAT_TEXT_ONLY_COVER_TOP = 0.38;
 const COPYCAT_TEXT_ONLY_COVER_SIZE_T2 = 0.074;
 const COPYCAT_TEXT_ONLY_COVER_SIZE_T14 = 0.088;
 
-export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18;
+export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19;
 
 function CopycatAppMarkFooter({
   isCover,
@@ -181,6 +187,8 @@ function CopycatAppMarkFooter({
 type CopycatPanelProps = {
   competitorId: string;
   templateId: CopycatTemplateId;
+  /** When true, draw only from the curated hook posts, ignoring competitor feeds. */
+  useHookPosts?: boolean;
   onNewRandomPost?: () => void;
 };
 
@@ -257,6 +265,7 @@ function CopycatSlidePreview({
   illustrationSrc,
   isCtaSlide = false,
   slideCount = 6,
+  backgroundSrc,
 }: {
   templateId: CopycatTemplateId;
   tabIndex: number;
@@ -267,6 +276,7 @@ function CopycatSlidePreview({
   illustrationSrc?: string;
   isCtaSlide?: boolean;
   slideCount?: number;
+  backgroundSrc?: string;
 }) {
   const isCover = tabIndex === 0;
   const showTemplate2StyleCta =
@@ -284,7 +294,7 @@ function CopycatSlidePreview({
     templateId !== 1 &&
     templateId !== 6 &&
     templateId !== 17 &&
-    templateId !== 18;
+    templateId !== 19;
   const alignLeft = Boolean(leftAlign && !isCover) || templateId === 2;
   const pastelBg =
     IMAGE_TEMPLATE2_PASTEL_COLORS[tabIndex % IMAGE_TEMPLATE2_PASTEL_COLORS.length]!;
@@ -294,18 +304,18 @@ function CopycatSlidePreview({
     ? 'left-[11%] w-[78%] -translate-y-1/2 text-left'
     : 'left-1/2 w-[78%] -translate-x-1/2 -translate-y-1/2 text-center';
 
-  if (templateId === 18) {
+  if (templateId === 19) {
     return (
       <div className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4 bg-black">
         <div
           className="pointer-events-none absolute inset-0"
-          style={{ background: IMAGE_TEMPLATE18_GLOW_BACKGROUND }}
+          style={{ background: IMAGE_TEMPLATE19_GLOW_BACKGROUND }}
           aria-hidden
         />
         <div
           className="pointer-events-none absolute inset-0"
           style={{
-            backgroundImage: `url(${IMAGE_TEMPLATE18_GRAIN_SRC})`,
+            backgroundImage: `url(${IMAGE_TEMPLATE19_GRAIN_SRC})`,
             backgroundSize: '120px',
             opacity: 0.4,
             mixBlendMode: 'overlay',
@@ -315,13 +325,13 @@ function CopycatSlidePreview({
         <p
           className="absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 whitespace-pre-wrap wrap-break-word text-center"
           style={{
-            top: `${(isCtaSlide ? IMAGE_TEMPLATE18_CTA_TEXT_Y : IMAGE_TEMPLATE18_TEXT_Y) * 100}%`,
-            width: `${IMAGE_TEMPLATE18_TEXT_WIDTH * 100}%`,
-            color: IMAGE_TEMPLATE18_TEXT,
-            fontFamily: IMAGE_TEMPLATE18_FONT_STACK,
-            fontSize: `${IMAGE_TEMPLATE18_TEXT_SIZE * 100}cqw`,
+            top: `${(isCtaSlide ? IMAGE_TEMPLATE19_CTA_TEXT_Y : IMAGE_TEMPLATE19_TEXT_Y) * 100}%`,
+            width: `${IMAGE_TEMPLATE19_TEXT_WIDTH * 100}%`,
+            color: IMAGE_TEMPLATE19_TEXT,
+            fontFamily: IMAGE_TEMPLATE19_FONT_STACK,
+            fontSize: `${IMAGE_TEMPLATE19_TEXT_SIZE * 100}cqw`,
             fontWeight: 400,
-            lineHeight: IMAGE_TEMPLATE18_LINE_HEIGHT,
+            lineHeight: IMAGE_TEMPLATE19_LINE_HEIGHT,
           }}
         >
           {text}
@@ -354,16 +364,29 @@ function CopycatSlidePreview({
           <p
             className="absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 text-center"
             style={{
-              top: `${IMAGE_TEMPLATE18_LABEL_Y * 100}%`,
-              color: IMAGE_TEMPLATE18_LABEL_COLOR,
-              fontFamily: IMAGE_TEMPLATE18_LABEL_FONT_STACK,
-              fontSize: `${IMAGE_TEMPLATE18_LABEL_SIZE * 100}cqw`,
+              top: `${IMAGE_TEMPLATE19_LABEL_Y * 100}%`,
+              color: IMAGE_TEMPLATE19_LABEL_COLOR,
+              fontFamily: IMAGE_TEMPLATE19_LABEL_FONT_STACK,
+              fontSize: `${IMAGE_TEMPLATE19_LABEL_SIZE * 100}cqw`,
               fontWeight: 500,
             }}
           >
-            {IMAGE_TEMPLATE18_LABEL}
+            {IMAGE_TEMPLATE19_LABEL}
           </p>
         )}
+      </div>
+    );
+  }
+
+  if (templateId === 18) {
+    return (
+      <div className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4 bg-black">
+        <PastelSlideshowPreview
+          text={text}
+          tabIndex={tabIndex}
+          slideCount={slideCount}
+          isCta={isCtaSlide}
+        />
       </div>
     );
   }
@@ -371,7 +394,7 @@ function CopycatSlidePreview({
   if (templateId === 17) {
     return (
       <div className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4 bg-black">
-        {isCover ? <SplitCoverPreview text={text} /> : <SplitQuestionPreview text={text} />}
+        <SplitCoverPreview text={text} backgroundSrc={backgroundSrc} />
       </div>
     );
   }
@@ -947,9 +970,11 @@ function CopycatSlidePreview({
 export function CopycatPanel({
   competitorId,
   templateId,
+  useHookPosts = false,
   onNewRandomPost,
 }: CopycatPanelProps) {
   const posts: CopycatPost[] = useMemo(() => {
+    if (useHookPosts) return getHookPosts();
     const raw =
       competitorId === 'flamingo-cards'
         ? getFlamingoCardsPosts(FLAMINGO_CARDS_FEED.posts)
@@ -974,8 +999,9 @@ export function CopycatPanel({
                         : [];
     if (competitorId === 'flamingo-cards') return filterCopycatPostsByMinViews(raw);
     return raw;
-  }, [competitorId]);
+  }, [competitorId, useHookPosts]);
   const postIds = useMemo(() => posts.map((post) => post.id), [posts]);
+  const postSourceKey = useHookPosts ? 'hook-posts' : competitorId;
 
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState(0);
@@ -1030,7 +1056,7 @@ export function CopycatPanel({
     setTemplate15FrameBg((current) => pickTemplate15FrameColor(current));
   }, [postIds]);
 
-  // Fresh crypto draw whenever the template or competitor changes (and once on mount).
+  // Fresh crypto draw whenever the template or post source changes (and once on mount).
   useEffect(() => {
     if (postIds.length === 0) {
       setSelectedPostId(null);
@@ -1039,11 +1065,19 @@ export function CopycatPanel({
     postBagRef.current = [];
     lastPostIdRef.current = null;
     reshufflePost();
-  }, [templateId, competitorId, reshufflePost]);
+  }, [templateId, postSourceKey, reshufflePost]);
 
   useEffect(() => {
     if (selectedTab >= slideBodies.length) setSelectedTab(0);
   }, [selectedTab, slideBodies.length]);
+
+  // New random post lands on the cover, which has no question id and always
+  // uses the shared photo. Open the first question that has its own JPEG.
+  useEffect(() => {
+    if (templateId !== 17) return;
+    const tab = template17TabForQuestions(questionSlides);
+    if (tab > 0) setSelectedTab(tab);
+  }, [selectedPostId, templateId, questionSlides]);
 
   useEffect(() => {
     if (templateId !== 1) return;
@@ -1162,6 +1196,8 @@ export function CopycatPanel({
           text,
           isCta,
           isCover,
+          backgroundSrc:
+            templateId === 17 ? template17BackgroundSrcAt(questionSlides, index) : undefined,
           leftAlign: Boolean(
             templateId === 2 ||
               (index > 0 && questionSlides[index - 1]?.options?.length)
@@ -1223,14 +1259,14 @@ export function CopycatPanel({
     <div className="mx-auto flex w-full max-w-sm flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
-          Random post · {slideBodies.length} slides
+          {useHookPosts ? 'Hook post' : 'Random post'} · {slideBodies.length} slides
         </p>
         <div className="flex shrink-0 items-center gap-1.5">
           <button
             type="button"
             onClick={() => {
-              if (onNewRandomPost) onNewRandomPost();
-              else reshufflePost();
+              if (useHookPosts || !onNewRandomPost) reshufflePost();
+              else onNewRandomPost();
             }}
             disabled={isDownloading}
             className="rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-1.5 text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:border-zinc-400 dark:hover:border-zinc-500 disabled:opacity-50"
@@ -1302,6 +1338,9 @@ export function CopycatPanel({
         tabIndex={selectedTab}
         slideCount={slideBodies.length}
         text={slideBodies[selectedTab] ?? ''}
+        backgroundSrc={
+          templateId === 17 ? template17BackgroundSrcAt(questionSlides, selectedTab) : undefined
+        }
         leftAlign={Boolean(
           templateId === 2 ||
             (selectedTab > 0 && questionSlides[selectedTab - 1]?.options?.length)

@@ -65,16 +65,22 @@ import {
 import {
   IMAGE_TEMPLATE17_COVER_SRC,
   IMAGE_TEMPLATE17_ICON_SRC,
+  IMAGE_TEMPLATE17_OPTION_WEIGHT,
   IMAGE_TEMPLATE17_TITLE_WEIGHT,
-  paintTemplate17QuestionCard,
   paintTemplate17Slide,
+  template17CanvasFontStack,
+  template17PrimaryFontFamily,
 } from '@/app/lib/image-template-17-split';
 import {
-  IMAGE_TEMPLATE18_FONT_STACK,
-  IMAGE_TEMPLATE18_GRAIN_SRC,
-  IMAGE_TEMPLATE18_LABEL_FONT_STACK,
+  IMAGE_TEMPLATE18_FONT_WEIGHT,
   paintTemplate18Slide,
-} from '@/app/lib/image-template-18-glow';
+} from '@/app/lib/image-template-18-pastel';
+import {
+  IMAGE_TEMPLATE19_FONT_STACK,
+  IMAGE_TEMPLATE19_GRAIN_SRC,
+  IMAGE_TEMPLATE19_LABEL_FONT_STACK,
+  paintTemplate19Slide,
+} from '@/app/lib/image-template-19-glow';
 
 const TIKTOK = '"TikTok Sans", system-ui, sans-serif';
 const COMIC =
@@ -112,7 +118,7 @@ function drawCopycatAppMark(
   ctx.fillText(COPYCAT_APP_NAME, frameWidth / 2, markY);
 }
 
-export type CopycatExportTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18;
+export type CopycatExportTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19;
 
 export type CopycatExportSlide = {
   text: string;
@@ -120,6 +126,8 @@ export type CopycatExportSlide = {
   illustrationSrc?: string;
   isCta: boolean;
   isCover: boolean;
+  /** Template 17 photo URL. Same path the preview uses. Covers omit it and use the shared cover. */
+  backgroundSrc?: string;
 };
 
 function concreteFontFamily(stack: string): string {
@@ -215,9 +223,9 @@ async function paintSlide(
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Failed to prepare canvas');
 
-  if (templateId === 18) {
-    const serif = concreteFontFamily(IMAGE_TEMPLATE18_FONT_STACK);
-    const label = concreteFontFamily(IMAGE_TEMPLATE18_LABEL_FONT_STACK);
+  if (templateId === 19) {
+    const serif = concreteFontFamily(IMAGE_TEMPLATE19_FONT_STACK);
+    const label = concreteFontFamily(IMAGE_TEMPLATE19_LABEL_FONT_STACK);
     try {
       await document.fonts.load(`400 72px ${serif}`);
       await document.fonts.load(`500 36px ${label}`);
@@ -227,10 +235,10 @@ async function paintSlide(
       /* fonts may already be ready */
     }
     const [grain, promo] = await Promise.all([
-      loadImage(IMAGE_TEMPLATE18_GRAIN_SRC),
+      loadImage(IMAGE_TEMPLATE19_GRAIN_SRC),
       slide.isCta ? loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC) : Promise.resolve(null),
     ]);
-    paintTemplate18Slide(ctx, w, h, {
+    paintTemplate19Slide(ctx, w, h, {
       text: slide.text,
       grain,
       fontFamily: serif,
@@ -242,21 +250,45 @@ async function paintSlide(
   }
 
   if (templateId === 17) {
+    const family = template17PrimaryFontFamily();
+    const fontFamily = template17CanvasFontStack(family);
     try {
-      await document.fonts.load(`${IMAGE_TEMPLATE17_TITLE_WEIGHT} 72px "Inter"`);
-      await document.fonts.load(`600 28px "Inter"`);
+      await document.fonts.load(`${IMAGE_TEMPLATE17_TITLE_WEIGHT} 72px "${family}"`);
+      await document.fonts.load(`${IMAGE_TEMPLATE17_OPTION_WEIGHT} 48px "${family}"`);
+      await document.fonts.load(`600 28px "${family}"`);
     } catch {
       /* fonts may already be ready */
     }
+    const backgroundSrc = slide.backgroundSrc || IMAGE_TEMPLATE17_COVER_SRC;
     const [icon, image] = await Promise.all([
       loadImage(IMAGE_TEMPLATE17_ICON_SRC),
-      loadImage(IMAGE_TEMPLATE17_COVER_SRC),
+      loadImage(backgroundSrc).catch(() =>
+        backgroundSrc === IMAGE_TEMPLATE17_COVER_SRC
+          ? Promise.reject(new Error(`Failed to load ${backgroundSrc}`))
+          : loadImage(IMAGE_TEMPLATE17_COVER_SRC)
+      ),
     ]);
-    if (slide.isCover) {
-      paintTemplate17Slide(ctx, w, h, { text: slide.text, icon, image });
-    } else {
-      paintTemplate17QuestionCard(ctx, w, h, { text: slide.text, icon, image });
+    paintTemplate17Slide(ctx, w, h, { text: slide.text, icon, image, fontFamily });
+    return canvasBlob(canvas);
+  }
+
+  if (templateId === 18) {
+    try {
+      await document.fonts.load(
+        `${IMAGE_TEMPLATE18_FONT_WEIGHT} 72px "Libre Baskerville"`
+      );
+      await document.fonts.load('700 36px "TikTok Sans"');
+    } catch {
+      /* fonts may already be ready */
     }
+    const promo = slide.isCta ? await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC) : null;
+    paintTemplate18Slide(ctx, w, h, {
+      text: slide.text,
+      tabIndex,
+      slideCount,
+      isCta: slide.isCta,
+      promo,
+    });
     return canvasBlob(canvas);
   }
 

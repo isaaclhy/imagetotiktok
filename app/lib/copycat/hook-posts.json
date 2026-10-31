@@ -1,0 +1,1345 @@
+{
+  "handle": "hook-posts",
+  "platform": "tiktok",
+  "postCount": 49,
+  "minViews": 0,
+  "posts": [
+    {
+      "id": "hook-01",
+      "coverText": "First one to dodge this question does the dishes",
+      "slideText": [
+        {
+          "text": "What was your honest first impression of me?"
+        },
+        {
+          "text": "What's a silly nickname you secretly want to call me?"
+        },
+        {
+          "text": "What's the cutest habit of mine that you secretly love?"
+        },
+        {
+          "text": "What's the one thing you've never told me because it might hurt me?"
+        },
+        {
+          "text": "Be honest: what is the most exhausting part of being in a relationship with me?"
+        }
+      ]
+    },
+    {
+      "id": "hook-02",
+      "coverText": "Marriage life after this question 🤯",
+      "slideText": [
+        {
+          "text": "What aspect of our future together worries you the most?"
+        },
+        {
+          "text": "What's the biggest fear you have about our future together?"
+        },
+        {
+          "text": "What's the one thing about our future together that scares you the most?"
+        },
+        {
+          "text": "If you could grant us one wish for our future together, what would it be?"
+        },
+        {
+          "text": "If you were married to another woman and you met me, would you cheat on her with me?"
+        }
+      ]
+    },
+    {
+      "id": "hook-03",
+      "coverText": "The moment we both blushed",
+      "slideText": [
+        {
+          "text": "What turns you on more?",
+          "options": [
+            "My hair tied",
+            "My hair untied"
+          ]
+        },
+        {
+          "text": "What's the weirdest thing you find attractive about me?"
+        },
+        {
+          "text": "What's the most unexpected thing about me that turns you on?"
+        },
+        {
+          "text": "If someone flirted with you while we were fighting - would you tell me?"
+        },
+        {
+          "text": "When you first met me, what physical feature of mine turned you on the most?"
+        }
+      ]
+    },
+    {
+      "id": "hook-04",
+      "coverText": "Pre-divorce question round. Here we go.",
+      "slideText": [
+        {
+          "text": "What part of my personality annoys you the most?"
+        },
+        {
+          "text": "Have you ever wanted to leave me for a better-looking guy?"
+        },
+        {
+          "text": "If you could leave me a note to read in 10 years, what would it say?"
+        },
+        {
+          "text": "If someone else offered you the 'perfect' relationship, would you leave me?"
+        },
+        {
+          "text": "If your mom told you to break up with me tomorrow, what would you do?",
+          "options": [
+            "Listen to her",
+            "Fight for us"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hook-05",
+      "coverText": "Red flags hiding in his answers 🚩",
+      "slideText": [
+        {
+          "text": "What's my funniest red flag?"
+        },
+        {
+          "text": "Have you ever compared me to your ex?"
+        },
+        {
+          "text": "Have you ever lied to me to protect my feelings? What was it about?"
+        },
+        {
+          "text": "Have you ever wondered if an ex was better suited for you than I am?"
+        },
+        {
+          "text": "Have you ever felt jealous of my relationship with someone else? Who and why?"
+        }
+      ]
+    },
+    {
+      "id": "hook-06",
+      "coverText": "POV: she says \"I know everything about you\"",
+      "slideText": [
+        {
+          "text": "What's my biggest green flag?",
+          "options": [
+            "Loyal",
+            "Understanding",
+            "Supportive",
+            "Honest"
+          ]
+        },
+        {
+          "text": "What do you think is my biggest insecurity?"
+        },
+        {
+          "text": "What would you say is my biggest turn-on is?"
+        },
+        {
+          "text": "What has been my biggest impact on your life?"
+        },
+        {
+          "text": "If someone asked you to name my biggest red flag, what is it?"
+        }
+      ]
+    },
+    {
+      "id": "hook-07",
+      "coverText": "Take me back to our first conversation",
+      "slideText": [
+        {
+          "text": "Do you ever replay our first kiss in your head?"
+        },
+        {
+          "text": "When was the first time you thought \"she's the one\"?"
+        },
+        {
+          "text": "Who do you think was more nervous on our first date?"
+        },
+        {
+          "text": "If we met today for the first time, how would you try to get my attention?"
+        },
+        {
+          "text": "What's a detail about the first time we met that you think you'll remember forever?"
+        }
+      ]
+    },
+    {
+      "id": "hook-08",
+      "coverText": "Answer fast. No thinking allowed.",
+      "slideText": [
+        {
+          "text": "Am I the drama or the peacekeeper?",
+          "options": [
+            "The drama",
+            "The peacekeeper"
+          ]
+        },
+        {
+          "text": "Did you fall for me or did I just grow on you?",
+          "options": [
+            "I fell for you",
+            "You grew on me"
+          ]
+        },
+        {
+          "text": "What's your favorite word or phrase I say often?"
+        },
+        {
+          "text": "Do you feel like we're growing together or apart?",
+          "options": [
+            "Together",
+            "Apart"
+          ]
+        },
+        {
+          "text": "What's my main skill?",
+          "options": [
+            "Chaos",
+            "Noise",
+            "Confusion"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hook-09",
+      "coverText": "Things I wish we'd asked sooner",
+      "slideText": [
+        {
+          "text": "What is your love language?"
+        },
+        {
+          "text": "What's something you need from me that I don't give?"
+        },
+        {
+          "text": "What's something I do that secretly makes you feel loved?"
+        },
+        {
+          "text": "Was I the type of person you expected to fall in love with?"
+        },
+        {
+          "text": "What do you need from me that you're not currently getting?"
+        }
+      ]
+    },
+    {
+      "id": "hook-10",
+      "coverText": "Rating my husband's answers out of 10",
+      "slideText": [
+        {
+          "text": "Rate my jealousy out of 10."
+        },
+        {
+          "text": "Rate how annoying I am out of 10."
+        },
+        {
+          "text": "How did you first describe me to your friends?"
+        },
+        {
+          "text": "If you had to describe me in three words what would they be?"
+        },
+        {
+          "text": "If your friends rated you as a boyfriend, what would they say you suck at?"
+        }
+      ]
+    },
+    {
+      "id": "hook-11",
+      "coverText": "He did NOT see this question coming",
+      "slideText": [
+        {
+          "text": "If we could have a perfect day together, what would it look like?"
+        },
+        {
+          "text": "If we had to create a couple's theme song, what would the title be?"
+        },
+        {
+          "text": "If we weren't in a relationship, what pickup line would you use with me?"
+        },
+        {
+          "text": "If we could start a new tradition together, what would you want it to be?"
+        },
+        {
+          "text": "If we could start over knowing everything we know now, would you still choose me?"
+        }
+      ]
+    },
+    {
+      "id": "hook-12",
+      "coverText": "Couples who can't answer this, worry",
+      "slideText": [
+        {
+          "text": "How do you know I trust you?"
+        },
+        {
+          "text": "How do you know when I've missed you?"
+        },
+        {
+          "text": "What makes me different from other guys?"
+        },
+        {
+          "text": "If someone asked, \"Why do you love them?\" what would you say?"
+        },
+        {
+          "text": "What makes me different from other girls you've dated/talked to in the past?"
+        }
+      ]
+    },
+    {
+      "id": "hook-13",
+      "coverText": "Unpopular opinion: date nights are overrated",
+      "slideText": [
+        {
+          "text": "Would you still date me if I was a worm?"
+        },
+        {
+          "text": "What was your favorite date we've ever had? Why?"
+        },
+        {
+          "text": "What did you tell your friends after our first date?"
+        },
+        {
+          "text": "What did you want to do on our first date but didn't?"
+        },
+        {
+          "text": "Which of our dates would you love to relive, and why?"
+        }
+      ]
+    },
+    {
+      "id": "hook-14",
+      "coverText": "Asked him this at 2 AM…",
+      "slideText": [
+        {
+          "text": "What is your biggest fear in life?"
+        },
+        {
+          "text": "How do you feel when I cry in front of you?"
+        },
+        {
+          "text": "What do you fear I'll never understand about you?"
+        },
+        {
+          "text": "If you could ask me anything with no fear, what would it be?"
+        },
+        {
+          "text": "Why are you with me?",
+          "options": [
+            "I truly love you",
+            "I'm scared of starting over"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hook-15",
+      "coverText": "3 years together and I never knew this",
+      "slideText": [
+        {
+          "text": "What's a secret dream you've never told anyone (even me)?"
+        },
+        {
+          "text": "What's one childhood memory that shaped who you are today?"
+        },
+        {
+          "text": "What's one thing you've never told me about your feelings?"
+        },
+        {
+          "text": "What's one thing about me that you noticed but never told me?"
+        },
+        {
+          "text": "Is there something you've never told me because you thought I'd react badly?"
+        }
+      ]
+    },
+    {
+      "id": "hook-16",
+      "coverText": "Storytime: one question changed our relationship",
+      "slideText": [
+        {
+          "text": "What changed in you after we met?"
+        },
+        {
+          "text": "What moment with me changed the way you view love?"
+        },
+        {
+          "text": "What part of your life has changed the most since we met?"
+        },
+        {
+          "text": "What's something I've done that changed the way you see love?"
+        },
+        {
+          "text": "When was the specific moment you knew you wanted to be with me?"
+        }
+      ]
+    },
+    {
+      "id": "hook-17",
+      "coverText": "Wait for his answer 👀",
+      "slideText": [
+        {
+          "text": "Would you still choose me if your family disliked me?"
+        },
+        {
+          "text": "If I completely changed tomorrow, would you still choose me?"
+        },
+        {
+          "text": "Would you still love me if I was the most beautiful woman in the world and everyone wanted me?"
+        },
+        {
+          "text": "If I asked your best friend what you say about me when I'm not around, what would they tell me?"
+        },
+        {
+          "text": "What would you pick?",
+          "options": [
+            "Gaming for a week",
+            "Cuddling with me every night"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hook-18",
+      "coverText": "Guess who's the jealous one",
+      "slideText": [
+        {
+          "text": "Who is one person you tell everything to?"
+        },
+        {
+          "text": "If we broke up today, who is the first girl you would hit up?"
+        },
+        {
+          "text": "If aliens forced you to delete one female contact, who is it?"
+        },
+        {
+          "text": "If you could secretly read my texts with anyone, who would it be?"
+        },
+        {
+          "text": "Who is the one person from your past that took you the longest to get over?"
+        }
+      ]
+    },
+    {
+      "id": "hook-19",
+      "coverText": "Don't ask your partner this. Seriously.",
+      "slideText": [
+        {
+          "text": "What excites you most about getting to know me more?"
+        },
+        {
+          "text": "What's something you wish we could experience together?"
+        },
+        {
+          "text": "Have you kept in touch with any exes without telling me?"
+        },
+        {
+          "text": "What does it feel like when I'm next to you vs when I'm not?"
+        },
+        {
+          "text": "If your ex showed up right now and said she still loves you, what would you honestly feel?"
+        }
+      ]
+    },
+    {
+      "id": "hook-20",
+      "coverText": "The question therapists say couples skip",
+      "slideText": [
+        {
+          "text": "What's the most hurtful thing I've said to you?"
+        },
+        {
+          "text": "What's the hardest thing for you to forgive about me?"
+        },
+        {
+          "text": "What's the most hurtful thing I've done without realizing it?"
+        },
+        {
+          "text": "What is one thing I do that unintentionally hurts your feelings?"
+        },
+        {
+          "text": "Have you ever lied to me because you thought the truth would hurt me?"
+        }
+      ]
+    },
+    {
+      "id": "hook-21",
+      "coverText": "Green flag or red flag? You decide",
+      "slideText": [
+        {
+          "text": "What's something you pretend you're okay with but you're not?"
+        },
+        {
+          "text": "If we could relive one day together, which day would you pick?"
+        },
+        {
+          "text": "What's something I do that you act okay with, but secretly aren't?"
+        },
+        {
+          "text": "If you could secretly read one of my conversations which one would you pick?"
+        },
+        {
+          "text": "If you had to pick one moment that defines us as a couple, what would it be?"
+        }
+      ]
+    },
+    {
+      "id": "hook-22",
+      "coverText": "Reading his answer out loud, sorry babe",
+      "slideText": [
+        {
+          "text": "What's something you miss about being single?"
+        },
+        {
+          "text": "What do you love most about your body and why?"
+        },
+        {
+          "text": "What do you love most about the way we are together?"
+        },
+        {
+          "text": "What's your favorite thing about me that isn't physical?"
+        },
+        {
+          "text": "What do you love about us that other couples don't have?"
+        }
+      ]
+    },
+    {
+      "id": "hook-23",
+      "coverText": "Most couples fail question #3",
+      "slideText": [
+        {
+          "text": "What did I fix inside you without even trying?"
+        },
+        {
+          "text": "Can you remember what I was wearing when we met?"
+        },
+        {
+          "text": "Do you remember what you felt during our first kiss?"
+        },
+        {
+          "text": "Remember the day we first met? How would you describe it now?"
+        },
+        {
+          "text": "If I woke up with amnesia, what's the first thing you'd want me to remember?"
+        }
+      ]
+    },
+    {
+      "id": "hook-24",
+      "coverText": "New trick for awkward silences unlocked 🤯",
+      "slideText": [
+        {
+          "text": "If you could change one of my habits, what would it be and why?"
+        },
+        {
+          "text": "If you could plan a perfect day for us, what would it look like?"
+        },
+        {
+          "text": "If you could have a relationship do-over, would you choose me again?"
+        },
+        {
+          "text": "If you could relive one moment from our relationship, what would it be?"
+        },
+        {
+          "text": "If you could give me one piece of advice to make me a better partner, what would it be?"
+        }
+      ]
+    },
+    {
+      "id": "hook-25",
+      "coverText": "Comment your answer before he does",
+      "slideText": [
+        {
+          "text": "If I was a burglar, what's the dumbest thing I'd steal?"
+        },
+        {
+          "text": "What's the most romantic thing I've done for you recently?"
+        },
+        {
+          "text": "What's the best thing I've ever given you? (besides me, obviously)"
+        },
+        {
+          "text": "What's the most important lesson you've learned from our relationship?"
+        },
+        {
+          "text": "Would you rather?",
+          "options": [
+            "Redo your worst argument",
+            "Relive your best memory together"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hook-26",
+      "coverText": "Rage bait questions: did he pass? 😭",
+      "slideText": [
+        {
+          "text": "If I had an identical twin, you'd:",
+          "options": [
+            "Know the difference",
+            "Probably panic",
+            "Ask them out for a date"
+          ]
+        },
+        {
+          "text": "If your celebrity crush wanted you for one night, are you saying no?"
+        },
+        {
+          "text": "If I gained 30kg, would you still find me equally attractive?"
+        },
+        {
+          "text": "If someone offered you $10 million to forget everything about me, would you take it?"
+        },
+        {
+          "text": "If your dream person existed, why are you still choosing me?"
+        }
+      ]
+    },
+    {
+      "id": "hook-27",
+      "coverText": "Cute or cringe? Say it at the same time",
+      "slideText": [
+        {
+          "text": "Wearing your hoodie everywhere.",
+          "options": [
+            "Cute",
+            "Cringe"
+          ]
+        },
+        {
+          "text": "Calling each other \"my baby.\"",
+          "options": [
+            "Cute",
+            "Cringe"
+          ]
+        },
+        {
+          "text": "Putting my initials in your bio.",
+          "options": [
+            "Cute",
+            "Cringe"
+          ]
+        },
+        {
+          "text": "Spoonfeeding each other at a restaurant.",
+          "options": [
+            "Cute",
+            "Cringe"
+          ]
+        },
+        {
+          "text": "Still flirting with each other after years together.",
+          "options": [
+            "Cute",
+            "Cringe"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hook-28",
+      "coverText": "The bare minimum shouldn't feel this rare",
+      "slideText": [
+        {
+          "text": "They carry your bag for you.",
+          "options": [
+            "Bare minimum",
+            "Princess treatment"
+          ]
+        },
+        {
+          "text": "They remember your usual coffee order without asking.",
+          "options": [
+            "Bare minimum",
+            "Princess treatment"
+          ]
+        },
+        {
+          "text": "They walk on the side of the sidewalk closest to the road.",
+          "options": [
+            "Bare minimum",
+            "Princess treatment"
+          ]
+        },
+        {
+          "text": "They give you updates on whatever they're doing.",
+          "options": [
+            "Bare minimum",
+            "I'm spoiled"
+          ]
+        },
+        {
+          "text": "They notice you're cold and give you their jacket without you asking.",
+          "options": [
+            "Bare minimum",
+            "Princess treatment"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hook-29",
+      "coverText": "Read this before your next date night",
+      "slideText": [
+        {
+          "text": "Date night?",
+          "options": [
+            "Staying in",
+            "Going out"
+          ]
+        },
+        {
+          "text": "Would you let me plan our next date night?",
+          "options": [
+            "Yes",
+            "No"
+          ]
+        },
+        {
+          "text": "What should our next date be?"
+        },
+        {
+          "text": "What's one fantasy date night with me that you'd love to actually live out?"
+        },
+        {
+          "text": "What's one thing I could do on date night that would make you forget the actual date?"
+        }
+      ]
+    },
+    {
+      "id": "hook-30",
+      "coverText": "Not all angels are in heaven… one is dating me",
+      "slideText": [
+        {
+          "text": "What makes your heart melt the fastest?",
+          "options": [
+            "A forehead kiss",
+            "A tight hug",
+            "A sincere compliment",
+            "Hearing \"I love you\""
+          ]
+        },
+        {
+          "text": "What's the cutest thing I do without even noticing?",
+          "options": [
+            "My random faces",
+            "My little hand gestures",
+            "My excited voice",
+            "My happy dances"
+          ]
+        },
+        {
+          "text": "What's a compliment you think about giving me when you see me, but don't always say out loud?"
+        },
+        {
+          "text": "What's something about me that you secretly admire but never say out loud?"
+        },
+        {
+          "text": "What do you silently thank me for but rarely say out loud?"
+        }
+      ]
+    },
+    {
+      "id": "hook-31",
+      "coverText": "My reaction to his answers 😐",
+      "slideText": [
+        {
+          "text": "If I disappeared in a grocery store, where would you look first?",
+          "options": [
+            "Snack aisle",
+            "Beauty aisle",
+            "Random clearance sale"
+          ]
+        },
+        {
+          "text": "If I disappeared for 24 hours and came back as a chicken, what would you do?"
+        },
+        {
+          "text": "What's the most cringe thing I've ever said or done?"
+        },
+        {
+          "text": "What's something I'm convinced I'm good at but you disagree?"
+        },
+        {
+          "text": "What's something I do that annoys you, but you'd NEVER say out loud?"
+        }
+      ]
+    },
+    {
+      "id": "hook-32",
+      "coverText": "If we agree on all 5, we're soulmates",
+      "slideText": [
+        {
+          "text": "Who's the crybaby?",
+          "options": [
+            "You",
+            "Me"
+          ]
+        },
+        {
+          "text": "Who would take longer in the bathroom?",
+          "options": [
+            "Me",
+            "You",
+            "Both",
+            "Depends who's getting ready"
+          ]
+        },
+        {
+          "text": "Who sends more romantic messages?",
+          "options": [
+            "You",
+            "Me"
+          ]
+        },
+        {
+          "text": "When money gets tight, who leads?",
+          "options": [
+            "Me",
+            "You",
+            "Team up"
+          ]
+        },
+        {
+          "text": "Who would be the stricter parent?",
+          "options": [
+            "Me",
+            "You",
+            "Depends who's watching",
+            "Neither of us"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hook-33",
+      "coverText": "Raised to never say \"I love you\" out loud",
+      "slideText": [
+        {
+          "text": "What's your favorite way to say \"I love you\" without words?"
+        },
+        {
+          "text": "What's your favorite way I say \"I love you\" without saying it?"
+        },
+        {
+          "text": "Did you ever almost say \"I love you\" to me before you actually said it?"
+        },
+        {
+          "text": "How do you feel about the way we express love to each other?"
+        },
+        {
+          "text": "What's an emotion you often feel but rarely express?"
+        }
+      ]
+    },
+    {
+      "id": "hook-34",
+      "coverText": "What you'd miss if I was gone tomorrow",
+      "slideText": [
+        {
+          "text": "What would you miss first if I disappeared for a week?",
+          "options": [
+            "My texts",
+            "My voice",
+            "My hugs",
+            "My random updates"
+          ]
+        },
+        {
+          "text": "Which of my habits would you secretly miss if I stopped?",
+          "options": [
+            "My texts",
+            "My teasing",
+            "My check-ins",
+            "My random updates"
+          ]
+        },
+        {
+          "text": "What's one annoying thing I do that you'd actually miss if I stopped?"
+        },
+        {
+          "text": "What would you miss about me that nobody else could recreate?"
+        },
+        {
+          "text": "If I were gone tomorrow, what would you regret not telling me today?"
+        }
+      ]
+    },
+    {
+      "id": "hook-35",
+      "coverText": "Point at who's more likely. No lying 👉",
+      "slideText": [
+        {
+          "text": "Who's more likely to fall asleep during a movie?"
+        },
+        {
+          "text": "Who's more likely to plan a surprise date?"
+        },
+        {
+          "text": "Who's more likely to overthink a dry text?"
+        },
+        {
+          "text": "Who's more likely to start an argument over something tiny?"
+        },
+        {
+          "text": "Who's more likely to say \"I love you\" first?"
+        }
+      ]
+    },
+    {
+      "id": "hook-36",
+      "coverText": "The orange peel test, but make it questions 🍊",
+      "slideText": [
+        {
+          "text": "When you've had a long day, what's the sweetest thing I could do for you?"
+        },
+        {
+          "text": "What's one thing I understood about you without you asking?",
+          "options": [
+            "Your mood",
+            "Your fears",
+            "Your needs",
+            "Your silence"
+          ]
+        },
+        {
+          "text": "Is there anything I do for you that makes you happy every time I do it?"
+        },
+        {
+          "text": "What do you wish I noticed about you without you asking?"
+        },
+        {
+          "text": "What do I do for you that no one else ever has?"
+        }
+      ]
+    },
+    {
+      "id": "hook-37",
+      "coverText": "The moment he realizes what I'm really asking 😳",
+      "slideText": [
+        {
+          "text": "If I turned into a frog, you'd:",
+          "options": [
+            "Kiss me in hopes to lift the curse",
+            "Keep me as I am",
+            "Find a witch"
+          ]
+        },
+        {
+          "text": "If I had an identical twin, would you be into them?"
+        },
+        {
+          "text": "Do you think your ex was more attractive than me?"
+        },
+        {
+          "text": "Would you rather have never met me or cheat on me right now?",
+          "options": [
+            "Never met",
+            "Cheat now",
+            "Neither"
+          ]
+        },
+        {
+          "text": "Be honest: has anyone ever made you feel more loved than I do?"
+        }
+      ]
+    },
+    {
+      "id": "hook-38",
+      "coverText": "New message from -A: ask them this tonight 💌",
+      "slideText": [
+        {
+          "text": "What's a weird little thing I do that you secretly find cute?"
+        },
+        {
+          "text": "What's a tiny detail about me you noticed right away, but never told me?"
+        },
+        {
+          "text": "Have you ever been jealous but never told me?",
+          "options": [
+            "Yes, once",
+            "Yes, more than once",
+            "Way too many times"
+          ]
+        },
+        {
+          "text": "What's one fear about us you've never told me?"
+        },
+        {
+          "text": "What truth about us do you think I'm not ready to hear?"
+        }
+      ]
+    },
+    {
+      "id": "hook-39",
+      "coverText": "October is all about us 🍂",
+      "slideText": [
+        {
+          "text": "What would you rather do tonight?",
+          "options": [
+            "Talk until we fall asleep",
+            "Watch something together",
+            "Go on a late-night food run",
+            "Cuddle and do nothing"
+          ]
+        },
+        {
+          "text": "Which tradition becomes our thing?",
+          "options": [
+            "Friday date night",
+            "Annual photo book",
+            "Sunday family dinner"
+          ]
+        },
+        {
+          "text": "What's your favorite memory of us?",
+          "options": [
+            "Our first date",
+            "Our first kiss",
+            "Our random little moments",
+            "The time we laughed nonstop"
+          ]
+        },
+        {
+          "text": "What would you hope we're still doing at 70?",
+          "options": [
+            "Going on dates",
+            "Traveling",
+            "Flirting",
+            "Falling asleep together"
+          ]
+        },
+        {
+          "text": "What's a moment we shared that made you fall even deeper in love?"
+        }
+      ]
+    },
+    {
+      "id": "hook-40",
+      "coverText": "Me acting fine after his answer to #5 🙂",
+      "slideText": [
+        {
+          "text": "What's something I say that you've heard way too many times?",
+          "options": [
+            "I'm hungry.",
+            "Listen...",
+            "Wait, look.",
+            "I'm fine."
+          ]
+        },
+        {
+          "text": "When I'm pretending I'm fine, what gives me away?",
+          "options": [
+            "My silence",
+            "My jokes",
+            "My attitude"
+          ]
+        },
+        {
+          "text": "What's something I do that you pretend doesn't annoy you?"
+        },
+        {
+          "text": "Have you ever pretended you weren't jealous?"
+        },
+        {
+          "text": "What's something you're tired of pretending doesn't hurt?"
+        }
+      ]
+    },
+    {
+      "id": "hook-41",
+      "coverText": "Nobody talks about this part of being in love",
+      "slideText": [
+        {
+          "text": "What's my tell when I actually like someone?",
+          "options": [
+            "Mention them constantly",
+            "Smile at my phone",
+            "Act extra shy"
+          ]
+        },
+        {
+          "text": "What's something you only feel comfortable being completely honest with me about?"
+        },
+        {
+          "text": "What's the hardest thing for you to be honest with me about?"
+        },
+        {
+          "text": "What's a truth about yourself you hide from me to keep the peace?"
+        },
+        {
+          "text": "Have I ever hurt you in a way you haven't told me about?"
+        }
+      ]
+    },
+    {
+      "id": "hook-42",
+      "coverText": "Stop scrolling and ask your partner these instead",
+      "slideText": [
+        {
+          "text": "What's the last text I sent that made you smile like an idiot?"
+        },
+        {
+          "text": "Have you ever caught yourself smiling at your phone because of me?"
+        },
+        {
+          "text": "Did you ever wait to text me back just so I wouldn't know how much you liked me?"
+        },
+        {
+          "text": "Should couples know each other's phone password?"
+        },
+        {
+          "text": "One of us is always on the phone when we're together.",
+          "options": [
+            "Not a big deal",
+            "A little annoying",
+            "Put the phone away sometimes",
+            "It makes me feel ignored"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hook-43",
+      "coverText": "I asked him these so you don't have to 😭",
+      "slideText": [
+        {
+          "text": "What's my go-to excuse when I don't want to do something?"
+        },
+        {
+          "text": "If I texted \"don't be mad,\" what would you assume I did?"
+        },
+        {
+          "text": "What's my most obvious \"I want attention\" behavior?"
+        },
+        {
+          "text": "If we switched bodies for a week, what's the first thing you'd do as me?"
+        },
+        {
+          "text": "What's my most lovable flaw?",
+          "options": [
+            "Clingy",
+            "Stubborn",
+            "Dramatic",
+            "Jealous"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hook-44",
+      "coverText": "One rule in our relationship: never go to bed mad",
+      "slideText": [
+        {
+          "text": "Who gets soft faster during fights?",
+          "options": [
+            "Me",
+            "You",
+            "Both",
+            "We stay stubborn"
+          ]
+        },
+        {
+          "text": "We argue over something stupid. You:",
+          "options": [
+            "Make me laugh",
+            "Give me space",
+            "Apologize first"
+          ]
+        },
+        {
+          "text": "What's the pettiest reason we've ever argued?"
+        },
+        {
+          "text": "If you could erase one argument we've ever had, which one would it be?"
+        },
+        {
+          "text": "Has breaking up ever crossed your mind during one of our major arguments?",
+          "options": [
+            "Innocent",
+            "Guilty"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hook-45",
+      "coverText": "Just remembered his answer to #4 and I'm still not okay",
+      "slideText": [
+        {
+          "text": "What's a detail about our first date that you'll never forget?"
+        },
+        {
+          "text": "When was the first time you thought about kissing me?",
+          "options": [
+            "When we first met",
+            "First date",
+            "Before dating"
+          ]
+        },
+        {
+          "text": "What did you really think of me when we first talked?"
+        },
+        {
+          "text": "Be honest: did you stalk my socials before we started talking?"
+        },
+        {
+          "text": "What's one moment with me you remember almost perfectly?"
+        }
+      ]
+    },
+    {
+      "id": "hook-46",
+      "coverText": "Things he gets wrong about me every time 🙄",
+      "slideText": [
+        {
+          "text": "What's my usual comfort food?",
+          "options": [
+            "Something sweet",
+            "Something salty",
+            "I really don't know"
+          ]
+        },
+        {
+          "text": "What's my biggest \"leave me alone\" warning sign?",
+          "options": [
+            "Short replies",
+            "Going quiet",
+            "Looking annoyed"
+          ]
+        },
+        {
+          "text": "What's my biggest sign that I'm comfortable around someone?",
+          "options": [
+            "I get weird",
+            "I overshare everything",
+            "I stop filtering"
+          ]
+        },
+        {
+          "text": "What's something I secretly need when I've had a terrible day?",
+          "options": [
+            "Reassurance first",
+            "Space first",
+            "A distraction"
+          ]
+        },
+        {
+          "text": "What's my biggest fear?"
+        }
+      ]
+    },
+    {
+      "id": "hook-47",
+      "coverText": "Send this to the couple who never fights",
+      "slideText": [
+        {
+          "text": "You're each other's wallpaper on your phones, laptops and even your work computers.",
+          "options": [
+            "Aww",
+            "Eww"
+          ]
+        },
+        {
+          "text": "Your partner is bad at texting but great in person.",
+          "options": [
+            "Issue",
+            "Not an issue"
+          ]
+        },
+        {
+          "text": "You often catch them sneaking a glance at your phone when you get a notification.",
+          "options": [
+            "Sweet",
+            "Sus"
+          ]
+        },
+        {
+          "text": "Staying friends with an ex they dated years ago.",
+          "options": [
+            "Fine",
+            "Foul"
+          ]
+        },
+        {
+          "text": "They compared you to their ex during an argument.",
+          "options": [
+            "Forgive",
+            "Leave"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hook-48",
+      "coverText": "This question is splitting couples up right now",
+      "slideText": [
+        {
+          "text": "Be honest... do you get jealous because you care, or because you're scared of losing me?",
+          "options": [
+            "I care",
+            "I'm scared",
+            "Both"
+          ]
+        },
+        {
+          "text": "Would you rather hurt me with the truth or protect me with a lie?",
+          "options": [
+            "Hurt me with the truth",
+            "Protect me with a lie"
+          ]
+        },
+        {
+          "text": "If we broke up but lost all memory of our relationship, would you try to make me fall for you again?"
+        },
+        {
+          "text": "If your ex texted \"I miss you,\" would you reply? Or at least tell me about it?"
+        },
+        {
+          "text": "Is there an ex with whom you'd rekindle a relationship if you were single?"
+        }
+      ]
+    },
+    {
+      "id": "hook-49",
+      "coverText": "He planned the date, I planned the questions 💌",
+      "slideText": [
+        {
+          "text": "How should we reconnect?",
+          "options": [
+            "Plan a date",
+            "Go somewhere new",
+            "Stay in and talk"
+          ]
+        },
+        {
+          "text": "What's your idea of a wild date night?",
+          "options": [
+            "A spontaneous road trip",
+            "A steamy movie night",
+            "A night out with no plans",
+            "A romantic hotel stay"
+          ]
+        },
+        {
+          "text": "What would our perfect date look like?"
+        },
+        {
+          "text": "What would you want us to do every anniversary?",
+          "options": [
+            "Recreate our first date",
+            "Take a trip",
+            "Exchange letters",
+            "Try something new"
+          ]
+        },
+        {
+          "text": "If I told you to plan a date that ends with us not wanting to say goodbye, what's the plan?"
+        }
+      ]
+    }
+  ]
+}

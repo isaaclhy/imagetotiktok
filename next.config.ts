@@ -23,6 +23,11 @@ const nextConfig: NextConfig = {
     'remotion',
     'esbuild',
   ],
+  // Static copycat JPEGs must not be traced into any function. The
+  // character-image route only reads `public/characters`.
+  outputFileTracingExcludes: {
+    '*': ['public/copycat-backgrounds/**/*'],
+  },
 };
 
 export default nextConfig;

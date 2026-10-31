@@ -124,6 +124,12 @@ export const IMAGE_TEMPLATES_BY_APP: Record<StudioAppId, ImageTemplateCard[]> = 
     },
     {
       id: 18,
+      title: 'Pastel questions',
+      subtitle: '',
+      coverSrc: '/image-templates/template-18-cover.png',
+    },
+    {
+      id: 19,
       title: 'Red glow',
       subtitle: '',
     },

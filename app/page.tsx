@@ -191,6 +191,7 @@ import {
   template14TextForBackground,
 } from '@/app/lib/image-template-14-cards';
 import { NotesQuestionsPreview } from '@/app/components/NotesQuestionsPreview';
+import { PastelSlideshowPreview } from '@/app/components/PastelSlideshowPreview';
 import {
   IMAGE_TEMPLATE16_BG,
   IMAGE_TEMPLATE16_ICON_SRC,
@@ -199,6 +200,14 @@ import {
   isImageTemplate16Id,
   paintTemplate16Slide,
 } from '@/app/lib/image-template-16-notes';
+import {
+  IMAGE_TEMPLATE18_CTA_TAB,
+  IMAGE_TEMPLATE18_QUESTION_COUNT,
+  IMAGE_TEMPLATE18_SLIDE_COUNT,
+  isImageTemplate18Id,
+  paintTemplate18Slide,
+  template18Background,
+} from '@/app/lib/image-template-18-pastel';
 import {
   CHARACTER_IMAGE_QUALITIES,
   type CharacterImageQuality,
@@ -383,7 +392,7 @@ function pickRandomCopycatCompetitor(exclude?: CopycatCompetitorId): CopycatComp
 }
 
 /** Spill It image templates available inside Copycat. */
-const COPYCAT_TEMPLATE_IDS = [1, 2, 6, 13, 14, 15, 16, 17, 18] as const;
+const COPYCAT_TEMPLATE_IDS = [1, 2, 6, 13, 14, 15, 16, 17, 18, 19] as const;
 type CopycatTemplateId = (typeof COPYCAT_TEMPLATE_IDS)[number];
 
 function isKawaiiStyleTemplateId(templateId: number | null | undefined): boolean {
@@ -2156,6 +2165,7 @@ export default function Home() {
     useState<CopycatCompetitorId>('flamingo-cards');
   const [selectedCopycatTemplateId, setSelectedCopycatTemplateId] =
     useState<CopycatTemplateId>(1);
+  const [copycatHookPosts, setCopycatHookPosts] = useState(false);
 
   useEffect(() => {
     setSelectedCopycatCompetitorId(pickRandomCopycatCompetitor());
@@ -2260,7 +2270,7 @@ export default function Home() {
   const prevFirstCardTextRef = useRef(firstCardTextValue);
 
   const imageTemplateCards = getImageTemplatesForApp(selectedAppId).filter(
-    (card) => card.id !== 15 && card.id !== 18
+    (card) => card.id !== 15 && card.id !== 19
   );
   const videoTemplateCards = getVideoTemplatesForApp(selectedAppId);
   const characterCards = getCharactersForApp(selectedAppId);
@@ -2276,6 +2286,8 @@ export default function Home() {
     selectedAppId === 'spill-it' && isImageTemplate14Id(selectedImageTemplateId);
   const isNotesQuestionsImageTemplate =
     selectedAppId === 'spill-it' && isImageTemplate16Id(selectedImageTemplateId);
+  const isPastelSlideshowImageTemplate =
+    selectedAppId === 'spill-it' && isImageTemplate18Id(selectedImageTemplateId);
   const isPinterestCoverImageTemplate =
     selectedAppId === 'spill-it' && isPinterestCoverImageTemplateId(selectedImageTemplateId);
   const isCouplesCuteMomentsImageTemplate =
@@ -2308,7 +2320,8 @@ export default function Home() {
     !isCouplesDoodleImageTemplate &&
     !isMaroonLockscreenImageTemplate &&
     !isColorCardImageTemplate &&
-    !isNotesQuestionsImageTemplate;
+    !isNotesQuestionsImageTemplate &&
+    !isPastelSlideshowImageTemplate;
   const imageTemplateCtaTabIndex = hasImageTemplateCtaTab
     ? imageTemplateQuestionCount + 1
     : -1;
@@ -2393,7 +2406,8 @@ export default function Home() {
         isPastelCarouselImageTemplate ||
         isPinterestCoverImageTemplate ||
         isPinterestCoverOnlyImageTemplate ||
-        isNotesQuestionsImageTemplate) &&
+        isNotesQuestionsImageTemplate ||
+        isPastelSlideshowImageTemplate) &&
       selectedImageBrowserTab >= imageTemplateTabCount
     ) {
       setSelectedImageBrowserTab(0);
@@ -2404,6 +2418,7 @@ export default function Home() {
     isPinterestCoverImageTemplate,
     isPinterestCoverOnlyImageTemplate,
     isNotesQuestionsImageTemplate,
+    isPastelSlideshowImageTemplate,
     imageTemplateTabCount,
     selectedImageBrowserTab,
   ]);
@@ -2506,6 +2521,16 @@ export default function Home() {
     setImageTabFunnyQuestions(questions);
     setImageTabTexts([title, ...questions]);
     setImageTemplate2CoverSubtitle((current) => pickRandomImageTemplate2CoverSubtitle(current));
+  };
+
+  const applyImageTemplate18QuestionType = (type: AutomateQuestionType) => {
+    setImageTemplate2QuestionType(type);
+    const resolved = resolveQuestionType(type);
+    const title = pickTitleForType(resolved);
+    const questions = pickQuestionsForType(resolved, IMAGE_TEMPLATE18_QUESTION_COUNT);
+    setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[resolved]);
+    setImageTabFunnyQuestions(questions);
+    setImageTabTexts([title, ...questions]);
   };
 
   const applyImageTemplate6QuestionType = (type: AutomateQuestionType) => {
@@ -4515,6 +4540,22 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       return;
     }
 
+    if (selectedAppId === 'spill-it' && isImageTemplate18Id(tid)) {
+      const type =
+        imageTemplate2QuestionType === 'random'
+          ? pickDifferentRandomQuestionType(concreteTypeFromImageLabel(imageTabTypeLabel))
+          : imageTemplate2QuestionType;
+      const title = pickTitleForType(type);
+      const questions = pickQuestionsForType(type, IMAGE_TEMPLATE18_QUESTION_COUNT);
+      setImageTabFunnyQuestions(questions);
+      setImageTabFrameBg(template18Background(0, false));
+      setImageTabPastelBgs([]);
+      setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[type]);
+      setImageTabSources(Array.from({ length: IMAGE_TEMPLATE18_SLIDE_COUNT }, () => ''));
+      setImageTabTexts([title, ...questions]);
+      return;
+    }
+
     if (selectedAppId === 'spill-it' && isImageTemplate16Id(tid)) {
       const title = pickTitleForType(
         'funny',
@@ -5042,6 +5083,47 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           }, 'image/png');
         });
         entries.push({ path: `template-14-${names[i]}.png`, blob });
+      }
+      return { entries, isKawaiiTemplate: false };
+    }
+    if (exportTemplateId === 18) {
+      const names = ['cover', 'q1', 'q2', 'q3', 'q4', 'q5'] as const;
+      const frameWidth = 1080;
+      const frameHeight = 1440;
+      const loadImage = (src: string, label: string) =>
+        new Promise<HTMLImageElement>((resolve, reject) => {
+          const el = new Image();
+          el.onload = () => resolve(el);
+          el.onerror = () => reject(new Error(`Failed to load ${label}`));
+          el.src = src;
+        });
+      try {
+        await document.fonts.load('400 72px "Libre Baskerville"');
+        await document.fonts.load('700 36px "TikTok Sans"');
+      } catch {
+        /* fonts may already be ready */
+      }
+      const promo = await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC, 'the App Store image');
+      const entries = [];
+      for (let i = 0; i < IMAGE_TEMPLATE18_SLIDE_COUNT; i++) {
+        const canvas = document.createElement('canvas');
+        canvas.width = frameWidth;
+        canvas.height = frameHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Failed to prepare the slide');
+        paintTemplate18Slide(ctx, frameWidth, frameHeight, {
+          text: (imageTabTexts[i] ?? '').trim(),
+          tabIndex: i,
+          isCta: i === IMAGE_TEMPLATE18_CTA_TAB,
+          promo: i === IMAGE_TEMPLATE18_CTA_TAB ? promo : null,
+        });
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((next) => {
+            if (next) resolve(next);
+            else reject(new Error('Failed to export the slide'));
+          }, 'image/png');
+        });
+        entries.push({ path: `template-18-${names[i] ?? `q${i}`}.png`, blob });
       }
       return { entries, isKawaiiTemplate: false };
     }
@@ -6739,10 +6821,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                       <select
                         id="copycat-competitor"
                         value={selectedCopycatCompetitorId}
+                        disabled={copycatHookPosts}
                         onChange={(e) =>
                           setSelectedCopycatCompetitorId(e.target.value as CopycatCompetitorId)
                         }
-                        className="w-full min-w-0 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-2.5 text-sm font-medium text-zinc-900 dark:text-zinc-100 outline-none focus:border-zinc-400 dark:focus:border-zinc-500 md:min-w-[10.5rem] md:w-auto md:py-2"
+                        className="w-full min-w-0 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-2.5 text-sm font-medium text-zinc-900 dark:text-zinc-100 outline-none focus:border-zinc-400 dark:focus:border-zinc-500 disabled:cursor-not-allowed disabled:opacity-50 md:min-w-[10.5rem] md:w-auto md:py-2"
                       >
                         {COPYCAT_COMPETITORS.map((competitor) => (
                           <option key={competitor.id} value={competitor.id}>
@@ -6750,12 +6833,25 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                           </option>
                         ))}
                       </select>
+                      <label
+                        htmlFor="copycat-hook-posts"
+                        className="mt-3 flex cursor-pointer select-none items-center gap-2 text-sm font-medium text-zinc-800 dark:text-zinc-200"
+                      >
+                        <input
+                          id="copycat-hook-posts"
+                          type="checkbox"
+                          checked={copycatHookPosts}
+                          onChange={(e) => setCopycatHookPosts(e.target.checked)}
+                          className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600"
+                        />
+                        Use hook posts
+                      </label>
                     </div>
                     <div className="w-full text-left">
                       <p className="mb-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">
                         Template
                       </p>
-                      <div className="grid grid-cols-3 gap-2 md:grid-cols-8">
+                      <div className="grid grid-cols-3 gap-2 md:grid-cols-9">
                         {COPYCAT_TEMPLATE_IDS.map((templateId) => {
                           const card = getImageTemplatesForApp('spill-it').find(
                             (c) => c.id === templateId
@@ -6766,7 +6862,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               key={templateId}
                               type="button"
                               onClick={() => {
-                                if (selectedCopycatTemplateId !== templateId) {
+                                if (!copycatHookPosts && selectedCopycatTemplateId !== templateId) {
                                   setSelectedCopycatCompetitorId((competitor) =>
                                     pickRandomCopycatCompetitor(competitor)
                                   );
@@ -6806,6 +6902,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                 <CopycatPanel
                   competitorId={selectedCopycatCompetitorId}
                   templateId={selectedCopycatTemplateId}
+                  useHookPosts={copycatHookPosts}
                   onNewRandomPost={() =>
                     setSelectedCopycatCompetitorId((current) =>
                       pickRandomCopycatCompetitor(current)
@@ -6955,6 +7052,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         isMaroonLockscreenImageTemplate ||
                         isColorCardImageTemplate ||
                         isNotesQuestionsImageTemplate ||
+                        isPastelSlideshowImageTemplate ||
                         isPastelCarouselImageTemplate ||
                         isPinterestCoverImageTemplate ||
                         isPinterestCoverOnlyImageTemplate ? (
@@ -7213,6 +7311,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                           style={{
                             backgroundColor: isColorCardImageTemplate
                               ? IMAGE_TEMPLATE14_FRAME_BG
+                              : isPastelSlideshowImageTemplate
+                              ? '#000000'
                               : isNotesQuestionsImageTemplate
                               ? IMAGE_TEMPLATE16_BG
                               : isMaroonLockscreenImageTemplate
@@ -7224,7 +7324,13 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               : activeImageFrameBg,
                           }}
                         >
-                          {isNotesQuestionsImageTemplate ? (
+                          {isPastelSlideshowImageTemplate ? (
+                            <PastelSlideshowPreview
+                              text={imageFrameTextForActiveTab}
+                              tabIndex={selectedImageBrowserTab}
+                              isCta={selectedImageBrowserTab === IMAGE_TEMPLATE18_CTA_TAB}
+                            />
+                          ) : isNotesQuestionsImageTemplate ? (
                             <NotesQuestionsPreview
                               text={imageFrameTextForActiveTab}
                               tabIndex={selectedImageBrowserTab}
@@ -8157,6 +8263,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         isCouplesDoodleImageTemplate ||
                         isMaroonLockscreenImageTemplate ||
                         isNotesQuestionsImageTemplate ||
+                        isPastelSlideshowImageTemplate ||
                         isCouplesSelfieImageTemplate ||
                         isTopDownSelfieImageTemplate ? (
                           <div className="w-full md:w-80 md:self-start space-y-4">
@@ -8169,7 +8276,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   Frame text
                                 </label>
                                 <div className="flex flex-wrap items-center gap-2">
-                                  {isPastelCarouselImageTemplate || isBearsKawaiiImageTemplate ? (
+                                  {isPastelCarouselImageTemplate ||
+                                  isPastelSlideshowImageTemplate ||
+                                  isBearsKawaiiImageTemplate ? (
                                     <select
                                       value={
                                         isBearsKawaiiImageTemplate
@@ -8180,6 +8289,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                         const next = e.target.value as AutomateQuestionType;
                                         if (isBearsKawaiiImageTemplate) {
                                           applyImageTemplate6QuestionType(next);
+                                        } else if (isPastelSlideshowImageTemplate) {
+                                          applyImageTemplate18QuestionType(next);
                                         } else {
                                           applyImageTemplate2QuestionType(next);
                                         }
@@ -8199,6 +8310,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                     onClick={() => {
                                       if (
                                         isPastelCarouselImageTemplate ||
+                                        isPastelSlideshowImageTemplate ||
                                         isBearsKawaiiImageTemplate ||
                                         isCouplesSelfieImageTemplate ||
                                         isTopDownSelfieImageTemplate
@@ -8322,7 +8434,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                     }}
                                     className="w-full sm:w-auto text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                                   >
-                                    {isPastelCarouselImageTemplate || isBearsKawaiiImageTemplate
+                                    {isPastelCarouselImageTemplate ||
+                                    isPastelSlideshowImageTemplate ||
+                                    isBearsKawaiiImageTemplate
                                       ? 'Retry'
                                       : 'Random question'}
                                   </button>
