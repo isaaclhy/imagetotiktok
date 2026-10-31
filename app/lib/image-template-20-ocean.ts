@@ -19,8 +19,15 @@ export const IMAGE_TEMPLATE20_SLIDE_COUNT = IMAGE_TEMPLATE20_QUESTION_COUNT + 1;
 export const IMAGE_TEMPLATE20_CTA_TAB = IMAGE_TEMPLATE20_QUESTION_COUNT;
 export const IMAGE_TEMPLATE20_COVER_SRC = '/image-templates/template-20-cover.jpg';
 
-/** Cool off-white. Cover stroke interiors on the reference sit near rgb(218, 229, 237). */
-export const IMAGE_TEMPLATE20_TEXT = '#DAE5ED';
+/**
+ * Question and option ink. Brightest reference pixels sit near rgb(204, 206, 222):
+ * a soft grey with a cool lavender cast, not pure white.
+ */
+export const IMAGE_TEMPLATE20_TEXT = '#CCCEDE';
+/** Bold cover and CTA headline. Stroke interiors measure about rgb(218, 228, 235). */
+export const IMAGE_TEMPLATE20_COVER_TEXT = '#DAE4EB';
+/** Footer. Stroke interiors measure about rgb(167, 192, 207), dimmer than the body. */
+export const IMAGE_TEMPLATE20_FOOTER_TEXT = '#A7C0CF';
 export const IMAGE_TEMPLATE20_FONT_STACK =
   '"Liberation Serif", "Times New Roman", Times, serif';
 export const IMAGE_TEMPLATE20_FOOTER_FONT_STACK =
@@ -78,6 +85,12 @@ export const IMAGE_TEMPLATE20_TEXT_WIDTH = 0.7;
 export const IMAGE_TEMPLATE20_QUESTION_TOP = 0.322;
 /** Extra air between the question and the first option, in ems. */
 export const IMAGE_TEMPLATE20_OPTION_GAP = 1.02;
+/**
+ * Option words share one column. On the reference, "Roast me" / "Bring up my past"
+ * / "Fake break up" / "Ignore me" all start 132px right of the letter at 2160
+ * wide, which is 66px at the 1080 export.
+ */
+export const IMAGE_TEMPLATE20_OPTION_TAB = 66 / 1080;
 
 export const IMAGE_TEMPLATE20_FOOTER_SIZE = 0.0352;
 export const IMAGE_TEMPLATE20_FOOTER_Y = 0.862;
@@ -302,6 +315,7 @@ function paintCover(
     if ((lines.length <= 4 && block <= height * 0.42) || fontSize <= minSize) break;
     fontSize = Math.max(minSize, fontSize - 2);
   }
+  ctx.fillStyle = IMAGE_TEMPLATE20_COVER_TEXT;
   ctx.font = `700 ${fontSize}px ${fontFamily}`;
   const ascent = inkAscent(ctx, 'H');
   const descent = inkDescent(ctx, 'Hgy');
@@ -320,7 +334,7 @@ function paintFooter(
 ) {
   const fontSize = Math.round(width * IMAGE_TEMPLATE20_FOOTER_SIZE);
   ctx.font = `600 ${fontSize}px ${footerFontFamily}`;
-  ctx.fillStyle = IMAGE_TEMPLATE20_TEXT;
+  ctx.fillStyle = IMAGE_TEMPLATE20_FOOTER_TEXT;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   const box = ctx.measureText(IMAGE_TEMPLATE20_FOOTER);
@@ -369,7 +383,7 @@ function paintCta(
   if (layout) paintQuestionLines(ctx, width, layout);
 
   ctx.font = `700 ${labelSize}px ${fontFamily}`;
-  ctx.fillStyle = IMAGE_TEMPLATE20_TEXT;
+  ctx.fillStyle = IMAGE_TEMPLATE20_COVER_TEXT;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   ctx.fillText(IMAGE_TEMPLATE20_CTA_LABEL, width / 2, promoY - labelGap - labelDescent);
@@ -411,7 +425,7 @@ function layoutQuestion(
   const descent = inkDescent(ctx);
   let optionLines = 0;
   for (const option of parsed) {
-    optionLines += countOptionLines(ctx, option, fontSize, fontFamily, maxWidth);
+    optionLines += countOptionLines(ctx, option, fontSize, fontFamily, width, maxWidth);
   }
   const optionGap = optionLines && questionLines.length ? fontSize * IMAGE_TEMPLATE20_OPTION_GAP : 0;
   const firstBaseline = inkTop + ascent;
@@ -446,16 +460,15 @@ function countOptionLines(
   option: OptionLine,
   fontSize: number,
   fontFamily: string,
+  frameWidth: number,
   maxWidth: number
 ): number {
   if (!option.letter) {
     ctx.font = `400 ${fontSize}px ${fontFamily}`;
     return Math.max(1, wrapLines(ctx, option.text, maxWidth).length);
   }
-  ctx.font = `700 ${fontSize}px ${fontFamily}`;
-  const markWidth = ctx.measureText(`${option.letter}.`).width;
   ctx.font = `400 ${fontSize}px ${fontFamily}`;
-  const avail = Math.max(1, maxWidth - markWidth - ctx.measureText(' ').width);
+  const avail = Math.max(1, maxWidth - frameWidth * IMAGE_TEMPLATE20_OPTION_TAB);
   const wrapped = option.text.trim() ? wrapLines(ctx, option.text, avail) : [''];
   return Math.max(1, wrapped.length);
 }
@@ -546,7 +559,6 @@ function paintQuestionLines(
   width: number,
   layout: QuestionLayout
 ) {
-  void width;
   ctx.fillStyle = IMAGE_TEMPLATE20_TEXT;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
@@ -571,10 +583,8 @@ function paintQuestionLines(
     const mark = `${option.letter}.`;
     ctx.font = `700 ${layout.fontSize}px ${layout.fontFamily}`;
     ctx.fillText(mark, layout.x, y);
-    const markWidth = ctx.measureText(mark).width;
+    const textX = layout.x + width * IMAGE_TEMPLATE20_OPTION_TAB;
     ctx.font = `400 ${layout.fontSize}px ${layout.fontFamily}`;
-    const space = ctx.measureText(' ').width;
-    const textX = layout.x + markWidth + space;
     const avail = Math.max(1, layout.x + layout.maxWidth - textX);
     const wrapped = option.text.trim() ? wrapLines(ctx, option.text, avail) : [''];
     wrapped.forEach((line, index) => {
