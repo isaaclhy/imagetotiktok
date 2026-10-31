@@ -5106,7 +5106,10 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           el.src = src;
         });
       try {
+        await document.fonts.load('400 72px "Liberation Serif"');
+        await document.fonts.load('italic 400 72px "Liberation Serif"');
         await document.fonts.load('400 72px "Libre Baskerville"');
+        await document.fonts.load('600 36px "Poppins"');
         await document.fonts.load('700 36px "TikTok Sans"');
       } catch {
         /* fonts may already be ready */

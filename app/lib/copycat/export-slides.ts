@@ -272,9 +272,10 @@ async function paintSlide(
 
   if (templateId === 18) {
     try {
-      await document.fonts.load(
-        `${IMAGE_TEMPLATE18_FONT_WEIGHT} 72px "Libre Baskerville"`
-      );
+      await document.fonts.load(`${IMAGE_TEMPLATE18_FONT_WEIGHT} 72px "Liberation Serif"`);
+      await document.fonts.load(`italic ${IMAGE_TEMPLATE18_FONT_WEIGHT} 72px "Liberation Serif"`);
+      await document.fonts.load(`${IMAGE_TEMPLATE18_FONT_WEIGHT} 72px "Libre Baskerville"`);
+      await document.fonts.load('600 36px "Poppins"');
       await document.fonts.load('700 36px "TikTok Sans"');
     } catch {
       /* fonts may already be ready */

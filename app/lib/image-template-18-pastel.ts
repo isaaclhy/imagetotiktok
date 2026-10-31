@@ -22,10 +22,12 @@ export const IMAGE_TEMPLATE18_COVER_SRC = '/image-templates/template-18-cover.pn
 
 export const IMAGE_TEMPLATE18_TEXT = '#3A342F';
 export const IMAGE_TEMPLATE18_FONT_STACK =
-  '"Libre Baskerville", Georgia, "Times New Roman", serif';
+  '"Liberation Serif", "Times New Roman", Times, serif';
 export const IMAGE_TEMPLATE18_FONT_CSS =
-  'var(--font-libre-baskerville), "Libre Baskerville", Georgia, "Times New Roman", serif';
-export const IMAGE_TEMPLATE18_SANS_STACK = '"TikTok Sans", system-ui, sans-serif';
+  '"Liberation Serif", "Times New Roman", Times, serif';
+export const IMAGE_TEMPLATE18_SANS_STACK = '"Poppins", "TikTok Sans", system-ui, sans-serif';
+export const IMAGE_TEMPLATE18_PASTEL_FONT_STACK =
+  '"Libre Baskerville", Georgia, "Times New Roman", serif';
 export const IMAGE_TEMPLATE18_FONT_WEIGHT = 400;
 export const IMAGE_TEMPLATE18_LINE_HEIGHT = 1.28;
 export const IMAGE_TEMPLATE18_FOOTER = IMAGE_TEMPLATE2_APP_FOOTER;
@@ -42,8 +44,20 @@ export const IMAGE_TEMPLATE18_CARD_MARGIN = 0.025;
  * as a fraction of frame width. About 1% — a slight convex bow, not a wave.
  */
 export const IMAGE_TEMPLATE18_CARD_BULGE = 0.01;
-/** Corner radius on a 1080-wide frame. Barely rounded; scales with width. */
+/** Corner radius on a 1080-wide frame. The bulged card is square; only the red rounded style uses a radius. */
 export const IMAGE_TEMPLATE18_CARD_RADIUS_AT_1080 = 10;
+
+/**
+ * Bulged-card outline measured on pastel_0438_s02 at 1080×1440.
+ * Mid-side x is 17..1062, centre top/bottom y is 39..1400, and the
+ * sin bow adds 25px of sideways bulge and 17px of vertical bulge.
+ */
+export const IMAGE_TEMPLATE18_EDGE_LEFT = 17 / 1080;
+export const IMAGE_TEMPLATE18_EDGE_RIGHT = 1062 / 1080;
+export const IMAGE_TEMPLATE18_EDGE_TOP = 39 / 1440;
+export const IMAGE_TEMPLATE18_EDGE_BOTTOM = 1400 / 1440;
+export const IMAGE_TEMPLATE18_BULGE_X = 25 / 1080;
+export const IMAGE_TEMPLATE18_BULGE_Y = 17 / 1440;
 
 export const IMAGE_TEMPLATE18_PROGRESS_H = 0.0065;
 export const IMAGE_TEMPLATE18_PROGRESS_GAP = 0.012;
@@ -114,13 +128,13 @@ export function template18ScanlineFactor(style: Template18StyleId): number {
  * used when a slide index falls past mauve.
  */
 export const IMAGE_TEMPLATE18_PASTEL_TRUE_SLIDES = [
-  { bg: '#D3FDF1', accent: '#C4A15A', sample: '#96C0B4' },
-  { bg: '#C9F9FD', accent: '#C4A15A', sample: '#93BAC1' },
-  { bg: '#E4E7F8', accent: '#7A6E9A', sample: '#A7ACC0' },
-  { bg: '#FCE3F6', accent: '#C45A78', sample: '#BFA6B9' },
-  { bg: '#F8E6F7', accent: '#9A7896', sample: '#C0AABF' },
-  { bg: '#F6EEDC', accent: '#8A7A58', sample: '#C0B5A1' },
-  { bg: '#F6F5B8', accent: '#A09040', sample: '#BFBE7D' },
+  { bg: '#C6EEE3', accent: '#C4A15A', sample: '#96C0B4' },
+  { bg: '#BDEAEE', accent: '#C4A15A', sample: '#93BAC1' },
+  { bg: '#D6D9E9', accent: '#7A6E9A', sample: '#A7ACC0' },
+  { bg: '#EDD5E7', accent: '#C45A78', sample: '#BFA6B9' },
+  { bg: '#E9D8E8', accent: '#9A7896', sample: '#C0AABF' },
+  { bg: '#E7E0CF', accent: '#8A7A58', sample: '#C0B5A1' },
+  { bg: '#E7E6AD', accent: '#A09040', sample: '#BFBE7D' },
 ] as const;
 
 /**
@@ -147,7 +161,7 @@ export const IMAGE_TEMPLATE18_DEEP_RED_SLIDES = [
   { bg: '#7E2218', sample: '#6A0F0E' },
 ] as const;
 
-export const IMAGE_TEMPLATE18_ROUNDED_CARD = '#700000';
+export const IMAGE_TEMPLATE18_ROUNDED_CARD = '#740605';
 export const IMAGE_TEMPLATE18_ROUNDED_FRAME_INNER = '#2B1615';
 export const IMAGE_TEMPLATE18_ROUNDED_FRAME_OUTER = '#1C0706';
 
@@ -232,16 +246,48 @@ export function template18Accent(
   return template18SlideStyle(tabIndex, style).accent;
 }
 
-export function template18TextColor(style: Template18StyleId): string {
-  if (style === 'pastel') return IMAGE_TEMPLATE18_TEXT;
-  if (style === 'pastel-true') return IMAGE_TEMPLATE18_PASTEL_TRUE_TEXT;
-  if (style === 'dark-moody') return IMAGE_TEMPLATE18_OFFWHITE;
-  return IMAGE_TEMPLATE18_WHITE;
+/** Darkest text pixels sampled from the pastel reference slides, one per studio colour. */
+const IMAGE_TEMPLATE18_PASTEL_TRUE_TEXT_SLIDES = [
+  '#262F24',
+  '#3B374B',
+  '#3A3452',
+  '#453247',
+  '#3E3042',
+  '#463C30',
+  '#3A381E',
+] as const;
+
+/** Footer ink, lighter and tinted to the same slide. */
+const IMAGE_TEMPLATE18_PASTEL_TRUE_FOOTER_SLIDES = [
+  '#3A4B46',
+  '#5B6A77',
+  '#555E6C',
+  '#77606F',
+  '#6A5866',
+  '#6A6452',
+  '#565428',
+] as const;
+
+function slideHex(slides: readonly string[], tabIndex: number): string {
+  const count = slides.length;
+  const index = ((tabIndex % count) + count) % count;
+  return slides[index]!;
 }
 
-export function template18FooterColor(style: Template18StyleId): string {
-  if (style === 'pastel' || style === 'pastel-true') return template18TextColor(style);
-  return IMAGE_TEMPLATE18_WHITE;
+export function template18TextColor(style: Template18StyleId, tabIndex = 0): string {
+  if (style === 'pastel') return IMAGE_TEMPLATE18_TEXT;
+  if (style === 'pastel-true') return slideHex(IMAGE_TEMPLATE18_PASTEL_TRUE_TEXT_SLIDES, tabIndex);
+  if (style === 'dark-moody') return '#F6F7F5';
+  if (style === 'deep-red') return '#F6EBEE';
+  return '#F3DBDC';
+}
+
+export function template18FooterColor(style: Template18StyleId, tabIndex = 0): string {
+  if (style === 'pastel') return IMAGE_TEMPLATE18_TEXT;
+  if (style === 'pastel-true') return slideHex(IMAGE_TEMPLATE18_PASTEL_TRUE_FOOTER_SLIDES, tabIndex);
+  if (style === 'dark-moody') return '#F4F5F3';
+  if (style === 'deep-red') return '#F3E4E6';
+  return '#F3DBDC';
 }
 
 export type Template18Card = {
@@ -268,31 +314,33 @@ export function template18Card(
   style: Template18StyleId = 'pastel'
 ): Template18Card {
   if (style === 'red-rounded') {
-    const insetX = width * 0.034;
-    const insetY = height * 0.026;
+    const insetX = width * 0.055;
+    const insetY = height * 0.045;
     return {
       left: insetX,
       right: width - insetX,
       top: insetY,
       bottom: height - insetY,
-      radius: width * 0.016,
+      radius: width * 0.018,
       bulgeX: 0,
       bulgeY: 0,
       shape: 'round',
     };
   }
-  const margin = width * IMAGE_TEMPLATE18_CARD_MARGIN;
-  const bulge = width * IMAGE_TEMPLATE18_CARD_BULGE;
-  const inset = margin + bulge;
-  const radius = Math.min((IMAGE_TEMPLATE18_CARD_RADIUS_AT_1080 / 1080) * width, margin);
+  const bulgeX = width * IMAGE_TEMPLATE18_BULGE_X;
+  const bulgeY = height * IMAGE_TEMPLATE18_BULGE_Y;
+  const leftCenter = width * IMAGE_TEMPLATE18_EDGE_LEFT;
+  const rightCenter = width * IMAGE_TEMPLATE18_EDGE_RIGHT;
+  const topCenter = height * IMAGE_TEMPLATE18_EDGE_TOP;
+  const bottomCenter = height * IMAGE_TEMPLATE18_EDGE_BOTTOM;
   return {
-    left: inset,
-    right: width - inset,
-    top: inset,
-    bottom: height - inset,
-    radius,
-    bulgeX: bulge,
-    bulgeY: bulge,
+    left: leftCenter + bulgeX,
+    right: rightCenter - bulgeX,
+    top: topCenter + bulgeY,
+    bottom: bottomCenter - bulgeY,
+    radius: 0,
+    bulgeX,
+    bulgeY,
     shape: 'bulge',
   };
 }
@@ -332,15 +380,33 @@ type Template18Band = {
 };
 
 function template18LineHeight(style: Template18StyleId): number {
-  return style === 'pastel' ? IMAGE_TEMPLATE18_LINE_HEIGHT : 1.34;
+  return style === 'pastel' ? IMAGE_TEMPLATE18_LINE_HEIGHT : 1.42;
 }
 
 function template18CoverPreferred(style: Template18StyleId): number {
   if (style === 'pastel') return 0.072;
   if (style === 'dark-moody') return 0.07;
-  if (style === 'deep-red') return 0.064;
-  if (style === 'pastel-true') return 0.058;
-  return 0.06;
+  if (style === 'deep-red') return 0.062;
+  if (style === 'pastel-true') return 0.07;
+  return 0.05;
+}
+
+function template18QuestionPreferred(style: Template18StyleId): number {
+  if (style === 'pastel-true') return 0.052;
+  if (style === 'dark-moody') return 0.05;
+  if (style === 'deep-red') return 0.05;
+  if (style === 'red-rounded') return 0.044;
+  return 0.056;
+}
+
+/** Vertical centre of the text block, as a fraction of the frame height. */
+function template18TextCenter(style: Template18StyleId, kind: Template18Kind): number | null {
+  if (style === 'pastel' || kind === 'cta') return null;
+  if (style === 'pastel-true') return kind === 'cover' ? 0.504 : 0.492;
+  if (style === 'dark-moody') return kind === 'cover' ? 0.477 : 0.483;
+  if (style === 'deep-red') return kind === 'cover' ? 0.475 : 0.455;
+  if (style === 'red-rounded') return kind === 'cover' ? 0.508 : 0.538;
+  return 0.48;
 }
 
 function template18TextBand(
@@ -350,18 +416,30 @@ function template18TextBand(
   style: Template18StyleId
 ): Template18Band {
   const card = template18Card(width, height, style);
-  const maxWidth = (card.right - card.left) * (style === 'pastel' ? 0.84 : 0.78);
+  const maxWidth =
+    (card.right - card.left) *
+    (style === 'pastel'
+      ? 0.84
+      : style === 'deep-red'
+        ? 0.56
+        : style === 'dark-moody' && kind === 'cover'
+          ? 0.62
+          : style === 'pastel-true' && kind === 'cover'
+            ? 0.72
+            : 0.74);
   const hasBar = template18HasProgress(style);
   const belowBar = hasBar ? card.top + height * 0.055 : card.top + height * 0.07;
   const aboveFooter =
     style === 'pastel' ? card.bottom - height * 0.07 : height * 0.8;
   if (style !== 'pastel' && kind !== 'cta') {
+    const center = (template18TextCenter(style, kind) ?? 0.47) * height;
+    const half = height * 0.22;
     return {
-      top: height * 0.32,
-      bottom: height * 0.7,
+      top: center - half,
+      bottom: center + half,
       maxWidth,
-      preferred: kind === 'cover' ? template18CoverPreferred(style) : style === 'red-rounded' ? 0.05 : 0.044,
-      min: 0.026,
+      preferred: kind === 'cover' ? template18CoverPreferred(style) : template18QuestionPreferred(style),
+      min: 0.02,
     };
   }
   if (kind === 'cover') {
@@ -478,7 +556,7 @@ export function layoutTemplate18Text(
   style: Template18StyleId = 'pastel'
 ): Template18TextLayout {
   const band = template18TextBand(width, height, kind, style);
-  const fontWeight = kind === 'cover' && style === 'dark-moody' ? 700 : IMAGE_TEMPLATE18_FONT_WEIGHT;
+  const fontWeight = IMAGE_TEMPLATE18_FONT_WEIGHT;
   const leading = template18LineHeight(style);
   const empty: Template18TextLayout = {
     lines: [],
@@ -554,62 +632,27 @@ export function traceTemplate18Card(
     ctx.roundRect(card.left, card.top, w, h, card.radius);
     return;
   }
-  const { left, right, top, bottom, radius, bulgeX, bulgeY } = card;
-  const r = radius;
-  const edgeSteps = 48;
-  const cornerSteps = 20;
-  const bow = (t: number) => Math.sin(Math.PI * t) ** 2;
-
-  const points: Array<[number, number]> = [];
-  const push = (x: number, y: number) => {
-    const last = points[points.length - 1];
-    if (last && Math.abs(last[0] - x) < 0.01 && Math.abs(last[1] - y) < 0.01) return;
-    points.push([x, y]);
-  };
-
-  for (let i = 0; i <= edgeSteps; i++) {
-    const t = i / edgeSteps;
-    const x = left + r + t * (right - left - 2 * r);
-    push(x, top - bow(t) * bulgeY);
+  const { left, right, top, bottom, bulgeX, bulgeY } = card;
+  const spanX = right - left;
+  const spanY = bottom - top;
+  const steps = 72;
+  const bow = (t: number) => Math.sin(Math.PI * t);
+  ctx.moveTo(left, top);
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps;
+    ctx.lineTo(left + t * spanX, top - bow(t) * bulgeY);
   }
-  for (let i = 1; i <= cornerSteps; i++) {
-    const a = -Math.PI / 2 + (Math.PI / 2) * (i / cornerSteps);
-    push(right - r + Math.cos(a) * r, top + r + Math.sin(a) * r);
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps;
+    ctx.lineTo(right + bow(t) * bulgeX, top + t * spanY);
   }
-  for (let i = 1; i <= edgeSteps; i++) {
-    const t = i / edgeSteps;
-    const y = top + r + t * (bottom - top - 2 * r);
-    push(right + bow(t) * bulgeX, y);
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps;
+    ctx.lineTo(right - t * spanX, bottom + bow(t) * bulgeY);
   }
-  for (let i = 1; i <= cornerSteps; i++) {
-    const a = 0 + (Math.PI / 2) * (i / cornerSteps);
-    push(right - r + Math.cos(a) * r, bottom - r + Math.sin(a) * r);
-  }
-  for (let i = 1; i <= edgeSteps; i++) {
-    const t = i / edgeSteps;
-    const x = right - r - t * (right - left - 2 * r);
-    push(x, bottom + bow(t) * bulgeY);
-  }
-  for (let i = 1; i <= cornerSteps; i++) {
-    const a = Math.PI / 2 + (Math.PI / 2) * (i / cornerSteps);
-    push(left + r + Math.cos(a) * r, bottom - r + Math.sin(a) * r);
-  }
-  for (let i = 1; i <= edgeSteps; i++) {
-    const t = i / edgeSteps;
-    const y = bottom - r - t * (bottom - top - 2 * r);
-    push(left - bow(t) * bulgeX, y);
-  }
-  for (let i = 1; i <= cornerSteps; i++) {
-    const a = Math.PI + (Math.PI / 2) * (i / cornerSteps);
-    push(left + r + Math.cos(a) * r, top + r + Math.sin(a) * r);
-  }
-
-  const first = points[0];
-  if (!first) return;
-  ctx.moveTo(first[0], first[1]);
-  for (let i = 1; i < points.length; i++) {
-    const point = points[i]!;
-    ctx.lineTo(point[0], point[1]);
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps;
+    ctx.lineTo(left - bow(t) * bulgeX, bottom - t * spanY);
   }
   ctx.closePath();
 }
@@ -630,39 +673,19 @@ export function drawTemplate18Vignette(
   const cx = width / 2;
   const cy = height / 2;
   const outer = Math.hypot(cx - card.left, cy - card.top);
+  if (style === 'red-rounded') return;
   const gradient = ctx.createRadialGradient(cx, cy, outer * 0.05, cx, cy, outer);
-  if (style === 'deep-red') {
-    gradient.addColorStop(0, 'rgba(0,0,0,0)');
-    gradient.addColorStop(0.48, 'rgba(0,0,0,0.02)');
-    gradient.addColorStop(0.7, 'rgba(0,0,0,0.16)');
-    gradient.addColorStop(0.86, 'rgba(0,0,0,0.42)');
-    gradient.addColorStop(1, 'rgba(0,0,0,0.78)');
-  } else if (style === 'pastel-true') {
-    gradient.addColorStop(0, 'rgba(0,0,0,0)');
-    gradient.addColorStop(0.5, 'rgba(0,0,0,0)');
-    gradient.addColorStop(0.72, 'rgba(0,0,0,0.05)');
-    gradient.addColorStop(0.88, 'rgba(0,0,0,0.16)');
-    gradient.addColorStop(1, 'rgba(0,0,0,0.32)');
-  } else if (style === 'dark-moody') {
-    gradient.addColorStop(0, 'rgba(0,0,0,0)');
-    gradient.addColorStop(0.5, 'rgba(0,0,0,0)');
-    gradient.addColorStop(0.74, 'rgba(0,0,0,0.06)');
-    gradient.addColorStop(0.9, 'rgba(0,0,0,0.16)');
-    gradient.addColorStop(1, 'rgba(0,0,0,0.26)');
-  } else if (style === 'red-rounded') {
-    gradient.addColorStop(0, 'rgba(0,0,0,0)');
-    gradient.addColorStop(0.55, 'rgba(0,0,0,0)');
-    gradient.addColorStop(0.78, 'rgba(0,0,0,0.16)');
-    gradient.addColorStop(0.92, 'rgba(0,0,0,0.38)');
-    gradient.addColorStop(1, 'rgba(0,0,0,0.58)');
-  } else {
-    gradient.addColorStop(0, 'rgba(0,0,0,0)');
-    gradient.addColorStop(0.36, 'rgba(0,0,0,0.02)');
-    gradient.addColorStop(0.55, 'rgba(0,0,0,0.08)');
-    gradient.addColorStop(0.72, 'rgba(0,0,0,0.18)');
-    gradient.addColorStop(0.86, 'rgba(0,0,0,0.32)');
-    gradient.addColorStop(1, 'rgba(0,0,0,0.46)');
-  }
+  // Sampled on the pastel reference: flat through the inner half, then a
+  // smooth ring down to about 0.75 at the sharp corner. Deep red stops a
+  // little sooner so the corner stays near #53130D instead of black.
+  const corner = style === 'deep-red' ? 0.24 : 0.27;
+  gradient.addColorStop(0, 'rgba(0,0,0,0)');
+  gradient.addColorStop(0.52, 'rgba(0,0,0,0)');
+  gradient.addColorStop(0.64, 'rgba(0,0,0,0.04)');
+  gradient.addColorStop(0.74, 'rgba(0,0,0,0.1)');
+  gradient.addColorStop(0.84, 'rgba(0,0,0,0.16)');
+  gradient.addColorStop(0.93, 'rgba(0,0,0,0.21)');
+  gradient.addColorStop(1, `rgba(0,0,0,${corner})`);
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 }
@@ -727,25 +750,22 @@ export function drawTemplate18Progress(
   if (questionCount <= 0 || questionIndex <= 0) return;
   const card = template18Card(width, height, style);
   if (style === 'pastel-true') {
-    const trackW = card.right - card.left - width * 0.08;
-    const barH = Math.max(4, Math.round(height * 0.0055));
-    const y = card.top + height * 0.034;
-    const x = card.left + width * 0.04;
+    const barH = Math.max(6, Math.round((height * 6) / 1440));
+    const y = (height * 102) / 1440;
+    const x = (width * 48) / 1080;
+    const trackW = (width * 984) / 1080;
     const radius = barH / 2;
-    ctx.fillStyle = 'rgba(70, 60, 70, 0.22)';
+    ctx.fillStyle = 'rgba(70, 96, 118, 0.42)';
     ctx.beginPath();
     ctx.roundRect(x, y, trackW, barH, radius);
     ctx.fill();
-    const filled = Math.max(
-      0,
-      Math.min(1, (questionIndex - 1 + IMAGE_TEMPLATE18_PROGRESS_ACTIVE) / questionCount)
-    );
+    const filled = Math.max(0, Math.min(1, (questionIndex - 1 + 1.45) / questionCount));
     if (filled > 0) {
       ctx.save();
       ctx.beginPath();
       ctx.roundRect(x, y, trackW, barH, radius);
       ctx.clip();
-      ctx.fillStyle = accent;
+      ctx.fillStyle = 'rgb(150, 115, 45)';
       ctx.fillRect(x, y, Math.max(barH, trackW * filled), barH);
       ctx.restore();
     }
@@ -801,22 +821,53 @@ export function drawTemplate18Scanlines(
   ctx.restore();
 }
 
-function drawRoundedFrameHalo(
-  ctx: CanvasRenderingContext2D,
-  card: Template18Card,
-  width: number
-) {
+function drawRoundedSoftEdge(ctx: CanvasRenderingContext2D, card: Template18Card, width: number) {
   const w = card.right - card.left;
   const h = card.bottom - card.top;
-  const steps = 12;
+  const steps = 22;
+  const maxGrow = width * 0.04;
   for (let i = steps; i >= 1; i--) {
-    const grow = (i / steps) * width * 0.04;
-    const alpha = 0.05 + (1 - i / steps) * 0.22;
-    ctx.fillStyle = `rgba(48, 10, 8, ${alpha})`;
+    const t = i / steps;
+    const grow = t * maxGrow;
+    const r = Math.round(116 * (1 - t) + 48 * t);
+    const g = Math.round(6 * (1 - t) + 5 * t);
+    const b = Math.round(5 * (1 - t) + 5 * t);
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
     ctx.beginPath();
-    ctx.roundRect(card.left - grow, card.top - grow, w + grow * 2, h + grow * 2, card.radius + grow * 0.45);
+    ctx.roundRect(
+      card.left - grow,
+      card.top - grow,
+      w + grow * 2,
+      h + grow * 2,
+      card.radius + grow * 0.35
+    );
     ctx.fill();
   }
+}
+
+/** 1–2 px yellow fringe on the left edge and blue on the right, like the reference. */
+function drawTemplate18Fringe(ctx: CanvasRenderingContext2D, width: number, height: number) {
+  const image = ctx.getImageData(0, 0, width, height);
+  const data = image.data;
+  const bg = (idx: number) => data[idx]! < 14 && data[idx + 1]! < 14 && data[idx + 2]! < 18;
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 2; x < width - 2; x++) {
+      const i = (y * width + x) * 4;
+      if (bg(i)) continue;
+      const left = bg((y * width + (x - 1)) * 4);
+      const right = bg((y * width + (x + 1)) * 4);
+      if (left && x < width * 0.5) {
+        data[i] = Math.round(data[i]! * 0.45 + 210 * 0.55);
+        data[i + 1] = Math.round(data[i + 1]! * 0.45 + 170 * 0.55);
+        data[i + 2] = Math.round(data[i + 2]! * 0.7 + 20 * 0.3);
+      } else if (right && x > width * 0.5) {
+        data[i] = Math.round(data[i]! * 0.55 + 16 * 0.45);
+        data[i + 1] = Math.round(data[i + 1]! * 0.45 + 175 * 0.55);
+        data[i + 2] = Math.round(data[i + 2]! * 0.35 + 214 * 0.65);
+      }
+    }
+  }
+  ctx.putImageData(image, 0, 0);
 }
 
 function drawTemplate18Frame(ctx: CanvasRenderingContext2D, width: number, height: number, style: Template18StyleId) {
@@ -833,7 +884,7 @@ function drawTemplate18Frame(ctx: CanvasRenderingContext2D, width: number, heigh
     gradient.addColorStop(1, IMAGE_TEMPLATE18_ROUNDED_FRAME_OUTER);
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
-    drawRoundedFrameHalo(ctx, template18Card(width, height, style), width);
+    drawRoundedSoftEdge(ctx, template18Card(width, height, style), width);
     return;
   }
   ctx.fillStyle = IMAGE_TEMPLATE18_CANVAS_BG;
@@ -846,7 +897,7 @@ function template18FooterY(height: number, card: Template18Card, style: Template
 }
 
 function template18FooterSize(width: number, style: Template18StyleId): number {
-  const ratio = style === 'pastel' ? IMAGE_TEMPLATE18_FOOTER_SIZE : 0.03;
+  const ratio = style === 'pastel' ? IMAGE_TEMPLATE18_FOOTER_SIZE : 0.034;
   return Math.round(width * ratio);
 }
 
@@ -870,12 +921,15 @@ export function paintTemplate18Slide(
   const slideCount = options.slideCount ?? IMAGE_TEMPLATE18_SLIDE_COUNT;
   const isCta = options.isCta ?? options.tabIndex === IMAGE_TEMPLATE18_CTA_TAB;
   const kind = template18Kind(options.tabIndex, isCta);
-  const fontFamily = options.fontFamily || IMAGE_TEMPLATE18_FONT_STACK;
   const questionCount = Math.max(0, slideCount - 1);
-  const textColor = template18TextColor(style);
+  const textColor = template18TextColor(style, options.tabIndex);
+  const bodyFont =
+    options.fontFamily ||
+    (style === 'pastel' ? IMAGE_TEMPLATE18_PASTEL_FONT_STACK : IMAGE_TEMPLATE18_FONT_STACK);
   const scanlines = resolveTemplate18Scanlines(style, options.scanlines !== false);
 
   drawTemplate18Frame(ctx, width, height, style);
+  if (style === 'red-rounded') drawTemplate18Grain(ctx, width, height, 0.2);
 
   ctx.save();
   ctx.beginPath();
@@ -899,10 +953,10 @@ export function paintTemplate18Slide(
     );
   }
 
-  const layout = layoutTemplate18Text(ctx, width, height, options.text, kind, fontFamily, style);
+  const layout = layoutTemplate18Text(ctx, width, height, options.text, kind, bodyFont, style);
   if (layout.lines.length > 0) {
     ctx.fillStyle = textColor;
-    ctx.font = `${layout.fontWeight} ${layout.fontSize}px ${fontFamily}`;
+    ctx.font = `${layout.fontWeight} ${layout.fontSize}px ${bodyFont}`;
     setLetterSpacing(ctx, '0px');
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
@@ -912,9 +966,8 @@ export function paintTemplate18Slide(
       const italic = italicLast && index === layout.lines.length - 1;
       if (italic) {
         ctx.save();
-        ctx.translate(width / 2, y);
-        ctx.transform(1, 0, -0.24, 1, 0, 0);
-        ctx.fillText(line, 0, 0);
+        ctx.font = `italic ${layout.fontWeight} ${layout.fontSize}px ${bodyFont}`;
+        ctx.fillText(line, width / 2, y);
         ctx.restore();
       } else {
         ctx.fillText(line, width / 2, y);
@@ -931,22 +984,28 @@ export function paintTemplate18Slide(
     const promo = template18PromoLayout(width, height, style);
     ctx.drawImage(options.promo, promo.x, promo.y, promo.width, promo.height);
     setLetterSpacing(ctx, '0px');
-    ctx.font = `700 ${labelSize}px ${IMAGE_TEMPLATE18_SANS_STACK}`;
+    ctx.font = `${style === 'pastel' ? 700 : 600} ${labelSize}px ${
+      style === 'pastel' ? '"TikTok Sans", system-ui, sans-serif' : IMAGE_TEMPLATE18_SANS_STACK
+    }`;
     ctx.fillStyle = textColor;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
     ctx.fillText(IMAGE_TEMPLATE2_Q5_PROMO_LABEL, width / 2, promo.y - labelGap);
     if (scanlines) drawTemplate18Scanlines(ctx, width, height, template18ScanlineFactor(style));
     ctx.restore();
+    if (style !== 'red-rounded') drawTemplate18Fringe(ctx, width, height);
     return;
   }
 
   setLetterSpacing(ctx, '0px');
-  ctx.fillStyle = template18FooterColor(style);
-  ctx.font = `700 ${template18FooterSize(width, style)}px ${IMAGE_TEMPLATE18_SANS_STACK}`;
+  ctx.fillStyle = template18FooterColor(style, options.tabIndex);
+  ctx.font = `${style === 'pastel' ? 700 : 600} ${template18FooterSize(width, style)}px ${
+    style === 'pastel' ? '"TikTok Sans", system-ui, sans-serif' : IMAGE_TEMPLATE18_SANS_STACK
+  }`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(IMAGE_TEMPLATE18_FOOTER, width / 2, template18FooterY(height, card, style));
   if (scanlines) drawTemplate18Scanlines(ctx, width, height, template18ScanlineFactor(style));
   ctx.restore();
+  if (style !== 'red-rounded') drawTemplate18Fringe(ctx, width, height);
 }

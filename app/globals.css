@@ -71,6 +71,30 @@ body {
 }
 
 @font-face {
+  font-family: "Liberation Serif";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/liberation-serif/LiberationSerif-Regular.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Liberation Serif";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/liberation-serif/LiberationSerif-Italic.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Poppins";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/poppins/Poppins-SemiBold.ttf") format("truetype");
+}
+
+@font-face {
   font-family: "Libre Baskerville";
   font-style: normal;
   font-weight: 400;
