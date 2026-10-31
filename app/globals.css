@@ -87,6 +87,14 @@ body {
 }
 
 @font-face {
+  font-family: "Liberation Serif";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/liberation-serif/LiberationSerif-Bold.ttf") format("truetype");
+}
+
+@font-face {
   font-family: "Poppins";
   font-style: normal;
   font-weight: 600;

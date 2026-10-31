@@ -83,6 +83,11 @@ import {
   IMAGE_TEMPLATE19_LABEL_FONT_STACK,
   paintTemplate19Slide,
 } from '@/app/lib/image-template-19-glow';
+import {
+  IMAGE_TEMPLATE20_FONT_STACK,
+  IMAGE_TEMPLATE20_FOOTER_FONT_STACK,
+  paintTemplate20Slide,
+} from '@/app/lib/image-template-20-ocean';
 
 const TIKTOK = '"TikTok Sans", system-ui, sans-serif';
 const COMIC =
@@ -120,7 +125,7 @@ function drawCopycatAppMark(
   ctx.fillText(COPYCAT_APP_NAME, frameWidth / 2, markY);
 }
 
-export type CopycatExportTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19;
+export type CopycatExportTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20;
 
 export type CopycatExportSlide = {
   text: string;
@@ -229,6 +234,28 @@ async function paintSlide(
   canvas.height = h;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Failed to prepare canvas');
+
+  if (templateId === 20) {
+    const serif = concreteFontFamily(IMAGE_TEMPLATE20_FONT_STACK);
+    const footer = concreteFontFamily(IMAGE_TEMPLATE20_FOOTER_FONT_STACK);
+    try {
+      await document.fonts.load(`400 72px ${serif}`);
+      await document.fonts.load(`700 96px ${serif}`);
+      await document.fonts.load(`600 40px ${footer}`);
+    } catch {
+      /* fonts may already be ready */
+    }
+    const promo = slide.isCta ? await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC) : null;
+    paintTemplate20Slide(ctx, w, h, {
+      text: slide.text,
+      fontFamily: serif,
+      footerFontFamily: footer,
+      isCover: slide.isCover,
+      isCta: slide.isCta,
+      promo,
+    });
+    return canvasBlob(canvas);
+  }
 
   if (templateId === 19) {
     const serif = concreteFontFamily(IMAGE_TEMPLATE19_FONT_STACK);

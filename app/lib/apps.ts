@@ -133,6 +133,12 @@ export const IMAGE_TEMPLATES_BY_APP: Record<StudioAppId, ImageTemplateCard[]> = 
       title: 'Red glow',
       subtitle: '',
     },
+    {
+      id: 20,
+      title: 'Ocean questions',
+      subtitle: '',
+      coverSrc: '/image-templates/template-20-cover.jpg',
+    },
   ],
   fab: [
     { id: 1, title: 'Heart shaped paper', subtitle: '' },
