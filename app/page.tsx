@@ -6799,7 +6799,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                       <p className="mb-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">
                         Template
                       </p>
-                      <div className="grid grid-cols-3 gap-2 md:grid-cols-8">
+                      <div className="grid grid-cols-3 gap-2 md:grid-cols-9">
                         {COPYCAT_TEMPLATE_IDS.map((templateId) => {
                           const card = getImageTemplatesForApp('spill-it').find(
                             (c) => c.id === templateId

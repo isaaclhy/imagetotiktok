@@ -277,7 +277,8 @@ function CopycatSlidePreview({
     !showTemplate13Cta &&
     templateId !== 1 &&
     templateId !== 6 &&
-    templateId !== 17;
+    templateId !== 17 &&
+    templateId !== 18;
   const alignLeft = Boolean(leftAlign && !isCover) || templateId === 2;
   const pastelBg =
     IMAGE_TEMPLATE2_PASTEL_COLORS[tabIndex % IMAGE_TEMPLATE2_PASTEL_COLORS.length]!;
