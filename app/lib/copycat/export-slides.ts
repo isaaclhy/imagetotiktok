@@ -88,6 +88,11 @@ import {
   IMAGE_TEMPLATE20_FOOTER_FONT_STACK,
   paintTemplate20Slide,
 } from '@/app/lib/image-template-20-ocean';
+import {
+  IMAGE_TEMPLATE22_FONT_STACK,
+  IMAGE_TEMPLATE22_FONT_WEIGHT,
+  paintTemplate22Slide,
+} from '@/app/lib/image-template-22-red-rounded';
 
 const TIKTOK = '"TikTok Sans", system-ui, sans-serif';
 const COMIC =
@@ -125,7 +130,7 @@ function drawCopycatAppMark(
   ctx.fillText(COPYCAT_APP_NAME, frameWidth / 2, markY);
 }
 
-export type CopycatExportTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20;
+export type CopycatExportTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 22;
 
 export type CopycatExportSlide = {
   text: string;
@@ -253,6 +258,25 @@ async function paintSlide(
       isCover: slide.isCover,
       isCta: slide.isCta,
       promo,
+    });
+    return canvasBlob(canvas);
+  }
+
+  if (templateId === 22) {
+    try {
+      await document.fonts.load(`${IMAGE_TEMPLATE22_FONT_WEIGHT} 72px ${IMAGE_TEMPLATE22_FONT_STACK}`);
+      await document.fonts.load('600 36px "Poppins"');
+    } catch {
+      /* fonts may already be ready */
+    }
+    const promo = slide.isCta ? await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC) : null;
+    paintTemplate22Slide(ctx, w, h, {
+      text: slide.text,
+      tabIndex,
+      slideCount,
+      isCta: slide.isCta,
+      promo,
+      fontFamily: IMAGE_TEMPLATE22_FONT_STACK,
     });
     return canvasBlob(canvas);
   }
