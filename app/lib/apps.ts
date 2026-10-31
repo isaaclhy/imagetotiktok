@@ -140,6 +140,12 @@ export const IMAGE_TEMPLATES_BY_APP: Record<StudioAppId, ImageTemplateCard[]> = 
       coverSrc: '/image-templates/template-20-cover.jpg',
     },
     {
+      id: 21,
+      title: 'Bold solid',
+      subtitle: '',
+      coverSrc: '/image-templates/template-21-cover.png',
+    },
+    {
       id: 22,
       title: 'Red rounded card',
       subtitle: '',
