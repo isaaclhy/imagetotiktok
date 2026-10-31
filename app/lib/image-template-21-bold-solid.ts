@@ -22,8 +22,28 @@ export const IMAGE_TEMPLATE21_CTA_TAB = IMAGE_TEMPLATE21_SLIDE_COUNT - 1;
 
 export const IMAGE_TEMPLATE21_TEXT = '#FFFFFF';
 export const IMAGE_TEMPLATE21_FOOTER = IMAGE_TEMPLATE2_APP_FOOTER;
+/**
+ * Inter has real medium (500) and semibold (600) cuts. Liberation Sans and
+ * Arial only have regular and bold, so they stay as fallbacks.
+ */
 export const IMAGE_TEMPLATE21_FONT_STACK =
-  '"Liberation Sans", Arimo, Arial, Helvetica, sans-serif';
+  '"Inter", "Liberation Sans", Arimo, Arial, Helvetica, sans-serif';
+
+/** First family from `--font-inter` (the self-hosted next/font face), or Inter. */
+export function template21PrimaryFontFamily(): string {
+  if (typeof document === 'undefined') return 'Inter';
+  const raw = getComputedStyle(document.body).getPropertyValue('--font-inter').trim();
+  if (!raw) return 'Inter';
+  const quoted = raw.match(/^['"]([^'"]+)['"]/);
+  const first = quoted?.[1] ?? raw.split(',')[0]?.trim().replace(/^['"]|['"]$/g, '');
+  return first || 'Inter';
+}
+
+/** Canvas stack that prefers the loaded self-hosted Inter face. */
+export function template21CanvasFontStack(family = template21PrimaryFontFamily()): string {
+  if (!family || family === 'Inter') return IMAGE_TEMPLATE21_FONT_STACK;
+  return `"${family}", ${IMAGE_TEMPLATE21_FONT_STACK}`;
+}
 
 /** Cover gradient, top → middle → bottom. */
 export const IMAGE_TEMPLATE21_COVER_TOP = '#156272';
@@ -54,13 +74,14 @@ const CYCLE_SOLIDS = [
 const PROGRESS_TRACK_MIX = 0.36;
 
 /**
- * Cover size keeps "How jealous / is your / boyfriend, / really?" on four
- * centred lines in Liberation Sans Bold at 1080×1440.
+ * Cover is semibold, about 17% smaller than the first pass, so
+ * "How jealous" is ~55% of the frame and still breaks into the same four lines.
  */
-export const IMAGE_TEMPLATE21_COVER_SIZE = 0.112;
-export const IMAGE_TEMPLATE21_COVER_WIDTH = 0.72;
+export const IMAGE_TEMPLATE21_COVER_WEIGHT = 600;
+export const IMAGE_TEMPLATE21_COVER_SIZE = 0.095;
+export const IMAGE_TEMPLATE21_COVER_WIDTH = 0.58;
 export const IMAGE_TEMPLATE21_COVER_LINE_HEIGHT = 1.08;
-export const IMAGE_TEMPLATE21_COVER_MIN_SIZE = 0.046;
+export const IMAGE_TEMPLATE21_COVER_MIN_SIZE = 0.04;
 export const IMAGE_TEMPLATE21_COVER_MAX_BLOCK = 0.58;
 
 /**
@@ -70,11 +91,13 @@ export const IMAGE_TEMPLATE21_COVER_MAX_BLOCK = 0.58;
 export const IMAGE_TEMPLATE21_BLOCK_TOP = 830 / 2880;
 export const IMAGE_TEMPLATE21_SIDE_PAD = 0.085;
 export const IMAGE_TEMPLATE21_QUESTION_SIZE = 0.04815;
-export const IMAGE_TEMPLATE21_OPTION_SIZE = 0.04074;
-export const IMAGE_TEMPLATE21_QUESTION_WEIGHT = 700;
-export const IMAGE_TEMPLATE21_OPTION_WEIGHT = 400;
+/** Options are almost the question size, only a little smaller. */
+export const IMAGE_TEMPLATE21_OPTION_SIZE = 0.0445;
+/** Questions are medium. Answers are semibold. */
+export const IMAGE_TEMPLATE21_QUESTION_WEIGHT = 500;
+export const IMAGE_TEMPLATE21_OPTION_WEIGHT = 600;
 export const IMAGE_TEMPLATE21_QUESTION_LINE_HEIGHT = 1.18;
-export const IMAGE_TEMPLATE21_OPTION_LINE_HEIGHT = 1.78;
+export const IMAGE_TEMPLATE21_OPTION_LINE_HEIGHT = 1.7;
 /** Space between the question and the first answer, in question ems. */
 export const IMAGE_TEMPLATE21_OPTION_GAP = 0.75;
 export const IMAGE_TEMPLATE21_QUESTION_MIN_SIZE = 0.03;
@@ -83,7 +106,9 @@ export const IMAGE_TEMPLATE21_PROGRESS_Y = 0.048;
 export const IMAGE_TEMPLATE21_PROGRESS_H = 0.01;
 export const IMAGE_TEMPLATE21_PROGRESS_INSET = 0.078;
 
+/** Cover footer stays low. Question footers sit at 90% of the frame height. */
 export const IMAGE_TEMPLATE21_FOOTER_Y = 0.942;
+export const IMAGE_TEMPLATE21_QUESTION_FOOTER_Y = 0.9;
 export const IMAGE_TEMPLATE21_FOOTER_SIZE = 0.03;
 export const IMAGE_TEMPLATE21_FOOTER_WEIGHT = 400;
 
@@ -266,14 +291,15 @@ function paintFooter(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
-  fontFamily: string
+  fontFamily: string,
+  yRatio: number
 ) {
   const size = Math.round(width * IMAGE_TEMPLATE21_FOOTER_SIZE);
   ctx.font = `${IMAGE_TEMPLATE21_FOOTER_WEIGHT} ${size}px ${fontFamily}`;
   ctx.fillStyle = IMAGE_TEMPLATE21_TEXT;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(IMAGE_TEMPLATE21_FOOTER, width / 2, height * IMAGE_TEMPLATE21_FOOTER_Y);
+  ctx.fillText(IMAGE_TEMPLATE21_FOOTER, width / 2, height * yRatio);
 }
 
 function paintCover(
@@ -291,13 +317,13 @@ function paintCover(
   let lineH = fontSize * IMAGE_TEMPLATE21_COVER_LINE_HEIGHT;
   for (let step = 0; step < 40; step++) {
     lineH = fontSize * IMAGE_TEMPLATE21_COVER_LINE_HEIGHT;
-    ctx.font = `${IMAGE_TEMPLATE21_QUESTION_WEIGHT} ${fontSize}px ${fontFamily}`;
+    ctx.font = `${IMAGE_TEMPLATE21_COVER_WEIGHT} ${fontSize}px ${fontFamily}`;
     lines = text.trim() ? wrapBlock(ctx, text, maxWidth) : [];
     const fits = lines.length <= 6 && lines.length * lineH <= maxBlock;
     if (fits || fontSize <= minSize) break;
     fontSize = Math.max(minSize, fontSize - 2);
   }
-  ctx.font = `${IMAGE_TEMPLATE21_QUESTION_WEIGHT} ${fontSize}px ${fontFamily}`;
+  ctx.font = `${IMAGE_TEMPLATE21_COVER_WEIGHT} ${fontSize}px ${fontFamily}`;
   ctx.fillStyle = IMAGE_TEMPLATE21_TEXT;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
@@ -481,7 +507,7 @@ export function paintTemplate21Slide(
 
   if (isCover) {
     paintCover(ctx, width, height, options.text, fontFamily);
-    paintFooter(ctx, width, height, fontFamily);
+    paintFooter(ctx, width, height, fontFamily, IMAGE_TEMPLATE21_FOOTER_Y);
     return;
   }
 
@@ -494,7 +520,7 @@ export function paintTemplate21Slide(
     question,
     optionText,
     fontFamily,
-    height * IMAGE_TEMPLATE21_FOOTER_Y - footerSize
+    height * IMAGE_TEMPLATE21_QUESTION_FOOTER_Y - footerSize
   );
-  paintFooter(ctx, width, height, fontFamily);
+  paintFooter(ctx, width, height, fontFamily, IMAGE_TEMPLATE21_QUESTION_FOOTER_Y);
 }

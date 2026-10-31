@@ -4,9 +4,9 @@ import { useEffect, useRef } from 'react';
 import { IMAGE_TEMPLATE2_Q5_PROMO_SRC } from '@/app/lib/image-template-2-cover';
 import {
   IMAGE_TEMPLATE21_COVER_MID,
-  IMAGE_TEMPLATE21_FONT_STACK,
   IMAGE_TEMPLATE21_SLIDE_COUNT,
   paintTemplate21Slide,
+  template21CanvasFontStack,
 } from '@/app/lib/image-template-21-bold-solid';
 
 const EXPORT_W = 1080;
@@ -62,9 +62,11 @@ export function BoldSolidPreview({
       canvas.height = EXPORT_H;
       const ctx = canvas.getContext('2d');
       if (!ctx || cancelled) return;
+      const fontFamily = template21CanvasFontStack();
       try {
-        await document.fonts.load(`700 120px ${IMAGE_TEMPLATE21_FONT_STACK}`);
-        await document.fonts.load(`400 48px ${IMAGE_TEMPLATE21_FONT_STACK}`);
+        await document.fonts.load(`600 96px ${fontFamily}`);
+        await document.fonts.load(`500 52px ${fontFamily}`);
+        await document.fonts.load(`600 48px ${fontFamily}`);
       } catch {
         /* faces may already be ready */
       }
@@ -78,7 +80,7 @@ export function BoldSolidPreview({
         isCover: cover,
         isCta: cta,
         promo,
-        fontFamily: IMAGE_TEMPLATE21_FONT_STACK,
+        fontFamily,
       });
     };
 

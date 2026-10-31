@@ -84,9 +84,14 @@ import {
   paintTemplate19Slide,
 } from '@/app/lib/image-template-19-glow';
 import {
-  IMAGE_TEMPLATE21_FONT_STACK,
   paintTemplate21Slide,
+  template21CanvasFontStack,
 } from '@/app/lib/image-template-21-bold-solid';
+import {
+  IMAGE_TEMPLATE22_FONT_STACK,
+  IMAGE_TEMPLATE22_FONT_WEIGHT,
+  paintTemplate22Slide,
+} from '@/app/lib/image-template-22-red-rounded';
 
 const TIKTOK = '"TikTok Sans", system-ui, sans-serif';
 const COMIC =
@@ -124,7 +129,7 @@ function drawCopycatAppMark(
   ctx.fillText(COPYCAT_APP_NAME, frameWidth / 2, markY);
 }
 
-export type CopycatExportTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 21;
+export type CopycatExportTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 21 | 22;
 
 export type CopycatExportSlide = {
   text: string;
@@ -234,10 +239,30 @@ async function paintSlide(
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Failed to prepare canvas');
 
-  if (templateId === 21) {
+  if (templateId === 22) {
     try {
-      await document.fonts.load(`700 120px ${IMAGE_TEMPLATE21_FONT_STACK}`);
-      await document.fonts.load(`400 48px ${IMAGE_TEMPLATE21_FONT_STACK}`);
+      await document.fonts.load(`${IMAGE_TEMPLATE22_FONT_WEIGHT} 72px ${IMAGE_TEMPLATE22_FONT_STACK}`);
+      await document.fonts.load('600 36px "Poppins"');
+    } catch {
+      /* fonts may already be ready */
+    }
+    const promo = slide.isCta ? await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC) : null;
+    paintTemplate22Slide(ctx, w, h, {
+      text: slide.text,
+      tabIndex,
+      slideCount,
+      isCta: slide.isCta,
+      promo,
+      fontFamily: IMAGE_TEMPLATE22_FONT_STACK,
+    });
+    return canvasBlob(canvas);
+  }
+
+  if (templateId === 21) {
+    const fontFamily = template21CanvasFontStack();
+    try {
+      await document.fonts.load(`600 96px ${fontFamily}`);
+      await document.fonts.load(`500 52px ${fontFamily}`);
     } catch {
       /* fonts may already be ready */
     }
@@ -249,7 +274,7 @@ async function paintSlide(
       isCover: slide.isCover,
       isCta: slide.isCta,
       promo,
-      fontFamily: IMAGE_TEMPLATE21_FONT_STACK,
+      fontFamily,
     });
     return canvasBlob(canvas);
   }
