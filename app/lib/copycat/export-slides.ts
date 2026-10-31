@@ -72,8 +72,10 @@ import {
   template17PrimaryFontFamily,
 } from '@/app/lib/image-template-17-split';
 import {
+  IMAGE_TEMPLATE18_DEFAULT_STYLE,
   IMAGE_TEMPLATE18_FONT_WEIGHT,
   paintTemplate18Slide,
+  type Template18StyleId,
 } from '@/app/lib/image-template-18-pastel';
 import {
   IMAGE_TEMPLATE19_FONT_STACK,
@@ -213,7 +215,8 @@ async function paintSlide(
   tabIndex: number,
   template14Color: string,
   template15FrameBg?: string,
-  slideCount = 6
+  slideCount = 6,
+  template18?: { style: Template18StyleId; scanlines: boolean }
 ): Promise<Blob> {
   const { w, h } = frameSize(templateId);
   const canvas = document.createElement('canvas');
@@ -283,6 +286,8 @@ async function paintSlide(
       slideCount,
       isCta: slide.isCta,
       promo,
+      style: template18?.style ?? IMAGE_TEMPLATE18_DEFAULT_STYLE,
+      scanlines: template18?.scanlines ?? true,
     });
     return canvasBlob(canvas);
   }
@@ -625,6 +630,8 @@ export async function exportCopycatSlidesZip(options: {
   slides: CopycatExportSlide[];
   template14Color?: string;
   template15FrameBg?: string;
+  template18Style?: Template18StyleId;
+  template18Scanlines?: boolean;
 }): Promise<Blob> {
   const JSZip = (await import('jszip')).default;
   const zip = new JSZip();
@@ -637,7 +644,11 @@ export async function exportCopycatSlidesZip(options: {
       i,
       color,
       options.template15FrameBg,
-      options.slides.length
+      options.slides.length,
+      {
+        style: options.template18Style ?? IMAGE_TEMPLATE18_DEFAULT_STYLE,
+        scanlines: options.template18Scanlines ?? true,
+      }
     );
     const name = i === 0 ? 'cover' : `q${i}`;
     zip.file(`template-${options.templateId}-${name}.png`, blob);

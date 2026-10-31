@@ -202,11 +202,16 @@ import {
 } from '@/app/lib/image-template-16-notes';
 import {
   IMAGE_TEMPLATE18_CTA_TAB,
+  IMAGE_TEMPLATE18_DEFAULT_STYLE,
   IMAGE_TEMPLATE18_QUESTION_COUNT,
   IMAGE_TEMPLATE18_SLIDE_COUNT,
+  IMAGE_TEMPLATE18_STYLE_OPTIONS,
   isImageTemplate18Id,
+  isTemplate18StyleId,
   paintTemplate18Slide,
   template18Background,
+  template18CanvasBackground,
+  type Template18StyleId,
 } from '@/app/lib/image-template-18-pastel';
 import {
   CHARACTER_IMAGE_QUALITIES,
@@ -2189,6 +2194,9 @@ export default function Home() {
   const [imageTabFunnyQuestions, setImageTabFunnyQuestions] = useState<string[]>([]);
   const [imageTabTexts, setImageTabTexts] = useState<string[]>([]);
   const [imageTabSources, setImageTabSources] = useState<string[]>([]);
+  const [imageTemplate18Style, setImageTemplate18Style] =
+    useState<Template18StyleId>(IMAGE_TEMPLATE18_DEFAULT_STYLE);
+  const [imageTemplate18Scanlines, setImageTemplate18Scanlines] = useState(true);
   const [imageTemplate2QuestionType, setImageTemplate2QuestionType] =
     useState<AutomateQuestionType>('random');
   const [imageTemplate6QuestionType, setImageTemplate6QuestionType] =
@@ -5116,6 +5124,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           tabIndex: i,
           isCta: i === IMAGE_TEMPLATE18_CTA_TAB,
           promo: i === IMAGE_TEMPLATE18_CTA_TAB ? promo : null,
+          style: imageTemplate18Style,
+          scanlines: imageTemplate18Scanlines,
         });
         const blob = await new Promise<Blob>((resolve, reject) => {
           canvas.toBlob((next) => {
@@ -7312,7 +7322,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             backgroundColor: isColorCardImageTemplate
                               ? IMAGE_TEMPLATE14_FRAME_BG
                               : isPastelSlideshowImageTemplate
-                              ? '#000000'
+                              ? template18CanvasBackground(imageTemplate18Style)
                               : isNotesQuestionsImageTemplate
                               ? IMAGE_TEMPLATE16_BG
                               : isMaroonLockscreenImageTemplate
@@ -7329,6 +7339,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               text={imageFrameTextForActiveTab}
                               tabIndex={selectedImageBrowserTab}
                               isCta={selectedImageBrowserTab === IMAGE_TEMPLATE18_CTA_TAB}
+                              styleId={imageTemplate18Style}
+                              scanlines={imageTemplate18Scanlines}
                             />
                           ) : isNotesQuestionsImageTemplate ? (
                             <NotesQuestionsPreview
@@ -8304,6 +8316,37 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                       <option value="me_or_you">Me or you</option>
                                       <option value="brave">Brave</option>
                                     </select>
+                                  ) : null}
+                                  {isPastelSlideshowImageTemplate ? (
+                                    <>
+                                      <select
+                                        value={imageTemplate18Style}
+                                        onChange={(e) => {
+                                          const next = e.target.value;
+                                          if (isTemplate18StyleId(next)) setImageTemplate18Style(next);
+                                        }}
+                                        className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2 py-1.5 sm:py-1 text-sm sm:text-xs text-zinc-800 dark:text-zinc-200"
+                                        aria-label="Style"
+                                      >
+                                        {IMAGE_TEMPLATE18_STYLE_OPTIONS.map((option) => (
+                                          <option key={option.id} value={option.id}>
+                                            {option.label}
+                                          </option>
+                                        ))}
+                                      </select>
+                                      {imageTemplate18Style === 'pastel' ? (
+                                        <label className="inline-flex items-center gap-1.5 text-sm sm:text-xs text-zinc-700 dark:text-zinc-300">
+                                          <input
+                                            type="checkbox"
+                                            checked={imageTemplate18Scanlines}
+                                            onChange={(e) => setImageTemplate18Scanlines(e.target.checked)}
+                                            className="h-3.5 w-3.5 rounded border-zinc-300 dark:border-zinc-600"
+                                            aria-label="Scanlines"
+                                          />
+                                          Scanlines
+                                        </label>
+                                      ) : null}
+                                    </>
                                   ) : null}
                                   <button
                                     type="button"

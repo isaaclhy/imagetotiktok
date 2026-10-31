@@ -108,6 +108,12 @@ import {
 } from '@/app/lib/image-template-14-cards';
 import { NotesQuestionsPreview } from '@/app/components/NotesQuestionsPreview';
 import { PastelSlideshowPreview } from '@/app/components/PastelSlideshowPreview';
+import {
+  IMAGE_TEMPLATE18_DEFAULT_STYLE,
+  IMAGE_TEMPLATE18_STYLE_OPTIONS,
+  isTemplate18StyleId,
+  type Template18StyleId,
+} from '@/app/lib/image-template-18-pastel';
 import { RedGlowPreview } from '@/app/components/RedGlowPreview';
 import { SplitCoverPreview } from '@/app/components/SplitCoverPreview';
 import {
@@ -251,12 +257,16 @@ function CopycatSlidePreview({
   isCtaSlide = false,
   slideCount = 6,
   backgroundSrc,
+  template18Style = IMAGE_TEMPLATE18_DEFAULT_STYLE,
+  template18Scanlines = true,
 }: {
   templateId: CopycatTemplateId;
   tabIndex: number;
   text: string;
   leftAlign?: boolean;
   template14Color?: string;
+  template18Style?: Template18StyleId;
+  template18Scanlines?: boolean;
   template15FrameBg?: string;
   illustrationSrc?: string;
   isCtaSlide?: boolean;
@@ -305,6 +315,8 @@ function CopycatSlidePreview({
           tabIndex={tabIndex}
           slideCount={slideCount}
           isCta={isCtaSlide}
+          styleId={template18Style}
+          scanlines={template18Scanlines}
         />
       </div>
     );
@@ -925,6 +937,10 @@ export function CopycatPanel({
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState(0);
   const [template14Color, setTemplate14Color] = useState(() => pickTemplate14Color());
+  const [template18Style, setTemplate18Style] = useState<Template18StyleId>(
+    IMAGE_TEMPLATE18_DEFAULT_STYLE
+  );
+  const [template18Scanlines, setTemplate18Scanlines] = useState(true);
   const [template15FrameBg, setTemplate15FrameBg] = useState(() =>
     pickTemplate15FrameColor()
   );
@@ -1136,6 +1152,8 @@ export function CopycatPanel({
         slides,
         template14Color,
         template15FrameBg,
+        template18Style,
+        template18Scanlines,
       });
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
@@ -1162,6 +1180,8 @@ export function CopycatPanel({
     templateId,
     template14Color,
     template15FrameBg,
+    template18Style,
+    template18Scanlines,
   ]);
 
   if (!selectedPost) {
@@ -1252,11 +1272,44 @@ export function CopycatPanel({
       {templateId === 15 && template15CoverError ? (
         <p className="text-xs text-red-600 dark:text-red-400">{template15CoverError}</p>
       ) : null}
+      {templateId === 18 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={template18Style}
+            onChange={(e) => {
+              const next = e.target.value;
+              if (isTemplate18StyleId(next)) setTemplate18Style(next);
+            }}
+            className="rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1.5 text-xs font-medium text-zinc-800 dark:text-zinc-200"
+            aria-label="Style"
+          >
+            {IMAGE_TEMPLATE18_STYLE_OPTIONS.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          {template18Style === 'pastel' ? (
+            <label className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-800 dark:text-zinc-200">
+              <input
+                type="checkbox"
+                checked={template18Scanlines}
+                onChange={(e) => setTemplate18Scanlines(e.target.checked)}
+                className="h-3.5 w-3.5 rounded border-zinc-300 dark:border-zinc-600"
+                aria-label="Scanlines"
+              />
+              Scanlines
+            </label>
+          ) : null}
+        </div>
+      ) : null}
       <CopycatSlidePreview
         templateId={templateId}
         tabIndex={selectedTab}
         slideCount={slideBodies.length}
         text={slideBodies[selectedTab] ?? ''}
+        template18Style={template18Style}
+        template18Scanlines={template18Scanlines}
         backgroundSrc={
           templateId === 17 ? template17BackgroundSrcAt(questionSlides, selectedTab) : undefined
         }
