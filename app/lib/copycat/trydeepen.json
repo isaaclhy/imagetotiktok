@@ -2,7 +2,7 @@
   "handle": "trydeepen",
   "platform": "tiktok",
   "minViews": 100000,
-  "postCount": 16,
+  "postCount": 18,
   "creditsUsed": 3,
   "creditsRemaining": 95,
   "posts": [
@@ -452,6 +452,76 @@
         },
         {
           "text": "How have I really impacted your life?"
+        }
+      ]
+    },
+    {
+      "id": "7701670626032979221",
+      "views": 341800,
+      "likes": 15400,
+      "coverText": "9 ridiculously fun questions for couples",
+      "slideText": [
+        {
+          "text": "How would you describe my face to someone who's never met me?"
+        },
+        {
+          "text": "If I texted \"don't be mad,\" what would you guess I did?"
+        },
+        {
+          "text": "If our love story were a Netflix series, what would you call it?"
+        },
+        {
+          "text": "What was the first thing you told your best friend about me?"
+        },
+        {
+          "text": "If you had to change my legal name, what would you call me?"
+        },
+        {
+          "text": "If every human had one red flag, what would mine be?"
+        },
+        {
+          "text": "If we missed our flight, what could we do to pass the time at the airport?"
+        },
+        {
+          "text": "If I suddenly became your exact height, would you still find me attractive?"
+        },
+        {
+          "text": "I just got arrested. What's your guess on what I did?"
+        }
+      ]
+    },
+    {
+      "id": "7701951819924163848",
+      "views": 105200,
+      "likes": 3706,
+      "coverText": "3 dumb questions for him (but fun)",
+      "slideText": [
+        {
+          "text": "If you had 60 seconds to make me cry for $1M, what would you do?",
+          "options": [
+            "Roast me",
+            "Bring up my past",
+            "Fake a breakup",
+            "Ignore me"
+          ]
+        },
+        {
+          "text": "If I said I bought something crazy, what would you guess it was?",
+          "options": [
+            "Something expensive",
+            "Something useless",
+            "Something random",
+            "Something embarrassing"
+          ]
+        },
+        {
+          "text": "If I forgot everything tomorrow, what's the first thing you'd tell me?",
+          "options": [
+            "How we met",
+            "What I'm like",
+            "Why you love me",
+            "An inside joke"
+          ]
         }
       ]
     }
