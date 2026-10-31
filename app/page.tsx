@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import JSZip from 'jszip';
 import type { CanvasData } from '@/app/lib/types';
 import { generateCardImage as generateCardImageLib } from '@/app/lib/generate-card-image';
@@ -209,8 +209,12 @@ import {
   isImageTemplate18Id,
   isTemplate18StyleId,
   paintTemplate18Slide,
+  shuffleTemplate18PastelBody,
   template18Background,
   template18CanvasBackground,
+  template18PastelBodyTones,
+  template18PastelSlidesForCount,
+  type Template18PastelTone,
   type Template18StyleId,
 } from '@/app/lib/image-template-18-pastel';
 import {
@@ -2197,6 +2201,13 @@ export default function Home() {
   const [imageTemplate18Style, setImageTemplate18Style] =
     useState<Template18StyleId>(IMAGE_TEMPLATE18_DEFAULT_STYLE);
   const [imageTemplate18Scanlines, setImageTemplate18Scanlines] = useState(true);
+  const [imageTemplate18PastelBody, setImageTemplate18PastelBody] = useState<Template18PastelTone[]>(
+    () => template18PastelBodyTones()
+  );
+  const imageTemplate18PastelSlides = useMemo(
+    () => template18PastelSlidesForCount(imageTemplate18PastelBody, IMAGE_TEMPLATE18_SLIDE_COUNT),
+    [imageTemplate18PastelBody]
+  );
   const [imageTemplate2QuestionType, setImageTemplate2QuestionType] =
     useState<AutomateQuestionType>('random');
   const [imageTemplate6QuestionType, setImageTemplate6QuestionType] =
@@ -2539,6 +2550,7 @@ export default function Home() {
     setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[resolved]);
     setImageTabFunnyQuestions(questions);
     setImageTabTexts([title, ...questions]);
+    setImageTemplate18PastelBody(shuffleTemplate18PastelBody());
   };
 
   const applyImageTemplate6QuestionType = (type: AutomateQuestionType) => {
@@ -4561,6 +4573,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[type]);
       setImageTabSources(Array.from({ length: IMAGE_TEMPLATE18_SLIDE_COUNT }, () => ''));
       setImageTabTexts([title, ...questions]);
+      setImageTemplate18PastelBody(shuffleTemplate18PastelBody());
       return;
     }
 
@@ -5129,6 +5142,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           promo: i === IMAGE_TEMPLATE18_CTA_TAB ? promo : null,
           style: imageTemplate18Style,
           scanlines: imageTemplate18Scanlines,
+          pastelSlides: imageTemplate18PastelSlides,
         });
         const blob = await new Promise<Blob>((resolve, reject) => {
           canvas.toBlob((next) => {
@@ -7344,6 +7358,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               isCta={selectedImageBrowserTab === IMAGE_TEMPLATE18_CTA_TAB}
                               styleId={imageTemplate18Style}
                               scanlines={imageTemplate18Scanlines}
+                              pastelSlides={imageTemplate18PastelSlides}
                             />
                           ) : isNotesQuestionsImageTemplate ? (
                             <NotesQuestionsPreview

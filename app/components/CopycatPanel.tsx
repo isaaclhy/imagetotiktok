@@ -110,8 +110,13 @@ import { NotesQuestionsPreview } from '@/app/components/NotesQuestionsPreview';
 import { PastelSlideshowPreview } from '@/app/components/PastelSlideshowPreview';
 import {
   IMAGE_TEMPLATE18_DEFAULT_STYLE,
+  IMAGE_TEMPLATE18_SLIDE_COUNT,
   IMAGE_TEMPLATE18_STYLE_OPTIONS,
   isTemplate18StyleId,
+  shuffleTemplate18PastelBody,
+  template18PastelBodyTones,
+  template18PastelSlidesForCount,
+  type Template18PastelTone,
   type Template18StyleId,
 } from '@/app/lib/image-template-18-pastel';
 import { RedGlowPreview } from '@/app/components/RedGlowPreview';
@@ -259,6 +264,7 @@ function CopycatSlidePreview({
   backgroundSrc,
   template18Style = IMAGE_TEMPLATE18_DEFAULT_STYLE,
   template18Scanlines = true,
+  template18PastelSlides,
 }: {
   templateId: CopycatTemplateId;
   tabIndex: number;
@@ -267,6 +273,7 @@ function CopycatSlidePreview({
   template14Color?: string;
   template18Style?: Template18StyleId;
   template18Scanlines?: boolean;
+  template18PastelSlides?: readonly Template18PastelTone[];
   template15FrameBg?: string;
   illustrationSrc?: string;
   isCtaSlide?: boolean;
@@ -317,6 +324,7 @@ function CopycatSlidePreview({
           isCta={isCtaSlide}
           styleId={template18Style}
           scanlines={template18Scanlines}
+          pastelSlides={template18PastelSlides}
         />
       </div>
     );
@@ -941,6 +949,9 @@ export function CopycatPanel({
     IMAGE_TEMPLATE18_DEFAULT_STYLE
   );
   const [template18Scanlines, setTemplate18Scanlines] = useState(true);
+  const [template18PastelBody, setTemplate18PastelBody] = useState<Template18PastelTone[]>(
+    () => template18PastelBodyTones()
+  );
   const [template15FrameBg, setTemplate15FrameBg] = useState(() =>
     pickTemplate15FrameColor()
   );
@@ -972,6 +983,14 @@ export function CopycatPanel({
     () => (selectedPost ? copycatPostSlideBodiesClean(selectedPost) : []),
     [selectedPost]
   );
+  const template18PastelSlides = useMemo(
+    () =>
+      template18PastelSlidesForCount(
+        template18PastelBody,
+        Math.max(1, slideBodies.length || IMAGE_TEMPLATE18_SLIDE_COUNT)
+      ),
+    [template18PastelBody, slideBodies.length]
+  );
 
   // CTA is the last question slide itself — never a separate empty tab.
   const ctaTabIndex = slideBodies.length > 1 ? slideBodies.length - 1 : -1;
@@ -989,6 +1008,7 @@ export function CopycatPanel({
     setSelectedTab(0);
     setTemplate14Color((current) => pickTemplate14Color(current));
     setTemplate15FrameBg((current) => pickTemplate15FrameColor(current));
+    setTemplate18PastelBody(shuffleTemplate18PastelBody());
   }, [postIds]);
 
   // Fresh crypto draw whenever the template or post source changes (and once on mount).
@@ -1154,6 +1174,7 @@ export function CopycatPanel({
         template15FrameBg,
         template18Style,
         template18Scanlines,
+        template18PastelSlides,
       });
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
@@ -1182,6 +1203,7 @@ export function CopycatPanel({
     template15FrameBg,
     template18Style,
     template18Scanlines,
+    template18PastelSlides,
   ]);
 
   if (!selectedPost) {
@@ -1310,6 +1332,7 @@ export function CopycatPanel({
         text={slideBodies[selectedTab] ?? ''}
         template18Style={template18Style}
         template18Scanlines={template18Scanlines}
+        template18PastelSlides={template18PastelSlides}
         backgroundSrc={
           templateId === 17 ? template17BackgroundSrcAt(questionSlides, selectedTab) : undefined
         }
