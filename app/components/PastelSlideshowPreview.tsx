@@ -3,10 +3,12 @@
 import { useEffect, useRef } from 'react';
 import { IMAGE_TEMPLATE2_Q5_PROMO_SRC } from '@/app/lib/image-template-2-cover';
 import {
-  IMAGE_TEMPLATE18_CANVAS_BG,
   IMAGE_TEMPLATE18_CTA_TAB,
+  IMAGE_TEMPLATE18_DEFAULT_STYLE,
   IMAGE_TEMPLATE18_SLIDE_COUNT,
   paintTemplate18Slide,
+  template18CanvasBackground,
+  type Template18StyleId,
 } from '@/app/lib/image-template-18-pastel';
 
 const EXPORT_W = 1080;
@@ -34,6 +36,9 @@ type PastelSlideshowPreviewProps = {
   tabIndex: number;
   slideCount?: number;
   isCta?: boolean;
+  styleId?: Template18StyleId;
+  /** Original pastel only. Other styles follow the reference posts. */
+  scanlines?: boolean;
 };
 
 /**
@@ -45,6 +50,8 @@ export function PastelSlideshowPreview({
   tabIndex,
   slideCount = IMAGE_TEMPLATE18_SLIDE_COUNT,
   isCta,
+  styleId = IMAGE_TEMPLATE18_DEFAULT_STYLE,
+  scanlines = true,
 }: PastelSlideshowPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cta = isCta ?? tabIndex === IMAGE_TEMPLATE18_CTA_TAB;
@@ -60,7 +67,10 @@ export function PastelSlideshowPreview({
       const ctx = canvas.getContext('2d');
       if (!ctx || cancelled) return;
       try {
+        await document.fonts.load('400 72px "Liberation Serif"');
+        await document.fonts.load('italic 400 72px "Liberation Serif"');
         await document.fonts.load('400 72px "Libre Baskerville"');
+        await document.fonts.load('600 36px "Poppins"');
         await document.fonts.load('700 36px "TikTok Sans"');
       } catch {
         /* faces may already be ready */
@@ -74,6 +84,8 @@ export function PastelSlideshowPreview({
         slideCount,
         isCta: cta,
         promo,
+        style: styleId,
+        scanlines,
       });
     };
 
@@ -81,11 +93,19 @@ export function PastelSlideshowPreview({
     return () => {
       cancelled = true;
     };
-  }, [text, tabIndex, slideCount, cta]);
+  }, [text, tabIndex, slideCount, cta, styleId, scanlines]);
 
   return (
-    <div className="absolute inset-0" style={{ backgroundColor: IMAGE_TEMPLATE18_CANVAS_BG }}>
-      <canvas ref={canvasRef} className="block h-full w-full" aria-label="Pastel question slide" />
+    <div
+      className="absolute inset-0"
+      style={{ backgroundColor: template18CanvasBackground(styleId) }}
+    >
+      <canvas
+        ref={canvasRef}
+        className="block h-full w-full"
+        style={{ imageRendering: 'auto' }}
+        aria-label="Pastel question slide"
+      />
     </div>
   );
 }
