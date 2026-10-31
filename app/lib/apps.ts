@@ -134,6 +134,12 @@ export const IMAGE_TEMPLATES_BY_APP: Record<StudioAppId, ImageTemplateCard[]> = 
       subtitle: '',
     },
     {
+      id: 20,
+      title: 'Ocean questions',
+      subtitle: '',
+      coverSrc: '/image-templates/template-20-cover.jpg',
+    },
+    {
       id: 21,
       title: 'Bold solid',
       subtitle: '',
