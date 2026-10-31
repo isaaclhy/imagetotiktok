@@ -66,8 +66,15 @@ import {
   IMAGE_TEMPLATE17_COVER_SRC,
   IMAGE_TEMPLATE17_ICON_SRC,
   IMAGE_TEMPLATE17_TITLE_WEIGHT,
+  paintTemplate17QuestionCard,
   paintTemplate17Slide,
 } from '@/app/lib/image-template-17-split';
+import {
+  IMAGE_TEMPLATE18_FONT_STACK,
+  IMAGE_TEMPLATE18_GRAIN_SRC,
+  IMAGE_TEMPLATE18_LABEL_FONT_STACK,
+  paintTemplate18Slide,
+} from '@/app/lib/image-template-18-glow';
 
 const TIKTOK = '"TikTok Sans", system-ui, sans-serif';
 const COMIC =
@@ -105,7 +112,7 @@ function drawCopycatAppMark(
   ctx.fillText(COPYCAT_APP_NAME, frameWidth / 2, markY);
 }
 
-export type CopycatExportTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17;
+export type CopycatExportTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18;
 
 export type CopycatExportSlide = {
   text: string;
@@ -114,6 +121,17 @@ export type CopycatExportSlide = {
   isCta: boolean;
   isCover: boolean;
 };
+
+function concreteFontFamily(stack: string): string {
+  const probe = document.createElement('span');
+  probe.style.fontFamily = stack;
+  probe.style.position = 'absolute';
+  probe.style.left = '-9999px';
+  document.body.appendChild(probe);
+  const family = getComputedStyle(probe).fontFamily;
+  probe.remove();
+  return family || stack;
+}
 
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -197,6 +215,32 @@ async function paintSlide(
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Failed to prepare canvas');
 
+  if (templateId === 18) {
+    const serif = concreteFontFamily(IMAGE_TEMPLATE18_FONT_STACK);
+    const label = concreteFontFamily(IMAGE_TEMPLATE18_LABEL_FONT_STACK);
+    try {
+      await document.fonts.load(`400 72px ${serif}`);
+      await document.fonts.load(`500 36px ${label}`);
+      await document.fonts.load(`700 36px ${label}`);
+      await document.fonts.load(`700 48px ${label}`);
+    } catch {
+      /* fonts may already be ready */
+    }
+    const [grain, promo] = await Promise.all([
+      loadImage(IMAGE_TEMPLATE18_GRAIN_SRC),
+      slide.isCta ? loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC) : Promise.resolve(null),
+    ]);
+    paintTemplate18Slide(ctx, w, h, {
+      text: slide.text,
+      grain,
+      fontFamily: serif,
+      labelFontFamily: label,
+      isCta: slide.isCta,
+      promo,
+    });
+    return canvasBlob(canvas);
+  }
+
   if (templateId === 17) {
     try {
       await document.fonts.load(`${IMAGE_TEMPLATE17_TITLE_WEIGHT} 72px "Inter"`);
@@ -208,7 +252,11 @@ async function paintSlide(
       loadImage(IMAGE_TEMPLATE17_ICON_SRC),
       loadImage(IMAGE_TEMPLATE17_COVER_SRC),
     ]);
-    paintTemplate17Slide(ctx, w, h, { text: slide.text, icon, image });
+    if (slide.isCover) {
+      paintTemplate17Slide(ctx, w, h, { text: slide.text, icon, image });
+    } else {
+      paintTemplate17QuestionCard(ctx, w, h, { text: slide.text, icon, image });
+    }
     return canvasBlob(canvas);
   }
 

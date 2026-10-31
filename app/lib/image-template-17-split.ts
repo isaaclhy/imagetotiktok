@@ -29,6 +29,18 @@ export const IMAGE_TEMPLATE17_DIM_END = '#000000';
 export const IMAGE_TEMPLATE17_DIM_GRADIENT =
   `linear-gradient(to bottom, transparent 0%, ${IMAGE_TEMPLATE17_DIM_MID} 38%, ${IMAGE_TEMPLATE17_DIM_HEAVY} 72%, ${IMAGE_TEMPLATE17_DIM_END} 100%)`;
 
+/** Q1–Q5: same photo/fade/brand as the cover, with a white question card. */
+export const IMAGE_TEMPLATE17_Q_BRAND_Y = 0.4;
+export const IMAGE_TEMPLATE17_Q_CARD_INSET_X = 0.11;
+export const IMAGE_TEMPLATE17_Q_CARD_TOP = 0.46;
+export const IMAGE_TEMPLATE17_Q_CARD_BOTTOM = 0.07;
+export const IMAGE_TEMPLATE17_Q_CARD_RADIUS = 0.036;
+export const IMAGE_TEMPLATE17_Q_CARD_BG = '#FFFFFF';
+export const IMAGE_TEMPLATE17_Q_CARD_TEXT = '#141414';
+export const IMAGE_TEMPLATE17_Q_TEXT_SIZE = 0.05;
+export const IMAGE_TEMPLATE17_Q_TEXT_INSET = 0.1;
+export const IMAGE_TEMPLATE17_Q_LINE_HEIGHT = 1.12;
+
 export function isImageTemplate17Id(templateId: number | null | undefined): boolean {
   return templateId === 17;
 }
@@ -88,13 +100,32 @@ function drawFade(ctx: CanvasRenderingContext2D, width: number, height: number) 
   ctx.fillRect(0, startY, width, height - startY);
 }
 
+function traceRoundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number
+) {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + width, y, x + width, y + height, r);
+  ctx.arcTo(x + width, y + height, x, y + height, r);
+  ctx.arcTo(x, y + height, x, y, r);
+  ctx.arcTo(x, y, x + width, y, r);
+  ctx.closePath();
+}
+
 function drawBrand(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
-  icon?: CanvasImageSource | null
+  icon?: CanvasImageSource | null,
+  brandY = IMAGE_TEMPLATE17_BRAND_Y
 ) {
-  const seamY = height * IMAGE_TEMPLATE17_BRAND_Y;
+  const seamY = height * brandY;
   const iconSize = width * IMAGE_TEMPLATE17_ICON_SIZE;
   const brandSize = Math.round(width * IMAGE_TEMPLATE17_BRAND_SIZE);
   ctx.font = `600 ${brandSize}px ${IMAGE_TEMPLATE17_FONT_STACK}`;
@@ -154,6 +185,55 @@ export function paintTemplate17Slide(
   const lines = wrapLines(ctx, options.text, maxW);
   const lineH = fontSize * IMAGE_TEMPLATE17_TITLE_LINE_HEIGHT;
   let y = height * IMAGE_TEMPLATE17_TITLE_TOP;
+  for (const line of lines) {
+    ctx.fillText(line, width / 2, y);
+    y += lineH;
+  }
+  ctx.letterSpacing = '0px';
+}
+
+export function paintTemplate17QuestionCard(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  options: {
+    text: string;
+    icon?: CanvasImageSource | null;
+    image?: CanvasImageSource | null;
+  }
+): void {
+  ctx.fillStyle = IMAGE_TEMPLATE17_BG;
+  ctx.fillRect(0, 0, width, height);
+  drawCoverImage(ctx, width, height, options.image);
+  drawFade(ctx, width, height);
+  drawBrand(ctx, width, height, options.icon, IMAGE_TEMPLATE17_Q_BRAND_Y);
+
+  const cardX = width * IMAGE_TEMPLATE17_Q_CARD_INSET_X;
+  const cardY = height * IMAGE_TEMPLATE17_Q_CARD_TOP;
+  const cardW = width - cardX * 2;
+  const cardH = height * (1 - IMAGE_TEMPLATE17_Q_CARD_TOP - IMAGE_TEMPLATE17_Q_CARD_BOTTOM);
+  const radius = width * IMAGE_TEMPLATE17_Q_CARD_RADIUS;
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.35)';
+  ctx.shadowBlur = width * 0.04;
+  ctx.shadowOffsetY = width * 0.012;
+  ctx.fillStyle = IMAGE_TEMPLATE17_Q_CARD_BG;
+  traceRoundRect(ctx, cardX, cardY, cardW, cardH, radius);
+  ctx.fill();
+  ctx.restore();
+
+  const fontSize = Math.round(width * IMAGE_TEMPLATE17_Q_TEXT_SIZE);
+  ctx.fillStyle = IMAGE_TEMPLATE17_Q_CARD_TEXT;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `${IMAGE_TEMPLATE17_TITLE_WEIGHT} ${fontSize}px ${IMAGE_TEMPLATE17_FONT_STACK}`;
+  ctx.letterSpacing = IMAGE_TEMPLATE17_TITLE_TRACKING;
+  const maxW = cardW * (1 - IMAGE_TEMPLATE17_Q_TEXT_INSET * 2);
+  const lines = wrapLines(ctx, options.text, maxW);
+  const lineH = fontSize * IMAGE_TEMPLATE17_Q_LINE_HEIGHT;
+  const blockH = lines.length * lineH;
+  let y = cardY + cardH / 2 - blockH / 2 + lineH / 2;
   for (const line of lines) {
     ctx.fillText(line, width / 2, y);
     y += lineH;

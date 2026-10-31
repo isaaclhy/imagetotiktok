@@ -306,6 +306,11 @@ import {
   type VideoTemplate4CompetitorFilter,
 } from '@/app/lib/video-template-4-ocean';
 import {
+  paintVideoTemplate6Overlay,
+  VIDEO_TEMPLATE6_PEXELS_QUERIES,
+  VIDEO_TEMPLATE6_SEE_DESCRIPTION,
+} from '@/app/lib/video-template-6-cinematic';
+import {
   pexelsVideoProxySrc,
   PEXELS_PREFER_HEIGHT,
 } from '@/app/lib/pexels-video-client';
@@ -378,7 +383,7 @@ function pickRandomCopycatCompetitor(exclude?: CopycatCompetitorId): CopycatComp
 }
 
 /** Spill It image templates available inside Copycat. */
-const COPYCAT_TEMPLATE_IDS = [1, 2, 6, 13, 14, 15, 16, 17] as const;
+const COPYCAT_TEMPLATE_IDS = [1, 2, 6, 13, 14, 15, 16, 17, 18] as const;
 type CopycatTemplateId = (typeof COPYCAT_TEMPLATE_IDS)[number];
 
 function isKawaiiStyleTemplateId(templateId: number | null | undefined): boolean {
@@ -2255,7 +2260,7 @@ export default function Home() {
   const prevFirstCardTextRef = useRef(firstCardTextValue);
 
   const imageTemplateCards = getImageTemplatesForApp(selectedAppId).filter(
-    (card) => card.id !== 15
+    (card) => card.id !== 15 && card.id !== 18
   );
   const videoTemplateCards = getVideoTemplatesForApp(selectedAppId);
   const characterCards = getCharactersForApp(selectedAppId);
@@ -2312,6 +2317,8 @@ export default function Home() {
   const isCouplesNatureVideoTemplate = selectedAppId === 'spill-it' && selectedVideoTemplateId === 2;
   const isSpillItNotesVideoTemplate = selectedAppId === 'spill-it' && selectedVideoTemplateId === 3;
   const isOceanSunsetVideoTemplate = selectedAppId === 'spill-it' && selectedVideoTemplateId === 4;
+  const isCinematicCoverVideoTemplate =
+    selectedAppId === 'spill-it' && selectedVideoTemplateId === 6;
   const isFreshBakedDonutVideoTemplate =
     selectedAppId === 'spill-it' && selectedVideoTemplateId === 5;
   const selectedFreshBakedDonut = freshBakedDonutSelectedPost(
@@ -2325,6 +2332,7 @@ export default function Home() {
     isCouplesNatureVideoTemplate ||
     isSpillItNotesVideoTemplate ||
     isOceanSunsetVideoTemplate ||
+    isCinematicCoverVideoTemplate ||
     isNightyParticleVideoTemplate ||
     isNightyRainVideoTemplate;
 
@@ -2438,10 +2446,21 @@ export default function Home() {
     return { cover: next.label, questions: next.questions };
   };
 
+  const regenerateCinematicCoverContent = () => {
+    const title = pickTitleForType(videoTemplate2QuestionType);
+    const questions = pickQuestionsForType(videoTemplate2QuestionType, 5);
+    setVideoOverlayCaption(title);
+    setVideoTemplate2Questions(questions);
+    return { cover: title, questions };
+  };
+
   const applyVideoTemplate2QuestionType = (type: AutomateQuestionType) => {
     setVideoTemplate2QuestionType(type);
     const title = pickTitleForType(type);
-    const questions = pickQuestionsForType(type, isSpillItNotesVideoTemplate ? 5 : 7);
+    const questions = pickQuestionsForType(
+      type,
+      isSpillItNotesVideoTemplate || isCinematicCoverVideoTemplate ? 5 : 7
+    );
     setVideoOverlayCaption(title);
     setVideoTemplate2Questions(questions);
     void handleGenerateVideoTemplate2Description({ cover: title, questions });
@@ -2599,6 +2618,12 @@ export default function Home() {
         questions: videoTemplate4Questions.map((q) => q.trim()).filter(Boolean),
       };
     }
+    if (isCinematicCoverVideoTemplate) {
+      return {
+        cover: videoOverlayCaption.trim(),
+        questions: videoTemplate2Questions.map((q) => q.trim()).filter(Boolean),
+      };
+    }
     if (isFreshBakedDonutVideoTemplate) {
       return freshBakedDonutCaptionSource(selectedFreshBakedDonut);
     }
@@ -2703,7 +2728,9 @@ export default function Home() {
                 ? FAB_NOTES_PEXELS_QUERIES
                 : isOceanSunsetVideoTemplate
                   ? [VIDEO_TEMPLATE4_PEXELS_QUERY]
-                  : VIDEO_TEMPLATE2_PEXELS_QUERIES;
+                  : isCinematicCoverVideoTemplate
+                    ? [...VIDEO_TEMPLATE6_PEXELS_QUERIES]
+                    : VIDEO_TEMPLATE2_PEXELS_QUERIES;
             return queryPool[Math.floor(Math.random() * queryPool.length)]!;
           })();
       const page = 1 + Math.floor(Math.random() * 15);
@@ -2850,6 +2877,10 @@ export default function Home() {
       const source = regenerateVideoTemplate4Content();
       void handleRegenerateVideoTemplate2Video();
       void handleGenerateVideoTemplate2Description(source);
+    } else if (isCinematicCoverVideoTemplate) {
+      const source = regenerateCinematicCoverContent();
+      void handleRegenerateVideoTemplate2Video();
+      void handleGenerateVideoTemplate2Description(source);
     } else if (isFreshBakedDonutVideoTemplate) {
       setFreshBakedDonutSelectedId(null);
     } else if (isFabAffirmationVideoTemplate) {
@@ -2867,6 +2898,7 @@ export default function Home() {
     isNightyParticleVideoTemplate,
     isNightyRainVideoTemplate,
     isOceanSunsetVideoTemplate,
+    isCinematicCoverVideoTemplate,
     isFreshBakedDonutVideoTemplate,
     isFabAffirmationVideoTemplate,
     selectedVideoTemplateId,
@@ -6307,6 +6339,26 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       return { blob, extension: 'mp4', baseName: `ocean-sunset-${today}` };
     }
 
+    if (isCinematicCoverVideoTemplate) {
+      const videoSrc = requireVideoSrc();
+      try {
+        await document.fonts.load('700 48px "TikTok Sans"');
+        await document.fonts.load('600 48px "TikTok Sans"');
+      } catch {
+        /* font may already be ready */
+      }
+      const blob = await exportCouplesNatureVideo({
+        videoSrc,
+        maxDurationSec: VIDEO_TEMPLATE2_MAX_DURATION_SEC,
+        backgroundFilter: 'none',
+        paintOverlay: (ctx, w, h) =>
+          paintVideoTemplate6Overlay(ctx, w, h, {
+            text: videoOverlayCaption.trim(),
+          }),
+      });
+      return { blob, extension: 'mp4', baseName: `cinematic-${today}` };
+    }
+
     if (isSpillItNotesVideoTemplate) {
       const videoSrc = requireVideoSrc();
       const title = videoOverlayCaption.trim() || pickRandomDailyFunnyTitle();
@@ -8538,7 +8590,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 'Regenerate video'
                               )}
                             </button>
-                            {isCouplesNatureVideoTemplate || isSpillItNotesVideoTemplate ? (
+                            {isCouplesNatureVideoTemplate ||
+                            isSpillItNotesVideoTemplate ||
+                            isCinematicCoverVideoTemplate ? (
                               <button
                                 type="button"
                                 onClick={regenerateVideoTemplate2Type}
@@ -9104,6 +9158,52 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   <span className="text-xs font-bold sm:text-sm">Spill It</span>
                                 </div>
                               </div>
+                            ) : isCinematicCoverVideoTemplate ? (
+                              <div className="absolute inset-0 z-10 pointer-events-none">
+                                <div className="absolute inset-0 bg-black/20" aria-hidden />
+                                <div
+                                  className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_46%,rgba(0,0,0,0)_0%,rgba(0,0,0,0.1)_68%,rgba(0,0,0,0.48)_100%)]"
+                                  aria-hidden
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center px-[11%]">
+                                  <p
+                                    className="w-full text-center text-xl leading-[1.15] text-white sm:text-2xl md:text-3xl"
+                                    style={{
+                                      fontFamily: TIKTOK_SANS_STACK,
+                                      fontWeight: 700,
+                                      textShadow:
+                                        '0 1px 2px rgba(0,0,0,0.75), 0 4px 18px rgba(0,0,0,0.65)',
+                                    }}
+                                  >
+                                    {videoOverlayCaption}
+                                  </p>
+                                </div>
+                                <div
+                                  className="absolute inset-x-0 bottom-[8%] z-10 flex flex-col items-center text-white"
+                                  style={{
+                                    fontFamily: TIKTOK_SANS_STACK,
+                                    textShadow:
+                                      '0 1px 2px rgba(0,0,0,0.7), 0 3px 14px rgba(0,0,0,0.55)',
+                                  }}
+                                >
+                                  <svg
+                                    viewBox="0 0 24 24"
+                                    className="h-7 w-7 sm:h-8 sm:w-8"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="1.75"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    aria-hidden
+                                  >
+                                    <path d="M12 4v14" />
+                                    <path d="m6 13 6 6 6-6" />
+                                  </svg>
+                                  <span className="mt-1 text-[11px] font-semibold tracking-wide sm:text-xs">
+                                    {VIDEO_TEMPLATE6_SEE_DESCRIPTION}
+                                  </span>
+                                </div>
+                              </div>
                             ) : (videoOverlayCaption.trim() ||
                               (isCouplesNatureVideoTemplate && videoTemplate2Questions.length > 0)) ? (
                               isCouplesNatureVideoTemplate ? (
@@ -9263,10 +9363,14 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                     ? 'Title text'
                                     : isOceanSunsetVideoTemplate
                                       ? 'Question'
-                                      : 'Frame text'}
+                                      : isCinematicCoverVideoTemplate
+                                        ? 'Cover text'
+                                        : 'Frame text'}
                                 </label>
                                 <div className="flex flex-wrap items-center gap-2">
-                                  {isCouplesNatureVideoTemplate || isSpillItNotesVideoTemplate ? (
+                                  {isCouplesNatureVideoTemplate ||
+                                  isSpillItNotesVideoTemplate ||
+                                  isCinematicCoverVideoTemplate ? (
                                     <select
                                       value={videoTemplate2QuestionType}
                                       onChange={(e) =>
@@ -9296,6 +9400,12 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                         void handleRegenerateVideoTemplate2Video();
                                         return;
                                       }
+                                      if (isCinematicCoverVideoTemplate) {
+                                        const source = regenerateCinematicCoverContent();
+                                        void handleRegenerateVideoTemplate2Video();
+                                        void handleGenerateVideoTemplate2Description(source);
+                                        return;
+                                      }
                                       if (isSpillItNotesVideoTemplate) {
                                         regenerateFabNotesTitle();
                                         return;
@@ -9312,7 +9422,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   >
                                     {isCouplesNatureVideoTemplate ||
                                     isSpillItNotesVideoTemplate ||
-                                    isOceanSunsetVideoTemplate
+                                    isOceanSunsetVideoTemplate ||
+                                    isCinematicCoverVideoTemplate
                                       ? 'Retry'
                                       : 'Random question'}
                                   </button>
