@@ -37,8 +37,6 @@ export const IMAGE_TEMPLATE22_FOOTER_SIZE = 0.034;
 
 /** Cover titles sit just below the middle of the frame. */
 export const IMAGE_TEMPLATE22_COVER_CENTER = 0.508;
-/** Questions sit a little lower, matching the rounded red posts. */
-export const IMAGE_TEMPLATE22_QUESTION_CENTER = 0.538;
 export const IMAGE_TEMPLATE22_COVER_SIZE = 0.05;
 export const IMAGE_TEMPLATE22_QUESTION_SIZE = 0.044;
 export const IMAGE_TEMPLATE22_CTA_SIZE = 0.042;
@@ -103,34 +101,52 @@ type Template22Band = {
   min: number;
 };
 
-function template22TextCenter(kind: Template22Kind): number | null {
-  if (kind === 'cta') return null;
-  return kind === 'cover' ? IMAGE_TEMPLATE22_COVER_CENTER : IMAGE_TEMPLATE22_QUESTION_CENTER;
+/** Horizontal centre of the rounded card. The frame inset is symmetric. */
+function template22CardCenterX(width: number, height: number): number {
+  const card = template22Card(width, height);
+  return (card.left + card.right) / 2;
 }
 
+/**
+ * Vertical room for question copy.
+ * Ordinary questions sit between the card's top padding and the footer.
+ * The closing question sits in the same kind of band, ending above the
+ * promo label so a short line and a long wrap share one centre.
+ */
 function template22TextBand(width: number, height: number, kind: Template22Kind): Template22Band {
   const card = template22Card(width, height);
   const maxWidth = (card.right - card.left) * 0.74;
-  if (kind !== 'cta') {
-    const center = (template22TextCenter(kind) ?? 0.47) * height;
+  if (kind === 'cover') {
+    const center = IMAGE_TEMPLATE22_COVER_CENTER * height;
     const half = height * 0.22;
     return {
       top: center - half,
       bottom: center + half,
       maxWidth,
-      preferred: kind === 'cover' ? IMAGE_TEMPLATE22_COVER_SIZE : IMAGE_TEMPLATE22_QUESTION_SIZE,
+      preferred: IMAGE_TEMPLATE22_COVER_SIZE,
       min: 0.02,
     };
   }
-  const promo = template22PromoLayout(width, height);
-  const labelSize = height * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO;
-  const labelGap = height * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO;
+  if (kind === 'cta') {
+    const promo = template22PromoLayout(width, height);
+    const labelSize = height * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO;
+    const labelGap = height * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO;
+    return {
+      top: card.top + height * 0.07,
+      bottom: promo.y - labelGap - labelSize - height * 0.02,
+      maxWidth,
+      preferred: IMAGE_TEMPLATE22_CTA_SIZE,
+      min: 0.026,
+    };
+  }
+  const footerSize = width * IMAGE_TEMPLATE22_FOOTER_SIZE;
+  const footerTop = height * IMAGE_TEMPLATE22_FOOTER_Y - footerSize * 0.7;
   return {
-    top: card.top + height * 0.07,
-    bottom: promo.y - labelGap - labelSize - height * 0.02,
+    top: card.top + height * 0.05,
+    bottom: footerTop - height * 0.03,
     maxWidth,
-    preferred: IMAGE_TEMPLATE22_CTA_SIZE,
-    min: 0.026,
+    preferred: IMAGE_TEMPLATE22_QUESTION_SIZE,
+    min: 0.02,
   };
 }
 
@@ -198,14 +214,11 @@ export type Template22TextLayout = {
   top: number;
   maxWidth: number;
   fontWeight: number;
-  align?: 'center' | 'left';
-  x?: number;
+  /** Index of the first option line. A gap is inserted before it. */
   optionStart?: number;
   optionGap?: number;
 };
 
-/** Inset of a choice block from each side of the card, as a fraction of card width. */
-const CHOICE_PAD = 0.08;
 /** Extra air between the question and the first option, as a fraction of the font size. */
 const CHOICE_GAP = 0.62;
 
@@ -222,29 +235,14 @@ function layoutChoices(
   fontFamily: string
 ): Template22TextLayout {
   const { question, options } = splitCopycatQuestionAndOptions(text);
-  const card = template22Card(width, height);
-  const innerW = Math.max(1, card.right - card.left);
-  const pad = innerW * CHOICE_PAD;
-  const maxWidth = Math.max(1, innerW - pad * 2);
-  const x = Math.round(card.left + pad);
+  const band = template22TextBand(width, height, kind === 'cta' ? 'cta' : 'question');
+  const maxWidth = Math.max(1, band.maxWidth);
   const fontWeight = IMAGE_TEMPLATE22_FONT_WEIGHT;
   const leading = IMAGE_TEMPLATE22_LINE_HEIGHT;
-  let topLimit: number;
-  let bottomLimit: number;
-  let preferred: number;
-  let minRatio: number;
-  if (kind === 'cta') {
-    const band = template22TextBand(width, height, 'cta');
-    topLimit = band.top;
-    bottomLimit = band.bottom;
-    preferred = band.preferred;
-    minRatio = band.min;
-  } else {
-    topLimit = card.top + height * 0.07;
-    bottomLimit = height * 0.8;
-    preferred = IMAGE_TEMPLATE22_QUESTION_SIZE;
-    minRatio = 0.02;
-  }
+  const topLimit = band.top;
+  const bottomLimit = band.bottom;
+  const preferred = band.preferred;
+  const minRatio = band.min;
   const room = bottomLimit - topLimit;
   const maxSize = Math.max(1, Math.round(width * preferred));
   const minSize = Math.max(1, Math.round(width * minRatio));
@@ -255,8 +253,6 @@ function layoutChoices(
     top: topLimit,
     maxWidth,
     fontWeight,
-    align: 'left',
-    x,
     optionStart: -1,
     optionGap: 0,
   };
@@ -300,13 +296,7 @@ function layoutChoices(
 
   const lines = [...chosen.questionLines, ...chosen.optionLines];
   const block = chosen.block;
-  let top = topLimit + Math.max(0, (room - block) / 2);
-  const center = template22TextCenter(kind);
-  if (center != null) {
-    const ideal = center * height - block / 2;
-    const maxTop = Math.max(topLimit, bottomLimit - block);
-    top = Math.min(maxTop, Math.max(topLimit, ideal));
-  }
+  const top = topLimit + Math.max(0, (room - block) / 2);
 
   return {
     lines,
@@ -315,8 +305,6 @@ function layoutChoices(
     top,
     maxWidth,
     fontWeight,
-    align: 'left',
-    x,
     optionStart: chosen.optionLines.length > 0 ? chosen.questionLines.length : -1,
     optionGap: chosen.optionGap,
   };
@@ -518,24 +506,32 @@ export function paintTemplate22Slide(
     ctx.font = `${layout.fontWeight} ${layout.fontSize}px ${bodyFont}`;
     setLetterSpacing(ctx, '0px');
     ctx.textBaseline = 'top';
-    if (layout.align === 'left') {
-      ctx.textAlign = 'left';
-      let y = layout.top;
-      const optionStart = layout.optionStart ?? -1;
-      const optionGap = layout.optionGap ?? 0;
-      layout.lines.forEach((line, index) => {
-        if (index === optionStart) y += optionGap;
-        ctx.fillText(line, layout.x ?? 0, y);
-        y += layout.lineHeight;
-      });
-    } else {
-      ctx.textAlign = 'center';
-      let y = layout.top;
-      layout.lines.forEach((line) => {
-        ctx.fillText(line, width / 2, y);
-        y += layout.lineHeight;
-      });
+    ctx.textAlign = 'center';
+    const centerX = template22CardCenterX(width, height);
+    let y = layout.top;
+    const optionStart = layout.optionStart ?? -1;
+    const optionGap = layout.optionGap ?? 0;
+    // Options stay a left-aligned list. The column is centred on the card,
+    // under the centred question.
+    let optionX = centerX;
+    if (optionStart >= 0) {
+      let widest = 0;
+      for (let i = optionStart; i < layout.lines.length; i++) {
+        widest = Math.max(widest, ctx.measureText(layout.lines[i] ?? '').width);
+      }
+      optionX = centerX - Math.min(layout.maxWidth, widest) / 2;
     }
+    layout.lines.forEach((line, index) => {
+      if (index === optionStart) y += optionGap;
+      if (optionStart >= 0 && index >= optionStart) {
+        ctx.textAlign = 'left';
+        ctx.fillText(line, optionX, y);
+      } else {
+        ctx.textAlign = 'center';
+        ctx.fillText(line, centerX, y);
+      }
+      y += layout.lineHeight;
+    });
   }
 
   if (kind === 'cta' && options.promo) {
