@@ -7,12 +7,13 @@ import {
 } from '@/app/lib/image-template-2-cover';
 
 /**
- * Red spotlight slideshow (image template 19), measured from the @trydeepen
+ * Spotlight slideshow (image template 19), measured from the @trydeepen
  * "5 questions you should ask him" slides at 3:4.
  *
- * The red is one flat brick-red circle, centered, with diameter about the
- * slide width. It stays solid through most of the radius and feathers to
- * black over the outer band. It is not a bright-centered glow.
+ * One flat disc, centered, with diameter about the slide width. It stays
+ * solid through most of the radius and feathers to black over the outer
+ * band. It is not a bright-centered glow. Red is the measured reference;
+ * the other colours are that same ramp with the hue replaced.
  */
 export const IMAGE_TEMPLATE19_BG = '#000000';
 export const IMAGE_TEMPLATE19_TEXT = '#FFFFFF';
@@ -53,6 +54,70 @@ export const IMAGE_TEMPLATE19_LABEL_Y = 0.928;
 export const IMAGE_TEMPLATE19_LABEL_SIZE = 0.034;
 export const IMAGE_TEMPLATE19_CTA_TEXT_Y = 0.36;
 
+/** Cover plus five questions. The last question is the CTA. No extra tab. */
+export const IMAGE_TEMPLATE19_QUESTION_COUNT = 5;
+export const IMAGE_TEMPLATE19_SLIDE_COUNT = IMAGE_TEMPLATE19_QUESTION_COUNT + 1;
+export const IMAGE_TEMPLATE19_CTA_TAB = IMAGE_TEMPLATE19_QUESTION_COUNT;
+
+export const IMAGE_TEMPLATE19_COLORS = [
+  'red',
+  'royal-blue',
+  'emerald',
+  'purple',
+  'orange',
+  'hot-pink',
+  'teal',
+  'gold',
+] as const;
+
+export type Template19ColorId = (typeof IMAGE_TEMPLATE19_COLORS)[number];
+/** Dropdown value. Shuffle is one concrete colour for the whole slideshow. */
+export type Template19ColorOptionId = Template19ColorId | 'shuffle';
+
+export const IMAGE_TEMPLATE19_COLOR_OPTIONS: ReadonlyArray<{
+  id: Template19ColorOptionId;
+  label: string;
+}> = [
+  { id: 'red', label: 'Red' },
+  { id: 'royal-blue', label: 'Royal blue' },
+  { id: 'emerald', label: 'Emerald green' },
+  { id: 'purple', label: 'Purple' },
+  { id: 'orange', label: 'Orange' },
+  { id: 'hot-pink', label: 'Hot pink' },
+  { id: 'teal', label: 'Teal' },
+  { id: 'gold', label: 'Gold/amber' },
+  { id: 'shuffle', label: 'Shuffle' },
+];
+
+export const IMAGE_TEMPLATE19_DEFAULT_COLOR: Template19ColorOptionId = 'red';
+
+export function isImageTemplate19Id(templateId: number | null | undefined): boolean {
+  return templateId === 19;
+}
+
+export function isTemplate19ColorId(value: string): value is Template19ColorId {
+  return (IMAGE_TEMPLATE19_COLORS as readonly string[]).includes(value);
+}
+
+export function isTemplate19ColorOptionId(value: string): value is Template19ColorOptionId {
+  return value === 'shuffle' || isTemplate19ColorId(value);
+}
+
+/** One colour for a shuffled slideshow. The same id is painted on every slide. */
+export function pickTemplate19ShuffleColor(random: () => number = Math.random): Template19ColorId {
+  const index = Math.floor(random() * IMAGE_TEMPLATE19_COLORS.length);
+  return IMAGE_TEMPLATE19_COLORS[index] ?? 'red';
+}
+
+export function resolveTemplate19PaintColor(
+  option: Template19ColorOptionId | null | undefined,
+  shuffled: Template19ColorId = 'red'
+): Template19ColorId {
+  if (option === 'shuffle') return isTemplate19ColorId(shuffled) ? shuffled : 'red';
+  if (option && isTemplate19ColorId(option)) return option;
+  return 'red';
+}
+
 /**
  * Colour along the radius, in units of half the frame width (1 = the side edges).
  * Sampled from the reference disc, then lifted a few points in the feather so
@@ -73,7 +138,111 @@ const DISC_STOPS: ReadonlyArray<readonly [number, readonly [number, number, numb
   [1.04, [0, 0, 0]],
 ];
 
-/** Gaussian-ish noise strength on the flat red, and the little that shows on black. */
+type DiscRgb = readonly [number, number, number];
+
+/**
+ * OKLCH hue for each preset, degrees. The red ramp's lightness and chroma
+ * are kept and only the hue changes, so every disc is the same flat shape.
+ * Chroma is pulled back only where sRGB cannot hold the brick red's chroma
+ * at that hue (emerald, orange, teal, gold). Those stay at the red's
+ * lightness, which keeps them dark enough for the white type.
+ */
+const TEMPLATE19_COLOR_HUE: Record<Exclude<Template19ColorId, 'red'>, number> = {
+  'royal-blue': 264,
+  emerald: 146,
+  purple: 316,
+  orange: 48,
+  'hot-pink': 348,
+  teal: 188,
+  gold: 82,
+};
+
+function srgbChannelToLinear(channel: number): number {
+  const x = channel / 255;
+  return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+}
+
+function linearChannelToSrgb(channel: number): number {
+  const x = channel <= 0.0031308 ? 12.92 * channel : 1.055 * channel ** (1 / 2.4) - 0.055;
+  return Math.round(Math.min(255, Math.max(0, x * 255)));
+}
+
+function linearToOklab(r: number, g: number, b: number): { L: number; a: number; b: number } {
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return {
+    L: 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    a: 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+    b: 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+  };
+}
+
+function oklabToLinear(L: number, a: number, b: number): { r: number; g: number; b: number } {
+  const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
+  const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
+  const s_ = L - 0.0894841775 * a - 1.291485548 * b;
+  const l = l_ * l_ * l_;
+  const m = m_ * m_ * m_;
+  const s = s_ * s_ * s_;
+  return {
+    r: 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    g: -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    b: -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+  };
+}
+
+function linearInGamut(rgb: { r: number; g: number; b: number }): boolean {
+  return rgb.r >= -1e-4 && rgb.g >= -1e-4 && rgb.b >= -1e-4 && rgb.r <= 1 + 1e-4 && rgb.g <= 1 + 1e-4 && rgb.b <= 1 + 1e-4;
+}
+
+/** Same OKLCH lightness as `rgb`, hue replaced. Chroma shrinks only to fit sRGB. */
+function hueShiftRgb(rgb: DiscRgb, hueDeg: number): DiscRgb {
+  if (rgb[0] === 0 && rgb[1] === 0 && rgb[2] === 0) return [0, 0, 0];
+  const lab = linearToOklab(
+    srgbChannelToLinear(rgb[0]),
+    srgbChannelToLinear(rgb[1]),
+    srgbChannelToLinear(rgb[2])
+  );
+  const chroma = Math.hypot(lab.a, lab.b);
+  const rad = (hueDeg * Math.PI) / 180;
+  let lo = 0;
+  let hi = chroma;
+  for (let i = 0; i < 24; i++) {
+    const mid = (lo + hi) / 2;
+    const linear = oklabToLinear(lab.L, mid * Math.cos(rad), mid * Math.sin(rad));
+    if (linearInGamut(linear)) lo = mid;
+    else hi = mid;
+  }
+  const linear = oklabToLinear(lab.L, lo * Math.cos(rad), lo * Math.sin(rad));
+  return [
+    linearChannelToSrgb(linear.r),
+    linearChannelToSrgb(linear.g),
+    linearChannelToSrgb(linear.b),
+  ];
+}
+
+function hueShiftedDiscStops(hueDeg: number): ReadonlyArray<readonly [number, DiscRgb]> {
+  return DISC_STOPS.map(([t, rgb]) => [t, hueShiftRgb(rgb, hueDeg)] as const);
+}
+
+const DISC_STOPS_BY_COLOR: Record<Template19ColorId, ReadonlyArray<readonly [number, DiscRgb]>> = {
+  red: DISC_STOPS,
+  'royal-blue': hueShiftedDiscStops(TEMPLATE19_COLOR_HUE['royal-blue']),
+  emerald: hueShiftedDiscStops(TEMPLATE19_COLOR_HUE.emerald),
+  purple: hueShiftedDiscStops(TEMPLATE19_COLOR_HUE.purple),
+  orange: hueShiftedDiscStops(TEMPLATE19_COLOR_HUE.orange),
+  'hot-pink': hueShiftedDiscStops(TEMPLATE19_COLOR_HUE['hot-pink']),
+  teal: hueShiftedDiscStops(TEMPLATE19_COLOR_HUE.teal),
+  gold: hueShiftedDiscStops(TEMPLATE19_COLOR_HUE.gold),
+};
+
+function discStopsFor(color: Template19ColorId | undefined): ReadonlyArray<readonly [number, DiscRgb]> {
+  if (color && color in DISC_STOPS_BY_COLOR) return DISC_STOPS_BY_COLOR[color];
+  return DISC_STOPS;
+}
+
+/** Gaussian-ish noise strength on the flat disc, and the little that shows on black. */
 const GRAIN_SIGMA = 17;
 const GRAIN_SIGMA_BLACK = 2.5;
 
@@ -126,13 +295,18 @@ function preferLongerSecondLine(
   return [words1.join(' '), words2.join(' ')];
 }
 
-function paintDisc(ctx: CanvasRenderingContext2D, frameWidth: number, frameHeight: number) {
+function paintDisc(
+  ctx: CanvasRenderingContext2D,
+  frameWidth: number,
+  frameHeight: number,
+  color: Template19ColorId | undefined
+) {
   const cx = frameWidth / 2;
   const cy = frameHeight * IMAGE_TEMPLATE19_DISC_CY;
   const radius = frameWidth * IMAGE_TEMPLATE19_DISC_RADIUS;
   const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
   const tScale = IMAGE_TEMPLATE19_DISC_RADIUS / 0.5;
-  for (const [t, [r, g, b]] of DISC_STOPS) {
+  for (const [t, [r, g, b]] of discStopsFor(color)) {
     const stop = Math.min(1, t / tScale);
     glow.addColorStop(stop, `rgb(${r}, ${g}, ${b})`);
   }
@@ -161,7 +335,8 @@ function paintGrain(ctx: CanvasRenderingContext2D, frameWidth: number, frameHeig
   for (let i = 0; i < pixels; i++) {
     const o = i * 4;
     const r = data[o]!;
-    const sigma = GRAIN_SIGMA_BLACK + (r / 168) * (GRAIN_SIGMA - GRAIN_SIGMA_BLACK);
+    const peak = Math.max(r, data[o + 1]!, data[o + 2]!);
+    const sigma = GRAIN_SIGMA_BLACK + (peak / 168) * (GRAIN_SIGMA - GRAIN_SIGMA_BLACK);
     const delta = grainUnit(i) * sigma;
     data[o] = Math.max(0, Math.min(255, r + delta));
     data[o + 1] = Math.max(0, Math.min(255, data[o + 1]! + delta));
@@ -181,6 +356,8 @@ export function paintTemplate19Slide(
     isCover?: boolean;
     isCta?: boolean;
     promo?: CanvasImageSource | null;
+    /** Concrete disc colour. Defaults to the measured red. */
+    color?: Template19ColorId;
   }
 ) {
   const fontFamily = options.fontFamily ?? '"Times New Roman", Times, Georgia, serif';
@@ -188,7 +365,7 @@ export function paintTemplate19Slide(
   ctx.letterSpacing = '0px';
   ctx.fillStyle = IMAGE_TEMPLATE19_BG;
   ctx.fillRect(0, 0, frameWidth, frameHeight);
-  paintDisc(ctx, frameWidth, frameHeight);
+  paintDisc(ctx, frameWidth, frameHeight, options.color);
   paintGrain(ctx, frameWidth, frameHeight);
 
   const showPromo = Boolean(options.isCta && options.promo);

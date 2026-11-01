@@ -193,6 +193,7 @@ import {
 import { BoldSolidPreview } from '@/app/components/BoldSolidPreview';
 import { NotesQuestionsPreview } from '@/app/components/NotesQuestionsPreview';
 import { PastelSlideshowPreview } from '@/app/components/PastelSlideshowPreview';
+import { RedGlowPreview } from '@/app/components/RedGlowPreview';
 import { OceanSlideshowPreview } from '@/app/components/OceanSlideshowPreview';
 import { RedRoundedPreview } from '@/app/components/RedRoundedPreview';
 import {
@@ -220,6 +221,23 @@ import {
   type Template18PastelTone,
   type Template18StyleId,
 } from '@/app/lib/image-template-18-pastel';
+import {
+  IMAGE_TEMPLATE19_BG,
+  IMAGE_TEMPLATE19_COLOR_OPTIONS,
+  IMAGE_TEMPLATE19_CTA_TAB,
+  IMAGE_TEMPLATE19_DEFAULT_COLOR,
+  IMAGE_TEMPLATE19_FONT_STACK,
+  IMAGE_TEMPLATE19_LABEL_FONT_STACK,
+  IMAGE_TEMPLATE19_QUESTION_COUNT,
+  IMAGE_TEMPLATE19_SLIDE_COUNT,
+  isImageTemplate19Id,
+  isTemplate19ColorOptionId,
+  paintTemplate19Slide,
+  pickTemplate19ShuffleColor,
+  resolveTemplate19PaintColor,
+  type Template19ColorId,
+  type Template19ColorOptionId,
+} from '@/app/lib/image-template-19-glow';
 import {
   IMAGE_TEMPLATE20_CTA_TAB,
   IMAGE_TEMPLATE20_QUESTION_COUNT,
@@ -2246,6 +2264,14 @@ export default function Home() {
     () => template18PastelSlidesForCount(imageTemplate18PastelBody, IMAGE_TEMPLATE18_SLIDE_COUNT),
     [imageTemplate18PastelBody]
   );
+  const [imageTemplate19Color, setImageTemplate19Color] =
+    useState<Template19ColorOptionId>(IMAGE_TEMPLATE19_DEFAULT_COLOR);
+  const [imageTemplate19ShuffleColor, setImageTemplate19ShuffleColor] =
+    useState<Template19ColorId>(() => pickTemplate19ShuffleColor());
+  const imageTemplate19PaintColor = resolveTemplate19PaintColor(
+    imageTemplate19Color,
+    imageTemplate19ShuffleColor
+  );
   const [imageTemplate2QuestionType, setImageTemplate2QuestionType] =
     useState<AutomateQuestionType>('random');
   const [imageTemplate6QuestionType, setImageTemplate6QuestionType] =
@@ -2327,7 +2353,7 @@ export default function Home() {
   const prevFirstCardTextRef = useRef(firstCardTextValue);
 
   const imageTemplateCards = getImageTemplatesForApp(selectedAppId).filter(
-    (card) => card.id !== 15 && card.id !== 19
+    (card) => card.id !== 15
   );
   const videoTemplateCards = getVideoTemplatesForApp(selectedAppId);
   const characterCards = getCharactersForApp(selectedAppId);
@@ -2345,6 +2371,8 @@ export default function Home() {
     selectedAppId === 'spill-it' && isImageTemplate16Id(selectedImageTemplateId);
   const isPastelSlideshowImageTemplate =
     selectedAppId === 'spill-it' && isImageTemplate18Id(selectedImageTemplateId);
+  const isRedGlowImageTemplate =
+    selectedAppId === 'spill-it' && isImageTemplate19Id(selectedImageTemplateId);
   const isOceanSlideshowImageTemplate =
     selectedAppId === 'spill-it' && isImageTemplate20Id(selectedImageTemplateId);
   const isBoldSolidImageTemplate =
@@ -2387,6 +2415,7 @@ export default function Home() {
     !isColorCardImageTemplate &&
     !isNotesQuestionsImageTemplate &&
     !isPastelSlideshowImageTemplate &&
+    !isRedGlowImageTemplate &&
     !isOceanSlideshowImageTemplate &&
     !isRedRoundedImageTemplate;
   const imageTemplateCtaTabIndex = hasImageTemplateCtaTab
@@ -2478,6 +2507,7 @@ export default function Home() {
         isPinterestCoverOnlyImageTemplate ||
         isNotesQuestionsImageTemplate ||
         isPastelSlideshowImageTemplate ||
+        isRedGlowImageTemplate ||
         isOceanSlideshowImageTemplate ||
         isBoldSolidImageTemplate ||
         isRedRoundedImageTemplate) &&
@@ -2492,6 +2522,7 @@ export default function Home() {
     isPinterestCoverOnlyImageTemplate,
     isNotesQuestionsImageTemplate,
     isPastelSlideshowImageTemplate,
+    isRedGlowImageTemplate,
     isOceanSlideshowImageTemplate,
     isBoldSolidImageTemplate,
     isRedRoundedImageTemplate,
@@ -2608,6 +2639,17 @@ export default function Home() {
     setImageTabFunnyQuestions(questions);
     setImageTabTexts([title, ...questions]);
     setImageTemplate18PastelBody(shuffleTemplate18PastelBody());
+  };
+
+  const applyImageTemplate19QuestionType = (type: AutomateQuestionType) => {
+    setImageTemplate2QuestionType(type);
+    const resolved = resolveQuestionType(type);
+    const title = pickTitleForType(resolved);
+    const questions = pickQuestionsForType(resolved, IMAGE_TEMPLATE19_QUESTION_COUNT);
+    setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[resolved]);
+    setImageTabFunnyQuestions(questions);
+    setImageTabTexts([title, ...questions]);
+    setImageTemplate19ShuffleColor(pickTemplate19ShuffleColor());
   };
 
   const applyImageTemplate20QuestionType = (type: AutomateQuestionType) => {
@@ -4716,6 +4758,23 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       return;
     }
 
+    if (selectedAppId === 'spill-it' && isImageTemplate19Id(tid)) {
+      const type =
+        imageTemplate2QuestionType === 'random'
+          ? pickDifferentRandomQuestionType(concreteTypeFromImageLabel(imageTabTypeLabel))
+          : imageTemplate2QuestionType;
+      const title = pickTitleForType(type);
+      const questions = pickQuestionsForType(type, IMAGE_TEMPLATE19_QUESTION_COUNT);
+      setImageTabFunnyQuestions(questions);
+      setImageTabFrameBg(IMAGE_TEMPLATE19_BG);
+      setImageTabPastelBgs([]);
+      setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[type]);
+      setImageTabSources(Array.from({ length: IMAGE_TEMPLATE19_SLIDE_COUNT }, () => ''));
+      setImageTabTexts([title, ...questions]);
+      setImageTemplate19ShuffleColor(pickTemplate19ShuffleColor());
+      return;
+    }
+
     if (selectedAppId === 'spill-it' && isImageTemplate22Id(tid)) {
       const type =
         imageTemplate2QuestionType === 'random'
@@ -5321,6 +5380,51 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           }, 'image/png');
         });
         entries.push({ path: `template-18-${names[i] ?? `q${i}`}.png`, blob });
+      }
+      return { entries, isKawaiiTemplate: false };
+    }
+    if (exportTemplateId === 19) {
+      const names = ['cover', 'q1', 'q2', 'q3', 'q4', 'q5'] as const;
+      const frameWidth = 1080;
+      const frameHeight = 1440;
+      const loadImage = (src: string, label: string) =>
+        new Promise<HTMLImageElement>((resolve, reject) => {
+          const el = new Image();
+          el.onload = () => resolve(el);
+          el.onerror = () => reject(new Error(`Failed to load ${label}`));
+          el.src = src;
+        });
+      try {
+        await document.fonts.load(`400 96px ${IMAGE_TEMPLATE19_FONT_STACK}`);
+        await document.fonts.load(`600 40px ${IMAGE_TEMPLATE19_LABEL_FONT_STACK}`);
+        await document.fonts.load(`700 48px ${IMAGE_TEMPLATE19_LABEL_FONT_STACK}`);
+      } catch {
+        /* fonts may already be ready */
+      }
+      const promo = await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC, 'the App Store image');
+      const entries = [];
+      for (let i = 0; i < IMAGE_TEMPLATE19_SLIDE_COUNT; i++) {
+        const canvas = document.createElement('canvas');
+        canvas.width = frameWidth;
+        canvas.height = frameHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Failed to prepare the slide');
+        paintTemplate19Slide(ctx, frameWidth, frameHeight, {
+          text: (imageTabTexts[i] ?? '').trim(),
+          fontFamily: IMAGE_TEMPLATE19_FONT_STACK,
+          labelFontFamily: IMAGE_TEMPLATE19_LABEL_FONT_STACK,
+          isCover: i === 0,
+          isCta: i === IMAGE_TEMPLATE19_CTA_TAB,
+          promo: i === IMAGE_TEMPLATE19_CTA_TAB ? promo : null,
+          color: imageTemplate19PaintColor,
+        });
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((next) => {
+            if (next) resolve(next);
+            else reject(new Error('Failed to export the slide'));
+          }, 'image/png');
+        });
+        entries.push({ path: `template-19-${names[i] ?? `q${i}`}.png`, blob });
       }
       return { entries, isKawaiiTemplate: false };
     }
@@ -7399,6 +7503,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         isColorCardImageTemplate ||
                         isNotesQuestionsImageTemplate ||
                         isPastelSlideshowImageTemplate ||
+                        isRedGlowImageTemplate ||
                         isOceanSlideshowImageTemplate ||
                         isBoldSolidImageTemplate ||
                         isRedRoundedImageTemplate ||
@@ -7662,6 +7767,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               ? IMAGE_TEMPLATE14_FRAME_BG
                               : isPastelSlideshowImageTemplate
                               ? template18CanvasBackground(imageTemplate18Style)
+                              : isRedGlowImageTemplate
+                              ? IMAGE_TEMPLATE19_BG
                               : isOceanSlideshowImageTemplate
                               ? '#0A4F78'
                               : isRedRoundedImageTemplate
@@ -7693,6 +7800,13 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               styleId={imageTemplate18Style}
                               scanlines={imageTemplate18Scanlines}
                               pastelSlides={imageTemplate18PastelSlides}
+                            />
+                          ) : isRedGlowImageTemplate ? (
+                            <RedGlowPreview
+                              text={imageFrameTextForActiveTab}
+                              isCover={selectedImageBrowserTab === 0}
+                              isCta={selectedImageBrowserTab === IMAGE_TEMPLATE19_CTA_TAB}
+                              color={imageTemplate19PaintColor}
                             />
                           ) : isOceanSlideshowImageTemplate ? (
                             <OceanSlideshowPreview
@@ -8640,6 +8754,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         isMaroonLockscreenImageTemplate ||
                         isNotesQuestionsImageTemplate ||
                         isPastelSlideshowImageTemplate ||
+                        isRedGlowImageTemplate ||
                         isOceanSlideshowImageTemplate ||
                         isRedRoundedImageTemplate ||
                         isCouplesSelfieImageTemplate ||
@@ -8656,6 +8771,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 <div className="flex flex-wrap items-center gap-2">
                                   {isPastelCarouselImageTemplate ||
                                   isPastelSlideshowImageTemplate ||
+                                  isRedGlowImageTemplate ||
                                   isOceanSlideshowImageTemplate ||
                                   isRedRoundedImageTemplate ||
                                   isBearsKawaiiImageTemplate ? (
@@ -8671,6 +8787,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                           applyImageTemplate6QuestionType(next);
                                         } else if (isPastelSlideshowImageTemplate) {
                                           applyImageTemplate18QuestionType(next);
+                                        } else if (isRedGlowImageTemplate) {
+                                          applyImageTemplate19QuestionType(next);
                                         } else if (isOceanSlideshowImageTemplate) {
                                           applyImageTemplate20QuestionType(next);
                                         } else if (isRedRoundedImageTemplate) {
@@ -8720,12 +8838,32 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                       ) : null}
                                     </>
                                   ) : null}
+                                  {isRedGlowImageTemplate ? (
+                                    <select
+                                      value={imageTemplate19Color}
+                                      onChange={(e) => {
+                                        const next = e.target.value;
+                                        if (isTemplate19ColorOptionId(next)) {
+                                          setImageTemplate19Color(next);
+                                        }
+                                      }}
+                                      className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2 py-1.5 sm:py-1 text-sm sm:text-xs text-zinc-800 dark:text-zinc-200"
+                                      aria-label="Colour"
+                                    >
+                                      {IMAGE_TEMPLATE19_COLOR_OPTIONS.map((option) => (
+                                        <option key={option.id} value={option.id}>
+                                          {option.label}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  ) : null}
                                   <button
                                     type="button"
                                     onClick={() => {
                                       if (
                                         isPastelCarouselImageTemplate ||
                                         isPastelSlideshowImageTemplate ||
+                                        isRedGlowImageTemplate ||
                                         isOceanSlideshowImageTemplate ||
                                         isRedRoundedImageTemplate ||
                                         isBearsKawaiiImageTemplate ||
@@ -8871,6 +9009,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   >
                                     {isPastelCarouselImageTemplate ||
                                     isPastelSlideshowImageTemplate ||
+                                    isRedGlowImageTemplate ||
                                     isOceanSlideshowImageTemplate ||
                                     isRedRoundedImageTemplate ||
                                     isBearsKawaiiImageTemplate

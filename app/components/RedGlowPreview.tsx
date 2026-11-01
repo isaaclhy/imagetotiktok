@@ -7,6 +7,7 @@ import {
   IMAGE_TEMPLATE19_FONT_STACK,
   IMAGE_TEMPLATE19_LABEL_FONT_STACK,
   paintTemplate19Slide,
+  type Template19ColorId,
 } from '@/app/lib/image-template-19-glow';
 
 const EXPORT_W = 1080;
@@ -33,13 +34,19 @@ type RedGlowPreviewProps = {
   text: string;
   isCover?: boolean;
   isCta?: boolean;
+  color?: Template19ColorId;
 };
 
 /**
  * Draws with the same `paintTemplate19Slide` call as the download, at the
  * export resolution, then scales it into the 3:4 frame.
  */
-export function RedGlowPreview({ text, isCover = false, isCta = false }: RedGlowPreviewProps) {
+export function RedGlowPreview({
+  text,
+  isCover = false,
+  isCta = false,
+  color = 'red',
+}: RedGlowPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -69,6 +76,7 @@ export function RedGlowPreview({ text, isCover = false, isCta = false }: RedGlow
         isCover,
         isCta,
         promo,
+        color,
       });
     };
 
@@ -76,7 +84,7 @@ export function RedGlowPreview({ text, isCover = false, isCta = false }: RedGlow
     return () => {
       cancelled = true;
     };
-  }, [text, isCover, isCta]);
+  }, [text, isCover, isCta, color]);
 
   return (
     <div className="absolute inset-0" style={{ backgroundColor: IMAGE_TEMPLATE19_BG }}>
