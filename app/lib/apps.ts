@@ -195,7 +195,7 @@ export const VIDEO_TEMPLATES_BY_APP: Record<StudioAppId, VideoTemplateCard[]> = 
     {
       id: 7,
       title: 'Dark Love Letter',
-      subtitle: 'Long letter on a moody dark clip',
+      subtitle: 'Quote or letter on a moody dark clip',
       coverSrc: '/video-templates/template-7-cover.jpg',
     },
   ],
