@@ -82,6 +82,7 @@ import {
   IMAGE_TEMPLATE19_FONT_STACK,
   IMAGE_TEMPLATE19_LABEL_FONT_STACK,
   paintTemplate19Slide,
+  type Template19ColorId,
 } from '@/app/lib/image-template-19-glow';
 import {
   IMAGE_TEMPLATE20_FONT_STACK,
@@ -235,7 +236,8 @@ async function paintSlide(
     style: Template18StyleId;
     scanlines: boolean;
     pastelSlides?: readonly Template18PastelTone[];
-  }
+  },
+  template19Color?: Template19ColorId
 ): Promise<Blob> {
   const { w, h } = frameSize(templateId);
   const canvas = document.createElement('canvas');
@@ -324,6 +326,7 @@ async function paintSlide(
       isCover: slide.isCover,
       isCta: slide.isCta,
       promo,
+      color: template19Color,
     });
     return canvasBlob(canvas);
   }
@@ -716,6 +719,7 @@ export async function exportCopycatSlidesZip(options: {
   template18Style?: Template18StyleId;
   template18Scanlines?: boolean;
   template18PastelSlides?: readonly Template18PastelTone[];
+  template19Color?: Template19ColorId;
 }): Promise<Blob> {
   const JSZip = (await import('jszip')).default;
   const zip = new JSZip();
@@ -733,7 +737,8 @@ export async function exportCopycatSlidesZip(options: {
         style: options.template18Style ?? IMAGE_TEMPLATE18_DEFAULT_STYLE,
         scanlines: options.template18Scanlines ?? true,
         pastelSlides: options.template18PastelSlides,
-      }
+      },
+      options.template19Color
     );
     const name = i === 0 ? 'cover' : `q${i}`;
     zip.file(`template-${options.templateId}-${name}.png`, blob);

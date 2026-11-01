@@ -121,6 +121,15 @@ import {
 } from '@/app/lib/image-template-18-pastel';
 import { BoldSolidPreview } from '@/app/components/BoldSolidPreview';
 import { RedGlowPreview } from '@/app/components/RedGlowPreview';
+import {
+  IMAGE_TEMPLATE19_COLOR_OPTIONS,
+  IMAGE_TEMPLATE19_DEFAULT_COLOR,
+  isTemplate19ColorOptionId,
+  pickTemplate19ShuffleColor,
+  resolveTemplate19PaintColor,
+  type Template19ColorId,
+  type Template19ColorOptionId,
+} from '@/app/lib/image-template-19-glow';
 import { OceanSlideshowPreview } from '@/app/components/OceanSlideshowPreview';
 import { RedRoundedPreview } from '@/app/components/RedRoundedPreview';
 import { SplitCoverPreview } from '@/app/components/SplitCoverPreview';
@@ -299,6 +308,7 @@ function CopycatSlidePreview({
   template18Style = IMAGE_TEMPLATE18_DEFAULT_STYLE,
   template18Scanlines = true,
   template18PastelSlides,
+  template19Color = 'red',
 }: {
   templateId: CopycatTemplateId;
   tabIndex: number;
@@ -308,6 +318,7 @@ function CopycatSlidePreview({
   template18Style?: Template18StyleId;
   template18Scanlines?: boolean;
   template18PastelSlides?: readonly Template18PastelTone[];
+  template19Color?: Template19ColorId;
   template15FrameBg?: string;
   illustrationSrc?: string;
   isCtaSlide?: boolean;
@@ -360,7 +371,7 @@ function CopycatSlidePreview({
   if (templateId === 19) {
     return (
       <div className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4 bg-black">
-        <RedGlowPreview text={text} isCover={isCover} isCta={isCtaSlide} />
+        <RedGlowPreview text={text} isCover={isCover} isCta={isCtaSlide} color={template19Color} />
       </div>
     );
   }
@@ -1023,6 +1034,13 @@ export function CopycatPanel({
   const [template18PastelBody, setTemplate18PastelBody] = useState<Template18PastelTone[]>(
     () => template18PastelBodyTones()
   );
+  const [template19Color, setTemplate19Color] = useState<Template19ColorOptionId>(
+    IMAGE_TEMPLATE19_DEFAULT_COLOR
+  );
+  const [template19ShuffleColor, setTemplate19ShuffleColor] = useState<Template19ColorId>(() =>
+    pickTemplate19ShuffleColor()
+  );
+  const template19PaintColor = resolveTemplate19PaintColor(template19Color, template19ShuffleColor);
   const [template15FrameBg, setTemplate15FrameBg] = useState(() =>
     pickTemplate15FrameColor()
   );
@@ -1076,6 +1094,7 @@ export function CopycatPanel({
     setTemplate14Color((current) => pickTemplate14Color(current));
     setTemplate15FrameBg((current) => pickTemplate15FrameColor(current));
     setTemplate18PastelBody(shuffleTemplate18PastelBody());
+    setTemplate19ShuffleColor(pickTemplate19ShuffleColor());
   }
 
   postBagRef.current = selectedBag;
@@ -1127,6 +1146,7 @@ export function CopycatPanel({
     setTemplate14Color((current) => pickTemplate14Color(current));
     setTemplate15FrameBg((current) => pickTemplate15FrameColor(current));
     setTemplate18PastelBody(shuffleTemplate18PastelBody());
+    setTemplate19ShuffleColor(pickTemplate19ShuffleColor());
   }, [postIds, postEpoch]);
 
   // First draw only. Later source/template changes are applied during render above
@@ -1148,6 +1168,7 @@ export function CopycatPanel({
     setTemplate14Color((current) => pickTemplate14Color(current));
     setTemplate15FrameBg((current) => pickTemplate15FrameColor(current));
     setTemplate18PastelBody(shuffleTemplate18PastelBody());
+    setTemplate19ShuffleColor(pickTemplate19ShuffleColor());
   }, [postEpoch, postIds, selection]);
 
   // Re-apply the scroll offset from the last "New random post" tap before paint,
@@ -1311,6 +1332,7 @@ export function CopycatPanel({
         template18Style,
         template18Scanlines,
         template18PastelSlides,
+        template19Color: template19PaintColor,
       });
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
@@ -1340,6 +1362,7 @@ export function CopycatPanel({
     template18Style,
     template18Scanlines,
     template18PastelSlides,
+    template19PaintColor,
   ]);
 
   if (!selectedPost) {
@@ -1475,6 +1498,23 @@ export function CopycatPanel({
           ) : null}
         </div>
       ) : null}
+      {templateId === 19 ? (
+        <select
+          value={template19Color}
+          onChange={(e) => {
+            const next = e.target.value;
+            if (isTemplate19ColorOptionId(next)) setTemplate19Color(next);
+          }}
+          className="rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1.5 text-xs font-medium text-zinc-800 dark:text-zinc-200"
+          aria-label="Colour"
+        >
+          {IMAGE_TEMPLATE19_COLOR_OPTIONS.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      ) : null}
       <CopycatSlidePreview
         templateId={templateId}
         tabIndex={selectedTab}
@@ -1483,6 +1523,7 @@ export function CopycatPanel({
         template18Style={template18Style}
         template18Scanlines={template18Scanlines}
         template18PastelSlides={template18PastelSlides}
+        template19Color={template19PaintColor}
         backgroundSrc={
           templateId === 17 ? template17BackgroundSrcAt(questionSlides, selectedTab) : undefined
         }
