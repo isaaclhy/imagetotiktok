@@ -2,7 +2,7 @@
 
 Spill It video tab, template id 7. A 5 second 1080×1920 clip: a dim, almost-still background with a heavy darken, vignette, and film grain, plus one static block of centred lowercase text. The words are on screen from the first frame to the last.
 
-Long letters are small, tight, and white, and they fill the frame. Short quotes are larger, pale yellow, and sit in the middle with wide empty margins.
+Long letters are regular-weight white type at about 92% opacity, with a soft shadow, about 5% side margins, and a line height of 1.15. A letter of roughly 220 to 300 words fills the frame at about 33 to 35 lines. Short quotes are larger, pale yellow, and sit in the middle with wide empty margins.
 
 ![Long letter and short quote](side-by-side.png)
 

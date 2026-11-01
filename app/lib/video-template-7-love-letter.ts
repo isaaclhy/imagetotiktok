@@ -27,22 +27,23 @@ export const VIDEO_TEMPLATE7_HEIGHT = 1920;
 export type VideoTemplate7TextSource = 'letter' | 'quote' | 'custom';
 
 const FONT = '"TikTok Sans", system-ui, -apple-system, sans-serif';
-const LETTER_COLOR = '#FFFFFF';
+/** White at about 92% so the letter stays soft on a dark frame. */
+const LETTER_COLOR = 'rgba(255, 255, 255, 0.92)';
 /** Pale yellow / beige used on the short-quote posts. */
 const QUOTE_COLOR = '#F4E2A8';
 
-const LETTER_MARGIN_X = 0.034;
+const LETTER_MARGIN_X = 0.05;
 const LETTER_MARGIN_Y = 0.022;
-const LETTER_LINE_HEIGHT = 1.07;
-const LETTER_MIN_SIZE_RATIO = 0.02;
-const LETTER_MAX_SIZE_RATIO = 0.072;
+const LETTER_LINE_HEIGHT = 1.15;
+const LETTER_MIN_SIZE_RATIO = 0.018;
+const LETTER_MAX_SIZE_RATIO = 0.058;
 
 const QUOTE_MAX_WIDTH = 0.9;
 const QUOTE_LINE_HEIGHT = 1.22;
 const QUOTE_SIZE_RATIO = 0.084;
 const QUOTE_MIN_SIZE_RATIO = 0.05;
 
-const DARKEN_ALPHA = 0.52;
+const DARKEN_ALPHA = 0.58;
 
 const LETTERS = bank.letters;
 const QUOTES = bank.quotes;
@@ -127,7 +128,7 @@ function paintGrade(ctx: CanvasRenderingContext2D, frameWidth: number, frameHeig
   ctx.fillRect(0, 0, frameWidth, frameHeight);
 }
 
-/** Coarse film grain baked into the overlay so it sits on top of the clip. */
+/** Faint, dense noise so the frame reads as film grain rather than speckle. */
 function paintGrain(ctx: CanvasRenderingContext2D, frameWidth: number, frameHeight: number) {
   let image: ImageData;
   try {
@@ -136,13 +137,13 @@ function paintGrain(ctx: CanvasRenderingContext2D, frameWidth: number, frameHeig
     return;
   }
   const data = image.data;
-  const specks = Math.round(frameWidth * frameHeight * 0.09);
+  const specks = Math.round(frameWidth * frameHeight * 0.045);
   for (let n = 0; n < specks; n++) {
     const x = (Math.random() * frameWidth) | 0;
     const y = (Math.random() * frameHeight) | 0;
-    const light = Math.random() < 0.42;
-    const srcA = light ? 0.16 + Math.random() * 0.18 : 0.1 + Math.random() * 0.12;
-    const src = light ? 242 : 10;
+    const light = Math.random() < 0.5;
+    const srcA = light ? 0.035 + Math.random() * 0.04 : 0.03 + Math.random() * 0.035;
+    const src = light ? 230 : 12;
     const i = (y * frameWidth + x) * 4;
     const dstA = (data[i + 3] ?? 0) / 255;
     const outA = srcA + dstA * (1 - srcA);
@@ -156,6 +157,33 @@ function paintGrain(ctx: CanvasRenderingContext2D, frameWidth: number, frameHeig
     data[i + 3] = Math.round(outA * 255);
   }
   ctx.putImageData(image, 0, 0);
+}
+
+function drawLetterLines(
+  ctx: CanvasRenderingContext2D,
+  lines: string[],
+  frameWidth: number,
+  fontSize: number,
+  lineHeight: number,
+  centerY: number
+) {
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `400 ${fontSize}px ${FONT}`;
+  const blockH = lines.length * lineHeight;
+  let y = centerY - blockH / 2 + lineHeight / 2;
+  ctx.fillStyle = LETTER_COLOR;
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.72)';
+  ctx.shadowBlur = Math.max(2.2, fontSize * 0.09);
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = Math.max(1, fontSize * 0.045);
+  for (const line of lines) {
+    ctx.fillText(line, frameWidth / 2, y);
+    y += lineHeight;
+  }
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
 }
 
 function drawCenteredLines(
@@ -289,14 +317,12 @@ export function paintVideoTemplate7Overlay(
       );
     } else {
       const layout = layoutLetter(ctx, text, frameWidth, frameHeight);
-      drawCenteredLines(
+      drawLetterLines(
         ctx,
         layout.lines,
         frameWidth,
-        frameHeight,
         layout.fontSize,
         layout.lineHeight,
-        LETTER_COLOR,
         frameHeight * 0.5
       );
     }
