@@ -356,6 +356,14 @@ import {
   VIDEO_TEMPLATE6_SEE_DESCRIPTION,
 } from '@/app/lib/video-template-6-cinematic';
 import {
+  paintVideoTemplate7Overlay,
+  pickVideoTemplate7Letter,
+  pickVideoTemplate7Quote,
+  VIDEO_TEMPLATE7_DURATION_SEC,
+  VIDEO_TEMPLATE7_PEXELS_QUERIES,
+  type VideoTemplate7TextSource,
+} from '@/app/lib/video-template-7-love-letter';
+import {
   pexelsVideoProxySrc,
   PEXELS_PREFER_HEIGHT,
 } from '@/app/lib/pexels-video-client';
@@ -2141,6 +2149,9 @@ export default function Home() {
   const [videoTemplate2HighlightBg, setVideoTemplate2HighlightBg] = useState<string | null>(null);
   const [isVideoTemplate2VideoLoading, setIsVideoTemplate2VideoLoading] = useState(false);
   const [videoTemplate2VideoError, setVideoTemplate2VideoError] = useState<string | null>(null);
+  const [videoTemplate7TextSource, setVideoTemplate7TextSource] =
+    useState<VideoTemplate7TextSource>('letter');
+  const loveLetterOverlayRef = useRef<HTMLCanvasElement | null>(null);
   const nightyParticleVideoRef = useRef<HTMLVideoElement | null>(null);
   const nightyParticleAudioRef = useRef<HTMLAudioElement | null>(null);
   const nightyRainVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -2388,6 +2399,8 @@ export default function Home() {
   const isOceanSunsetVideoTemplate = selectedAppId === 'spill-it' && selectedVideoTemplateId === 4;
   const isCinematicCoverVideoTemplate =
     selectedAppId === 'spill-it' && selectedVideoTemplateId === 6;
+  const isLoveLetterVideoTemplate =
+    selectedAppId === 'spill-it' && selectedVideoTemplateId === 7;
   const isFreshBakedDonutVideoTemplate =
     selectedAppId === 'spill-it' && selectedVideoTemplateId === 5;
   const selectedFreshBakedDonut = freshBakedDonutSelectedPost(
@@ -2402,6 +2415,7 @@ export default function Home() {
     isSpillItNotesVideoTemplate ||
     isOceanSunsetVideoTemplate ||
     isCinematicCoverVideoTemplate ||
+    isLoveLetterVideoTemplate ||
     isNightyParticleVideoTemplate ||
     isNightyRainVideoTemplate;
 
@@ -2735,6 +2749,12 @@ export default function Home() {
         questions: videoTemplate2Questions.map((q) => q.trim()).filter(Boolean),
       };
     }
+    if (isLoveLetterVideoTemplate) {
+      return {
+        cover: videoOverlayCaption.trim(),
+        questions: [] as string[],
+      };
+    }
     if (isFreshBakedDonutVideoTemplate) {
       return freshBakedDonutCaptionSource(selectedFreshBakedDonut);
     }
@@ -2841,7 +2861,9 @@ export default function Home() {
                   ? [VIDEO_TEMPLATE4_PEXELS_QUERY]
                   : isCinematicCoverVideoTemplate
                     ? [...VIDEO_TEMPLATE6_PEXELS_QUERIES]
-                    : VIDEO_TEMPLATE2_PEXELS_QUERIES;
+                    : isLoveLetterVideoTemplate
+                      ? [...VIDEO_TEMPLATE7_PEXELS_QUERIES]
+                      : VIDEO_TEMPLATE2_PEXELS_QUERIES;
             return queryPool[Math.floor(Math.random() * queryPool.length)]!;
           })();
       const page = 1 + Math.floor(Math.random() * 15);
@@ -2992,6 +3014,12 @@ export default function Home() {
       const source = regenerateCinematicCoverContent();
       void handleRegenerateVideoTemplate2Video();
       void handleGenerateVideoTemplate2Description(source);
+    } else if (isLoveLetterVideoTemplate) {
+      const text = pickVideoTemplate7Letter();
+      setVideoTemplate7TextSource('letter');
+      setVideoOverlayCaption(text);
+      void handleRegenerateVideoTemplate2Video();
+      void handleGenerateVideoTemplate2Description({ cover: text, questions: [] });
     } else if (isFreshBakedDonutVideoTemplate) {
       setFreshBakedDonutSelectedId(null);
     } else if (isFabAffirmationVideoTemplate) {
@@ -3010,10 +3038,36 @@ export default function Home() {
     isNightyRainVideoTemplate,
     isOceanSunsetVideoTemplate,
     isCinematicCoverVideoTemplate,
+    isLoveLetterVideoTemplate,
     isFreshBakedDonutVideoTemplate,
     isFabAffirmationVideoTemplate,
     selectedVideoTemplateId,
   ]);
+
+  useEffect(() => {
+    if (!isLoveLetterVideoTemplate) return;
+    const canvas = loveLetterOverlayRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        await document.fonts.load('400 64px "TikTok Sans"');
+      } catch {
+        /* font may already be ready */
+      }
+      if (cancelled) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      paintVideoTemplate7Overlay(ctx, canvas.width, canvas.height, {
+        text: videoOverlayCaption,
+        source: videoTemplate7TextSource,
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoveLetterVideoTemplate, videoOverlayCaption, videoTemplate7TextSource]);
 
   // Sync triangle-wave bed audio with Particle preview playback.
   useEffect(() => {
@@ -6712,6 +6766,27 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       return { blob, extension: 'mp4', baseName: `cinematic-${today}` };
     }
 
+    if (isLoveLetterVideoTemplate) {
+      const videoSrc = requireVideoSrc();
+      try {
+        await document.fonts.load('400 64px "TikTok Sans"');
+        await document.fonts.load('500 64px "TikTok Sans"');
+      } catch {
+        /* font may already be ready */
+      }
+      const blob = await exportCouplesNatureVideo({
+        videoSrc,
+        maxDurationSec: VIDEO_TEMPLATE7_DURATION_SEC,
+        backgroundFilter: 'none',
+        paintOverlay: (ctx, w, h) =>
+          paintVideoTemplate7Overlay(ctx, w, h, {
+            text: videoOverlayCaption,
+            source: videoTemplate7TextSource,
+          }),
+      });
+      return { blob, extension: 'mp4', baseName: `dark-love-letter-${today}` };
+    }
+
     if (isSpillItNotesVideoTemplate) {
       const videoSrc = requireVideoSrc();
       const title = videoOverlayCaption.trim() || pickRandomDailyFunnyTitle();
@@ -9075,6 +9150,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   </svg>
                                   <span>Loading…</span>
                                 </>
+                              ) : isLoveLetterVideoTemplate ? (
+                                'Shuffle background'
                               ) : (
                                 'Regenerate video'
                               )}
@@ -9473,6 +9550,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                           ? nightyParticleMaxDuration
                                           : isNightyRainVideoTemplate
                                             ? NIGHTY_RAIN_MAX_DURATION_SEC
+                                            : isLoveLetterVideoTemplate
+                                              ? VIDEO_TEMPLATE7_DURATION_SEC
                                           : VIDEO_TEMPLATE2_MAX_DURATION_SEC;
                                       if (el.currentTime >= maxSec) {
                                         el.currentTime = 0;
@@ -9647,6 +9726,14 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   <span className="text-xs font-bold sm:text-sm">Spill It</span>
                                 </div>
                               </div>
+                            ) : isLoveLetterVideoTemplate ? (
+                              <canvas
+                                ref={loveLetterOverlayRef}
+                                width={1080}
+                                height={1920}
+                                className="absolute inset-0 z-10 h-full w-full pointer-events-none"
+                                aria-hidden
+                              />
                             ) : isCinematicCoverVideoTemplate ? (
                               <div className="absolute inset-0 z-10 pointer-events-none">
                                 <div className="absolute inset-0 bg-black/20" aria-hidden />
@@ -9845,6 +9932,72 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               </div>
                             ) : (
                               <>
+                            {isLoveLetterVideoTemplate ? (
+                              <div className="space-y-3">
+                                <div>
+                                  <label
+                                    htmlFor="love-letter-text-source"
+                                    className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-300"
+                                  >
+                                    Text
+                                  </label>
+                                  <select
+                                    id="love-letter-text-source"
+                                    value={videoTemplate7TextSource}
+                                    onChange={(e) => {
+                                      const next = e.target.value as VideoTemplate7TextSource;
+                                      setVideoTemplate7TextSource(next);
+                                      if (next === 'letter') {
+                                        setVideoOverlayCaption(
+                                          pickVideoTemplate7Letter(videoOverlayCaption)
+                                        );
+                                      } else if (next === 'quote') {
+                                        setVideoOverlayCaption(
+                                          pickVideoTemplate7Quote(videoOverlayCaption)
+                                        );
+                                      }
+                                    }}
+                                    className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-800 dark:text-zinc-200"
+                                  >
+                                    <option value="letter">Random letter</option>
+                                    <option value="quote">Random short quote</option>
+                                    <option value="custom">Custom text</option>
+                                  </select>
+                                </div>
+                                {videoTemplate7TextSource !== 'custom' ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setVideoOverlayCaption(
+                                        videoTemplate7TextSource === 'quote'
+                                          ? pickVideoTemplate7Quote(videoOverlayCaption)
+                                          : pickVideoTemplate7Letter(videoOverlayCaption)
+                                      );
+                                    }}
+                                    className="text-sm sm:text-xs px-3 py-2 sm:px-2 sm:py-1 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                  >
+                                    {videoTemplate7TextSource === 'quote' ? 'New quote' : 'New letter'}
+                                  </button>
+                                ) : null}
+                                <textarea
+                                  value={videoOverlayCaption}
+                                  onChange={(e) => {
+                                    setVideoOverlayCaption(e.target.value);
+                                    if (videoTemplate7TextSource !== 'custom') {
+                                      setVideoTemplate7TextSource('custom');
+                                    }
+                                  }}
+                                  rows={videoTemplate7TextSource === 'quote' ? 4 : 14}
+                                  placeholder="lowercase letter, or a short quote with line breaks"
+                                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-zinc-400 resize-y min-h-[6rem]"
+                                />
+                                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                                  5 seconds, 1080×1920. A long letter fills the frame in small white
+                                  type. A short quote sits larger in the center, in pale yellow.
+                                  The words stay on screen the whole time.
+                                </p>
+                              </div>
+                            ) : (
                             <div>
                               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                                 <label className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
@@ -9981,6 +10134,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               />
                               )}
                             </div>
+                            )}
                             {isCouplesNatureVideoTemplate || isSpillItNotesVideoTemplate ? (
                               <div>
                                 <div className="mb-2 flex items-center justify-between gap-2">
