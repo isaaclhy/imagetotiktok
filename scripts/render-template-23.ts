@@ -45,10 +45,10 @@ async function renderSlide(options: {
 async function main() {
   const promo = await loadImage(`public${IMAGE_TEMPLATE2_Q5_PROMO_SRC}`);
   const questions = pickTemplate21QuestionBodies(IMAGE_TEMPLATE23_QUESTION_COUNT);
-  const slides = [COVER, ...questions, ''];
+  const slides = [COVER, ...questions];
   const outDir = 'docs/image-template-23';
   mkdirSync(outDir, { recursive: true });
-  const names = ['cover', 'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'cta'];
+  const names = ['cover', 'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7'];
   for (let i = 0; i < IMAGE_TEMPLATE23_SLIDE_COUNT; i++) {
     const png = await renderSlide({
       text: slides[i] ?? '',
