@@ -94,6 +94,11 @@ import {
   template21CanvasFontStack,
 } from '@/app/lib/image-template-21-bold-solid';
 import {
+  loadTemplate23Fonts,
+  paintTemplate23Slide,
+  template23CanvasFontStack,
+} from '@/app/lib/image-template-23-flat-dark';
+import {
   IMAGE_TEMPLATE22_FONT_STACK,
   IMAGE_TEMPLATE22_FONT_WEIGHT,
   paintTemplate22Slide,
@@ -135,7 +140,7 @@ function drawCopycatAppMark(
   ctx.fillText(COPYCAT_APP_NAME, frameWidth / 2, markY);
 }
 
-export type CopycatExportTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22;
+export type CopycatExportTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23;
 
 export type CopycatExportSlide = {
   text: string;
@@ -283,6 +288,22 @@ async function paintSlide(
       isCta: slide.isCta,
       promo,
       fontFamily: IMAGE_TEMPLATE22_FONT_STACK,
+    });
+    return canvasBlob(canvas);
+  }
+
+  if (templateId === 23) {
+    const fontFamily = template23CanvasFontStack();
+    await loadTemplate23Fonts(fontFamily);
+    const promo = slide.isCta ? await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC) : null;
+    paintTemplate23Slide(ctx, w, h, {
+      text: slide.text,
+      tabIndex,
+      slideCount,
+      isCover: slide.isCover,
+      isCta: slide.isCta,
+      promo,
+      fontFamily,
     });
     return canvasBlob(canvas);
   }
