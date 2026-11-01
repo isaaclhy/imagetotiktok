@@ -26,6 +26,11 @@ export const VIDEO_TEMPLATE7_HEIGHT = 1920;
 
 export type VideoTemplate7TextSource = 'letter' | 'quote' | 'custom';
 
+/** Which bank a random pick draws from. Random is the default. */
+export type VideoTemplate7Length = 'random' | 'quote' | 'short' | 'medium' | 'long';
+
+export type VideoTemplate7LetterBand = 'short' | 'medium' | 'long';
+
 const FONT = '"TikTok Sans", system-ui, -apple-system, sans-serif';
 /** White at about 92% so the letter stays soft on a dark frame. */
 const LETTER_COLOR = 'rgba(255, 255, 255, 0.92)';
@@ -37,6 +42,18 @@ const LETTER_MARGIN_Y = 0.022;
 const LETTER_LINE_HEIGHT = 1.15;
 const LETTER_MIN_SIZE_RATIO = 0.018;
 const LETTER_MAX_SIZE_RATIO = 0.058;
+
+/**
+ * Blank line between a headline ("to my girl who works so hard,") and the body.
+ * A fraction of the line height, so the break stays visible without a hole.
+ */
+const LETTER_PARAGRAPH_GAP = 0.62;
+
+/** A one-liner holds for the original 5s. Shorter than that reads as a flash. */
+const QUOTE_DURATION_SEC = VIDEO_TEMPLATE7_DURATION_SEC;
+/** A ~100 word letter is meant to be read, so it stays up longer than the wall. */
+const SHORT_LETTER_DURATION_SEC = 8;
+const MEDIUM_LETTER_DURATION_SEC = 10;
 
 const QUOTE_MAX_WIDTH = 0.9;
 const QUOTE_LINE_HEIGHT = 1.22;
@@ -58,12 +75,64 @@ function pickDifferent(pool: readonly string[], current?: string): string {
   return next;
 }
 
-export function pickVideoTemplate7Letter(current?: string): string {
-  return pickDifferent(LETTERS, current);
+export function videoTemplate7WordCount(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+/** Short is about 100–150 words, medium about 150–230, and everything longer is a wall. */
+export function videoTemplate7LetterBand(text: string): VideoTemplate7LetterBand {
+  const words = videoTemplate7WordCount(text);
+  if (words <= 150) return 'short';
+  if (words <= 240) return 'medium';
+  return 'long';
+}
+
+function lettersInBand(band: VideoTemplate7LetterBand): readonly string[] {
+  const pool = LETTERS.filter((entry) => videoTemplate7LetterBand(entry) === band);
+  return pool.length > 0 ? pool : LETTERS;
+}
+
+export function pickVideoTemplate7Letter(
+  current?: string,
+  band?: VideoTemplate7LetterBand
+): string {
+  return pickDifferent(band ? lettersInBand(band) : LETTERS, current);
 }
 
 export function pickVideoTemplate7Quote(current?: string): string {
   return pickDifferent(QUOTES, current);
+}
+
+const LENGTH_BANDS = ['quote', 'short', 'medium', 'long'] as const;
+
+export function pickVideoTemplate7Text(
+  length: VideoTemplate7Length,
+  current?: string
+): { text: string; source: 'letter' | 'quote' } {
+  const band =
+    length === 'random'
+      ? LENGTH_BANDS[Math.floor(Math.random() * LENGTH_BANDS.length)]!
+      : length;
+  if (band === 'quote') {
+    return { text: pickVideoTemplate7Quote(current), source: 'quote' };
+  }
+  return { text: pickVideoTemplate7Letter(current, band), source: 'letter' };
+}
+
+/**
+ * How long the words stay up. A 10-word quote holds for 5 seconds so it does
+ * not flash. A short or medium letter holds longer so it can actually be read.
+ * A long letter keeps the original 5 second wall-of-text hold.
+ */
+export function videoTemplate7DurationSec(
+  text: string,
+  source?: VideoTemplate7TextSource
+): number {
+  if (videoTemplate7Variant(source ?? 'custom', text) === 'quote') return QUOTE_DURATION_SEC;
+  const band = videoTemplate7LetterBand(text);
+  if (band === 'short') return SHORT_LETTER_DURATION_SEC;
+  if (band === 'medium') return MEDIUM_LETTER_DURATION_SEC;
+  return VIDEO_TEMPLATE7_DURATION_SEC;
 }
 
 export function videoTemplate7Variant(
@@ -159,9 +228,78 @@ function paintGrain(ctx: CanvasRenderingContext2D, frameWidth: number, frameHeig
   ctx.putImageData(image, 0, 0);
 }
 
+type LetterLine = { text: string; gapBefore: number };
+
+function letterBandMetrics(words: number): {
+  minRatio: number;
+  maxRatio: number;
+  lineHeight: number;
+  marginX: number;
+  marginY: number;
+} {
+  // Short letters sit larger, with air around the block, so ~100 words
+  // does not shrink into a tiny wall or stretch edge to edge.
+  if (words <= 150) {
+    return {
+      minRatio: 0.036,
+      maxRatio: 0.056,
+      lineHeight: 1.32,
+      marginX: 0.09,
+      marginY: 0.08,
+    };
+  }
+  if (words <= 240) {
+    return {
+      minRatio: 0.028,
+      maxRatio: 0.046,
+      lineHeight: 1.24,
+      marginX: 0.075,
+      marginY: 0.055,
+    };
+  }
+  return {
+    minRatio: LETTER_MIN_SIZE_RATIO,
+    maxRatio: LETTER_MAX_SIZE_RATIO,
+    lineHeight: LETTER_LINE_HEIGHT,
+    marginX: LETTER_MARGIN_X,
+    marginY: LETTER_MARGIN_Y,
+  };
+}
+
+function letterBlockHeight(lines: readonly LetterLine[], lineHeight: number): number {
+  let height = 0;
+  for (const line of lines) height += line.gapBefore + lineHeight;
+  return height;
+}
+
+/** Keeps a blank line after a headline. A letter with no breaks wraps as one block. */
+function layoutLetterLines(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  gapPx: number
+): LetterLine[] {
+  const parts = text.split('\n');
+  const lines: LetterLine[] = [];
+  let pending = 0;
+  for (const part of parts) {
+    const trimmed = part.trim();
+    if (!trimmed) {
+      pending += gapPx;
+      continue;
+    }
+    const wrapped = wrapLines(ctx, trimmed, maxWidth);
+    wrapped.forEach((line, index) => {
+      lines.push({ text: line, gapBefore: index === 0 ? pending : 0 });
+      if (index === 0) pending = 0;
+    });
+  }
+  return lines;
+}
+
 function drawLetterLines(
   ctx: CanvasRenderingContext2D,
-  lines: string[],
+  lines: LetterLine[],
   frameWidth: number,
   fontSize: number,
   lineHeight: number,
@@ -170,7 +308,7 @@ function drawLetterLines(
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.font = `400 ${fontSize}px ${FONT}`;
-  const blockH = lines.length * lineHeight;
+  const blockH = letterBlockHeight(lines, lineHeight);
   let y = centerY - blockH / 2 + lineHeight / 2;
   ctx.fillStyle = LETTER_COLOR;
   ctx.shadowColor = 'rgba(0, 0, 0, 0.72)';
@@ -178,7 +316,8 @@ function drawLetterLines(
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = Math.max(1, fontSize * 0.045);
   for (const line of lines) {
-    ctx.fillText(line, frameWidth / 2, y);
+    y += line.gapBefore;
+    ctx.fillText(line.text, frameWidth / 2, y);
     y += lineHeight;
   }
   ctx.shadowColor = 'transparent';
@@ -231,21 +370,23 @@ function layoutLetter(
   text: string,
   frameWidth: number,
   frameHeight: number
-): { lines: string[]; fontSize: number; lineHeight: number } {
-  const maxW = frameWidth * (1 - LETTER_MARGIN_X * 2);
-  const maxH = frameHeight * (1 - LETTER_MARGIN_Y * 2);
-  const minSize = Math.max(16, Math.round(frameWidth * LETTER_MIN_SIZE_RATIO));
-  const maxSize = Math.round(frameWidth * LETTER_MAX_SIZE_RATIO);
+): { lines: LetterLine[]; fontSize: number; lineHeight: number } {
+  const metrics = letterBandMetrics(videoTemplate7WordCount(text));
+  const maxW = frameWidth * (1 - metrics.marginX * 2);
+  const maxH = frameHeight * (1 - metrics.marginY * 2);
+  const minSize = Math.max(16, Math.round(frameWidth * metrics.minRatio));
+  const maxSize = Math.round(frameWidth * metrics.maxRatio);
   let bestSize = minSize;
-  let bestLines = wrapLines(ctx, text, maxW);
+  let bestLines = layoutLetterLines(ctx, text, maxW, minSize * metrics.lineHeight * LETTER_PARAGRAPH_GAP);
 
   let lo = minSize;
   let hi = maxSize;
   while (lo <= hi) {
     const mid = (lo + hi) >> 1;
     ctx.font = `400 ${mid}px ${FONT}`;
-    const lines = wrapLines(ctx, text, maxW);
-    const block = lines.length * mid * LETTER_LINE_HEIGHT;
+    const lineHeight = mid * metrics.lineHeight;
+    const lines = layoutLetterLines(ctx, text, maxW, lineHeight * LETTER_PARAGRAPH_GAP);
+    const block = letterBlockHeight(lines, lineHeight);
     if (block <= maxH && lines.length > 0) {
       bestSize = mid;
       bestLines = lines;
@@ -255,13 +396,10 @@ function layoutLetter(
     }
   }
 
+  const lineHeight = bestSize * metrics.lineHeight;
   ctx.font = `400 ${bestSize}px ${FONT}`;
-  bestLines = wrapLines(ctx, text, maxW);
-  return {
-    lines: bestLines,
-    fontSize: bestSize,
-    lineHeight: bestSize * LETTER_LINE_HEIGHT,
-  };
+  bestLines = layoutLetterLines(ctx, text, maxW, lineHeight * LETTER_PARAGRAPH_GAP);
+  return { lines: bestLines, fontSize: bestSize, lineHeight };
 }
 
 function layoutQuote(
