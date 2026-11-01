@@ -121,6 +121,7 @@ import {
   type Template18StyleId,
 } from '@/app/lib/image-template-18-pastel';
 import { BoldSolidPreview } from '@/app/components/BoldSolidPreview';
+import { FlatDarkPreview } from '@/app/components/FlatDarkPreview';
 import { RedGlowPreview } from '@/app/components/RedGlowPreview';
 import {
   pickDifferentTemplate19Color,
@@ -144,7 +145,7 @@ const COPYCAT_TEXT_ONLY_COVER_TOP = 0.38;
 const COPYCAT_TEXT_ONLY_COVER_SIZE_T2 = 0.074;
 const COPYCAT_TEXT_ONLY_COVER_SIZE_T14 = 0.088;
 
-export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22;
+export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23;
 
 function CopycatAppMarkFooter({
   isCover,
@@ -342,7 +343,8 @@ function CopycatSlidePreview({
     templateId !== 19 &&
     templateId !== 20 &&
     templateId !== 21 &&
-    templateId !== 22;
+    templateId !== 22 &&
+    templateId !== 23;
   const alignLeft = Boolean(leftAlign && !isCover) || templateId === 2;
   const pastelBg =
     IMAGE_TEMPLATE2_PASTEL_COLORS[tabIndex % IMAGE_TEMPLATE2_PASTEL_COLORS.length]!;
@@ -356,6 +358,20 @@ function CopycatSlidePreview({
     return (
       <div className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4 bg-[#126871]">
         <BoldSolidPreview
+          text={text}
+          tabIndex={tabIndex}
+          slideCount={slideCount}
+          isCover={isCover}
+          isCta={isCtaSlide}
+        />
+      </div>
+    );
+  }
+
+  if (templateId === 23) {
+    return (
+      <div className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4 bg-[#252531]">
+        <FlatDarkPreview
           text={text}
           tabIndex={tabIndex}
           slideCount={slideCount}
