@@ -112,7 +112,8 @@ const QUESTION_WEIGHT = 400;
 const OPTION_GAP = 0.05;
 const OPTION_SIZE = 0.045;
 const OPTION_LINE_PITCH = 0.08;
-const OPTION_TEXT_X = 0.205;
+/** Shared column for option words and wrapped lines. Two spaces after "a."–"d.". */
+const OPTION_TEXT_X = 0.22;
 const OPTION_LABEL_WEIGHT = 700;
 
 const FOOTER_Y = 0.862;
