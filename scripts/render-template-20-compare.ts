@@ -1,8 +1,22 @@
 // Dev-only renderer. napi-canvas is not the DOM CanvasRenderingContext2D.
 // @ts-nocheck
-import { mkdirSync } from 'fs';
+import { mkdirSync, writeFileSync } from 'fs';
 import { createCanvas, GlobalFonts, loadImage } from '@napi-rs/canvas';
+import { IMAGE_TEMPLATE2_APP_FOOTER, IMAGE_TEMPLATE2_PASTEL_COLORS } from '../app/lib/constants';
+import {
+  IMAGE_TEMPLATE2_Q5_PROMO_LABEL,
+  IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO,
+  IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO,
+  IMAGE_TEMPLATE2_QUESTION_CENTER_RATIO,
+  IMAGE_TEMPLATE2_QUESTION_SIZE_RATIO,
+  IMAGE_TEMPLATE2_TEXT_COLOR,
+  imageTemplate2Q5PromoLayout,
+} from '../app/lib/image-template-2-cover';
 import { paintTemplate20Slide } from '../app/lib/image-template-20-ocean';
+import {
+  IMAGE_TEMPLATE23_CTA_TAB,
+  paintTemplate23Slide,
+} from '../app/lib/image-template-23-flat-dark';
 
 const W = 1080;
 const H = 1440;
@@ -16,9 +30,15 @@ GlobalFonts.registerFromPath(
   'Liberation Serif'
 );
 GlobalFonts.registerFromPath('public/fonts/poppins/Poppins-SemiBold.ttf', 'Poppins');
+GlobalFonts.registerFromPath('public/fonts/tiktok-sans/TikTokSans-800.ttf', 'TikTok Sans');
+GlobalFonts.registerFromPath('public/fonts/tiktok-sans/TikTokSans-700.ttf', 'TikTok Sans');
+GlobalFonts.registerFromPath('app/fonts/roboto/roboto-latin-400-normal.woff2', 'Roboto');
+GlobalFonts.registerFromPath('app/fonts/roboto/roboto-latin-700-normal.woff2', 'Roboto');
 
 const SERIF = '"Liberation Serif", Times, serif';
 const SANS = '"Poppins", sans-serif';
+const TIKTOK = '"TikTok Sans", sans-serif';
+const ROBOTO = '"Roboto", sans-serif';
 
 const QUESTION = [
   'If you had 60 seconds to make me cry for $1M, what would you do?',
@@ -28,12 +48,6 @@ const QUESTION = [
   'c. Fake a breakup',
   'd. Ignore me',
 ].join('\n');
-
-const REFS = {
-  cover: 'docs/image-template-20/ref-cover.png',
-  question: 'docs/image-template-20/ref-question.png',
-  cta: 'docs/image-template-20/ref-cta.png',
-};
 
 async function renderSlide(opts: {
   text: string;
@@ -97,11 +111,7 @@ function report(name: string, canvas: ReturnType<typeof createCanvas>) {
   console.log('  bands', bands.join(' '));
 }
 
-async function sideBySide(
-  refPath: string,
-  ours: Awaited<ReturnType<typeof renderSlide>>,
-  outPath: string
-) {
+async function sideBySide(refPath, ours, outPath, rightLabel) {
   const ref = await loadImage(refPath);
   const canvas = createCanvas(W * 2 + 24, H + 64);
   const ctx = canvas.getContext('2d');
@@ -110,10 +120,119 @@ async function sideBySide(
   ctx.fillStyle = '#ffffff';
   ctx.font = '600 28px "Poppins", sans-serif';
   ctx.fillText('Reference', 24, 42);
-  ctx.fillText('Template 20', W + 48, 42);
+  ctx.fillText(rightLabel, W + 48, 42);
   ctx.drawImage(ref, 0, 64, W, H);
   ctx.drawImage(ours, W + 24, 64, W, H);
-  const { writeFileSync } = await import('fs');
+  writeFileSync(outPath, canvas.toBuffer('image/png'));
+}
+
+function wrapWords(ctx, text, maxWidth) {
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [];
+  const lines = [];
+  let current = words[0];
+  for (let i = 1; i < words.length; i++) {
+    const next = `${current} ${words[i]}`;
+    if (ctx.measureText(next).width <= maxWidth) current = next;
+    else {
+      lines.push(current);
+      current = words[i];
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
+}
+
+/** Template 2 question / Q5, matching the studio export. */
+function renderTemplate2(text, { cta, promo }) {
+  const canvas = createCanvas(W, H);
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = IMAGE_TEMPLATE2_PASTEL_COLORS[cta ? 5 : 1];
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = IMAGE_TEMPLATE2_TEXT_COLOR;
+  ctx.font = `700 ${Math.round(W * 0.03)}px ${TIKTOK}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('Couples Questions', W / 2, H * 0.08);
+
+  const barX = W * 0.08;
+  const barW = W * 0.84;
+  const barY = H * 0.21;
+  const barH = Math.max(8, Math.round(H * 0.007));
+  ctx.font = `700 ${Math.round(H * 0.032)}px ${TIKTOK}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('Funny Questions', W / 2, barY - H * 0.018);
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.fillRect(barX, barY, barW, barH);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(barX, barY, barW * (cta ? 1 : 0.5), barH);
+
+  const fontSize = Math.round(W * IMAGE_TEMPLATE2_QUESTION_SIZE_RATIO);
+  ctx.font = `800 ${fontSize}px ${TIKTOK}`;
+  ctx.fillStyle = IMAGE_TEMPLATE2_TEXT_COLOR;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  const maxTextWidth = W * 0.6;
+  const textX = (W - maxTextWidth) / 2;
+  const lines = wrapWords(ctx, text.replace(/\n/g, ' '), maxTextWidth);
+  const lineHeight = fontSize * 1.22;
+  const blockH = lines.length * lineHeight;
+  const textCenterY = H * IMAGE_TEMPLATE2_QUESTION_CENTER_RATIO;
+  let y = textCenterY - blockH / 2 + lineHeight / 2;
+  for (const line of lines) {
+    ctx.fillText(line, textX, y);
+    y += lineHeight;
+  }
+
+  if (cta && promo) {
+    const labelSize = Math.round(H * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO);
+    const labelGap = H * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO;
+    const layout = imageTemplate2Q5PromoLayout(W, H, y - lineHeight / 2 + labelSize + labelGap);
+    ctx.drawImage(promo, layout.x, layout.y, layout.width, layout.height);
+    ctx.font = `700 ${labelSize}px ${TIKTOK}`;
+    ctx.fillStyle = IMAGE_TEMPLATE2_TEXT_COLOR;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(IMAGE_TEMPLATE2_Q5_PROMO_LABEL, W / 2, layout.y - labelGap);
+  } else {
+    ctx.font = `700 ${Math.round(H * 0.03)}px ${TIKTOK}`;
+    ctx.fillStyle = IMAGE_TEMPLATE2_TEXT_COLOR;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(IMAGE_TEMPLATE2_APP_FOOTER, W / 2, H * 0.9);
+  }
+  return canvas;
+}
+
+function renderTemplate23(text, { cta, promo, tabIndex }) {
+  const canvas = createCanvas(W, H);
+  const ctx = canvas.getContext('2d');
+  paintTemplate23Slide(ctx, W, H, {
+    text,
+    tabIndex,
+    isCover: false,
+    isCta: cta,
+    promo: cta ? promo : null,
+    fontFamily: ROBOTO,
+  });
+  return canvas;
+}
+
+function strip(canvases, labels, outPath) {
+  const gap = 24;
+  const labelH = 64;
+  const canvas = createCanvas(W * canvases.length + gap * (canvases.length - 1), H + labelH);
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#111111';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '600 28px "Poppins", sans-serif';
+  canvases.forEach((slide, index) => {
+    const x = index * (W + gap);
+    ctx.fillText(labels[index], x + 24, 42);
+    ctx.drawImage(slide, x, labelH, W, H);
+  });
   writeFileSync(outPath, canvas.toBuffer('image/png'));
 }
 
@@ -121,12 +240,7 @@ async function main() {
   const outDir = 'docs/image-template-20';
   mkdirSync(outDir, { recursive: true });
   const promo = await loadImage('public/image-templates/template-2-q5-appstore.png');
-  const cover = await renderSlide({
-    text: '3 dumb questions for him\n(but fun)',
-    isCover: true,
-  });
   const question = await renderSlide({ text: QUESTION });
-  const cta = await renderSlide({ text: '', isCta: true, promo });
   const q5 = await renderSlide({ text: QUESTION, isCta: true, promo });
   const longQuestion = [
     'If I said I bought something crazy that you have never seen before, what would you guess?',
@@ -137,7 +251,6 @@ async function main() {
     'd. Something embarrassing that you would hide from everyone',
   ].join('\n');
   const qLong = await renderSlide({ text: longQuestion, isCta: true, promo });
-  const { writeFileSync } = await import('fs');
   const more = [
     [
       'If I said I bought something crazy, what would you guess?',
@@ -160,31 +273,67 @@ async function main() {
   const q2 = await renderSlide({ text: more[0]! });
   const q3 = await renderSlide({ text: more[1]! });
   const q4 = await renderSlide({ text: more[2]! });
-  const productCover = await renderSlide({
-    text: '5 Dumb Questions To Ask Your Boyfriend Tonight',
-    isCover: true,
+  const shortQuestion = 'Would you still like me if I went bald?';
+  const short = await renderSlide({ text: shortQuestion });
+  const shortCta = await renderSlide({ text: shortQuestion, isCta: true, promo });
+  const t2Question = renderTemplate2(QUESTION, { cta: false, promo });
+  const t2Cta = renderTemplate2(QUESTION, { cta: true, promo });
+  const t2Long = renderTemplate2(longQuestion, { cta: true, promo });
+  const t2Short = renderTemplate2(shortQuestion, { cta: true, promo });
+  const t23Question = renderTemplate23(QUESTION, { cta: false, promo, tabIndex: 1 });
+  const t23Cta = renderTemplate23(QUESTION, {
+    cta: true,
+    promo,
+    tabIndex: IMAGE_TEMPLATE23_CTA_TAB,
   });
-  writeFileSync(`${outDir}/cover.png`, cover.toBuffer('image/png'));
+  const t23Long = renderTemplate23(longQuestion, {
+    cta: true,
+    promo,
+    tabIndex: IMAGE_TEMPLATE23_CTA_TAB,
+  });
+  const t23Short = renderTemplate23(shortQuestion, {
+    cta: true,
+    promo,
+    tabIndex: IMAGE_TEMPLATE23_CTA_TAB,
+  });
   writeFileSync(`${outDir}/question.png`, question.toBuffer('image/png'));
+  writeFileSync(`${outDir}/question-short.png`, short.toBuffer('image/png'));
+  writeFileSync(`${outDir}/question-long.png`, (await renderSlide({ text: longQuestion })).toBuffer('image/png'));
   writeFileSync(`${outDir}/q2.png`, q2.toBuffer('image/png'));
   writeFileSync(`${outDir}/q3.png`, q3.toBuffer('image/png'));
   writeFileSync(`${outDir}/q4.png`, q4.toBuffer('image/png'));
-  writeFileSync(`${outDir}/cta.png`, cta.toBuffer('image/png'));
+  writeFileSync(`${outDir}/cta.png`, q5.toBuffer('image/png'));
   writeFileSync(`${outDir}/q5-with-cta.png`, q5.toBuffer('image/png'));
   writeFileSync(`${outDir}/q5-long.png`, qLong.toBuffer('image/png'));
-  writeFileSync(`${outDir}/product-cover.png`, productCover.toBuffer('image/png'));
-  writeFileSync(
-    'public/image-templates/template-20-cover.jpg',
-    productCover.toBuffer('image/jpeg', 90)
+  writeFileSync(`${outDir}/cta-short.png`, shortCta.toBuffer('image/png'));
+  strip(
+    [t2Question, question, t23Question],
+    ['Template 2', 'Template 20', 'Template 23'],
+    `${outDir}/compare-question.png`
   );
-  report('cover', cover);
+  strip(
+    [t2Cta, q5, t23Cta],
+    ['Template 2', 'Template 20', 'Template 23'],
+    `${outDir}/compare-cta.png`
+  );
+  strip(
+    [t2Long, qLong, t23Long],
+    ['Template 2 long', 'Template 20 long', 'Template 23 long'],
+    `${outDir}/compare-cta-long.png`
+  );
+  strip(
+    [t2Short, shortCta, t23Short],
+    ['Template 2', 'Template 20', 'Template 23'],
+    `${outDir}/compare-cta-short.png`
+  );
+  await sideBySide('docs/image-template-20/ref-question.png', question, `${outDir}/side-question.png`, 'Template 20');
+  await sideBySide('docs/image-template-20/ref-cta.png', q5, `${outDir}/side-cta.png`, 'Template 20');
   report('question', question);
-  report('cta', cta);
+  report('short', short);
   report('q5', q5);
   report('qlong', qLong);
-  await sideBySide(REFS.cover, cover, `${outDir}/side-cover.png`);
-  await sideBySide(REFS.question, question, `${outDir}/side-question.png`);
-  await sideBySide(REFS.cta, cta, `${outDir}/side-cta.png`);
+  report('t2cta', t2Cta);
+  report('t23cta', t23Cta);
   console.log('wrote', outDir);
 }
 

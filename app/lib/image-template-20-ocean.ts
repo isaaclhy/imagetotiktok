@@ -1,6 +1,12 @@
 import { IMAGE_TEMPLATE2_APP_FOOTER } from '@/app/lib/constants';
 import { splitCopycatQuestionAndOptions } from '@/app/lib/copycat/flamingo-cards';
-import { IMAGE_TEMPLATE2_Q5_PROMO_LABEL } from '@/app/lib/image-template-2-cover';
+import {
+  IMAGE_TEMPLATE2_Q5_PROMO_LABEL,
+  IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO,
+  IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO,
+  IMAGE_TEMPLATE2_Q5_PROMO_TEXT_GAP_RATIO,
+  imageTemplate2Q5PromoLayout,
+} from '@/app/lib/image-template-2-cover';
 
 /**
  * Ocean slideshow (image template 20).
@@ -12,7 +18,9 @@ import { IMAGE_TEMPLATE2_Q5_PROMO_LABEL } from '@/app/lib/image-template-2-cover
  * sits on top of that field. There is no central hotspot.
  *
  * Cover + five questions. The last question keeps its copy and closes with
- * template 2's App Store promo. There is no extra empty CTA tab.
+ * template 2's App Store promo: the "Download for more questions!" heading
+ * and the same cropped phone (only the top is on screen; the rest runs off
+ * the bottom, same width and position). There is no extra CTA-only slide.
  */
 export const IMAGE_TEMPLATE20_QUESTION_COUNT = 5;
 export const IMAGE_TEMPLATE20_SLIDE_COUNT = IMAGE_TEMPLATE20_QUESTION_COUNT + 1;
@@ -76,13 +84,18 @@ export const IMAGE_TEMPLATE20_COVER_WIDTH = 0.7;
 /** Vertical centre of the cover ink block. The title sits in the middle of the slide. */
 export const IMAGE_TEMPLATE20_COVER_CENTER = 0.5;
 
-/** Question body. Left edge and ink top measured on the reference questions. */
-export const IMAGE_TEMPLATE20_QUESTION_SIZE = 0.0426;
+/**
+ * Question body, as a fraction of frame width. Larger than the reference
+ * measurement so a short question fills the slide and stays easy to read.
+ * Long questions shrink only when they would hit the footer or the promo.
+ */
+export const IMAGE_TEMPLATE20_QUESTION_SIZE = 0.059;
 export const IMAGE_TEMPLATE20_QUESTION_LEADING = 1.57;
 export const IMAGE_TEMPLATE20_OPTION_LEADING = 1.72;
 export const IMAGE_TEMPLATE20_LEFT = 0.146;
 export const IMAGE_TEMPLATE20_TEXT_WIDTH = 0.7;
-export const IMAGE_TEMPLATE20_QUESTION_TOP = 0.322;
+/** Visual centre of a question block that fits without being lifted. */
+export const IMAGE_TEMPLATE20_QUESTION_CENTER = 0.46;
 /** Extra air between the question and the first option, in ems. */
 export const IMAGE_TEMPLATE20_OPTION_GAP = 1.02;
 /**
@@ -94,23 +107,6 @@ export const IMAGE_TEMPLATE20_OPTION_TAB = 66 / 1080;
 
 export const IMAGE_TEMPLATE20_FOOTER_SIZE = 0.0352;
 export const IMAGE_TEMPLATE20_FOOTER_Y = 0.862;
-
-export const IMAGE_TEMPLATE20_CTA_SIZE = 0.0555;
-/** Clear air between the last option's ink and the CTA heading. */
-const CTA_OPTION_TO_LABEL = 0.05;
-/** Air between the heading and the top of the phone. */
-const CTA_LABEL_TO_PROMO = 0.014;
-/** The phone mock stays fully inside the frame. */
-const CTA_BOTTOM_PAD = 0.02;
-/** Largest phone width. The whole mock, including its lower bezel, stays on the slide. */
-const CTA_PROMO_MAX_WIDTH = 0.58;
-/** Question block on the CTA slide sits higher than a normal question. */
-const CTA_QUESTION_TOP = 0.105;
-const CTA_QUESTION_TOP_MIN = 0.048;
-/** Smallest phone we still try to keep when the question is long. */
-const CTA_PROMO_MIN_HEIGHT = 0.36;
-
-const PROMO_ASPECT = 611 / 1024;
 
 export function isImageTemplate20Id(templateId: number | null | undefined): boolean {
   return templateId === 20;
@@ -195,7 +191,43 @@ function paintBackground(ctx: CanvasRenderingContext2D, width: number, height: n
   ctx.putImageData(image, 0, 0);
 }
 
-function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+function breakOverflowToken(
+  ctx: CanvasRenderingContext2D,
+  token: string,
+  maxWidth: number
+): string[] {
+  if (ctx.measureText(token).width <= maxWidth) return [token];
+  const parts: string[] = [];
+  let rest = token;
+  while (rest.length > 0) {
+    if (ctx.measureText(rest).width <= maxWidth) {
+      parts.push(rest);
+      break;
+    }
+    let lo = 1;
+    let hi = rest.length - 1;
+    let best = 1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (ctx.measureText(rest.slice(0, mid)).width <= maxWidth) {
+        best = mid;
+        lo = mid + 1;
+      } else {
+        hi = mid - 1;
+      }
+    }
+    parts.push(rest.slice(0, best));
+    rest = rest.slice(best);
+  }
+  return parts;
+}
+
+function wrapLines(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  balance = false
+): string[] {
   const paragraphs = text.replace(/\r/g, '').split('\n');
   const lines: string[] = [];
   for (const paragraph of paragraphs) {
@@ -204,18 +236,50 @@ function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number
       if (lines.length > 0) lines.push('');
       continue;
     }
-    let current = words[0]!;
-    for (let i = 1; i < words.length; i++) {
-      const next = `${current} ${words[i]}`;
-      if (ctx.measureText(next).width <= maxWidth) current = next;
-      else {
-        lines.push(current);
-        current = words[i]!;
+    const wrapped: string[] = [];
+    let current = '';
+    for (const word of words) {
+      for (const chunk of breakOverflowToken(ctx, word, maxWidth)) {
+        if (!current) {
+          current = chunk;
+          continue;
+        }
+        const next = `${current} ${chunk}`;
+        if (ctx.measureText(next).width <= maxWidth) current = next;
+        else {
+          wrapped.push(current);
+          current = chunk;
+        }
       }
     }
-    lines.push(current);
+    if (current) wrapped.push(current);
+    lines.push(...(balance ? rebalanceShortLastLine(ctx, wrapped, maxWidth) : wrapped));
   }
   return lines;
+}
+
+/**
+ * A one-word last line ("pack / something") reads as a mistake. Pull the
+ * previous word down when that still fits, so the break lands between phrases.
+ */
+function rebalanceShortLastLine(
+  ctx: CanvasRenderingContext2D,
+  lines: string[],
+  maxWidth: number
+): string[] {
+  if (lines.length < 2) return lines;
+  const last = lines[lines.length - 1]!;
+  if (!last || last.includes(' ')) return lines;
+  if (ctx.measureText(last).width > maxWidth * 0.45) return lines;
+  const prevWords = lines[lines.length - 2]!.split(' ');
+  if (prevWords.length < 2) return lines;
+  const moved = prevWords.pop()!;
+  const candidateLast = `${moved} ${last}`;
+  if (ctx.measureText(candidateLast).width > maxWidth) return lines;
+  const next = lines.slice();
+  next[next.length - 2] = prevWords.join(' ');
+  next[next.length - 1] = candidateLast;
+  return next;
 }
 
 function inkAscent(ctx: CanvasRenderingContext2D, sample = 'Hyg'): number {
@@ -344,6 +408,37 @@ function paintFooter(
   ctx.fillText(IMAGE_TEMPLATE20_FOOTER, width / 2, baseline);
 }
 
+/**
+ * Template 2's Q5 promo: a 90%-wide App Store mock whose top sits at 66% of
+ * the frame (only the top of the phone stays on screen; the rest runs off
+ * the bottom), with "Download for more questions!" just above it. A long
+ * question pushes the mock down instead of covering the copy. The heading
+ * stays in the ocean serif.
+ */
+function paintClosingPromo(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  fontFamily: string,
+  promo: CanvasImageSource,
+  textBottom: number
+) {
+  const labelSize = Math.round(height * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO);
+  const labelGap = height * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO;
+  const layout = imageTemplate2Q5PromoLayout(
+    width,
+    height,
+    textBottom > 0 ? textBottom + labelSize + labelGap : 0
+  );
+  ctx.drawImage(promo, layout.x, layout.y, layout.width, layout.height);
+  ctx.font = `700 ${labelSize}px ${fontFamily}`;
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+  ctx.fillStyle = IMAGE_TEMPLATE20_COVER_TEXT;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(IMAGE_TEMPLATE20_CTA_LABEL, width / 2, layout.y - labelGap);
+}
+
 function paintCta(
   ctx: CanvasRenderingContext2D,
   width: number,
@@ -352,42 +447,16 @@ function paintCta(
   fontFamily: string,
   promo: CanvasImageSource
 ) {
-  const labelSize = Math.round(width * IMAGE_TEMPLATE20_CTA_SIZE);
-  ctx.font = `700 ${labelSize}px ${fontFamily}`;
-  const labelAscent = inkAscent(ctx, 'H');
-  const labelDescent = inkDescent(ctx, 'Hgy');
-  const optionGap = height * CTA_OPTION_TO_LABEL;
-  const labelGap = height * CTA_LABEL_TO_PROMO;
-  const bottomPad = height * CTA_BOTTOM_PAD;
-  const question = text.trim();
-  const layout = question
-    ? fitCtaQuestion(ctx, width, height, question, fontFamily, {
-        labelAscent,
-        labelDescent,
-        optionGap,
-        labelGap,
-        bottomPad,
-      })
+  const resting = imageTemplate2Q5PromoLayout(width, height, 0);
+  const labelSize = height * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO;
+  const labelGap = height * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO;
+  const ceiling =
+    resting.y - labelGap - labelSize - height * IMAGE_TEMPLATE2_Q5_PROMO_TEXT_GAP_RATIO;
+  const layout = text.trim()
+    ? fitQuestion(ctx, width, height, text, fontFamily, ceiling)
     : null;
-
-  const blockBottom = layout ? layout.bottom : height * 0.22;
-  const minPromoTop =
-    blockBottom + (layout ? optionGap : height * 0.06) + labelAscent + labelDescent + labelGap;
-  const available = Math.max(1, height - bottomPad - minPromoTop);
-  const maxWidth = width * CTA_PROMO_MAX_WIDTH;
-  const promoHeight = Math.min(available, maxWidth / PROMO_ASPECT);
-  const promoWidth = promoHeight * PROMO_ASPECT;
-  const promoY = height - bottomPad - promoHeight;
-  const promoX = (width - promoWidth) / 2;
-
-  if (layout) paintQuestionLines(ctx, width, layout);
-
-  ctx.font = `700 ${labelSize}px ${fontFamily}`;
-  ctx.fillStyle = IMAGE_TEMPLATE20_COVER_TEXT;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillText(IMAGE_TEMPLATE20_CTA_LABEL, width / 2, promoY - labelGap - labelDescent);
-  ctx.drawImage(promo, promoX, promoY, promoWidth, promoHeight);
+  if (layout) paintQuestionLines(ctx, layout);
+  paintClosingPromo(ctx, width, height, fontFamily, promo, layout ? layout.bottom : 0);
 }
 
 type QuestionLayout = {
@@ -398,6 +467,7 @@ type QuestionLayout = {
   optionLeading: number;
   firstBaseline: number;
   optionGap: number;
+  optionInset: number;
   x: number;
   maxWidth: number;
   bottom: number;
@@ -415,17 +485,25 @@ function layoutQuestion(
 ): QuestionLayout {
   const x = width * IMAGE_TEMPLATE20_LEFT;
   const maxWidth = width * IMAGE_TEMPLATE20_TEXT_WIDTH;
+  const optionInset = measureOptionInset(ctx, fontSize, fontFamily, width);
   const { question, options } = splitCopycatQuestionAndOptions(text);
   const parsed = parseOptions(options);
   ctx.font = `400 ${fontSize}px ${fontFamily}`;
-  const questionLines = question.trim() ? wrapLines(ctx, question, maxWidth) : [];
+  const questionLines = question.trim() ? wrapLines(ctx, question, maxWidth, true) : [];
   const questionLeading = fontSize * IMAGE_TEMPLATE20_QUESTION_LEADING;
   const optionLeading = fontSize * IMAGE_TEMPLATE20_OPTION_LEADING;
   const ascent = inkAscent(ctx);
   const descent = inkDescent(ctx);
   let optionLines = 0;
   for (const option of parsed) {
-    optionLines += countOptionLines(ctx, option, fontSize, fontFamily, width, maxWidth);
+    optionLines += countOptionLines(
+      ctx,
+      option,
+      fontSize,
+      fontFamily,
+      maxWidth,
+      optionInset
+    );
   }
   const optionGap = optionLines && questionLines.length ? fontSize * IMAGE_TEMPLATE20_OPTION_GAP : 0;
   const firstBaseline = inkTop + ascent;
@@ -448,6 +526,7 @@ function layoutQuestion(
     optionLeading,
     firstBaseline,
     optionGap,
+    optionInset,
     x,
     maxWidth,
     bottom,
@@ -455,83 +534,72 @@ function layoutQuestion(
   };
 }
 
+/** Room after the letter so "A." never collides with the option, even at the larger size. */
+function measureOptionInset(
+  ctx: CanvasRenderingContext2D,
+  fontSize: number,
+  fontFamily: string,
+  frameWidth: number
+): number {
+  ctx.font = `700 ${fontSize}px ${fontFamily}`;
+  const mark = ctx.measureText('M.').width;
+  const gap = fontSize * 0.36;
+  return Math.max(frameWidth * IMAGE_TEMPLATE20_OPTION_TAB, mark + gap);
+}
+
 function countOptionLines(
   ctx: CanvasRenderingContext2D,
   option: OptionLine,
   fontSize: number,
   fontFamily: string,
-  frameWidth: number,
-  maxWidth: number
+  maxWidth: number,
+  optionInset: number
 ): number {
   if (!option.letter) {
     ctx.font = `400 ${fontSize}px ${fontFamily}`;
-    return Math.max(1, wrapLines(ctx, option.text, maxWidth).length);
+    return Math.max(1, wrapLines(ctx, option.text, maxWidth, true).length);
   }
   ctx.font = `400 ${fontSize}px ${fontFamily}`;
-  const avail = Math.max(1, maxWidth - frameWidth * IMAGE_TEMPLATE20_OPTION_TAB);
-  const wrapped = option.text.trim() ? wrapLines(ctx, option.text, avail) : [''];
+  const avail = Math.max(1, maxWidth - optionInset);
+  const wrapped = option.text.trim() ? wrapLines(ctx, option.text, avail, true) : [''];
   return Math.max(1, wrapped.length);
 }
 
-function ctaRoomBelow(
-  height: number,
-  metrics: {
-    labelAscent: number;
-    labelDescent: number;
-    optionGap: number;
-    labelGap: number;
-    bottomPad: number;
-  },
-  promoHeight: number
-): number {
-  return (
-    height -
-    metrics.optionGap -
-    metrics.labelAscent -
-    metrics.labelDescent -
-    metrics.labelGap -
-    metrics.bottomPad -
-    promoHeight
-  );
-}
-
-/** Shrink and lift the question until the heading and the full phone still fit. */
-function fitCtaQuestion(
+/**
+ * Place the question at the target size, centred on the slide. Shrink only
+ * when the block would cross the footer (or the promo ceiling). A closing
+ * slide lifts the block so the cropped phone can stay at template 2's
+ * resting position.
+ */
+function fitQuestion(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
   text: string,
   fontFamily: string,
-  metrics: {
-    labelAscent: number;
-    labelDescent: number;
-    optionGap: number;
-    labelGap: number;
-    bottomPad: number;
-  }
+  ceiling: number | null
 ): QuestionLayout {
+  const topFloor = height * (ceiling == null ? 0.08 : 0.05);
+  const footerSize = width * IMAGE_TEMPLATE20_FOOTER_SIZE;
+  const footerTop = height * IMAGE_TEMPLATE20_FOOTER_Y - footerSize * 0.85;
+  const bottomLimit = ceiling ?? footerTop - height * 0.028;
   let fontSize = Math.round(width * IMAGE_TEMPLATE20_QUESTION_SIZE);
-  const minSize = Math.round(width * 0.024);
-  let inkTop = height * CTA_QUESTION_TOP;
-  const floor = height * CTA_QUESTION_TOP_MIN;
-  const minPromo = height * CTA_PROMO_MIN_HEIGHT;
-  let layout = layoutQuestion(ctx, width, height, text, fontFamily, fontSize, inkTop);
-  while (layout.bottom > ctaRoomBelow(height, metrics, minPromo) && fontSize > minSize) {
+  const minSize = Math.round(width * (ceiling == null ? 0.036 : 0.03));
+
+  const blockAt = (size: number) =>
+    layoutQuestion(ctx, width, height, text, fontFamily, size, 0).bottom;
+
+  let block = blockAt(fontSize);
+  const room = Math.max(1, bottomLimit - topFloor);
+  while (fontSize > minSize && block > room) {
     fontSize -= 2;
-    const drop = (Math.round(width * IMAGE_TEMPLATE20_QUESTION_SIZE) - fontSize) / width;
-    inkTop = Math.max(floor, height * (CTA_QUESTION_TOP - drop * 0.45));
-    layout = layoutQuestion(ctx, width, height, text, fontFamily, fontSize, inkTop);
+    block = blockAt(fontSize);
   }
-  if (layout.bottom > ctaRoomBelow(height, metrics, minPromo)) {
-    const room = ctaRoomBelow(height, metrics, height * 0.28);
-    const block = Math.max(1, layout.bottom - inkTop);
-    if (block > room) {
-      fontSize = Math.max(16, Math.floor(fontSize * (room / block)));
-      inkTop = floor;
-      layout = layoutQuestion(ctx, width, height, text, fontFamily, fontSize, inkTop);
-    }
-  }
-  return layout;
+
+  let inkTop = height * IMAGE_TEMPLATE20_QUESTION_CENTER - block / 2;
+  if (inkTop < topFloor) inkTop = topFloor;
+  if (inkTop + block > bottomLimit) inkTop = Math.max(topFloor, bottomLimit - block);
+  return layoutQuestion(ctx, width, height, text, fontFamily, fontSize, inkTop);
 }
 
 function paintQuestion(
@@ -541,24 +609,11 @@ function paintQuestion(
   text: string,
   fontFamily: string
 ) {
-  const fontSize = Math.round(width * IMAGE_TEMPLATE20_QUESTION_SIZE);
-  const layout = layoutQuestion(
-    ctx,
-    width,
-    height,
-    text,
-    fontFamily,
-    fontSize,
-    height * IMAGE_TEMPLATE20_QUESTION_TOP
-  );
-  paintQuestionLines(ctx, width, layout);
+  const layout = fitQuestion(ctx, width, height, text, fontFamily, null);
+  paintQuestionLines(ctx, layout);
 }
 
-function paintQuestionLines(
-  ctx: CanvasRenderingContext2D,
-  width: number,
-  layout: QuestionLayout
-) {
+function paintQuestionLines(ctx: CanvasRenderingContext2D, layout: QuestionLayout) {
   ctx.fillStyle = IMAGE_TEMPLATE20_TEXT;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
@@ -573,7 +628,7 @@ function paintQuestionLines(
   for (const option of layout.options) {
     if (!option.letter) {
       ctx.font = `400 ${layout.fontSize}px ${layout.fontFamily}`;
-      const wrapped = wrapLines(ctx, option.text, layout.maxWidth);
+      const wrapped = wrapLines(ctx, option.text, layout.maxWidth, true);
       for (const line of wrapped) {
         ctx.fillText(line, layout.x, y);
         y += layout.optionLeading;
@@ -583,10 +638,10 @@ function paintQuestionLines(
     const mark = `${option.letter}.`;
     ctx.font = `700 ${layout.fontSize}px ${layout.fontFamily}`;
     ctx.fillText(mark, layout.x, y);
-    const textX = layout.x + width * IMAGE_TEMPLATE20_OPTION_TAB;
+    const textX = layout.x + layout.optionInset;
     ctx.font = `400 ${layout.fontSize}px ${layout.fontFamily}`;
     const avail = Math.max(1, layout.x + layout.maxWidth - textX);
-    const wrapped = option.text.trim() ? wrapLines(ctx, option.text, avail) : [''];
+    const wrapped = option.text.trim() ? wrapLines(ctx, option.text, avail, true) : [''];
     wrapped.forEach((line, index) => {
       ctx.font = `400 ${layout.fontSize}px ${layout.fontFamily}`;
       ctx.fillText(line, index === 0 ? textX : textX, y);
