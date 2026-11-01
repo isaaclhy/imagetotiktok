@@ -2,7 +2,7 @@
   "handle": "trydeepen",
   "platform": "tiktok",
   "minViews": 50000,
-  "postCount": 26,
+  "postCount": 27,
   "creditsUsed": 3,
   "creditsRemaining": 95,
   "posts": [
@@ -760,6 +760,63 @@
         },
         {
           "text": "If our lives were a comedy show, what would the title of the current season be?"
+        }
+      ]
+    },
+    {
+      "id": "7702903982779354389",
+      "views": 155700,
+      "likes": 4579,
+      "coverText": "Will your girlfriend let this slide?",
+      "slideText": [
+        {
+          "text": "A female friend sits on my lap for a group photo.",
+          "options": [
+            "Fight",
+            "Let it slide"
+          ]
+        },
+        {
+          "text": "I say another girl is my type.",
+          "options": [
+            "Fight",
+            "Let it slide"
+          ]
+        },
+        {
+          "text": "I accidentally call you by my ex's name.",
+          "options": [
+            "Fight",
+            "Let it slide"
+          ]
+        },
+        {
+          "text": "I follow a girl just because she's pretty.",
+          "options": [
+            "Fight",
+            "Let it slide"
+          ]
+        },
+        {
+          "text": "I dream about cheating on you and tell you about it.",
+          "options": [
+            "Fight",
+            "Let it slide"
+          ]
+        },
+        {
+          "text": "I say my female best friend understands me better than you do.",
+          "options": [
+            "Fight",
+            "Let it slide"
+          ]
+        },
+        {
+          "text": "I secretly check out my ex's profile.",
+          "options": [
+            "Fight",
+            "Let it slide"
+          ]
         }
       ]
     }
