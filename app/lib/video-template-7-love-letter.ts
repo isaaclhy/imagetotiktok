@@ -32,10 +32,12 @@ export type VideoTemplate7Length = 'random' | 'quote' | 'short' | 'medium' | 'lo
 export type VideoTemplate7LetterBand = 'short' | 'medium' | 'long';
 
 const FONT = '"TikTok Sans", system-ui, -apple-system, sans-serif';
-/** White at about 92% so the letter stays soft on a dark frame. */
-const LETTER_COLOR = 'rgba(255, 255, 255, 0.92)';
-/** Pale yellow / beige used on the short-quote posts. */
-const QUOTE_COLOR = '#F4E2A8';
+/**
+ * Warm pale yellow for every line in the template: quotes, headlines,
+ * signatures, and short, medium, and long letters. Opaque so small type
+ * stays readable on the darkened brick.
+ */
+const TEXT_COLOR = '#F4E2A8';
 
 const LETTER_MARGIN_X = 0.05;
 const LETTER_MARGIN_Y = 0.022;
@@ -310,7 +312,7 @@ function drawLetterLines(
   ctx.font = `400 ${fontSize}px ${FONT}`;
   const blockH = letterBlockHeight(lines, lineHeight);
   let y = centerY - blockH / 2 + lineHeight / 2;
-  ctx.fillStyle = LETTER_COLOR;
+  ctx.fillStyle = TEXT_COLOR;
   ctx.shadowColor = 'rgba(0, 0, 0, 0.72)';
   ctx.shadowBlur = Math.max(2.2, fontSize * 0.09);
   ctx.shadowOffsetX = 0;
@@ -450,7 +452,7 @@ export function paintVideoTemplate7Overlay(
         frameHeight,
         layout.fontSize,
         layout.lineHeight,
-        QUOTE_COLOR,
+        TEXT_COLOR,
         frameHeight * 0.5
       );
     } else {

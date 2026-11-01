@@ -10421,11 +10421,12 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                     videoOverlayCaption,
                                     videoTemplate7TextSource
                                   )}{' '}
-                                  seconds, 1080×1920. A quote sits large in the center, in pale
-                                  yellow, and holds so it does not flash. A short letter is larger
-                                  than a long one, with room around it, and stays up longer so it
-                                  can be read. A long letter fills the frame in small white type.
-                                  The words stay on screen the whole time.
+                                  seconds, 1080×1920. Quotes, headlines, and letters share the
+                                  same pale yellow. A quote sits large in the center and holds so
+                                  it does not flash. A short letter is larger than a long one, with
+                                  room around it, and stays up longer so it can be read. A long
+                                  letter fills the frame in small yellow type. The words stay on
+                                  screen the whole time.
                                 </p>
                               </div>
                             ) : (

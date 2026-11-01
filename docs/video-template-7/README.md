@@ -5,9 +5,9 @@ Spill It video tab, template id 7. A 1080×1920 clip: a dim, almost-still backgr
 How long the clip holds depends on the text:
 
 - A short quote holds for 5 seconds, in large pale yellow type, so a 10-word line does not flash.
-- A short letter (about 100–150 words) holds for 8 seconds. The type is larger than a long letter, with wide margins, so it does not look cramped or lost in the frame.
-- A medium letter (about 150–230 words) holds for 10 seconds, between those two sizes.
-- A long letter keeps the original 5 second hold. It fills the frame in small white type at about 92% opacity, with a soft shadow, about 5% side margins, and a line height of 1.15.
+- A short letter (about 100–150 words) holds for 8 seconds. The type is the same pale yellow, larger than a long letter, with wide margins, so it does not look cramped or lost in the frame. A headline line and any signature sit in that same yellow.
+- A medium letter (about 150–230 words) holds for 10 seconds, between those two sizes, in the same yellow.
+- A long letter keeps the original 5 second hold. It fills the frame in small pale yellow type (`#F4E2A8`, the same color as the quotes), with a soft shadow, about 5% side margins, and a line height of 1.15.
 
 ![Short quote](short-quote.png)
 
@@ -15,7 +15,7 @@ How long the clip holds depends on the text:
 
 ![Long letter](long-letter.png)
 
-The stills above are rendered from `paintVideoTemplate7Overlay`. The quote is a new playful one-liner. The short letter opens with a headline line and a blank line. The long letter is one of the new longer notes. An older long-letter reference is still in `letter.png`, and an older quote reference is in `quote.png`.
+The stills above are rendered from `paintVideoTemplate7Overlay`. The quote is a new playful one-liner. The short letter opens with a headline line and a blank line. The long letter is one of the new longer notes. Quotes, headlines, and letters all use the same pale yellow (`#F4E2A8`). An older long-letter reference is still in `letter.png` (white type, from before this color change), and an older quote reference is in `quote.png`. `side-by-side.png` is that same older pair.
 
 ## How to use
 
