@@ -37,7 +37,12 @@ export const IMAGE_TEMPLATE14_GRAIN_SRC = '/image-templates/template-14-grain.pn
 export const IMAGE_TEMPLATE14_SLIDE_COUNT = 6;
 export const IMAGE_TEMPLATE14_FONT_STACK =
   '"Libre Baskerville", Georgia, "Times New Roman", serif';
-export const IMAGE_TEMPLATE14_COVER_SIZE_RATIO = 0.072;
+/**
+ * Comfortable cover size for a short title. Longer titles step down in
+ * `template14CoverSizeRatio` so they stay a few lines instead of a dense block.
+ * The previous 0.072 (and the copycat cover's 0.088) set the serif too large.
+ */
+export const IMAGE_TEMPLATE14_COVER_SIZE_RATIO = 0.05;
 export const IMAGE_TEMPLATE14_QUESTION_SIZE_RATIO = 0.056;
 export const IMAGE_TEMPLATE14_QUESTION_MIN_SIZE_RATIO = 0.04;
 export const IMAGE_TEMPLATE14_OPTION_SIZE_RATIO = 0.044;
@@ -61,6 +66,20 @@ export function template14QuestionSizeRatio(text: string, isCta = false): number
   if (chars > 160) return 0.05;
   if (chars > 110) return 0.054;
   return IMAGE_TEMPLATE14_QUESTION_SIZE_RATIO;
+}
+
+/**
+ * Cover title size as a share of frame width.
+ * Short lines can sit a little larger; long lines step down so a title wraps
+ * into about three or four lines and still clears the mark.
+ */
+export function template14CoverSizeRatio(text: string): number {
+  const chars = text.replace(/\s+/g, ' ').trim().length;
+  if (chars > 96) return 0.036;
+  if (chars > 72) return 0.04;
+  if (chars > 48) return 0.044;
+  if (chars > 28) return 0.048;
+  return IMAGE_TEMPLATE14_COVER_SIZE_RATIO;
 }
 
 export function template14CardRect(frameWidth: number, frameHeight: number): {
@@ -133,8 +152,329 @@ function parseHexColor(color: string): { r: number; g: number; b: number } | nul
 export function template14TextForBackground(backgroundColor: string): string {
   const rgb = parseHexColor(backgroundColor);
   if (!rgb) return IMAGE_TEMPLATE14_TEXT;
-  const luminance = (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
+  const luminance = template14Luminance(rgb);
   return luminance < 0.45 ? IMAGE_TEMPLATE14_TEXT_ON_DARK : IMAGE_TEMPLATE14_TEXT;
+}
+
+/**
+ * Card-fill treatments. "Grain" is the original flat jewel colour with the
+ * film-grain overlay. The others are plain fills in the same family: flat,
+ * gradients, and a darkened dusk. No photos or illustrations.
+ */
+export type Template14StyleId = 'grain' | 'solid' | 'wash' | 'glow' | 'dusk' | 'duo';
+
+export const IMAGE_TEMPLATE14_STYLE_OPTIONS: ReadonlyArray<{
+  id: Template14StyleId;
+  label: string;
+}> = [
+  { id: 'grain', label: 'Grain' },
+  { id: 'solid', label: 'Solid' },
+  { id: 'wash', label: 'Soft wash' },
+  { id: 'glow', label: 'Glow' },
+  { id: 'dusk', label: 'Dusk' },
+  { id: 'duo', label: 'Duo' },
+];
+
+export const IMAGE_TEMPLATE14_DEFAULT_STYLE: Template14StyleId = 'grain';
+
+export function isTemplate14StyleId(value: string): value is Template14StyleId {
+  return IMAGE_TEMPLATE14_STYLE_OPTIONS.some((option) => option.id === value);
+}
+
+export function template14StyleLabel(style: Template14StyleId): string {
+  return IMAGE_TEMPLATE14_STYLE_OPTIONS.find((option) => option.id === style)?.label ?? 'Grain';
+}
+
+/** Label for the current card background, matching template 18's "Style: …" line. */
+export function template14LookLabel(style: Template14StyleId): string {
+  return `Style: ${template14StyleLabel(style)}`;
+}
+
+export function pickRandomTemplate14Style(random: () => number = Math.random): Template14StyleId {
+  const styles = IMAGE_TEMPLATE14_STYLE_OPTIONS;
+  const index = Math.floor(random() * styles.length);
+  return styles[index]?.id ?? IMAGE_TEMPLATE14_DEFAULT_STYLE;
+}
+
+/** A different style from the current one. */
+export function pickDifferentTemplate14Style(
+  current: Template14StyleId,
+  random: () => number = Math.random
+): Template14StyleId {
+  const pool = IMAGE_TEMPLATE14_STYLE_OPTIONS.filter((option) => option.id !== current);
+  const index = Math.floor(random() * pool.length);
+  return pool[index]?.id ?? IMAGE_TEMPLATE14_DEFAULT_STYLE;
+}
+
+type Template14Stop = { offset: number; color: string };
+
+export type Template14Paint =
+  | { type: 'solid'; color: string; grain: boolean }
+  | { type: 'linear'; angle: number; stops: readonly Template14Stop[]; grain: boolean }
+  | {
+      type: 'radial';
+      cx: number;
+      cy: number;
+      stops: readonly Template14Stop[];
+      grain: boolean;
+    };
+
+type Rgb = { r: number; g: number; b: number };
+
+const TEMPLATE14_WHITE: Rgb = { r: 255, g: 255, b: 255 };
+const TEMPLATE14_BLACK: Rgb = { r: 0, g: 0, b: 0 };
+
+function template14Luminance(rgb: Rgb): number {
+  return (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
+}
+
+function mixRgb(from: Rgb, to: Rgb, amount: number): Rgb {
+  const t = Math.max(0, Math.min(1, amount));
+  return {
+    r: from.r + (to.r - from.r) * t,
+    g: from.g + (to.g - from.g) * t,
+    b: from.b + (to.b - from.b) * t,
+  };
+}
+
+function rgbToHex(rgb: Rgb): string {
+  const channel = (value: number) =>
+    Math.max(0, Math.min(255, Math.round(value)))
+      .toString(16)
+      .padStart(2, '0');
+  return `#${channel(rgb.r)}${channel(rgb.g)}${channel(rgb.b)}`.toUpperCase();
+}
+
+function rgbOrFallback(color: string): Rgb {
+  return parseHexColor(color) ?? { r: 185, g: 123, b: 206 };
+}
+
+/**
+ * Keep a derived stop on the same side of the text threshold as `anchor`,
+ * with a little room so white type never lands on a mid tone (or black type
+ * on a colour that has gone too deep).
+ */
+function clampSameInk(color: Rgb, anchor: Rgb): Rgb {
+  const anchorL = template14Luminance(anchor);
+  const darkType = anchorL < 0.45;
+  // Stay on the anchor's side of the text split. Colours that already sit
+  // near the split (the rose, for example) cannot be forced further away
+  // than they already are, or the second stop collapses back to the first.
+  const limit = darkType ? Math.max(anchorL, 0.42) : Math.min(anchorL, 0.5);
+  const within = (rgb: Rgb) => {
+    const luminance = template14Luminance(rgb);
+    return darkType ? luminance <= limit + 0.004 : luminance >= limit - 0.004;
+  };
+  if (within(color)) return color;
+  let lo = 0;
+  let hi = 1;
+  let best = anchor;
+  for (let step = 0; step < 14; step++) {
+    const mid = (lo + hi) / 2;
+    const mixed = mixRgb(color, anchor, mid);
+    if (within(mixed)) {
+      best = mixed;
+      hi = mid;
+    } else {
+      lo = mid;
+    }
+  }
+  return best;
+}
+
+function tone(anchor: Rgb, toward: Rgb, amount: number): string {
+  return rgbToHex(clampSameInk(mixRgb(anchor, toward, amount), anchor));
+}
+
+function rgbToHsl(rgb: Rgb): { h: number; s: number; l: number } {
+  const r = rgb.r / 255;
+  const g = rgb.g / 255;
+  const b = rgb.b / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return { h: 0, s: 0, l };
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h = 0;
+  if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+  else if (max === g) h = (b - r) / d + 2;
+  else h = (r - g) / d + 4;
+  return { h: h * 60, s, l };
+}
+
+function hslToRgb(h: number, s: number, l: number): Rgb {
+  const hue = ((h % 360) + 360) % 360;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((hue / 60) % 2) - 1));
+  const m = l - c / 2;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  if (hue < 60) [r, g, b] = [c, x, 0];
+  else if (hue < 120) [r, g, b] = [x, c, 0];
+  else if (hue < 180) [r, g, b] = [0, c, x];
+  else if (hue < 240) [r, g, b] = [0, x, c];
+  else if (hue < 300) [r, g, b] = [x, 0, c];
+  else [r, g, b] = [c, 0, x];
+  return { r: (r + m) * 255, g: (g + m) * 255, b: (b + m) * 255 };
+}
+
+/** Second jewel in the duo blend: same lightness, hue turned about 32°. */
+function duoPartner(anchor: Rgb): Rgb {
+  const hsl = rgbToHsl(anchor);
+  const shifted = hslToRgb(hsl.h + 48, Math.max(hsl.s, 0.55), hsl.l);
+  return clampSameInk(shifted, anchor);
+}
+
+function duskAnchor(rgb: Rgb): Rgb {
+  const amount = template14Luminance(rgb) >= 0.45 ? 0.58 : 0.24;
+  return mixRgb(rgb, TEMPLATE14_BLACK, amount);
+}
+
+/** Fill for one card. `color` is the palette colour chosen for this post. */
+export function template14Paint(color: string, style: Template14StyleId = 'grain'): Template14Paint {
+  const base = rgbOrFallback(color);
+  const baseHex = rgbToHex(base);
+  if (style === 'solid') return { type: 'solid', color: baseHex, grain: false };
+  if (style === 'wash') {
+    return {
+      type: 'linear',
+      angle: 180,
+      grain: false,
+      stops: [
+        { offset: 0, color: tone(base, TEMPLATE14_WHITE, 0.34) },
+        { offset: 1, color: tone(base, TEMPLATE14_BLACK, 0.24) },
+      ],
+    };
+  }
+  if (style === 'glow') {
+    return {
+      type: 'radial',
+      cx: 0.5,
+      cy: 0.4,
+      grain: false,
+      stops: [
+        { offset: 0, color: tone(base, TEMPLATE14_WHITE, 0.38) },
+        { offset: 0.55, color: baseHex },
+        { offset: 1, color: tone(base, TEMPLATE14_BLACK, 0.3) },
+      ],
+    };
+  }
+  if (style === 'dusk') {
+    const dusk = duskAnchor(base);
+    return {
+      type: 'linear',
+      angle: 180,
+      grain: false,
+      stops: [
+        { offset: 0, color: tone(dusk, TEMPLATE14_WHITE, 0.2) },
+        { offset: 1, color: tone(dusk, TEMPLATE14_BLACK, 0.22) },
+      ],
+    };
+  }
+  if (style === 'duo') {
+    return {
+      type: 'linear',
+      angle: 135,
+      grain: false,
+      stops: [
+        { offset: 0, color: baseHex },
+        { offset: 1, color: rgbToHex(duoPartner(base)) },
+      ],
+    };
+  }
+  return { type: 'solid', color: baseHex, grain: true };
+}
+
+function template14PaintSamples(paint: Template14Paint): string[] {
+  if (paint.type === 'solid') return [paint.color];
+  return paint.stops.map((stop) => stop.color);
+}
+
+/**
+ * Type colour for a styled card. Uses the lightest stop, so a gradient that
+ * stays dark keeps white type and a light gradient keeps near-black.
+ */
+export function template14TextForStyle(
+  backgroundColor: string,
+  style: Template14StyleId = IMAGE_TEMPLATE14_DEFAULT_STYLE
+): string {
+  const samples = template14PaintSamples(template14Paint(backgroundColor, style));
+  let lightest = samples[0] ?? backgroundColor;
+  let lightestLuma = -1;
+  for (const sample of samples) {
+    const rgb = parseHexColor(sample);
+    const luminance = rgb ? template14Luminance(rgb) : 1;
+    if (luminance > lightestLuma) {
+      lightestLuma = luminance;
+      lightest = sample;
+    }
+  }
+  return template14TextForBackground(lightest);
+}
+
+/** CSS fill shared by the studio preview and the copycat preview. */
+export function template14CardCssBackground(
+  color: string,
+  style: Template14StyleId = IMAGE_TEMPLATE14_DEFAULT_STYLE
+): { backgroundColor: string; backgroundImage: string; showGrain: boolean } {
+  const paint = template14Paint(color, style);
+  if (paint.type === 'solid') {
+    return { backgroundColor: paint.color, backgroundImage: 'none', showGrain: paint.grain };
+  }
+  const stops = paint.stops
+    .map((stop) => `${stop.color} ${Math.round(stop.offset * 100)}%`)
+    .join(', ');
+  if (paint.type === 'linear') {
+    return {
+      backgroundColor: paint.stops[paint.stops.length - 1]?.color ?? color,
+      backgroundImage: `linear-gradient(${paint.angle}deg, ${stops})`,
+      showGrain: paint.grain,
+    };
+  }
+  return {
+    backgroundColor: paint.stops[paint.stops.length - 1]?.color ?? color,
+    backgroundImage: `radial-gradient(circle at ${paint.cx * 100}% ${paint.cy * 100}%, ${stops})`,
+    showGrain: paint.grain,
+  };
+}
+
+function template14CanvasStyle(
+  ctx: CanvasRenderingContext2D,
+  card: { x: number; y: number; width: number; height: number },
+  paint: Template14Paint
+): string | CanvasGradient {
+  if (paint.type === 'solid') return paint.color;
+  if (paint.type === 'linear') {
+    const rad = (paint.angle * Math.PI) / 180;
+    const dx = Math.sin(rad);
+    const dy = -Math.cos(rad);
+    const half =
+      (Math.abs(dx) * card.width + Math.abs(dy) * card.height) / 2;
+    const cx = card.x + card.width / 2;
+    const cy = card.y + card.height / 2;
+    const gradient = ctx.createLinearGradient(
+      cx - dx * half,
+      cy - dy * half,
+      cx + dx * half,
+      cy + dy * half
+    );
+    for (const stop of paint.stops) gradient.addColorStop(stop.offset, stop.color);
+    return gradient;
+  }
+  const cx = card.x + card.width * paint.cx;
+  const cy = card.y + card.height * paint.cy;
+  const farthest = Math.max(
+    Math.hypot(card.width * paint.cx, card.height * paint.cy),
+    Math.hypot(card.width * (1 - paint.cx), card.height * paint.cy),
+    Math.hypot(card.width * paint.cx, card.height * (1 - paint.cy)),
+    Math.hypot(card.width * (1 - paint.cx), card.height * (1 - paint.cy))
+  );
+  const radius = farthest * 0.86;
+  const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+  for (const stop of paint.stops) gradient.addColorStop(stop.offset, stop.color);
+  return gradient;
 }
 
 function wrapLine(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
@@ -175,14 +515,16 @@ function paintCardFill(
   ctx: CanvasRenderingContext2D,
   card: { x: number; y: number; width: number; height: number; radius: number },
   color: string,
+  style: Template14StyleId,
   grain?: CanvasImageSource
 ): void {
+  const paint = template14Paint(color, style);
   ctx.save();
   traceRoundRect(ctx, card.x, card.y, card.width, card.height, card.radius);
   ctx.clip();
-  ctx.fillStyle = color;
+  ctx.fillStyle = template14CanvasStyle(ctx, card, paint);
   ctx.fillRect(card.x, card.y, card.width, card.height);
-  if (grain) {
+  if (paint.grain && grain) {
     ctx.globalAlpha = 0.85;
     ctx.globalCompositeOperation = 'multiply';
     const pattern = ctx.createPattern(grain, 'repeat');
@@ -308,6 +650,7 @@ function paintSoftCard(
   frameHeight: number,
   card: { x: number; y: number; width: number; height: number; radius: number },
   color: string,
+  style: Template14StyleId,
   grain?: CanvasImageSource
 ): void {
   const radius = Math.max(10, Math.round(frameWidth * IMAGE_TEMPLATE14_EDGE_BLUR_RATIO));
@@ -328,11 +671,11 @@ function paintSoftCard(
     layerCtx.translate(cx - originX, cy - originY);
     layerCtx.scale(IMAGE_TEMPLATE14_EDGE_SCALE, IMAGE_TEMPLATE14_EDGE_SCALE);
     layerCtx.translate(-cx, -cy);
-    paintCardFill(layerCtx, card, color);
+    paintCardFill(layerCtx, card, color, style);
     blurCanvas(layer, radius);
     ctx.drawImage(layer, originX, originY);
   }
-  paintCardFill(ctx, card, color, grain);
+  paintCardFill(ctx, card, color, style, grain);
 }
 
 /** Cover, question, or Q5 slide. Q5 draws Template 2's label and App Store image. */
@@ -342,6 +685,7 @@ export function paintTemplate14Slide(
   frameHeight: number,
   options: {
     backgroundColor: string;
+    style?: Template14StyleId;
     text: string;
     tabIndex: number;
     grain: CanvasImageSource;
@@ -351,13 +695,14 @@ export function paintTemplate14Slide(
   }
 ): void {
   const card = template14CardRect(frameWidth, frameHeight);
+  const style = options.style ?? IMAGE_TEMPLATE14_DEFAULT_STYLE;
   ctx.fillStyle = IMAGE_TEMPLATE14_FRAME_BG;
   ctx.fillRect(0, 0, frameWidth, frameHeight);
-  paintSoftCard(ctx, frameWidth, frameHeight, card, options.backgroundColor, options.grain);
+  paintSoftCard(ctx, frameWidth, frameHeight, card, options.backgroundColor, style, options.grain);
 
   const isCover = options.tabIndex === 0;
   const isQ5 = options.tabIndex === IMAGE_TEMPLATE2_Q5_TAB_INDEX;
-  const textColor = template14TextForBackground(options.backgroundColor);
+  const textColor = template14TextForStyle(options.backgroundColor, style);
   const { question, options: optionText } = isCover
     ? { question: options.text, options: '' }
     : splitCopycatQuestionAndOptions(options.text);
@@ -365,14 +710,16 @@ export function paintTemplate14Slide(
   let fontSize = Math.round(
     frameWidth *
       (isCover
-        ? IMAGE_TEMPLATE14_COVER_SIZE_RATIO
+        ? template14CoverSizeRatio(question)
         : template14QuestionSizeRatio(question, isQ5))
   );
   const optionSize = Math.round(frameWidth * IMAGE_TEMPLATE14_OPTION_SIZE_RATIO);
   const minSize = Math.round(frameWidth * IMAGE_TEMPLATE14_QUESTION_MIN_SIZE_RATIO);
   const maxBlockH = isQ5
     ? card.height * IMAGE_TEMPLATE14_CTA_TEXT_MAX_HEIGHT_RATIO
-    : card.height * 0.72;
+    : isCover
+      ? card.height * 0.58
+      : card.height * 0.72;
   ctx.font = `400 ${fontSize}px ${IMAGE_TEMPLATE14_FONT_STACK}`;
   let questionLines = wrapPreservingBreaks(ctx, question, maxWidth);
   let questionLineH = fontSize * IMAGE_TEMPLATE14_LINE_HEIGHT;
@@ -382,7 +729,7 @@ export function paintTemplate14Slide(
   const optionGap = optionLines.length ? fontSize * IMAGE_TEMPLATE14_OPTION_GAP : 0;
   let blockH =
     questionLines.length * questionLineH + optionGap + optionLines.length * optionLineH;
-  while (fontSize > minSize && blockH > maxBlockH) {
+  while (fontSize > minSize && (blockH > maxBlockH || (isCover && questionLines.length > 5))) {
     fontSize -= 1;
     ctx.font = `400 ${fontSize}px ${IMAGE_TEMPLATE14_FONT_STACK}`;
     questionLines = wrapPreservingBreaks(ctx, question, maxWidth);
@@ -425,7 +772,7 @@ export function paintTemplate14Slide(
     );
     ctx.drawImage(options.promo, layout.x, layout.y, layout.width, layout.height);
     ctx.font = `700 ${labelSize}px "TikTok Sans", system-ui, sans-serif`;
-    ctx.fillStyle = '#FFFFFF';
+    ctx.fillStyle = textColor;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
     ctx.fillText(IMAGE_TEMPLATE2_Q5_PROMO_LABEL, frameWidth / 2, layout.y - labelGap);

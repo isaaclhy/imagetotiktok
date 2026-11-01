@@ -171,7 +171,6 @@ import {
   IMAGE_TEMPLATE14_CARD_RADIUS_RATIO,
   IMAGE_TEMPLATE14_EDGE_BLUR_RATIO,
   IMAGE_TEMPLATE14_EDGE_SCALE,
-  IMAGE_TEMPLATE14_COVER_SIZE_RATIO,
   IMAGE_TEMPLATE14_FONT_STACK,
   IMAGE_TEMPLATE14_FRAME_BG,
   IMAGE_TEMPLATE14_GRAIN_SRC,
@@ -185,10 +184,19 @@ import {
   IMAGE_TEMPLATE14_MARK_Y_RATIO,
   IMAGE_TEMPLATE14_CTA_TEXT_CENTER_RATIO,
   IMAGE_TEMPLATE14_CTA_TEXT_MAX_HEIGHT_RATIO,
+  IMAGE_TEMPLATE14_DEFAULT_STYLE,
+  IMAGE_TEMPLATE14_STYLE_OPTIONS,
+  isTemplate14StyleId,
+  pickDifferentTemplate14Style,
+  pickRandomTemplate14Style,
+  template14CardCssBackground,
+  template14CoverSizeRatio,
+  template14LookLabel,
   template14QuestionSizeRatio,
   nextTemplate14Color,
   paintTemplate14Slide,
-  template14TextForBackground,
+  template14TextForStyle,
+  type Template14StyleId,
 } from '@/app/lib/image-template-14-cards';
 import { BoldSolidPreview } from '@/app/components/BoldSolidPreview';
 import { FlatDarkPreview } from '@/app/components/FlatDarkPreview';
@@ -2272,6 +2280,8 @@ export default function Home() {
   const [imageTabFunnyQuestions, setImageTabFunnyQuestions] = useState<string[]>([]);
   const [imageTabTexts, setImageTabTexts] = useState<string[]>([]);
   const [imageTabSources, setImageTabSources] = useState<string[]>([]);
+  const [imageTemplate14Style, setImageTemplate14Style] =
+    useState<Template14StyleId>(IMAGE_TEMPLATE14_DEFAULT_STYLE);
   const [imageTemplate18Style, setImageTemplate18Style] =
     useState<Template18StyleId>(IMAGE_TEMPLATE18_DEFAULT_STYLE);
   const [imageTemplate18Scanlines, setImageTemplate18Scanlines] = useState(true);
@@ -5047,6 +5057,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     if (!urlReady) return;
     if (contentTab !== 'image' || selectedImageTemplateId === null) return;
     if (imageTabTexts.length > 0) return;
+    if (isImageTemplate14Id(selectedImageTemplateId)) {
+      setImageTemplate14Style(pickRandomTemplate14Style());
+    }
     if (isImageTemplate18Id(selectedImageTemplateId)) {
       const look = pickRandomTemplate18Look();
       setImageTemplate18Style(look.style);
@@ -5363,6 +5376,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         if (!ctx) throw new Error('Failed to prepare the slide');
         paintTemplate14Slide(ctx, frameWidth, frameHeight, {
           backgroundColor,
+          style: imageTemplate14Style,
           text: (imageTabTexts[i] ?? '').trim(),
           tabIndex: i,
           grain,
@@ -7522,6 +7536,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                           type="button"
                           onClick={() => {
                             setSelectedImageTemplateId(card.id);
+                            if (isImageTemplate14Id(card.id)) {
+                              setImageTemplate14Style(pickRandomTemplate14Style());
+                            }
                             if (isImageTemplate18Id(card.id)) {
                               const look = pickRandomTemplate18Look();
                               setImageTemplate18Style(look.style);
@@ -7928,15 +7945,30 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             />
                           ) : isColorCardImageTemplate ? (
                             <>
-                            <div
-                              className="pointer-events-none absolute"
-                              style={{
+                            {(() => {
+                              const cardFill = template14CardCssBackground(
+                                activeImageFrameBg,
+                                imageTemplate14Style
+                              );
+                              const cardText = template14TextForStyle(
+                                activeImageFrameBg,
+                                imageTemplate14Style
+                              );
+                              const cardBox = {
                                 left: `${IMAGE_TEMPLATE14_CARD_INSET_X * 100}%`,
                                 top: `${IMAGE_TEMPLATE14_CARD_INSET_Y * 100}%`,
                                 width: `${(1 - IMAGE_TEMPLATE14_CARD_INSET_X * 2) * 100}%`,
                                 height: `${(1 - IMAGE_TEMPLATE14_CARD_INSET_Y * 2) * 100}%`,
                                 borderRadius: `${IMAGE_TEMPLATE14_CARD_RADIUS_RATIO * 100}cqw`,
-                                backgroundColor: activeImageFrameBg,
+                                backgroundColor: cardFill.backgroundColor,
+                                backgroundImage: cardFill.backgroundImage,
+                              };
+                              return (
+                            <>
+                            <div
+                              className="pointer-events-none absolute"
+                              style={{
+                                ...cardBox,
                                 transform: `scale(${IMAGE_TEMPLATE14_EDGE_SCALE})`,
                                 filter: `blur(${IMAGE_TEMPLATE14_EDGE_BLUR_RATIO * 100}cqw)`,
                               }}
@@ -7944,16 +7976,10 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             />
                             <div
                               className="pointer-events-none absolute overflow-hidden"
-                              style={{
-                                left: `${IMAGE_TEMPLATE14_CARD_INSET_X * 100}%`,
-                                top: `${IMAGE_TEMPLATE14_CARD_INSET_Y * 100}%`,
-                                width: `${(1 - IMAGE_TEMPLATE14_CARD_INSET_X * 2) * 100}%`,
-                                height: `${(1 - IMAGE_TEMPLATE14_CARD_INSET_Y * 2) * 100}%`,
-                                borderRadius: `${IMAGE_TEMPLATE14_CARD_RADIUS_RATIO * 100}cqw`,
-                                backgroundColor: activeImageFrameBg,
-                              }}
+                              style={cardBox}
                               aria-hidden
                             >
+                              {cardFill.showGrain ? (
                               <div
                                 className="absolute inset-0"
                                 style={{
@@ -7963,6 +7989,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   mixBlendMode: 'multiply',
                                 }}
                               />
+                              ) : null}
                             </div>
                             <div
                               className="absolute z-10"
@@ -7994,7 +8021,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                         ? IMAGE_TEMPLATE14_CTA_TEXT_CENTER_RATIO
                                         : 0.5) * 100
                                   }%`,
-                                  color: template14TextForBackground(activeImageFrameBg),
+                                  color: cardText,
                                   fontFamily: IMAGE_TEMPLATE14_FONT_STACK,
                                   maxHeight:
                                     selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX
@@ -8011,7 +8038,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   style={{
                                     fontSize: `${
                                       (isCoverTab
-                                        ? IMAGE_TEMPLATE14_COVER_SIZE_RATIO
+                                        ? template14CoverSizeRatio(question)
                                         : template14QuestionSizeRatio(
                                             question,
                                             selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX
@@ -8044,7 +8071,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   className="absolute inset-x-[8%] z-10 text-center"
                                   style={{
                                     top: `${IMAGE_TEMPLATE14_MARK_Y_RATIO * 100}%`,
-                                    color: template14TextForBackground(activeImageFrameBg),
+                                    color: cardText,
                                     fontFamily: IMAGE_TEMPLATE14_FONT_STACK,
                                     fontSize: `${IMAGE_TEMPLATE14_MARK_SIZE_RATIO * 100}cqw`,
                                   }}
@@ -8056,8 +8083,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                             {selectedImageBrowserTab === IMAGE_TEMPLATE2_Q5_TAB_INDEX ? (
                               <>
                                 <p
-                                  className="absolute inset-x-[6%] z-20 text-center font-bold text-white"
+                                  className="absolute inset-x-[6%] z-20 text-center font-bold"
                                   style={{
+                                    color: cardText,
                                     fontFamily: pastelCarouselFontFamily,
                                     fontSize: `${IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO * (4 / 3) * 100}cqw`,
                                     bottom: `${(IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO + IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO) * 100}%`,
@@ -8077,6 +8105,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 />
                               </>
                             ) : null}
+                            </>
+                            );
+                              })()}
                             </>
                           ) : isMaroonLockscreenImageTemplate ? (
                             selectedImageBrowserTab === 0 && (imageTabSources[0] ?? '').trim() ? (
@@ -8907,6 +8938,48 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                       <option value="me_or_you">Me or you</option>
                                       <option value="brave">Brave</option>
                                     </select>
+                                  ) : null}
+                                  {isColorCardImageTemplate ? (
+                                    <div
+                                      className="flex w-full flex-wrap items-center gap-2"
+                                      data-template14-style={imageTemplate14Style}
+                                      data-template14-look={template14LookLabel(imageTemplate14Style)}
+                                    >
+                                      <label className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                                        Style
+                                        <select
+                                          value={imageTemplate14Style}
+                                          onChange={(e) => {
+                                            const next = e.target.value;
+                                            if (isTemplate14StyleId(next)) setImageTemplate14Style(next);
+                                          }}
+                                          className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2 py-1.5 sm:py-1 text-sm sm:text-xs text-zinc-800 dark:text-zinc-200"
+                                          aria-label="Card background style"
+                                        >
+                                          {IMAGE_TEMPLATE14_STYLE_OPTIONS.map((option) => (
+                                            <option key={option.id} value={option.id}>
+                                              {option.label}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </label>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setImageTemplate14Style((current) =>
+                                            pickDifferentTemplate14Style(current)
+                                          );
+                                        }}
+                                        className="inline-flex items-center gap-1.5 rounded-md bg-zinc-900 px-2.5 py-1.5 text-sm font-semibold text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 sm:py-1 sm:text-xs"
+                                        aria-label="Randomize style"
+                                      >
+                                        <span aria-hidden="true">🎲</span>
+                                        Randomize
+                                      </button>
+                                      <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                                        {template14LookLabel(imageTemplate14Style)}
+                                      </span>
+                                    </div>
                                   ) : null}
                                   {isPastelSlideshowImageTemplate ? (
                                     <div

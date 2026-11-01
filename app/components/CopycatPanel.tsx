@@ -103,8 +103,17 @@ import {
   IMAGE_TEMPLATE14_MARK_Y_RATIO,
   IMAGE_TEMPLATE14_CTA_TEXT_CENTER_RATIO,
   IMAGE_TEMPLATE14_CTA_TEXT_MAX_HEIGHT_RATIO,
+  IMAGE_TEMPLATE14_DEFAULT_STYLE,
+  IMAGE_TEMPLATE14_STYLE_OPTIONS,
+  isTemplate14StyleId,
+  pickDifferentTemplate14Style,
+  pickRandomTemplate14Style,
+  template14CardCssBackground,
+  template14CoverSizeRatio,
+  template14LookLabel,
   template14QuestionSizeRatio,
-  template14TextForBackground,
+  template14TextForStyle,
+  type Template14StyleId,
 } from '@/app/lib/image-template-14-cards';
 import { NotesQuestionsPreview } from '@/app/components/NotesQuestionsPreview';
 import { PastelSlideshowPreview } from '@/app/components/PastelSlideshowPreview';
@@ -143,7 +152,6 @@ const COPYCAT_COVER_HEARTS = '♥ ♥ ♥';
 /** Text-only covers and template-13 questions sit above center — closer to natural eye level. */
 const COPYCAT_TEXT_ONLY_COVER_TOP = 0.38;
 const COPYCAT_TEXT_ONLY_COVER_SIZE_T2 = 0.074;
-const COPYCAT_TEXT_ONLY_COVER_SIZE_T14 = 0.088;
 
 export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23;
 
@@ -299,6 +307,7 @@ function CopycatSlidePreview({
   text,
   leftAlign = false,
   template14Color,
+  template14Style = IMAGE_TEMPLATE14_DEFAULT_STYLE,
   template15FrameBg,
   illustrationSrc,
   isCtaSlide = false,
@@ -314,6 +323,7 @@ function CopycatSlidePreview({
   text: string;
   leftAlign?: boolean;
   template14Color?: string;
+  template14Style?: Template14StyleId;
   template18Style?: Template18StyleId;
   template18Scanlines?: boolean;
   template18PastelSlides?: readonly Template18PastelTone[];
@@ -349,7 +359,8 @@ function CopycatSlidePreview({
   const pastelBg =
     IMAGE_TEMPLATE2_PASTEL_COLORS[tabIndex % IMAGE_TEMPLATE2_PASTEL_COLORS.length]!;
   const card14Bg = template14Color ?? IMAGE_TEMPLATE14_COLORS[0]!;
-  const card14Text = template14TextForBackground(card14Bg);
+  const card14Fill = template14CardCssBackground(card14Bg, template14Style);
+  const card14Text = template14TextForStyle(card14Bg, template14Style);
   const bodyAlignClass = alignLeft
     ? 'left-[11%] w-[78%] -translate-y-1/2 text-left'
     : 'left-1/2 w-[78%] -translate-x-1/2 -translate-y-1/2 text-center';
@@ -586,7 +597,8 @@ function CopycatSlidePreview({
             width: `${(1 - IMAGE_TEMPLATE14_CARD_INSET_X * 2) * 100}%`,
             height: `${(1 - IMAGE_TEMPLATE14_CARD_INSET_Y * 2) * 100}%`,
             borderRadius: `${IMAGE_TEMPLATE14_CARD_RADIUS_RATIO * 100}cqw`,
-            backgroundColor: card14Bg,
+            backgroundColor: card14Fill.backgroundColor,
+            backgroundImage: card14Fill.backgroundImage,
             transform: `scale(${IMAGE_TEMPLATE14_EDGE_SCALE})`,
             filter: `blur(${IMAGE_TEMPLATE14_EDGE_BLUR_RATIO * 100}cqw)`,
           }}
@@ -600,10 +612,12 @@ function CopycatSlidePreview({
             width: `${(1 - IMAGE_TEMPLATE14_CARD_INSET_X * 2) * 100}%`,
             height: `${(1 - IMAGE_TEMPLATE14_CARD_INSET_Y * 2) * 100}%`,
             borderRadius: `${IMAGE_TEMPLATE14_CARD_RADIUS_RATIO * 100}cqw`,
-            backgroundColor: card14Bg,
+            backgroundColor: card14Fill.backgroundColor,
+            backgroundImage: card14Fill.backgroundImage,
           }}
           aria-hidden
         >
+          {card14Fill.showGrain ? (
           <div
             className="absolute inset-0"
             style={{
@@ -613,6 +627,7 @@ function CopycatSlidePreview({
               mixBlendMode: 'multiply',
             }}
           />
+          ) : null}
         </div>
         <div
           className="absolute z-10"
@@ -657,7 +672,7 @@ function CopycatSlidePreview({
               className="m-0 whitespace-pre-wrap"
               style={{
                 fontSize: `${(isCover
-                  ? COPYCAT_TEXT_ONLY_COVER_SIZE_T14
+                  ? template14CoverSizeRatio(question)
                   : template14QuestionSizeRatio(question, showTemplate2StyleCta)) * 100}cqw`,
                 fontWeight: 400,
                 lineHeight: IMAGE_TEMPLATE14_LINE_HEIGHT,
@@ -696,7 +711,7 @@ function CopycatSlidePreview({
             <p
               className="absolute inset-x-[6%] z-20 text-center font-bold"
               style={{
-                color: '#FFFFFF',
+                color: card14Text,
                 fontFamily: TIKTOK_SANS_STACK,
                 fontSize: `${IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO * (4 / 3) * 100}cqw`,
                 bottom: `${(IMAGE_TEMPLATE2_Q5_PROMO_VISIBLE_RATIO + IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO) * 100}%`,
@@ -1041,6 +1056,9 @@ export function CopycatPanel({
 
   const [selectedTab, setSelectedTab] = useState(0);
   const [template14Color, setTemplate14Color] = useState(() => pickTemplate14Color());
+  const [template14Style, setTemplate14Style] = useState<Template14StyleId>(
+    IMAGE_TEMPLATE14_DEFAULT_STYLE
+  );
   const [template18Style, setTemplate18Style] = useState<Template18StyleId>(
     IMAGE_TEMPLATE18_DEFAULT_STYLE
   );
@@ -1072,8 +1090,16 @@ export function CopycatPanel({
   } | null>(null);
   // Keeps a single crypto draw if React restarts this render after setSelection.
   const immediateDrawRef = useRef<{ epoch: string; postId: string; bag: string[] } | null>(null);
-  // Template 18's style is rolled when that template is selected, not on every new post.
+  // Styles are rolled when that template is selected, not on every new post.
+  const template14RolledForRef = useRef<number | null>(null);
   const template18RolledForRef = useRef<number | null>(null);
+
+  const rollTemplate14StyleForSelection = useCallback(() => {
+    if (template14RolledForRef.current === templateId) return;
+    template14RolledForRef.current = templateId;
+    if (templateId !== 14) return;
+    setTemplate14Style(pickRandomTemplate14Style());
+  }, [templateId]);
 
   const rollTemplate18LookForSelection = useCallback(() => {
     if (template18RolledForRef.current === templateId) return;
@@ -1112,6 +1138,7 @@ export function CopycatPanel({
     setSelectedTab(0);
     setTemplate14Color((current) => pickTemplate14Color(current));
     setTemplate15FrameBg((current) => pickTemplate15FrameColor(current));
+    rollTemplate14StyleForSelection();
     rollTemplate18LookForSelection();
     setTemplate18PastelBody(shuffleTemplate18PastelBody());
     setTemplate19Color(pickTemplate19ShuffleColor());
@@ -1187,10 +1214,11 @@ export function CopycatPanel({
     setSelectedTab(0);
     setTemplate14Color((current) => pickTemplate14Color(current));
     setTemplate15FrameBg((current) => pickTemplate15FrameColor(current));
+    rollTemplate14StyleForSelection();
     rollTemplate18LookForSelection();
     setTemplate18PastelBody(shuffleTemplate18PastelBody());
     setTemplate19Color(pickTemplate19ShuffleColor());
-  }, [postEpoch, postIds, selection, rollTemplate18LookForSelection]);
+  }, [postEpoch, postIds, selection, rollTemplate14StyleForSelection, rollTemplate18LookForSelection]);
 
   // Re-apply the scroll offset from the last "New random post" tap before paint,
   // including when the new post has a different slide count.
@@ -1349,6 +1377,7 @@ export function CopycatPanel({
         templateId,
         slides,
         template14Color,
+        template14Style,
         template15FrameBg,
         template18Style,
         template18Scanlines,
@@ -1379,6 +1408,7 @@ export function CopycatPanel({
     template15CoverSrc,
     templateId,
     template14Color,
+    template14Style,
     template15FrameBg,
     template18Style,
     template18Scanlines,
@@ -1488,6 +1518,46 @@ export function CopycatPanel({
       {templateId === 15 && template15CoverError ? (
         <p className="text-xs text-red-600 dark:text-red-400">{template15CoverError}</p>
       ) : null}
+      {templateId === 14 ? (
+        <div
+          className="flex flex-wrap items-center gap-2"
+          data-template14-style={template14Style}
+          data-template14-look={template14LookLabel(template14Style)}
+        >
+          <label className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+            Style
+            <select
+              value={template14Style}
+              onChange={(e) => {
+                const next = e.target.value;
+                if (isTemplate14StyleId(next)) setTemplate14Style(next);
+              }}
+              className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-800 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-200"
+              aria-label="Card background style"
+            >
+              {IMAGE_TEMPLATE14_STYLE_OPTIONS.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            onClick={() => {
+              setTemplate14Style((current) => pickDifferentTemplate14Style(current));
+            }}
+            className="inline-flex items-center gap-1.5 rounded-md bg-zinc-900 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+            aria-label="Randomize style"
+          >
+            <span aria-hidden="true">🎲</span>
+            Randomize
+          </button>
+          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
+            {template14LookLabel(template14Style)}
+          </span>
+        </div>
+      ) : null}
       {templateId === 18 ? (
         <div
           className="flex flex-wrap items-center gap-2"
@@ -1552,6 +1622,7 @@ export function CopycatPanel({
             (selectedTab > 0 && questionSlides[selectedTab - 1]?.options?.length)
         )}
         template14Color={template14Color}
+        template14Style={template14Style}
         template15FrameBg={template15FrameBg}
         illustrationSrc={
           templateId === 15

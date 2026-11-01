@@ -43,6 +43,7 @@ import {
 } from '@/app/lib/image-template-13-cover';
 import {
   IMAGE_TEMPLATE14_COLORS,
+  IMAGE_TEMPLATE14_DEFAULT_STYLE,
   IMAGE_TEMPLATE14_FONT_STACK,
   IMAGE_TEMPLATE14_GRAIN_SRC,
   IMAGE_TEMPLATE14_LINE_HEIGHT,
@@ -51,7 +52,9 @@ import {
   IMAGE_TEMPLATE14_TEXT_MAX_WIDTH_RATIO,
   paintTemplate14Slide,
   template14CardRect,
-  template14TextForBackground,
+  template14CoverSizeRatio,
+  template14TextForStyle,
+  type Template14StyleId,
 } from '@/app/lib/image-template-14-cards';
 import {
   paintTemplate15Cover,
@@ -111,7 +114,6 @@ const COPYCAT_APP_NAME = 'Spill It';
 const COPYCAT_COVER_HEARTS = '♥ ♥ ♥';
 const COPYCAT_TEXT_ONLY_COVER_TOP = 0.38;
 const COPYCAT_TEXT_ONLY_COVER_SIZE_T2 = 0.074;
-const COPYCAT_TEXT_ONLY_COVER_SIZE_T14 = 0.088;
 
 function drawCopycatAppMark(
   ctx: CanvasRenderingContext2D,
@@ -242,7 +244,8 @@ async function paintSlide(
     scanlines: boolean;
     pastelSlides?: readonly Template18PastelTone[];
   },
-  template19Color?: Template19ColorId
+  template19Color?: Template19ColorId,
+  template14Style: Template14StyleId = IMAGE_TEMPLATE14_DEFAULT_STYLE
 ): Promise<Blob> {
   const { w, h } = frameSize(templateId);
   const canvas = document.createElement('canvas');
@@ -447,9 +450,10 @@ async function paintSlide(
       /* fonts may already be ready */
     }
     if (slide.isCover) {
-      // Card + grain + mark only; title drawn higher/larger for text-only covers.
+      // Card fill only; the title sits higher, at eye level, with the cover hearts.
       paintTemplate14Slide(ctx, w, h, {
         backgroundColor: template14Color,
+        style: template14Style,
         text: '',
         tabIndex: 1,
         grain,
@@ -457,11 +461,25 @@ async function paintSlide(
         skipMark: true,
       });
       const card = template14CardRect(w, h);
-      const textColor = template14TextForBackground(template14Color);
-      const fontSize = Math.round(w * COPYCAT_TEXT_ONLY_COVER_SIZE_T14);
+      const textColor = template14TextForStyle(template14Color, template14Style);
+      const maxWidth = card.width * IMAGE_TEMPLATE14_TEXT_MAX_WIDTH_RATIO;
+      let fontSize = Math.round(w * template14CoverSizeRatio(slide.text));
+      const minSize = Math.round(w * 0.032);
       ctx.font = `400 ${fontSize}px ${IMAGE_TEMPLATE14_FONT_STACK}`;
+      let lines = wrapLines(ctx, slide.text, maxWidth);
+      const markY = card.y + card.height * IMAGE_TEMPLATE14_MARK_Y_RATIO;
+      const heartClearance = Math.round(w * 0.036) * 1.6;
+      while (
+        fontSize > minSize &&
+        (lines.length > 5 ||
+          lines.length * fontSize * IMAGE_TEMPLATE14_LINE_HEIGHT >
+            markY - heartClearance - (card.y + card.height * 0.12))
+      ) {
+        fontSize -= 1;
+        ctx.font = `400 ${fontSize}px ${IMAGE_TEMPLATE14_FONT_STACK}`;
+        lines = wrapLines(ctx, slide.text, maxWidth);
+      }
       ctx.fillStyle = textColor;
-      const lines = wrapLines(ctx, slide.text, card.width * IMAGE_TEMPLATE14_TEXT_MAX_WIDTH_RATIO);
       drawWrappedBlock(
         ctx,
         lines,
@@ -470,7 +488,6 @@ async function paintSlide(
         fontSize * IMAGE_TEMPLATE14_LINE_HEIGHT,
         'center'
       );
-      const markY = card.y + card.height * IMAGE_TEMPLATE14_MARK_Y_RATIO;
       const markSize = Math.round(w * IMAGE_TEMPLATE14_MARK_SIZE_RATIO);
       drawCopycatAppMark(ctx, w, markY, {
         isCover: true,
@@ -480,6 +497,7 @@ async function paintSlide(
     } else {
       paintTemplate14Slide(ctx, w, h, {
         backgroundColor: template14Color,
+        style: template14Style,
         text: slide.text,
         tabIndex: slide.isCta ? IMAGE_TEMPLATE2_Q5_TAB_INDEX : 1,
         grain,
@@ -493,7 +511,7 @@ async function paintSlide(
         const markSize = Math.round(w * IMAGE_TEMPLATE14_MARK_SIZE_RATIO);
         drawCopycatAppMark(ctx, w, markY, {
           isCover: false,
-          color: template14TextForBackground(template14Color),
+          color: template14TextForStyle(template14Color, template14Style),
           font: `400 ${markSize}px "Libre Baskerville", Georgia, serif`,
         });
       }
@@ -736,6 +754,7 @@ export async function exportCopycatSlidesZip(options: {
   templateId: CopycatExportTemplateId;
   slides: CopycatExportSlide[];
   template14Color?: string;
+  template14Style?: Template14StyleId;
   template15FrameBg?: string;
   template18Style?: Template18StyleId;
   template18Scanlines?: boolean;
@@ -759,7 +778,8 @@ export async function exportCopycatSlidesZip(options: {
         scanlines: options.template18Scanlines ?? true,
         pastelSlides: options.template18PastelSlides,
       },
-      options.template19Color
+      options.template19Color,
+      options.template14Style ?? IMAGE_TEMPLATE14_DEFAULT_STYLE
     );
     const name = i === 0 ? 'cover' : `q${i}`;
     zip.file(`template-${options.templateId}-${name}.png`, blob);
