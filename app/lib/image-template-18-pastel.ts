@@ -192,6 +192,69 @@ export function resolveTemplate18Scanlines(
   return true;
 }
 
+export type Template18Look = {
+  style: Template18StyleId;
+  scanlines: boolean;
+};
+
+export function template18StyleLabel(style: Template18StyleId): string {
+  return IMAGE_TEMPLATE18_STYLE_OPTIONS.find((option) => option.id === style)?.label ?? 'Pastel';
+}
+
+/** Label for the current pick, using the scanlines the paint functions actually draw. */
+export function template18LookLabel(style: Template18StyleId, scanlines: boolean): string {
+  const lines = resolveTemplate18Scanlines(style, scanlines) ? 'on' : 'off';
+  return `Style: ${template18StyleLabel(style)}, scanlines ${lines}`;
+}
+
+function template18VisibleLookKey(style: Template18StyleId, scanlines: boolean): string {
+  return `${style}:${resolveTemplate18Scanlines(style, scanlines) ? '1' : '0'}`;
+}
+
+/**
+ * Visible combinations. Scanlines are a real choice only for the original
+ * pastel; every other style always paints them.
+ */
+export function template18LookChoices(): Template18Look[] {
+  const looks: Template18Look[] = [];
+  for (const option of IMAGE_TEMPLATE18_STYLE_OPTIONS) {
+    if (option.id === 'pastel') {
+      looks.push({ style: 'pastel', scanlines: true });
+      looks.push({ style: 'pastel', scanlines: false });
+    } else {
+      looks.push({ style: option.id, scanlines: true });
+    }
+  }
+  return looks;
+}
+
+/**
+ * One style from the existing options, and an independent scanlines coin flip.
+ * The flip only changes the original pastel; other styles still paint scanlines.
+ */
+export function pickRandomTemplate18Look(random: () => number = Math.random): Template18Look {
+  const styles = IMAGE_TEMPLATE18_STYLE_OPTIONS;
+  const index = Math.floor(random() * styles.length);
+  const style = styles[index]?.id ?? IMAGE_TEMPLATE18_DEFAULT_STYLE;
+  return { style, scanlines: random() < 0.5 };
+}
+
+/** A different visible style/scanlines pair from the current one, when one exists. */
+export function pickDifferentTemplate18Look(
+  currentStyle: Template18StyleId,
+  currentScanlines: boolean,
+  random: () => number = Math.random
+): Template18Look {
+  const currentKey = template18VisibleLookKey(currentStyle, currentScanlines);
+  const choices = template18LookChoices();
+  const pool = choices.filter(
+    (look) => template18VisibleLookKey(look.style, look.scanlines) !== currentKey
+  );
+  const source = pool.length > 0 ? pool : choices;
+  const index = Math.floor(random() * source.length);
+  return source[index] ?? { style: IMAGE_TEMPLATE18_DEFAULT_STYLE, scanlines: true };
+}
+
 type Template18Tone = { bg: string; accent: string };
 
 function toneAt(slides: ReadonlyArray<{ bg: string; accent?: string }>, index: number, fallbackAccent: string): Template18Tone {
