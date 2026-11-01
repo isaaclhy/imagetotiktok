@@ -118,6 +118,25 @@ export function resolveTemplate19PaintColor(
   return 'red';
 }
 
+export function template19ColorLabel(color: Template19ColorId): string {
+  return IMAGE_TEMPLATE19_COLOR_OPTIONS.find((option) => option.id === color)?.label ?? 'Red';
+}
+
+export function template19ColourLabel(color: Template19ColorId): string {
+  return `Colour: ${template19ColorLabel(color)}`;
+}
+
+/** Another preset, skipping `current` when another preset exists. */
+export function pickDifferentTemplate19Color(
+  current: Template19ColorId,
+  random: () => number = Math.random
+): Template19ColorId {
+  const pool = IMAGE_TEMPLATE19_COLORS.filter((color) => color !== current);
+  const source = pool.length > 0 ? pool : IMAGE_TEMPLATE19_COLORS;
+  const index = Math.floor(random() * source.length);
+  return source[index] ?? 'red';
+}
+
 /**
  * Colour along the radius, in units of half the frame width (1 = the side edges).
  * Sampled from the reference disc, then lifted a few points in the feather so

@@ -209,13 +209,14 @@ import {
   IMAGE_TEMPLATE18_DEFAULT_STYLE,
   IMAGE_TEMPLATE18_QUESTION_COUNT,
   IMAGE_TEMPLATE18_SLIDE_COUNT,
-  IMAGE_TEMPLATE18_STYLE_OPTIONS,
   isImageTemplate18Id,
-  isTemplate18StyleId,
   paintTemplate18Slide,
+  pickDifferentTemplate18Look,
+  pickRandomTemplate18Look,
   shuffleTemplate18PastelBody,
   template18Background,
   template18CanvasBackground,
+  template18LookLabel,
   template18PastelBodyTones,
   template18PastelSlidesForCount,
   type Template18PastelTone,
@@ -223,20 +224,17 @@ import {
 } from '@/app/lib/image-template-18-pastel';
 import {
   IMAGE_TEMPLATE19_BG,
-  IMAGE_TEMPLATE19_COLOR_OPTIONS,
   IMAGE_TEMPLATE19_CTA_TAB,
-  IMAGE_TEMPLATE19_DEFAULT_COLOR,
   IMAGE_TEMPLATE19_FONT_STACK,
   IMAGE_TEMPLATE19_LABEL_FONT_STACK,
   IMAGE_TEMPLATE19_QUESTION_COUNT,
   IMAGE_TEMPLATE19_SLIDE_COUNT,
   isImageTemplate19Id,
-  isTemplate19ColorOptionId,
   paintTemplate19Slide,
+  pickDifferentTemplate19Color,
   pickTemplate19ShuffleColor,
-  resolveTemplate19PaintColor,
+  template19ColourLabel,
   type Template19ColorId,
-  type Template19ColorOptionId,
 } from '@/app/lib/image-template-19-glow';
 import {
   IMAGE_TEMPLATE20_CTA_TAB,
@@ -2264,14 +2262,7 @@ export default function Home() {
     () => template18PastelSlidesForCount(imageTemplate18PastelBody, IMAGE_TEMPLATE18_SLIDE_COUNT),
     [imageTemplate18PastelBody]
   );
-  const [imageTemplate19Color, setImageTemplate19Color] =
-    useState<Template19ColorOptionId>(IMAGE_TEMPLATE19_DEFAULT_COLOR);
-  const [imageTemplate19ShuffleColor, setImageTemplate19ShuffleColor] =
-    useState<Template19ColorId>(() => pickTemplate19ShuffleColor());
-  const imageTemplate19PaintColor = resolveTemplate19PaintColor(
-    imageTemplate19Color,
-    imageTemplate19ShuffleColor
-  );
+  const [imageTemplate19Color, setImageTemplate19Color] = useState<Template19ColorId>('red');
   const [imageTemplate2QuestionType, setImageTemplate2QuestionType] =
     useState<AutomateQuestionType>('random');
   const [imageTemplate6QuestionType, setImageTemplate6QuestionType] =
@@ -2649,7 +2640,7 @@ export default function Home() {
     setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[resolved]);
     setImageTabFunnyQuestions(questions);
     setImageTabTexts([title, ...questions]);
-    setImageTemplate19ShuffleColor(pickTemplate19ShuffleColor());
+    setImageTemplate19Color(pickTemplate19ShuffleColor());
   };
 
   const applyImageTemplate20QuestionType = (type: AutomateQuestionType) => {
@@ -4771,7 +4762,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       setImageTabTypeLabel(IMAGE_TEMPLATE2_TYPE_LABELS[type]);
       setImageTabSources(Array.from({ length: IMAGE_TEMPLATE19_SLIDE_COUNT }, () => ''));
       setImageTabTexts([title, ...questions]);
-      setImageTemplate19ShuffleColor(pickTemplate19ShuffleColor());
+      setImageTemplate19Color(pickTemplate19ShuffleColor());
       return;
     }
 
@@ -5010,6 +5001,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     if (!urlReady) return;
     if (contentTab !== 'image' || selectedImageTemplateId === null) return;
     if (imageTabTexts.length > 0) return;
+    if (isImageTemplate18Id(selectedImageTemplateId)) {
+      const look = pickRandomTemplate18Look();
+      setImageTemplate18Style(look.style);
+      setImageTemplate18Scanlines(look.scanlines);
+    }
     regenerateImageTemplateContent(selectedImageTemplateId, { resetTab: false });
   }, [urlReady, contentTab, selectedImageTemplateId, imageTabTexts.length]);
 
@@ -5416,7 +5412,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           isCover: i === 0,
           isCta: i === IMAGE_TEMPLATE19_CTA_TAB,
           promo: i === IMAGE_TEMPLATE19_CTA_TAB ? promo : null,
-          color: imageTemplate19PaintColor,
+          color: imageTemplate19Color,
         });
         const blob = await new Promise<Blob>((resolve, reject) => {
           canvas.toBlob((next) => {
@@ -7436,6 +7432,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                           type="button"
                           onClick={() => {
                             setSelectedImageTemplateId(card.id);
+                            if (isImageTemplate18Id(card.id)) {
+                              const look = pickRandomTemplate18Look();
+                              setImageTemplate18Style(look.style);
+                              setImageTemplate18Scanlines(look.scanlines);
+                            }
                             regenerateImageTemplateContent(card.id);
                           }}
                           className="group rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 p-2 md:p-3 text-left hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
@@ -7806,7 +7807,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               text={imageFrameTextForActiveTab}
                               isCover={selectedImageBrowserTab === 0}
                               isCta={selectedImageBrowserTab === IMAGE_TEMPLATE19_CTA_TAB}
-                              color={imageTemplate19PaintColor}
+                              color={imageTemplate19Color}
                             />
                           ) : isOceanSlideshowImageTemplate ? (
                             <OceanSlideshowPreview
@@ -8808,54 +8809,62 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                     </select>
                                   ) : null}
                                   {isPastelSlideshowImageTemplate ? (
-                                    <>
-                                      <select
-                                        value={imageTemplate18Style}
-                                        onChange={(e) => {
-                                          const next = e.target.value;
-                                          if (isTemplate18StyleId(next)) setImageTemplate18Style(next);
+                                    <div
+                                      className="flex w-full flex-wrap items-center gap-2"
+                                      data-template18-style={imageTemplate18Style}
+                                      data-template18-scanlines={imageTemplate18Scanlines ? 'on' : 'off'}
+                                      data-template18-look={template18LookLabel(
+                                        imageTemplate18Style,
+                                        imageTemplate18Scanlines
+                                      )}
+                                    >
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const next = pickDifferentTemplate18Look(
+                                            imageTemplate18Style,
+                                            imageTemplate18Scanlines
+                                          );
+                                          setImageTemplate18Style(next.style);
+                                          setImageTemplate18Scanlines(next.scanlines);
                                         }}
-                                        className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2 py-1.5 sm:py-1 text-sm sm:text-xs text-zinc-800 dark:text-zinc-200"
-                                        aria-label="Style"
+                                        className="inline-flex items-center gap-1.5 rounded-md bg-zinc-900 px-2.5 py-1.5 text-sm font-semibold text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 sm:py-1 sm:text-xs"
+                                        aria-label="Randomize style"
                                       >
-                                        {IMAGE_TEMPLATE18_STYLE_OPTIONS.map((option) => (
-                                          <option key={option.id} value={option.id}>
-                                            {option.label}
-                                          </option>
-                                        ))}
-                                      </select>
-                                      {imageTemplate18Style === 'pastel' ? (
-                                        <label className="inline-flex items-center gap-1.5 text-sm sm:text-xs text-zinc-700 dark:text-zinc-300">
-                                          <input
-                                            type="checkbox"
-                                            checked={imageTemplate18Scanlines}
-                                            onChange={(e) => setImageTemplate18Scanlines(e.target.checked)}
-                                            className="h-3.5 w-3.5 rounded border-zinc-300 dark:border-zinc-600"
-                                            aria-label="Scanlines"
-                                          />
-                                          Scanlines
-                                        </label>
-                                      ) : null}
-                                    </>
+                                        <span aria-hidden="true">🎲</span>
+                                        Randomize
+                                      </button>
+                                      <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                                        {template18LookLabel(
+                                          imageTemplate18Style,
+                                          imageTemplate18Scanlines
+                                        )}
+                                      </span>
+                                    </div>
                                   ) : null}
                                   {isRedGlowImageTemplate ? (
-                                    <select
-                                      value={imageTemplate19Color}
-                                      onChange={(e) => {
-                                        const next = e.target.value;
-                                        if (isTemplate19ColorOptionId(next)) {
-                                          setImageTemplate19Color(next);
-                                        }
-                                      }}
-                                      className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2 py-1.5 sm:py-1 text-sm sm:text-xs text-zinc-800 dark:text-zinc-200"
-                                      aria-label="Colour"
+                                    <div
+                                      className="flex w-full flex-wrap items-center gap-2"
+                                      data-template19-color={imageTemplate19Color}
+                                      data-template19-look={template19ColourLabel(imageTemplate19Color)}
                                     >
-                                      {IMAGE_TEMPLATE19_COLOR_OPTIONS.map((option) => (
-                                        <option key={option.id} value={option.id}>
-                                          {option.label}
-                                        </option>
-                                      ))}
-                                    </select>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setImageTemplate19Color((current) =>
+                                            pickDifferentTemplate19Color(current)
+                                          );
+                                        }}
+                                        className="inline-flex items-center gap-1.5 rounded-md bg-zinc-900 px-2.5 py-1.5 text-sm font-semibold text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 sm:py-1 sm:text-xs"
+                                        aria-label="Randomize colour"
+                                      >
+                                        <span aria-hidden="true">🎲</span>
+                                        Randomize
+                                      </button>
+                                      <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                                        {template19ColourLabel(imageTemplate19Color)}
+                                      </span>
+                                    </div>
                                   ) : null}
                                   <button
                                     type="button"

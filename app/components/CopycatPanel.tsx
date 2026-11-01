@@ -111,9 +111,10 @@ import { PastelSlideshowPreview } from '@/app/components/PastelSlideshowPreview'
 import {
   IMAGE_TEMPLATE18_DEFAULT_STYLE,
   IMAGE_TEMPLATE18_SLIDE_COUNT,
-  IMAGE_TEMPLATE18_STYLE_OPTIONS,
-  isTemplate18StyleId,
+  pickDifferentTemplate18Look,
+  pickRandomTemplate18Look,
   shuffleTemplate18PastelBody,
+  template18LookLabel,
   template18PastelBodyTones,
   template18PastelSlidesForCount,
   type Template18PastelTone,
@@ -122,13 +123,10 @@ import {
 import { BoldSolidPreview } from '@/app/components/BoldSolidPreview';
 import { RedGlowPreview } from '@/app/components/RedGlowPreview';
 import {
-  IMAGE_TEMPLATE19_COLOR_OPTIONS,
-  IMAGE_TEMPLATE19_DEFAULT_COLOR,
-  isTemplate19ColorOptionId,
+  pickDifferentTemplate19Color,
   pickTemplate19ShuffleColor,
-  resolveTemplate19PaintColor,
+  template19ColourLabel,
   type Template19ColorId,
-  type Template19ColorOptionId,
 } from '@/app/lib/image-template-19-glow';
 import { OceanSlideshowPreview } from '@/app/components/OceanSlideshowPreview';
 import { RedRoundedPreview } from '@/app/components/RedRoundedPreview';
@@ -1034,13 +1032,7 @@ export function CopycatPanel({
   const [template18PastelBody, setTemplate18PastelBody] = useState<Template18PastelTone[]>(
     () => template18PastelBodyTones()
   );
-  const [template19Color, setTemplate19Color] = useState<Template19ColorOptionId>(
-    IMAGE_TEMPLATE19_DEFAULT_COLOR
-  );
-  const [template19ShuffleColor, setTemplate19ShuffleColor] = useState<Template19ColorId>(() =>
-    pickTemplate19ShuffleColor()
-  );
-  const template19PaintColor = resolveTemplate19PaintColor(template19Color, template19ShuffleColor);
+  const [template19Color, setTemplate19Color] = useState<Template19ColorId>('red');
   const [template15FrameBg, setTemplate15FrameBg] = useState(() =>
     pickTemplate15FrameColor()
   );
@@ -1064,6 +1056,17 @@ export function CopycatPanel({
   } | null>(null);
   // Keeps a single crypto draw if React restarts this render after setSelection.
   const immediateDrawRef = useRef<{ epoch: string; postId: string; bag: string[] } | null>(null);
+  // Template 18's style is rolled when that template is selected, not on every new post.
+  const template18RolledForRef = useRef<number | null>(null);
+
+  const rollTemplate18LookForSelection = useCallback(() => {
+    if (template18RolledForRef.current === templateId) return;
+    template18RolledForRef.current = templateId;
+    if (templateId !== 18) return;
+    const look = pickRandomTemplate18Look();
+    setTemplate18Style(look.style);
+    setTemplate18Scanlines(look.scanlines);
+  }, [templateId]);
 
   let selectedPostId = selection && selection.epoch === postEpoch ? selection.postId : null;
   let selectedBag = selection && selection.epoch === postEpoch ? selection.bag : [];
@@ -1093,8 +1096,9 @@ export function CopycatPanel({
     setSelectedTab(0);
     setTemplate14Color((current) => pickTemplate14Color(current));
     setTemplate15FrameBg((current) => pickTemplate15FrameColor(current));
+    rollTemplate18LookForSelection();
     setTemplate18PastelBody(shuffleTemplate18PastelBody());
-    setTemplate19ShuffleColor(pickTemplate19ShuffleColor());
+    setTemplate19Color(pickTemplate19ShuffleColor());
   }
 
   postBagRef.current = selectedBag;
@@ -1146,7 +1150,7 @@ export function CopycatPanel({
     setTemplate14Color((current) => pickTemplate14Color(current));
     setTemplate15FrameBg((current) => pickTemplate15FrameColor(current));
     setTemplate18PastelBody(shuffleTemplate18PastelBody());
-    setTemplate19ShuffleColor(pickTemplate19ShuffleColor());
+    setTemplate19Color(pickTemplate19ShuffleColor());
   }, [postIds, postEpoch]);
 
   // First draw only. Later source/template changes are applied during render above
@@ -1167,9 +1171,10 @@ export function CopycatPanel({
     setSelectedTab(0);
     setTemplate14Color((current) => pickTemplate14Color(current));
     setTemplate15FrameBg((current) => pickTemplate15FrameColor(current));
+    rollTemplate18LookForSelection();
     setTemplate18PastelBody(shuffleTemplate18PastelBody());
-    setTemplate19ShuffleColor(pickTemplate19ShuffleColor());
-  }, [postEpoch, postIds, selection]);
+    setTemplate19Color(pickTemplate19ShuffleColor());
+  }, [postEpoch, postIds, selection, rollTemplate18LookForSelection]);
 
   // Re-apply the scroll offset from the last "New random post" tap before paint,
   // including when the new post has a different slide count.
@@ -1332,7 +1337,7 @@ export function CopycatPanel({
         template18Style,
         template18Scanlines,
         template18PastelSlides,
-        template19Color: template19PaintColor,
+        template19Color,
       });
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
@@ -1362,7 +1367,7 @@ export function CopycatPanel({
     template18Style,
     template18Scanlines,
     template18PastelSlides,
-    template19PaintColor,
+    template19Color,
   ]);
 
   if (!selectedPost) {
@@ -1468,52 +1473,51 @@ export function CopycatPanel({
         <p className="text-xs text-red-600 dark:text-red-400">{template15CoverError}</p>
       ) : null}
       {templateId === 18 ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={template18Style}
-            onChange={(e) => {
-              const next = e.target.value;
-              if (isTemplate18StyleId(next)) setTemplate18Style(next);
+        <div
+          className="flex flex-wrap items-center gap-2"
+          data-template18-style={template18Style}
+          data-template18-scanlines={template18Scanlines ? 'on' : 'off'}
+          data-template18-look={template18LookLabel(template18Style, template18Scanlines)}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              const next = pickDifferentTemplate18Look(template18Style, template18Scanlines);
+              setTemplate18Style(next.style);
+              setTemplate18Scanlines(next.scanlines);
             }}
-            className="rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1.5 text-xs font-medium text-zinc-800 dark:text-zinc-200"
-            aria-label="Style"
+            className="inline-flex items-center gap-1.5 rounded-md bg-zinc-900 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+            aria-label="Randomize style"
           >
-            {IMAGE_TEMPLATE18_STYLE_OPTIONS.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          {template18Style === 'pastel' ? (
-            <label className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-800 dark:text-zinc-200">
-              <input
-                type="checkbox"
-                checked={template18Scanlines}
-                onChange={(e) => setTemplate18Scanlines(e.target.checked)}
-                className="h-3.5 w-3.5 rounded border-zinc-300 dark:border-zinc-600"
-                aria-label="Scanlines"
-              />
-              Scanlines
-            </label>
-          ) : null}
+            <span aria-hidden="true">🎲</span>
+            Randomize
+          </button>
+          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
+            {template18LookLabel(template18Style, template18Scanlines)}
+          </span>
         </div>
       ) : null}
       {templateId === 19 ? (
-        <select
-          value={template19Color}
-          onChange={(e) => {
-            const next = e.target.value;
-            if (isTemplate19ColorOptionId(next)) setTemplate19Color(next);
-          }}
-          className="rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1.5 text-xs font-medium text-zinc-800 dark:text-zinc-200"
-          aria-label="Colour"
+        <div
+          className="flex flex-wrap items-center gap-2"
+          data-template19-color={template19Color}
+          data-template19-look={template19ColourLabel(template19Color)}
         >
-          {IMAGE_TEMPLATE19_COLOR_OPTIONS.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          <button
+            type="button"
+            onClick={() => {
+              setTemplate19Color((current) => pickDifferentTemplate19Color(current));
+            }}
+            className="inline-flex items-center gap-1.5 rounded-md bg-zinc-900 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+            aria-label="Randomize colour"
+          >
+            <span aria-hidden="true">🎲</span>
+            Randomize
+          </button>
+          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
+            {template19ColourLabel(template19Color)}
+          </span>
+        </div>
       ) : null}
       <CopycatSlidePreview
         templateId={templateId}
@@ -1523,7 +1527,7 @@ export function CopycatPanel({
         template18Style={template18Style}
         template18Scanlines={template18Scanlines}
         template18PastelSlides={template18PastelSlides}
-        template19Color={template19PaintColor}
+        template19Color={template19Color}
         backgroundSrc={
           templateId === 17 ? template17BackgroundSrcAt(questionSlides, selectedTab) : undefined
         }
