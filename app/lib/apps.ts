@@ -186,6 +186,12 @@ export const VIDEO_TEMPLATES_BY_APP: Record<StudioAppId, VideoTemplateCard[]> = 
       title: 'Cinematic',
       subtitle: '',
     },
+    {
+      id: 7,
+      title: 'Dark Love Letter',
+      subtitle: 'Long letter on a moody dark clip',
+      coverSrc: '/video-templates/template-7-cover.jpg',
+    },
   ],
   fab: [
     { id: 1, title: 'Affirmation montage', subtitle: '' },
