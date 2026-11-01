@@ -2413,7 +2413,8 @@ export default function Home() {
       : isFlatDarkImageTemplate
         ? IMAGE_TEMPLATE23_QUESTION_COUNT
         : 5;
-  // Template 1 / 2 / 6 / 7 / 8 / 9 end on Q5 — no CTA.
+  // These templates close on the last question. Template 2's App Store mock
+  // sits on that slide; there is no extra CTA-only tab.
   const hasImageTemplateCtaTab =
     !isPastelCarouselImageTemplate &&
     !isKawaiiImageTemplate &&
@@ -2427,7 +2428,8 @@ export default function Home() {
     !isPastelSlideshowImageTemplate &&
     !isRedGlowImageTemplate &&
     !isOceanSlideshowImageTemplate &&
-    !isRedRoundedImageTemplate;
+    !isRedRoundedImageTemplate &&
+    !isFlatDarkImageTemplate;
   const imageTemplateCtaTabIndex = hasImageTemplateCtaTab
     ? imageTemplateQuestionCount + 1
     : -1;
@@ -4829,7 +4831,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       setImageTabPastelBgs([]);
       setImageTabTypeLabel('Funny Questions');
       setImageTabSources(Array.from({ length: IMAGE_TEMPLATE23_SLIDE_COUNT }, () => ''));
-      setImageTabTexts([title, ...questions, '']);
+      setImageTabTexts([title, ...questions]);
       return;
     }
 
@@ -5544,7 +5546,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       return { entries, isKawaiiTemplate: false };
     }
     if (exportTemplateId === 23) {
-      const names = ['cover', 'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'cta'] as const;
+      const names = ['cover', 'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7'] as const;
       const frameWidth = 1080;
       const frameHeight = 1440;
       const loadImage = (src: string, label: string) =>
@@ -7877,7 +7879,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               tabIndex={selectedImageBrowserTab}
                               slideCount={imageTemplateTabCount}
                               isCover={selectedImageBrowserTab === 0}
-                              isCta={selectedImageBrowserTab === imageTemplateCtaTabIndex}
+                              isCta={selectedImageBrowserTab === IMAGE_TEMPLATE23_CTA_TAB}
                               coverSubtitle={imageTemplate23CoverSubtitle}
                             />
                           ) : isPastelSlideshowImageTemplate ? (

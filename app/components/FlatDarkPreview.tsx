@@ -91,7 +91,7 @@ export function FlatDarkPreview({
   return (
     <div
       className="absolute inset-0"
-      style={{ backgroundColor: template23Background(tabIndex, cta) }}
+      style={{ backgroundColor: template23Background(tabIndex) }}
     >
       <canvas
         ref={canvasRef}

@@ -1,8 +1,11 @@
 import { IMAGE_TEMPLATE2_APP_FOOTER } from '@/app/lib/constants';
 import { splitCopycatQuestionAndOptions } from '@/app/lib/copycat/flamingo-cards';
 import {
-  IMAGE_TEMPLATE2_Q5_PROMO_ASPECT,
   IMAGE_TEMPLATE2_Q5_PROMO_LABEL,
+  IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO,
+  IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO,
+  IMAGE_TEMPLATE2_Q5_PROMO_TEXT_GAP_RATIO,
+  imageTemplate2Q5PromoLayout,
 } from '@/app/lib/image-template-2-cover';
 
 /**
@@ -10,13 +13,17 @@ import {
  * Measured from a 3:4 "let it slide" post: one solid colour per slide,
  * no card, frame, progress bar, grain, or vignette.
  *
- * Cover + seven questions + a closing App Store slide. Question colours
+ * Cover + seven questions. The last question keeps its copy and closes with
+ * template 2's App Store promo (the mock reading "Download for more questions!",
+ * same width and crop). There is no extra CTA-only slide. Question colours
  * cycle when a post has more than seven questions. Type is Roboto.
- * The footer is Poppins SemiBold, same string as template 2.
+ * The footer is Poppins SemiBold, same string as template 2, and the promo
+ * replaces it on the last question.
  */
 export const IMAGE_TEMPLATE23_QUESTION_COUNT = 7;
-export const IMAGE_TEMPLATE23_SLIDE_COUNT = IMAGE_TEMPLATE23_QUESTION_COUNT + 2;
-export const IMAGE_TEMPLATE23_CTA_TAB = IMAGE_TEMPLATE23_SLIDE_COUNT - 1;
+export const IMAGE_TEMPLATE23_SLIDE_COUNT = IMAGE_TEMPLATE23_QUESTION_COUNT + 1;
+/** Last question. The App Store mock sits on this slide. */
+export const IMAGE_TEMPLATE23_CTA_TAB = IMAGE_TEMPLATE23_QUESTION_COUNT;
 
 export const IMAGE_TEMPLATE23_COVER_BG = '#252531';
 export const IMAGE_TEMPLATE23_QUESTION_COLORS = [
@@ -28,11 +35,9 @@ export const IMAGE_TEMPLATE23_QUESTION_COLORS = [
   '#0B1E3E',
   '#122319',
 ] as const;
-export const IMAGE_TEMPLATE23_CTA_BG = '#2B1215';
 
 /** Near-white at about 95% opacity. */
 export const IMAGE_TEMPLATE23_TEXT = 'rgba(245, 245, 248, 0.95)';
-export const IMAGE_TEMPLATE23_CTA_TEXT = '#FFFFFF';
 /** White at about 78% opacity. */
 export const IMAGE_TEMPLATE23_FOOTER_COLOR = 'rgba(255, 255, 255, 0.78)';
 
@@ -81,8 +86,8 @@ export function isImageTemplate23Id(templateId: number | null | undefined): bool
   return templateId === 23;
 }
 
-export function template23Background(tabIndex: number, isCta: boolean): string {
-  if (isCta) return IMAGE_TEMPLATE23_CTA_BG;
+/** Solid colour for the tab. The closing promo uses the last question's colour. */
+export function template23Background(tabIndex: number): string {
   if (tabIndex <= 0) return IMAGE_TEMPLATE23_COVER_BG;
   const slot =
     (tabIndex - 1) % IMAGE_TEMPLATE23_QUESTION_COLORS.length;
@@ -119,16 +124,6 @@ const OPTION_LABEL_WEIGHT = 700;
 const FOOTER_Y = 0.862;
 const FOOTER_SIZE = 0.038;
 const FOOTER_WEIGHT = 600;
-
-/** CTA headline band and phone, measured on the reference post. */
-const CTA_HEADLINE_TOP = 0.11;
-const CTA_HEADLINE_BOTTOM = 0.26;
-const CTA_HEADLINE_SIZE = 0.05;
-const CTA_HEADLINE_LINE_HEIGHT = 1.333;
-const CTA_HEADLINE_MAX_WIDTH = 0.78;
-const CTA_PHONE_X = 0.18;
-const CTA_PHONE_W = 0.64;
-const CTA_PHONE_Y = 0.46;
 
 function setLetterSpacing(ctx: CanvasRenderingContext2D, value: string) {
   if ('letterSpacing' in ctx) ctx.letterSpacing = value;
@@ -383,19 +378,39 @@ function paintQuestion(
   height: number,
   question: string,
   optionSource: string,
-  fontFamily: string
-) {
+  fontFamily: string,
+  /**
+   * When set, the block is lifted (and shrunk only if it still will not fit)
+   * so it ends above this y. Used by the closing slide so the promo can stay
+   * at template 2's resting size. Omitted on ordinary question slides.
+   */
+  ceiling?: number
+): number {
   const footerTop = height * FOOTER_Y - width * FOOTER_SIZE * 0.7;
+  const topFloor = height * (ceiling == null ? 0.08 : 0.05);
   let scale = 1;
-  const minScale = 0.62;
+  const minScale = ceiling == null ? 0.62 : 0.48;
   let layout = layoutQuestion(ctx, width, height, question, optionSource, fontFamily, scale);
-  while (
-    scale > minScale &&
-    (layout.top < height * 0.08 || questionBlockBottom(layout) > footerTop)
-  ) {
-    scale = Math.max(minScale, scale - 0.04);
-    layout = layoutQuestion(ctx, width, height, question, optionSource, fontFamily, scale);
-    if (scale === minScale) break;
+  if (ceiling == null) {
+    while (
+      scale > minScale &&
+      (layout.top < topFloor || questionBlockBottom(layout) > footerTop)
+    ) {
+      scale = Math.max(minScale, scale - 0.04);
+      layout = layoutQuestion(ctx, width, height, question, optionSource, fontFamily, scale);
+      if (scale === minScale) break;
+    }
+  } else {
+    const room = ceiling - topFloor;
+    while (scale > minScale && questionBlockBottom(layout) - layout.top > room) {
+      scale = Math.max(minScale, scale - 0.04);
+      layout = layoutQuestion(ctx, width, height, question, optionSource, fontFamily, scale);
+      if (scale === minScale) break;
+    }
+    const block = questionBlockBottom(layout) - layout.top;
+    if (layout.top + block > ceiling) {
+      layout = { ...layout, top: Math.max(topFloor, ceiling - block) };
+    }
   }
 
   const left = width * QUESTION_X;
@@ -434,44 +449,36 @@ function paintQuestion(
     }
     if (index < optionRows.length - 1) y += layout.optionPitch;
   });
+  return questionBlockBottom(layout);
 }
 
-function promoAspect(promo: CanvasImageSource): number {
-  const sized = promo as { width?: number; height?: number };
-  if (sized.width && sized.height) return sized.width / sized.height;
-  return IMAGE_TEMPLATE2_Q5_PROMO_ASPECT;
-}
-
-function paintCta(
+/**
+ * Template 2's Q5 promo: a 90%-wide App Store mock whose top sits at 66% of
+ * the frame (the rest runs off the bottom), with the label just above it.
+ * A long question pushes the mock down instead of covering the copy.
+ */
+function paintClosingPromo(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
   fontFamily: string,
-  promo: CanvasImageSource | null
+  promo: CanvasImageSource | null,
+  textBottom: number
 ) {
-  const size = width * CTA_HEADLINE_SIZE;
-  const lineH = size * CTA_HEADLINE_LINE_HEIGHT;
-  const maxWidth = width * CTA_HEADLINE_MAX_WIDTH;
-  ctx.font = `700 ${size}px ${fontFamily}`;
+  const labelSize = Math.round(height * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO);
+  const labelGap = height * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO;
+  const layout = imageTemplate2Q5PromoLayout(
+    width,
+    height,
+    textBottom > 0 ? textBottom + labelSize + labelGap : 0
+  );
+  if (promo) ctx.drawImage(promo, layout.x, layout.y, layout.width, layout.height);
+  ctx.font = `700 ${labelSize}px ${fontFamily}`;
   setLetterSpacing(ctx, '0px');
-  const lines = wrapBlock(ctx, IMAGE_TEMPLATE2_Q5_PROMO_LABEL, maxWidth);
-  const block = emSpan(lines.length, lineH, size);
-  const bandTop = height * CTA_HEADLINE_TOP;
-  const bandBottom = height * CTA_HEADLINE_BOTTOM;
-  let y = bandTop + Math.max(0, (bandBottom - bandTop - block) / 2);
-
-  ctx.fillStyle = IMAGE_TEMPLATE23_CTA_TEXT;
+  ctx.fillStyle = IMAGE_TEMPLATE23_TEXT;
   ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  lines.forEach((line, index) => {
-    ctx.fillText(line, width / 2, y);
-    y += index === lines.length - 1 ? size : lineH;
-  });
-
-  if (!promo) return;
-  const phoneW = width * CTA_PHONE_W;
-  const phoneH = phoneW / promoAspect(promo);
-  ctx.drawImage(promo, width * CTA_PHONE_X, height * CTA_PHONE_Y, phoneW, phoneH);
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(IMAGE_TEMPLATE2_Q5_PROMO_LABEL, width / 2, layout.y - labelGap);
 }
 
 export function paintTemplate23Slide(
@@ -498,11 +505,21 @@ export function paintTemplate23Slide(
   ctx.shadowColor = 'transparent';
   ctx.shadowBlur = 0;
   setLetterSpacing(ctx, '0px');
-  ctx.fillStyle = template23Background(options.tabIndex, isCta);
+  ctx.fillStyle = template23Background(options.tabIndex);
   ctx.fillRect(0, 0, width, height);
 
   if (isCta) {
-    paintCta(ctx, width, height, fontFamily, options.promo ?? null);
+    const { question, options: optionText } = splitCopycatQuestionAndOptions(options.text);
+    const resting = imageTemplate2Q5PromoLayout(width, height, 0);
+    const labelSize = height * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO;
+    const labelGap = height * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO;
+    const ceiling =
+      resting.y - labelGap - labelSize - height * IMAGE_TEMPLATE2_Q5_PROMO_TEXT_GAP_RATIO;
+    const textBottom =
+      question.trim() || optionText.trim()
+        ? paintQuestion(ctx, width, height, question, optionText, fontFamily, ceiling)
+        : 0;
+    paintClosingPromo(ctx, width, height, fontFamily, options.promo ?? null, textBottom);
     return;
   }
 
