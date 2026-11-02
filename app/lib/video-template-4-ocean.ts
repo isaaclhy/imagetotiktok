@@ -23,6 +23,7 @@ import { getCrayCrayQuestions7Posts } from '@/app/lib/copycat/craycrayquestions7
 import { getDeepQuestionsAppPosts } from '@/app/lib/copycat/deepquestionsapp';
 import { getFlamingoCardsTiktokPosts } from '@/app/lib/copycat/flamingo-cards-tiktok';
 import { getQuestionsForTonightPosts } from '@/app/lib/copycat/questionsfortonight';
+import { getCoupleSyxPosts } from '@/app/lib/copycat/couple-syx';
 
 export const VIDEO_TEMPLATE4_PEXELS_QUERY = 'ocean sunset';
 export const VIDEO_TEMPLATE4_LABELS = [
@@ -48,6 +49,7 @@ export const VIDEO_TEMPLATE4_COMPETITORS = [
   { id: 'deep-questions-app', label: 'Deep questions app' },
   { id: 'flamingo-cards-tiktok', label: 'Flamingo cards (TikTok)' },
   { id: 'questions-for-tonight', label: 'Questions for tonight' },
+  { id: 'couple-syx', label: 'Couple syx' },
 ] as const;
 
 export type VideoTemplate4CompetitorId = (typeof VIDEO_TEMPLATE4_COMPETITORS)[number]['id'];
@@ -110,6 +112,8 @@ function postsForCompetitor(id: VideoTemplate4CompetitorId): CopycatPost[] {
       return getFlamingoCardsTiktokPosts();
     case 'questions-for-tonight':
       return getQuestionsForTonightPosts();
+    case 'couple-syx':
+      return getCoupleSyxPosts();
   }
 }
 

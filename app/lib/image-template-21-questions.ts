@@ -28,6 +28,7 @@ import { getCrayCrayQuestions7Posts } from '@/app/lib/copycat/craycrayquestions7
 import { getDeepQuestionsAppPosts } from '@/app/lib/copycat/deepquestionsapp';
 import { getFlamingoCardsTiktokPosts } from '@/app/lib/copycat/flamingo-cards-tiktok';
 import { getQuestionsForTonightPosts } from '@/app/lib/copycat/questionsfortonight';
+import { getCoupleSyxPosts } from '@/app/lib/copycat/couple-syx';
 
 type ChoiceBody = {
   body: string;
@@ -77,6 +78,7 @@ function choicePool(): ChoiceBody[] {
   collect(getDeepQuestionsAppPosts(), into);
   collect(getFlamingoCardsTiktokPosts(), into);
   collect(getQuestionsForTonightPosts(), into);
+  collect(getCoupleSyxPosts(), into);
   collect(getCoupleCardsPosts(), into);
   collect(getHhTalkPosts(), into);
   collect(getGoldenThoughtsDailyPosts(), into);
