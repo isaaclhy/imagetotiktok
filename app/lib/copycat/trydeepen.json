@@ -2,7 +2,7 @@
   "handle": "trydeepen",
   "platform": "tiktok",
   "minViews": 50000,
-  "postCount": 27,
+  "postCount": 29,
   "creditsUsed": 3,
   "creditsRemaining": 95,
   "posts": [
@@ -817,6 +817,52 @@
             "Fight",
             "Let it slide"
           ]
+        }
+      ]
+    },
+    {
+      "id": "7703134881634585877",
+      "views": 57000,
+      "likes": 2246,
+      "coverText": "5 sweet questions to ask your girlfriend (but #5 might hurt)",
+      "slideText": [
+        {
+          "text": "If someone asked what made you fall for me, what would you say?"
+        },
+        {
+          "text": "What's one thing about me you hope never changes, even 10 years from now?"
+        },
+        {
+          "text": "What's a little thing I do that makes you feel loved more than I realize?"
+        },
+        {
+          "text": "What's something about me you wouldn't put up with in another guy?"
+        },
+        {
+          "text": "If you could go back to the day we met, knowing everything you know about me now, would you still choose me?"
+        }
+      ]
+    },
+    {
+      "id": "7703037883334036737",
+      "views": 91500,
+      "likes": 2747,
+      "coverText": "Ask your partner these 5 questions to laugh together while increasing intimacy",
+      "slideText": [
+        {
+          "text": "What intimidated you most about me at the beginning of our relationship?"
+        },
+        {
+          "text": "What would I most likely be fired for?"
+        },
+        {
+          "text": "How would you describe me in three words?"
+        },
+        {
+          "text": "How would you describe our relationship in one word?"
+        },
+        {
+          "text": "What did my friends and family reveal to you about me?"
         }
       ]
     }
