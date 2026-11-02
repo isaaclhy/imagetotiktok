@@ -468,6 +468,7 @@ const COPYCAT_COMPETITORS = [
   { id: 'deep-questions-app', label: 'Deep questions app' },
   { id: 'flamingo-cards-tiktok', label: 'Flamingo cards (TikTok)' },
   { id: 'questions-for-tonight', label: 'Questions for tonight' },
+  { id: 'couple-syx', label: 'Couple syx' },
 ] as const;
 
 type CopycatCompetitorId = (typeof COPYCAT_COMPETITORS)[number]['id'];
