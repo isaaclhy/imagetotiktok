@@ -8,6 +8,7 @@ import { getFlamingoConvoPosts } from '@/app/lib/copycat/flamingo-convo';
 import { getQuestions21Posts } from '@/app/lib/copycat/questions-21';
 import { getItsAllAboutLovingYouPosts } from '@/app/lib/copycat/itsallaboutlovingyou';
 import { getTryDeepenPosts } from '@/app/lib/copycat/trydeepen';
+import { getWeDeepOnePosts } from '@/app/lib/copycat/wedeepone';
 import { getCoupleCardsPosts } from '@/app/lib/copycat/couple-cards';
 import { getHhTalkPosts } from '@/app/lib/copycat/hhtalk';
 import { getGoldenThoughtsDailyPosts } from '@/app/lib/copycat/goldenthoughtsdaily';
@@ -31,6 +32,7 @@ let choicePool: string[] | null = null;
 function posts(): CopycatPost[] {
   return [
     ...getTryDeepenPosts(),
+    ...getWeDeepOnePosts(),
     ...FLAMINGO_CARDS_FEED.posts,
     ...getFlamingoConvoPosts(),
     ...getQuestions21Posts(),

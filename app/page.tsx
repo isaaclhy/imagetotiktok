@@ -461,6 +461,7 @@ const COPYCAT_COMPETITORS = [
   { id: 'golden-thoughts-daily', label: 'Golden Thoughts Daily' },
   { id: 'lvrsbae', label: '.lvrsbae' },
   { id: 'spill-cards-app', label: 'Spill Cards App' },
+  { id: 'we-deep-one', label: 'We deep one' },
 ] as const;
 
 type CopycatCompetitorId = (typeof COPYCAT_COMPETITORS)[number]['id'];
