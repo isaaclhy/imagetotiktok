@@ -22,6 +22,12 @@ import { getQuestions21Posts } from '@/app/lib/copycat/questions-21';
 import { getSpillCardsAppPosts } from '@/app/lib/copycat/spillcardsapp';
 import { getTryDeepenPosts } from '@/app/lib/copycat/trydeepen';
 import { getWeDeepOnePosts } from '@/app/lib/copycat/wedeepone';
+import { getCoupleDeepQuestionsPosts } from '@/app/lib/copycat/coupledeepquestions';
+import { getCrayCrayQuestions03Posts } from '@/app/lib/copycat/craycrayquestions03';
+import { getCrayCrayQuestions7Posts } from '@/app/lib/copycat/craycrayquestions7';
+import { getDeepQuestionsAppPosts } from '@/app/lib/copycat/deepquestionsapp';
+import { getFlamingoCardsTiktokPosts } from '@/app/lib/copycat/flamingo-cards-tiktok';
+import { getQuestionsForTonightPosts } from '@/app/lib/copycat/questionsfortonight';
 
 type ChoiceBody = {
   body: string;
@@ -65,6 +71,12 @@ function choicePool(): ChoiceBody[] {
   collect(getItsAllAboutLovingYouPosts(), into);
   collect(getTryDeepenPosts(), into);
   collect(getWeDeepOnePosts(), into);
+  collect(getCoupleDeepQuestionsPosts(), into);
+  collect(getCrayCrayQuestions03Posts(), into);
+  collect(getCrayCrayQuestions7Posts(), into);
+  collect(getDeepQuestionsAppPosts(), into);
+  collect(getFlamingoCardsTiktokPosts(), into);
+  collect(getQuestionsForTonightPosts(), into);
   collect(getCoupleCardsPosts(), into);
   collect(getHhTalkPosts(), into);
   collect(getGoldenThoughtsDailyPosts(), into);

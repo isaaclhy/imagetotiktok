@@ -462,6 +462,12 @@ const COPYCAT_COMPETITORS = [
   { id: 'lvrsbae', label: '.lvrsbae' },
   { id: 'spill-cards-app', label: 'Spill Cards App' },
   { id: 'we-deep-one', label: 'We deep one' },
+  { id: 'couple-deep-questions', label: 'Couple deep questions' },
+  { id: 'cray-cray-03', label: 'Cray Cray 03' },
+  { id: 'cray-cray-7', label: 'Cray Cray 7' },
+  { id: 'deep-questions-app', label: 'Deep questions app' },
+  { id: 'flamingo-cards-tiktok', label: 'Flamingo cards (TikTok)' },
+  { id: 'questions-for-tonight', label: 'Questions for tonight' },
 ] as const;
 
 type CopycatCompetitorId = (typeof COPYCAT_COMPETITORS)[number]['id'];

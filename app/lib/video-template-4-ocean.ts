@@ -17,6 +17,12 @@ import { getQuestions21Posts } from '@/app/lib/copycat/questions-21';
 import { getSpillCardsAppPosts } from '@/app/lib/copycat/spillcardsapp';
 import { getTryDeepenPosts } from '@/app/lib/copycat/trydeepen';
 import { getWeDeepOnePosts } from '@/app/lib/copycat/wedeepone';
+import { getCoupleDeepQuestionsPosts } from '@/app/lib/copycat/coupledeepquestions';
+import { getCrayCrayQuestions03Posts } from '@/app/lib/copycat/craycrayquestions03';
+import { getCrayCrayQuestions7Posts } from '@/app/lib/copycat/craycrayquestions7';
+import { getDeepQuestionsAppPosts } from '@/app/lib/copycat/deepquestionsapp';
+import { getFlamingoCardsTiktokPosts } from '@/app/lib/copycat/flamingo-cards-tiktok';
+import { getQuestionsForTonightPosts } from '@/app/lib/copycat/questionsfortonight';
 
 export const VIDEO_TEMPLATE4_PEXELS_QUERY = 'ocean sunset';
 export const VIDEO_TEMPLATE4_LABELS = [
@@ -36,6 +42,12 @@ export const VIDEO_TEMPLATE4_COMPETITORS = [
   { id: 'lvrsbae', label: '.lvrsbae' },
   { id: 'spill-cards-app', label: 'Spill Cards App' },
   { id: 'we-deep-one', label: 'We deep one' },
+  { id: 'couple-deep-questions', label: 'Couple deep questions' },
+  { id: 'cray-cray-03', label: 'Cray Cray 03' },
+  { id: 'cray-cray-7', label: 'Cray Cray 7' },
+  { id: 'deep-questions-app', label: 'Deep questions app' },
+  { id: 'flamingo-cards-tiktok', label: 'Flamingo cards (TikTok)' },
+  { id: 'questions-for-tonight', label: 'Questions for tonight' },
 ] as const;
 
 export type VideoTemplate4CompetitorId = (typeof VIDEO_TEMPLATE4_COMPETITORS)[number]['id'];
@@ -86,6 +98,18 @@ function postsForCompetitor(id: VideoTemplate4CompetitorId): CopycatPost[] {
       return getSpillCardsAppPosts();
     case 'we-deep-one':
       return getWeDeepOnePosts();
+    case 'couple-deep-questions':
+      return getCoupleDeepQuestionsPosts();
+    case 'cray-cray-03':
+      return getCrayCrayQuestions03Posts();
+    case 'cray-cray-7':
+      return getCrayCrayQuestions7Posts();
+    case 'deep-questions-app':
+      return getDeepQuestionsAppPosts();
+    case 'flamingo-cards-tiktok':
+      return getFlamingoCardsTiktokPosts();
+    case 'questions-for-tonight':
+      return getQuestionsForTonightPosts();
   }
 }
 
