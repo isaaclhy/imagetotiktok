@@ -15,6 +15,12 @@ import { getQuestions21Posts } from '@/app/lib/copycat/questions-21';
 import { getItsAllAboutLovingYouPosts } from '@/app/lib/copycat/itsallaboutlovingyou';
 import { getTryDeepenPosts } from '@/app/lib/copycat/trydeepen';
 import { getWeDeepOnePosts } from '@/app/lib/copycat/wedeepone';
+import { getCoupleDeepQuestionsPosts } from '@/app/lib/copycat/coupledeepquestions';
+import { getCrayCrayQuestions03Posts } from '@/app/lib/copycat/craycrayquestions03';
+import { getCrayCrayQuestions7Posts } from '@/app/lib/copycat/craycrayquestions7';
+import { getDeepQuestionsAppPosts } from '@/app/lib/copycat/deepquestionsapp';
+import { getFlamingoCardsTiktokPosts } from '@/app/lib/copycat/flamingo-cards-tiktok';
+import { getQuestionsForTonightPosts } from '@/app/lib/copycat/questionsfortonight';
 import { getCoupleCardsPosts } from '@/app/lib/copycat/couple-cards';
 import { getHhTalkPosts } from '@/app/lib/copycat/hhtalk';
 import { getGoldenThoughtsDailyPosts } from '@/app/lib/copycat/goldenthoughtsdaily';
@@ -1050,7 +1056,19 @@ export function CopycatPanel({
                         ? getSpillCardsAppPosts()
                         : competitorId === 'we-deep-one'
                           ? getWeDeepOnePosts()
-                          : [];
+                          : competitorId === 'couple-deep-questions'
+                            ? getCoupleDeepQuestionsPosts()
+                            : competitorId === 'cray-cray-03'
+                              ? getCrayCrayQuestions03Posts()
+                              : competitorId === 'cray-cray-7'
+                                ? getCrayCrayQuestions7Posts()
+                                : competitorId === 'deep-questions-app'
+                                  ? getDeepQuestionsAppPosts()
+                                  : competitorId === 'flamingo-cards-tiktok'
+                                    ? getFlamingoCardsTiktokPosts()
+                                    : competitorId === 'questions-for-tonight'
+                                      ? getQuestionsForTonightPosts()
+                                      : [];
     if (competitorId === 'flamingo-cards') return filterCopycatPostsByMinViews(raw);
     return raw;
   }, [competitorId, useHookPosts]);

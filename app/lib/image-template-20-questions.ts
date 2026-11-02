@@ -9,6 +9,12 @@ import { getQuestions21Posts } from '@/app/lib/copycat/questions-21';
 import { getItsAllAboutLovingYouPosts } from '@/app/lib/copycat/itsallaboutlovingyou';
 import { getTryDeepenPosts } from '@/app/lib/copycat/trydeepen';
 import { getWeDeepOnePosts } from '@/app/lib/copycat/wedeepone';
+import { getCoupleDeepQuestionsPosts } from '@/app/lib/copycat/coupledeepquestions';
+import { getCrayCrayQuestions03Posts } from '@/app/lib/copycat/craycrayquestions03';
+import { getCrayCrayQuestions7Posts } from '@/app/lib/copycat/craycrayquestions7';
+import { getDeepQuestionsAppPosts } from '@/app/lib/copycat/deepquestionsapp';
+import { getFlamingoCardsTiktokPosts } from '@/app/lib/copycat/flamingo-cards-tiktok';
+import { getQuestionsForTonightPosts } from '@/app/lib/copycat/questionsfortonight';
 import { getCoupleCardsPosts } from '@/app/lib/copycat/couple-cards';
 import { getHhTalkPosts } from '@/app/lib/copycat/hhtalk';
 import { getGoldenThoughtsDailyPosts } from '@/app/lib/copycat/goldenthoughtsdaily';
@@ -33,6 +39,12 @@ function posts(): CopycatPost[] {
   return [
     ...getTryDeepenPosts(),
     ...getWeDeepOnePosts(),
+    ...getCoupleDeepQuestionsPosts(),
+    ...getCrayCrayQuestions03Posts(),
+    ...getCrayCrayQuestions7Posts(),
+    ...getDeepQuestionsAppPosts(),
+    ...getFlamingoCardsTiktokPosts(),
+    ...getQuestionsForTonightPosts(),
     ...FLAMINGO_CARDS_FEED.posts,
     ...getFlamingoConvoPosts(),
     ...getQuestions21Posts(),
