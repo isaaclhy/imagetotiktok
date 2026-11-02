@@ -16,6 +16,7 @@ import { getLvrsbaePosts } from '@/app/lib/copycat/lvrsbae';
 import { getQuestions21Posts } from '@/app/lib/copycat/questions-21';
 import { getSpillCardsAppPosts } from '@/app/lib/copycat/spillcardsapp';
 import { getTryDeepenPosts } from '@/app/lib/copycat/trydeepen';
+import { getWeDeepOnePosts } from '@/app/lib/copycat/wedeepone';
 
 export const VIDEO_TEMPLATE4_PEXELS_QUERY = 'ocean sunset';
 export const VIDEO_TEMPLATE4_LABELS = [
@@ -34,6 +35,7 @@ export const VIDEO_TEMPLATE4_COMPETITORS = [
   { id: 'golden-thoughts-daily', label: 'Golden Thoughts Daily' },
   { id: 'lvrsbae', label: '.lvrsbae' },
   { id: 'spill-cards-app', label: 'Spill Cards App' },
+  { id: 'we-deep-one', label: 'We deep one' },
 ] as const;
 
 export type VideoTemplate4CompetitorId = (typeof VIDEO_TEMPLATE4_COMPETITORS)[number]['id'];
@@ -82,6 +84,8 @@ function postsForCompetitor(id: VideoTemplate4CompetitorId): CopycatPost[] {
       return getLvrsbaePosts();
     case 'spill-cards-app':
       return getSpillCardsAppPosts();
+    case 'we-deep-one':
+      return getWeDeepOnePosts();
   }
 }
 

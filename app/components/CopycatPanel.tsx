@@ -14,6 +14,7 @@ import { getFlamingoConvoPosts } from '@/app/lib/copycat/flamingo-convo';
 import { getQuestions21Posts } from '@/app/lib/copycat/questions-21';
 import { getItsAllAboutLovingYouPosts } from '@/app/lib/copycat/itsallaboutlovingyou';
 import { getTryDeepenPosts } from '@/app/lib/copycat/trydeepen';
+import { getWeDeepOnePosts } from '@/app/lib/copycat/wedeepone';
 import { getCoupleCardsPosts } from '@/app/lib/copycat/couple-cards';
 import { getHhTalkPosts } from '@/app/lib/copycat/hhtalk';
 import { getGoldenThoughtsDailyPosts } from '@/app/lib/copycat/goldenthoughtsdaily';
@@ -1047,7 +1048,9 @@ export function CopycatPanel({
                       ? getLvrsbaePosts()
                       : competitorId === 'spill-cards-app'
                         ? getSpillCardsAppPosts()
-                        : [];
+                        : competitorId === 'we-deep-one'
+                          ? getWeDeepOnePosts()
+                          : [];
     if (competitorId === 'flamingo-cards') return filterCopycatPostsByMinViews(raw);
     return raw;
   }, [competitorId, useHookPosts]);

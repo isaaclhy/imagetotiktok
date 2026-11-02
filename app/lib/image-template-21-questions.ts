@@ -21,6 +21,7 @@ import { getLvrsbaePosts } from '@/app/lib/copycat/lvrsbae';
 import { getQuestions21Posts } from '@/app/lib/copycat/questions-21';
 import { getSpillCardsAppPosts } from '@/app/lib/copycat/spillcardsapp';
 import { getTryDeepenPosts } from '@/app/lib/copycat/trydeepen';
+import { getWeDeepOnePosts } from '@/app/lib/copycat/wedeepone';
 
 type ChoiceBody = {
   body: string;
@@ -63,6 +64,7 @@ function choicePool(): ChoiceBody[] {
   collect(getQuestions21Posts(), into);
   collect(getItsAllAboutLovingYouPosts(), into);
   collect(getTryDeepenPosts(), into);
+  collect(getWeDeepOnePosts(), into);
   collect(getCoupleCardsPosts(), into);
   collect(getHhTalkPosts(), into);
   collect(getGoldenThoughtsDailyPosts(), into);
