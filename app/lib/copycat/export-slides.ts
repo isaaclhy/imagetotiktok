@@ -102,6 +102,12 @@ import {
   template23CanvasFontStack,
 } from '@/app/lib/image-template-23-flat-dark';
 import {
+  loadTemplate24Fonts,
+  paintTemplate24Slide,
+  template24CanvasFontStack,
+  type Template24Look,
+} from '@/app/lib/image-template-24-penguin';
+import {
   IMAGE_TEMPLATE22_FONT_STACK,
   IMAGE_TEMPLATE22_FONT_WEIGHT,
   paintTemplate22Slide,
@@ -142,7 +148,22 @@ function drawCopycatAppMark(
   ctx.fillText(COPYCAT_APP_NAME, frameWidth / 2, markY);
 }
 
-export type CopycatExportTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23;
+export type CopycatExportTemplateId =
+  | 1
+  | 2
+  | 6
+  | 13
+  | 14
+  | 15
+  | 16
+  | 17
+  | 18
+  | 19
+  | 20
+  | 21
+  | 22
+  | 23
+  | 24;
 
 export type CopycatExportSlide = {
   text: string;
@@ -245,7 +266,8 @@ async function paintSlide(
     pastelSlides?: readonly Template18PastelTone[];
   },
   template19Color?: Template19ColorId,
-  template14Style: Template14StyleId = IMAGE_TEMPLATE14_DEFAULT_STYLE
+  template14Style: Template14StyleId = IMAGE_TEMPLATE14_DEFAULT_STYLE,
+  template24Look?: Template24Look
 ): Promise<Blob> {
   const { w, h } = frameSize(templateId);
   const canvas = document.createElement('canvas');
@@ -291,6 +313,23 @@ async function paintSlide(
       isCta: slide.isCta,
       promo,
       fontFamily: IMAGE_TEMPLATE22_FONT_STACK,
+    });
+    return canvasBlob(canvas);
+  }
+
+  if (templateId === 24) {
+    const fontFamily = template24CanvasFontStack();
+    await loadTemplate24Fonts(fontFamily);
+    const promo = slide.isCta ? await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC) : null;
+    paintTemplate24Slide(ctx, w, h, {
+      text: slide.text,
+      tabIndex,
+      slideCount,
+      isCover: slide.isCover,
+      isCta: slide.isCta,
+      look: template24Look,
+      promo,
+      fontFamily,
     });
     return canvasBlob(canvas);
   }
@@ -760,6 +799,7 @@ export async function exportCopycatSlidesZip(options: {
   template18Scanlines?: boolean;
   template18PastelSlides?: readonly Template18PastelTone[];
   template19Color?: Template19ColorId;
+  template24Look?: Template24Look;
 }): Promise<Blob> {
   const JSZip = (await import('jszip')).default;
   const zip = new JSZip();
@@ -779,7 +819,8 @@ export async function exportCopycatSlidesZip(options: {
         pastelSlides: options.template18PastelSlides,
       },
       options.template19Color,
-      options.template14Style ?? IMAGE_TEMPLATE14_DEFAULT_STYLE
+      options.template14Style ?? IMAGE_TEMPLATE14_DEFAULT_STYLE,
+      options.template24Look
     );
     const name = i === 0 ? 'cover' : `q${i}`;
     zip.file(`template-${options.templateId}-${name}.png`, blob);
