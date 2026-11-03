@@ -2,7 +2,7 @@
   "handle": "trydeepen",
   "platform": "tiktok",
   "minViews": 50000,
-  "postCount": 29,
+  "postCount": 30,
   "creditsUsed": 3,
   "creditsRemaining": 95,
   "posts": [
@@ -863,6 +863,29 @@
         },
         {
           "text": "What did my friends and family reveal to you about me?"
+        }
+      ]
+    },
+    {
+      "id": "7702038018974092551",
+      "views": 52700,
+      "likes": 1502,
+      "coverText": "5 questions to annoy him now",
+      "slideText": [
+        {
+          "text": "If you were married to someone else and you met me, would you cheat on your wife with me?"
+        },
+        {
+          "text": "If I had an identical twin sister, would you also be attracted to her?"
+        },
+        {
+          "text": "Do you like me because you think I'm pretty, or do you think I'm pretty because you like me?"
+        },
+        {
+          "text": "Who do you think is the most attractive girl at your work?"
+        },
+        {
+          "text": "If I died and you got remarried, would you be buried next to me or your new one?"
         }
       ]
     }
