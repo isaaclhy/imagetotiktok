@@ -48,7 +48,12 @@ export const IMAGE_TEMPLATE15_MARK_SIZE_RATIO = 0.028;
 export const IMAGE_TEMPLATE15_MARK_TOP_RATIO = 0.085;
 export const IMAGE_TEMPLATE15_MARK_TRACKING = '0.14em';
 export const IMAGE_TEMPLATE15_COVER_SIZE_RATIO = 0.088;
-export const IMAGE_TEMPLATE15_QUESTION_SIZE_RATIO = 0.048;
+/**
+ * Question body as a fraction of frame width, and the auto-fit cap.
+ * Raised from 0.048 (about 31%) so short questions fill the card.
+ * Long questions shrink from this cap in `layoutTemplate15Question`.
+ */
+export const IMAGE_TEMPLATE15_QUESTION_SIZE_RATIO = 0.063;
 /** Top of the question + options, just under the mark — card eye-level band. */
 export const IMAGE_TEMPLATE15_QUESTION_TOP_RATIO = 0.2;
 export const IMAGE_TEMPLATE15_LINE_HEIGHT = 1.22;
@@ -137,6 +142,106 @@ function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number
   return lines;
 }
 
+export type Template15QuestionLayout = {
+  fontSize: number;
+  lines: string[];
+  lineHeight: number;
+  x: number;
+  y: number;
+  maxWidth: number;
+};
+
+function template15QuestionRoom(
+  frameWidth: number,
+  frameHeight: number
+): { x: number; y: number; maxWidth: number; room: number } {
+  const card = template15CardRect(frameWidth, frameHeight);
+  const border = Math.max(2, frameWidth * IMAGE_TEMPLATE15_CARD_BORDER_RATIO);
+  const maxWidth = Math.max(1, card.width * (1 - IMAGE_TEMPLATE15_TEXT_INSET_X * 2));
+  const x = card.x + card.width * IMAGE_TEMPLATE15_TEXT_INSET_X;
+  const y = card.y + card.height * IMAGE_TEMPLATE15_QUESTION_TOP_RATIO;
+  const bottomPad = Math.max(border * 0.35, frameHeight * 0.012);
+  const bottom = card.y + card.height - border - bottomPad;
+  return { x, y, maxWidth, room: Math.max(0, bottom - y) };
+}
+
+function questionLinesFit(
+  ctx: CanvasRenderingContext2D,
+  lines: string[],
+  maxWidth: number,
+  lineHeight: number,
+  room: number
+): boolean {
+  if (lines.length * lineHeight > room + 0.5) return false;
+  for (const line of lines) {
+    if (line && ctx.measureText(line).width > maxWidth + 0.5) return false;
+  }
+  return true;
+}
+
+/**
+ * Largest question size that stays inside the white card.
+ * Short copy keeps `IMAGE_TEMPLATE15_QUESTION_SIZE_RATIO`. Longer copy
+ * steps down from that cap so it never overflows or clips.
+ */
+export function layoutTemplate15Question(
+  ctx: CanvasRenderingContext2D,
+  frameWidth: number,
+  frameHeight: number,
+  text: string
+): Template15QuestionLayout {
+  const { x, y, maxWidth, room } = template15QuestionRoom(frameWidth, frameHeight);
+  const cap = Math.max(1, Math.round(frameWidth * IMAGE_TEMPLATE15_QUESTION_SIZE_RATIO));
+  const previousFont = ctx.font;
+  const previousSpacing = ctx.letterSpacing;
+
+  const measure = (size: number) => {
+    ctx.font = `500 ${size}px ${IMAGE_TEMPLATE15_QUESTION_FONT_STACK}`;
+    ctx.letterSpacing = '0px';
+    const lines = wrapLines(ctx, text, maxWidth);
+    const lineHeight = size * IMAGE_TEMPLATE15_LINE_HEIGHT;
+    return {
+      lines,
+      lineHeight,
+      fits:
+        room > 0 &&
+        questionLinesFit(ctx, lines, maxWidth, lineHeight, room),
+    };
+  };
+
+  let fontSize = cap;
+  let fitted = measure(cap);
+  if (!fitted.fits && text.trim() && room > 0) {
+    let lo = 1;
+    let hi = cap - 1;
+    fontSize = 1;
+    fitted = measure(1);
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      const next = measure(mid);
+      if (next.fits) {
+        fontSize = mid;
+        fitted = next;
+        lo = mid + 1;
+      } else {
+        hi = mid - 1;
+      }
+    }
+  }
+
+  ctx.font = previousFont;
+  ctx.letterSpacing = previousSpacing;
+
+  return {
+    fontSize,
+    lines: fitted.lines,
+    lineHeight: fitted.lineHeight,
+    x,
+    y,
+    maxWidth,
+  };
+}
+
 export function paintTemplate15QuestionCard(
   ctx: CanvasRenderingContext2D,
   frameWidth: number,
@@ -184,20 +289,17 @@ export function paintTemplate15QuestionCard(
   );
   ctx.letterSpacing = '0px';
 
-  const fontSize = Math.round(frameWidth * IMAGE_TEMPLATE15_QUESTION_SIZE_RATIO);
-  ctx.font = `500 ${fontSize}px ${IMAGE_TEMPLATE15_QUESTION_FONT_STACK}`;
-  const maxW = card.width * (1 - IMAGE_TEMPLATE15_TEXT_INSET_X * 2);
-  const lines = wrapLines(ctx, options.text, maxW);
-  const lineHeight = fontSize * IMAGE_TEMPLATE15_LINE_HEIGHT;
-  const x = card.x + card.width * IMAGE_TEMPLATE15_TEXT_INSET_X;
-  const topY = card.y + card.height * IMAGE_TEMPLATE15_QUESTION_TOP_RATIO;
+  const layout = layoutTemplate15Question(ctx, frameWidth, frameHeight, options.text);
+  ctx.font = `500 ${layout.fontSize}px ${IMAGE_TEMPLATE15_QUESTION_FONT_STACK}`;
+  ctx.letterSpacing = '0px';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
-  const blockH = lines.length * lineHeight;
+  const blockH = layout.lines.length * layout.lineHeight;
+  const topY = layout.y;
   let y = topY;
-  for (const line of lines) {
-    ctx.fillText(line, x, y);
-    y += lineHeight;
+  for (const line of layout.lines) {
+    ctx.fillText(line, layout.x, y);
+    y += layout.lineHeight;
   }
 
   if (options.isCta && options.promo) {
