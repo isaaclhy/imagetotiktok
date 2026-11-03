@@ -86,6 +86,8 @@ import {
   IMAGE_TEMPLATE15_QUESTION_TOP_RATIO,
   IMAGE_TEMPLATE15_TEXT,
   IMAGE_TEMPLATE15_TEXT_INSET_X,
+  layoutTemplate15Question,
+  type Template15QuestionLayout,
 } from '@/app/lib/image-template-15-cards';
 import {
   fetchPinterestCoverImage,
@@ -318,6 +320,84 @@ function pickTemplate14Color(exclude?: string): string {
 
 function templateFrameAspect(_templateId: CopycatTemplateId): string {
   return 'aspect-3/4';
+}
+
+/** Question copy for template 15, sized with the same cap and shrink as the export. */
+function Template15QuestionCopy({ text }: { text: string }) {
+  const frameRef = useRef<HTMLDivElement>(null);
+  const [layout, setLayout] = useState<Template15QuestionLayout | null>(null);
+
+  useLayoutEffect(() => {
+    const frame = frameRef.current;
+    if (!frame) return;
+    let cancelled = false;
+    const apply = () => {
+      if (cancelled || !frameRef.current) return;
+      const width = frameRef.current.clientWidth;
+      const height = frameRef.current.clientHeight;
+      if (width <= 0 || height <= 0) return;
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      setLayout(layoutTemplate15Question(ctx, width, height, text));
+    };
+    apply();
+    const observer = new ResizeObserver(() => apply());
+    observer.observe(frame);
+    const fonts = document.fonts;
+    void fonts.load('500 64px "Playfair Display"').then(() => apply());
+    void fonts.ready.then(() => apply());
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+    };
+  }, [text]);
+
+  return (
+    <div ref={frameRef} className="pointer-events-none absolute inset-0 z-10">
+      {layout ? (
+        <div
+          className="absolute text-left"
+          style={{
+            left: layout.x,
+            top: layout.y,
+            width: layout.maxWidth,
+            color: IMAGE_TEMPLATE15_TEXT,
+            fontFamily: IMAGE_TEMPLATE15_QUESTION_FONT_STACK,
+            fontSize: layout.fontSize,
+            fontWeight: 500,
+            letterSpacing: '0px',
+          }}
+        >
+          {layout.lines.map((line, index) => (
+            <div
+              key={index}
+              className="whitespace-nowrap"
+              style={{ height: layout.lineHeight, lineHeight: `${layout.lineHeight}px` }}
+            >
+              {line || '\u00a0'}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p
+          className="absolute z-10 whitespace-pre-wrap wrap-break-word text-left"
+          style={{
+            left: `${IMAGE_TEMPLATE15_TEXT_INSET_X * 100}%`,
+            width: `${(1 - IMAGE_TEMPLATE15_TEXT_INSET_X * 2) * 100}%`,
+            top: `${IMAGE_TEMPLATE15_QUESTION_TOP_RATIO * 100}%`,
+            color: IMAGE_TEMPLATE15_TEXT,
+            fontFamily: IMAGE_TEMPLATE15_QUESTION_FONT_STACK,
+            fontSize: `${IMAGE_TEMPLATE15_QUESTION_SIZE_RATIO * 100}cqw`,
+            fontWeight: 500,
+            lineHeight: IMAGE_TEMPLATE15_LINE_HEIGHT,
+          }}
+        >
+          {text}
+        </p>
+      )}
+    </div>
+  );
 }
 
 function CopycatSlidePreview({
@@ -574,23 +654,9 @@ function CopycatSlidePreview({
             >
               {IMAGE_TEMPLATE15_MARK}
             </p>
-            <p
-              className="absolute z-10 whitespace-pre-wrap wrap-break-word text-left"
-              style={{
-                left: `${IMAGE_TEMPLATE15_TEXT_INSET_X * 100}%`,
-                width: `${(1 - IMAGE_TEMPLATE15_TEXT_INSET_X * 2) * 100}%`,
-                top: `${IMAGE_TEMPLATE15_QUESTION_TOP_RATIO * 100}%`,
-                color: IMAGE_TEMPLATE15_TEXT,
-                fontFamily: IMAGE_TEMPLATE15_QUESTION_FONT_STACK,
-                fontSize: `${IMAGE_TEMPLATE15_QUESTION_SIZE_RATIO * 100}cqw`,
-                fontWeight: 500,
-                lineHeight: IMAGE_TEMPLATE15_LINE_HEIGHT,
-              }}
-            >
-              {text}
-            </p>
           </div>
         </div>
+        <Template15QuestionCopy text={text} />
         {showTemplate2StyleCta ? (
           <>
             <p
