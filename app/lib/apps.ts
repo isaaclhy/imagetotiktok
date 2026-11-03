@@ -157,6 +157,12 @@ export const IMAGE_TEMPLATES_BY_APP: Record<StudioAppId, ImageTemplateCard[]> = 
       subtitle: '',
       coverSrc: '/image-templates/template-23-cover.png',
     },
+    {
+      id: 24,
+      title: 'Penguin cards',
+      subtitle: '',
+      coverSrc: '/image-templates/template-24-cover.png',
+    },
   ],
   fab: [
     { id: 1, title: 'Heart shaped paper', subtitle: '' },

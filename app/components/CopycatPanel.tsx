@@ -139,6 +139,7 @@ import {
 } from '@/app/lib/image-template-18-pastel';
 import { BoldSolidPreview } from '@/app/components/BoldSolidPreview';
 import { FlatDarkPreview } from '@/app/components/FlatDarkPreview';
+import { PenguinCardsPreview } from '@/app/components/PenguinCardsPreview';
 import { RedGlowPreview } from '@/app/components/RedGlowPreview';
 import {
   pickDifferentTemplate19Color,
@@ -153,6 +154,16 @@ import {
   template17BackgroundSrcAt,
   template17TabForQuestions,
 } from '@/app/lib/copycat/template17-background';
+import {
+  IMAGE_TEMPLATE24_DEFAULT_LOOK,
+  IMAGE_TEMPLATE24_HIGHLIGHT_WORDS,
+  isTemplate24HighlightChoice,
+  rerollTemplate24Look,
+  rollTemplate24Look,
+  template24HighlightForCover,
+  type Template24HighlightChoice,
+  type Template24Look,
+} from '@/app/lib/image-template-24-penguin';
 
 const TIKTOK_SANS_STACK = '"TikTok Sans", system-ui, -apple-system, sans-serif';
 const COPYCAT_APP_NAME = 'Spill It';
@@ -161,7 +172,7 @@ const COPYCAT_COVER_HEARTS = '♥ ♥ ♥';
 const COPYCAT_TEXT_ONLY_COVER_TOP = 0.38;
 const COPYCAT_TEXT_ONLY_COVER_SIZE_T2 = 0.074;
 
-export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23;
+export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24;
 
 function CopycatAppMarkFooter({
   isCover,
@@ -325,6 +336,7 @@ function CopycatSlidePreview({
   template18Scanlines = true,
   template18PastelSlides,
   template19Color = 'red',
+  template24Look,
 }: {
   templateId: CopycatTemplateId;
   tabIndex: number;
@@ -336,6 +348,7 @@ function CopycatSlidePreview({
   template18Scanlines?: boolean;
   template18PastelSlides?: readonly Template18PastelTone[];
   template19Color?: Template19ColorId;
+  template24Look?: Template24Look;
   template15FrameBg?: string;
   illustrationSrc?: string;
   isCtaSlide?: boolean;
@@ -362,7 +375,8 @@ function CopycatSlidePreview({
     templateId !== 20 &&
     templateId !== 21 &&
     templateId !== 22 &&
-    templateId !== 23;
+    templateId !== 23 &&
+    templateId !== 24;
   const alignLeft = Boolean(leftAlign && !isCover) || templateId === 2;
   const pastelBg =
     IMAGE_TEMPLATE2_PASTEL_COLORS[tabIndex % IMAGE_TEMPLATE2_PASTEL_COLORS.length]!;
@@ -396,6 +410,21 @@ function CopycatSlidePreview({
           slideCount={slideCount}
           isCover={isCover}
           isCta={isCtaSlide}
+        />
+      </div>
+    );
+  }
+
+  if (templateId === 24) {
+    return (
+      <div className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4 bg-[#E9F1EC]">
+        <PenguinCardsPreview
+          text={text}
+          tabIndex={tabIndex}
+          slideCount={slideCount}
+          isCover={isCover}
+          isCta={isCtaSlide}
+          look={template24Look}
         />
       </div>
     );
@@ -1091,6 +1120,11 @@ export function CopycatPanel({
     () => template18PastelBodyTones()
   );
   const [template19Color, setTemplate19Color] = useState<Template19ColorId>('red');
+  const [template24Highlight, setTemplate24Highlight] =
+    useState<Template24HighlightChoice>('random');
+  const [template24Look, setTemplate24Look] = useState<Template24Look>(
+    IMAGE_TEMPLATE24_DEFAULT_LOOK
+  );
   const [template15FrameBg, setTemplate15FrameBg] = useState(() =>
     pickTemplate15FrameColor()
   );
@@ -1198,6 +1232,22 @@ export function CopycatPanel({
   );
 
   // CTA is the last question slide itself — never a separate empty tab.
+  const template24HighlightRef = useRef(template24Highlight);
+  template24HighlightRef.current = template24Highlight;
+
+  useEffect(() => {
+    if (templateId !== 24 || !selectedPostId) return;
+    const questionCount = Math.max(0, slideBodies.length - 1);
+    const cover = slideBodies[0] ?? '';
+    const choice = template24HighlightRef.current;
+    const rolled = rollTemplate24Look(questionCount);
+    setTemplate24Look({
+      ...rolled,
+      highlightWord:
+        choice === 'random' ? template24HighlightForCover(cover, 'random') : choice,
+    });
+  }, [templateId, selectedPostId, slideBodies]);
+
   const ctaTabIndex = slideBodies.length > 1 ? slideBodies.length - 1 : -1;
   const isCtaSlide = selectedTab === ctaTabIndex && ctaTabIndex > 0;
 
@@ -1407,6 +1457,7 @@ export function CopycatPanel({
         template18Scanlines,
         template18PastelSlides,
         template19Color,
+        template24Look,
       });
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
@@ -1438,6 +1489,7 @@ export function CopycatPanel({
     template18Scanlines,
     template18PastelSlides,
     template19Color,
+    template24Look,
   ]);
 
   if (!selectedPost) {
@@ -1629,6 +1681,45 @@ export function CopycatPanel({
           </span>
         </div>
       ) : null}
+      {templateId === 24 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+            Highlight
+            <select
+              value={template24Highlight}
+              onChange={(e) => {
+                const next = e.target.value;
+                if (!isTemplate24HighlightChoice(next)) return;
+                setTemplate24Highlight(next);
+                setTemplate24Look((look) => ({
+                  ...look,
+                  highlightWord: template24HighlightForCover(slideBodies[0] ?? '', next),
+                }));
+              }}
+              className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-800 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-200"
+              aria-label="Highlight word"
+            >
+              <option value="random">Random</option>
+              {IMAGE_TEMPLATE24_HIGHLIGHT_WORDS.map((word) => (
+                <option key={word} value={word}>
+                  {word}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            onClick={() => {
+              setTemplate24Look((current) => rerollTemplate24Look(current));
+            }}
+            className="inline-flex items-center gap-1.5 rounded-md bg-zinc-900 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+            aria-label="Randomize background, colours, and rotations"
+          >
+            <span aria-hidden="true">🎲</span>
+            Randomize
+          </button>
+        </div>
+      ) : null}
       <CopycatSlidePreview
         templateId={templateId}
         tabIndex={selectedTab}
@@ -1638,6 +1729,7 @@ export function CopycatPanel({
         template18Scanlines={template18Scanlines}
         template18PastelSlides={template18PastelSlides}
         template19Color={template19Color}
+        template24Look={template24Look}
         backgroundSrc={
           templateId === 17 ? template17BackgroundSrcAt(questionSlides, selectedTab) : undefined
         }

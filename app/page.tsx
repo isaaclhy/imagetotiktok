@@ -272,6 +272,29 @@ import {
   paintTemplate23Slide,
   template23CanvasFontStack,
 } from '@/app/lib/image-template-23-flat-dark';
+import { PenguinCardsPreview } from '@/app/components/PenguinCardsPreview';
+import { pickTemplate24QuestionBodies } from '@/app/lib/image-template-24-questions';
+import {
+  IMAGE_TEMPLATE24_DEFAULT_LOOK,
+  IMAGE_TEMPLATE24_DEFAULT_QUESTION_COUNT,
+  IMAGE_TEMPLATE24_HIGHLIGHT_WORDS,
+  IMAGE_TEMPLATE24_MAX_QUESTIONS,
+  IMAGE_TEMPLATE24_MIN_QUESTIONS,
+  fitTemplate24Look,
+  isImageTemplate24Id,
+  isTemplate24HighlightChoice,
+  loadTemplate24Fonts,
+  paintTemplate24Slide,
+  rerollTemplate24Look,
+  resolveTemplate24Highlight,
+  rollTemplate24Look,
+  template24CanvasFontStack,
+  template24CoverTitle,
+  template24Retitle,
+  template24SlideCount,
+  type Template24HighlightChoice,
+  type Template24Look,
+} from '@/app/lib/image-template-24-penguin';
 import {
   IMAGE_TEMPLATE22_CTA_TAB,
   IMAGE_TEMPLATE22_FRAME_OUTER,
@@ -484,7 +507,7 @@ function pickRandomCopycatCompetitor(exclude?: CopycatCompetitorId): CopycatComp
 }
 
 /** Spill It image templates available inside Copycat. */
-const COPYCAT_TEMPLATE_IDS = [1, 2, 6, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23] as const;
+const COPYCAT_TEMPLATE_IDS = [1, 2, 6, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24] as const;
 type CopycatTemplateId = (typeof COPYCAT_TEMPLATE_IDS)[number];
 
 function isKawaiiStyleTemplateId(templateId: number | null | undefined): boolean {
@@ -2322,6 +2345,14 @@ export default function Home() {
   const [imageTemplate23CoverSubtitle, setImageTemplate23CoverSubtitle] = useState(
     IMAGE_TEMPLATE23_COVER_SUBTITLE
   );
+  const [imageTemplate24QuestionCount, setImageTemplate24QuestionCount] = useState(
+    IMAGE_TEMPLATE24_DEFAULT_QUESTION_COUNT
+  );
+  const [imageTemplate24Highlight, setImageTemplate24Highlight] =
+    useState<Template24HighlightChoice>('random');
+  const [imageTemplate24Look, setImageTemplate24Look] = useState<Template24Look>(
+    IMAGE_TEMPLATE24_DEFAULT_LOOK
+  );
   const [imageTemplate9TitleAnchor, setImageTemplate9TitleAnchor] =
     useState<ImageTemplate9TitleAnchor>(() => pickImageTemplate9TitleAnchor());
   const [isImageTemplate7CoverLoading, setIsImageTemplate7CoverLoading] = useState(false);
@@ -2413,6 +2444,8 @@ export default function Home() {
     selectedAppId === 'spill-it' && isImageTemplate22Id(selectedImageTemplateId);
   const isFlatDarkImageTemplate =
     selectedAppId === 'spill-it' && isImageTemplate23Id(selectedImageTemplateId);
+  const isPenguinImageTemplate =
+    selectedAppId === 'spill-it' && isImageTemplate24Id(selectedImageTemplateId);
   const isPinterestCoverImageTemplate =
     selectedAppId === 'spill-it' && isPinterestCoverImageTemplateId(selectedImageTemplateId);
   const isCouplesCuteMomentsImageTemplate =
@@ -2438,7 +2471,9 @@ export default function Home() {
       ? IMAGE_TEMPLATE21_QUESTION_COUNT
       : isFlatDarkImageTemplate
         ? IMAGE_TEMPLATE23_QUESTION_COUNT
-        : 5;
+        : isPenguinImageTemplate
+          ? imageTemplate24QuestionCount
+          : 5;
   // These templates close on the last question. Template 2's App Store mock
   // sits on that slide; there is no extra CTA-only tab.
   const hasImageTemplateCtaTab =
@@ -2455,7 +2490,8 @@ export default function Home() {
     !isRedGlowImageTemplate &&
     !isOceanSlideshowImageTemplate &&
     !isRedRoundedImageTemplate &&
-    !isFlatDarkImageTemplate;
+    !isFlatDarkImageTemplate &&
+    !isPenguinImageTemplate;
   const imageTemplateCtaTabIndex = hasImageTemplateCtaTab
     ? imageTemplateQuestionCount + 1
     : -1;
@@ -2549,7 +2585,8 @@ export default function Home() {
         isOceanSlideshowImageTemplate ||
         isBoldSolidImageTemplate ||
         isRedRoundedImageTemplate ||
-        isFlatDarkImageTemplate) &&
+        isFlatDarkImageTemplate ||
+        isPenguinImageTemplate) &&
       selectedImageBrowserTab >= imageTemplateTabCount
     ) {
       setSelectedImageBrowserTab(0);
@@ -2566,6 +2603,7 @@ export default function Home() {
     isBoldSolidImageTemplate,
     isRedRoundedImageTemplate,
     isFlatDarkImageTemplate,
+    isPenguinImageTemplate,
     imageTemplateTabCount,
     selectedImageBrowserTab,
   ]);
@@ -4861,6 +4899,25 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       return;
     }
 
+    if (selectedAppId === 'spill-it' && isImageTemplate24Id(tid)) {
+      const look = rollTemplate24Look(imageTemplate24QuestionCount, imageTemplate24Highlight);
+      const title = template24CoverTitle(imageTemplate24QuestionCount, look.highlightWord);
+      const questions = pickTemplate24QuestionBodies(
+        imageTemplate24QuestionCount,
+        imageTabTexts.slice(1)
+      );
+      setImageTemplate24Look(look);
+      setImageTabFunnyQuestions(questions);
+      setImageTabFrameBg(look.background);
+      setImageTabPastelBgs([]);
+      setImageTabTypeLabel('Funny Questions');
+      setImageTabSources(
+        Array.from({ length: template24SlideCount(imageTemplate24QuestionCount) }, () => '')
+      );
+      setImageTabTexts([title, ...questions]);
+      return;
+    }
+
     if (selectedAppId === 'spill-it' && isImageTemplate21Id(tid)) {
       const title = pickTitleForType('funny', imageTabTexts[0]);
       const questions = pickTemplate21QuestionBodies(
@@ -5572,6 +5629,48 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           }, 'image/png');
         });
         entries.push({ path: `template-22-${names[i] ?? `q${i}`}.png`, blob });
+      }
+      return { entries, isKawaiiTemplate: false };
+    }
+    if (exportTemplateId === 24) {
+      const slideCount = template24SlideCount(imageTemplate24QuestionCount);
+      const frameWidth = 1080;
+      const frameHeight = 1440;
+      const loadImage = (src: string, label: string) =>
+        new Promise<HTMLImageElement>((resolve, reject) => {
+          const el = new Image();
+          el.onload = () => resolve(el);
+          el.onerror = () => reject(new Error(`Failed to load ${label}`));
+          el.src = src;
+        });
+      const fontFamily = template24CanvasFontStack();
+      await loadTemplate24Fonts(fontFamily);
+      const promo = await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC, 'the App Store image');
+      const entries = [];
+      for (let i = 0; i < slideCount; i++) {
+        const canvas = document.createElement('canvas');
+        canvas.width = frameWidth;
+        canvas.height = frameHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Failed to prepare the slide');
+        const name = i === 0 ? 'cover' : `q${i}`;
+        paintTemplate24Slide(ctx, frameWidth, frameHeight, {
+          text: (imageTabTexts[i] ?? '').trim(),
+          tabIndex: i,
+          slideCount,
+          isCover: i === 0,
+          isCta: i === slideCount - 1,
+          look: imageTemplate24Look,
+          promo: i === slideCount - 1 ? promo : null,
+          fontFamily,
+        });
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((next) => {
+            if (next) resolve(next);
+            else reject(new Error('Failed to export the slide'));
+          }, 'image/png');
+        });
+        entries.push({ path: `template-24-${name}.png`, blob });
       }
       return { entries, isKawaiiTemplate: false };
     }
@@ -7624,6 +7723,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         isBoldSolidImageTemplate ||
                         isRedRoundedImageTemplate ||
                         isFlatDarkImageTemplate ||
+                        isPenguinImageTemplate ||
                         isPastelCarouselImageTemplate ||
                         isPinterestCoverImageTemplate ||
                         isPinterestCoverOnlyImageTemplate ? (
@@ -7917,6 +8017,18 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               isCover={selectedImageBrowserTab === 0}
                               isCta={selectedImageBrowserTab === IMAGE_TEMPLATE23_CTA_TAB}
                               coverSubtitle={imageTemplate23CoverSubtitle}
+                            />
+                          ) : isPenguinImageTemplate ? (
+                            <PenguinCardsPreview
+                              text={imageFrameTextForActiveTab}
+                              tabIndex={selectedImageBrowserTab}
+                              slideCount={imageTemplateTabCount}
+                              isCover={selectedImageBrowserTab === 0}
+                              isCta={
+                                selectedImageBrowserTab === imageTemplateTabCount - 1 &&
+                                selectedImageBrowserTab > 0
+                              }
+                              look={imageTemplate24Look}
                             />
                           ) : isPastelSlideshowImageTemplate ? (
                             <PastelSlideshowPreview
@@ -8900,6 +9012,122 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         isCouplesSelfieImageTemplate ||
                         isTopDownSelfieImageTemplate ? (
                           <div className="w-full md:w-80 md:self-start space-y-4">
+                            {isPenguinImageTemplate ? (
+                              <div className="flex flex-wrap items-center gap-2">
+                                <label className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                                  Questions
+                                  <select
+                                    value={imageTemplate24QuestionCount}
+                                    onChange={(e) => {
+                                      const nextCount = Number(e.target.value);
+                                      if (
+                                        !Number.isInteger(nextCount) ||
+                                        nextCount < IMAGE_TEMPLATE24_MIN_QUESTIONS ||
+                                        nextCount > IMAGE_TEMPLATE24_MAX_QUESTIONS
+                                      ) {
+                                        return;
+                                      }
+                                      const word =
+                                        imageTemplate24Look.highlightWord ||
+                                        resolveTemplate24Highlight(imageTemplate24Highlight);
+                                      const existing = imageTabTexts
+                                        .slice(1)
+                                        .filter((item) => item.trim());
+                                      let questions = existing.slice(0, nextCount);
+                                      if (questions.length < nextCount) {
+                                        questions = [
+                                          ...questions,
+                                          ...pickTemplate24QuestionBodies(
+                                            nextCount - questions.length,
+                                            questions
+                                          ),
+                                        ];
+                                      }
+                                      setImageTemplate24QuestionCount(nextCount);
+                                      setImageTemplate24Look((current) =>
+                                        fitTemplate24Look(current, nextCount)
+                                      );
+                                      setImageTabFunnyQuestions(questions);
+                                      setImageTabTexts([
+                                        template24Retitle(imageTabTexts[0] ?? '', nextCount, word),
+                                        ...questions,
+                                      ]);
+                                      setImageTabSources(
+                                        Array.from(
+                                          { length: template24SlideCount(nextCount) },
+                                          () => ''
+                                        )
+                                      );
+                                    }}
+                                    className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2 py-1.5 sm:py-1 text-sm sm:text-xs text-zinc-800 dark:text-zinc-200"
+                                    aria-label="Number of questions"
+                                  >
+                                    {Array.from(
+                                      {
+                                        length:
+                                          IMAGE_TEMPLATE24_MAX_QUESTIONS -
+                                          IMAGE_TEMPLATE24_MIN_QUESTIONS +
+                                          1,
+                                      },
+                                      (_, index) => IMAGE_TEMPLATE24_MIN_QUESTIONS + index
+                                    ).map((count) => (
+                                      <option key={count} value={count}>
+                                        {count}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </label>
+                                <label className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                                  Highlight
+                                  <select
+                                    value={imageTemplate24Highlight}
+                                    onChange={(e) => {
+                                      const next = e.target.value;
+                                      if (!isTemplate24HighlightChoice(next)) return;
+                                      const word = resolveTemplate24Highlight(
+                                        next,
+                                        imageTemplate24Look.highlightWord
+                                      );
+                                      setImageTemplate24Highlight(next);
+                                      setImageTemplate24Look((current) => ({
+                                        ...current,
+                                        highlightWord: word,
+                                      }));
+                                      setImageTabTexts((current) => {
+                                        const title = template24Retitle(
+                                          current[0] ?? '',
+                                          imageTemplate24QuestionCount,
+                                          word
+                                        );
+                                        return [title, ...current.slice(1)];
+                                      });
+                                    }}
+                                    className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2 py-1.5 sm:py-1 text-sm sm:text-xs text-zinc-800 dark:text-zinc-200"
+                                    aria-label="Highlight word"
+                                  >
+                                    <option value="random">Random</option>
+                                    {IMAGE_TEMPLATE24_HIGHLIGHT_WORDS.map((word) => (
+                                      <option key={word} value={word}>
+                                        {word}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const next = rerollTemplate24Look(imageTemplate24Look);
+                                    setImageTemplate24Look(next);
+                                    setImageTabFrameBg(next.background);
+                                  }}
+                                  className="inline-flex items-center gap-1.5 rounded-md bg-zinc-900 px-2.5 py-1.5 text-sm font-semibold text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 sm:py-1 sm:text-xs"
+                                  aria-label="Randomize background, colours, and rotations"
+                                >
+                                  <span aria-hidden="true">🎲</span>
+                                  Randomize
+                                </button>
+                              </div>
+                            ) : null}
                             {!isFullBleedImageTabSelected ||
                             isCouplesSelfieImageTemplate ||
                             isTopDownSelfieImageTemplate ? (
@@ -9050,6 +9278,36 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   <button
                                     type="button"
                                     onClick={() => {
+                                      if (isPenguinImageTemplate) {
+                                        if (selectedImageBrowserTab === 0) {
+                                          const word =
+                                            imageTemplate24Highlight === 'random'
+                                              ? resolveTemplate24Highlight(
+                                                  'random',
+                                                  imageTemplate24Look.highlightWord
+                                                )
+                                              : imageTemplate24Look.highlightWord;
+                                          setImageTemplate24Look((current) => ({
+                                            ...current,
+                                            highlightWord: word,
+                                          }));
+                                          const next = [...imageTabTexts];
+                                          next[0] = template24CoverTitle(
+                                            imageTemplate24QuestionCount,
+                                            word
+                                          );
+                                          setImageTabTexts(next);
+                                          return;
+                                        }
+                                        const [nextQuestion] = pickTemplate24QuestionBodies(1, [
+                                          imageFrameTextForActiveTab,
+                                        ]);
+                                        if (!nextQuestion) return;
+                                        const next = [...imageTabTexts];
+                                        next[selectedImageBrowserTab] = nextQuestion;
+                                        setImageTabTexts(next);
+                                        return;
+                                      }
                                       if (isFlatDarkImageTemplate) {
                                         if (selectedImageBrowserTab === 0) {
                                           const next = [...imageTabTexts];
