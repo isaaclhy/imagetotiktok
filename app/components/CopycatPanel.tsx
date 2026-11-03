@@ -139,6 +139,7 @@ import {
 } from '@/app/lib/image-template-18-pastel';
 import { BoldSolidPreview } from '@/app/components/BoldSolidPreview';
 import { FlatDarkPreview } from '@/app/components/FlatDarkPreview';
+import { FlatSerifPreview } from '@/app/components/FlatSerifPreview';
 import { PenguinCardsPreview } from '@/app/components/PenguinCardsPreview';
 import { RedGlowPreview } from '@/app/components/RedGlowPreview';
 import {
@@ -172,7 +173,7 @@ const COPYCAT_COVER_HEARTS = '♥ ♥ ♥';
 const COPYCAT_TEXT_ONLY_COVER_TOP = 0.38;
 const COPYCAT_TEXT_ONLY_COVER_SIZE_T2 = 0.074;
 
-export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24;
+export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25;
 
 function CopycatAppMarkFooter({
   isCover,
@@ -376,7 +377,8 @@ function CopycatSlidePreview({
     templateId !== 21 &&
     templateId !== 22 &&
     templateId !== 23 &&
-    templateId !== 24;
+    templateId !== 24 &&
+    templateId !== 25;
   const alignLeft = Boolean(leftAlign && !isCover) || templateId === 2;
   const pastelBg =
     IMAGE_TEMPLATE2_PASTEL_COLORS[tabIndex % IMAGE_TEMPLATE2_PASTEL_COLORS.length]!;
@@ -405,6 +407,20 @@ function CopycatSlidePreview({
     return (
       <div className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4 bg-[#252531]">
         <FlatDarkPreview
+          text={text}
+          tabIndex={tabIndex}
+          slideCount={slideCount}
+          isCover={isCover}
+          isCta={isCtaSlide}
+        />
+      </div>
+    );
+  }
+
+  if (templateId === 25) {
+    return (
+      <div className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4 bg-[#241033]">
+        <FlatSerifPreview
           text={text}
           tabIndex={tabIndex}
           slideCount={slideCount}
@@ -1248,7 +1264,14 @@ export function CopycatPanel({
     });
   }, [templateId, selectedPostId, slideBodies]);
 
-  const ctaTabIndex = slideBodies.length > 1 ? slideBodies.length - 1 : -1;
+  // Template 25 keeps every question, then adds its own CTA slide.
+  const ctaIsOwnSlide = templateId === 25 && slideBodies.length > 0;
+  const tabCount = slideBodies.length + (ctaIsOwnSlide ? 1 : 0);
+  const ctaTabIndex = ctaIsOwnSlide
+    ? slideBodies.length
+    : slideBodies.length > 1
+      ? slideBodies.length - 1
+      : -1;
   const isCtaSlide = selectedTab === ctaTabIndex && ctaTabIndex > 0;
 
   const reshufflePost = useCallback(() => {
@@ -1303,8 +1326,8 @@ export function CopycatPanel({
   }, [selectedPostId, slideBodies.length]);
 
   useEffect(() => {
-    if (selectedTab >= slideBodies.length) setSelectedTab(0);
-  }, [selectedTab, slideBodies.length]);
+    if (tabCount > 0 && selectedTab >= tabCount) setSelectedTab(0);
+  }, [selectedTab, tabCount]);
 
   // New random post lands on the cover, which has no question id and always
   // uses the shared photo. Open the first question that has its own JPEG.
@@ -1425,7 +1448,7 @@ export function CopycatPanel({
     setIsDownloading(true);
     try {
       const slides = slideBodies.map((text, index) => {
-        const isCta = index === ctaTabIndex && ctaTabIndex > 0;
+        const isCta = ctaIsOwnSlide ? false : index === ctaTabIndex && ctaTabIndex > 0;
         const isCover = index === 0;
         return {
           text,
@@ -1447,6 +1470,16 @@ export function CopycatPanel({
                 : illustrations[index],
         };
       });
+      if (ctaIsOwnSlide) {
+        slides.push({
+          text: '',
+          isCta: true,
+          isCover: false,
+          backgroundSrc: undefined,
+          leftAlign: false,
+          illustrationSrc: undefined,
+        });
+      }
       const zipBlob = await exportCopycatSlidesZip({
         templateId,
         slides,
@@ -1478,6 +1511,7 @@ export function CopycatPanel({
     slideBodies,
     isDownloading,
     ctaTabIndex,
+    ctaIsOwnSlide,
     questionSlides,
     illustrations,
     template15CoverSrc,
@@ -1506,7 +1540,7 @@ export function CopycatPanel({
     <div className="mx-auto flex w-full max-w-sm flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
-          {useHookPosts ? 'Hook post' : 'Random post'} · {slideBodies.length} slides
+          {useHookPosts ? 'Hook post' : 'Random post'} · {tabCount} slides
         </p>
         <div className="flex shrink-0 items-center gap-1.5">
           <button
@@ -1576,7 +1610,7 @@ export function CopycatPanel({
         </div>
       </div>
       <div className="flex gap-1 overflow-x-auto pb-1">
-        {slideBodies.map((_, index) => (
+        {Array.from({ length: tabCount }, (_, index) => (
           <button
             key={index}
             type="button"
@@ -1587,7 +1621,7 @@ export function CopycatPanel({
                 : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
             }`}
           >
-              {index === 0 ? 'Cover' : `Q${index}`}
+              {index === 0 ? 'Cover' : ctaIsOwnSlide && index === ctaTabIndex ? 'CTA' : `Q${index}`}
           </button>
         ))}
       </div>
@@ -1723,8 +1757,8 @@ export function CopycatPanel({
       <CopycatSlidePreview
         templateId={templateId}
         tabIndex={selectedTab}
-        slideCount={slideBodies.length}
-        text={slideBodies[selectedTab] ?? ''}
+        slideCount={tabCount}
+        text={ctaIsOwnSlide && selectedTab === ctaTabIndex ? '' : slideBodies[selectedTab] ?? ''}
         template18Style={template18Style}
         template18Scanlines={template18Scanlines}
         template18PastelSlides={template18PastelSlides}

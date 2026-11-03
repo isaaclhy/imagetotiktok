@@ -200,6 +200,7 @@ import {
 } from '@/app/lib/image-template-14-cards';
 import { BoldSolidPreview } from '@/app/components/BoldSolidPreview';
 import { FlatDarkPreview } from '@/app/components/FlatDarkPreview';
+import { FlatSerifPreview } from '@/app/components/FlatSerifPreview';
 import { NotesQuestionsPreview } from '@/app/components/NotesQuestionsPreview';
 import { PastelSlideshowPreview } from '@/app/components/PastelSlideshowPreview';
 import { RedGlowPreview } from '@/app/components/RedGlowPreview';
@@ -261,6 +262,17 @@ import {
   template21CanvasFontStack,
 } from '@/app/lib/image-template-21-bold-solid';
 import { pickTemplate21QuestionBodies } from '@/app/lib/image-template-21-questions';
+import { pickTemplate25QuestionBodies } from '@/app/lib/image-template-25-questions';
+import {
+  IMAGE_TEMPLATE25_COVER_BG,
+  IMAGE_TEMPLATE25_CTA_TAB,
+  IMAGE_TEMPLATE25_QUESTION_COUNT,
+  IMAGE_TEMPLATE25_SLIDE_COUNT,
+  isImageTemplate25Id,
+  loadTemplate25Fonts,
+  paintTemplate25Slide,
+  template25Background,
+} from '@/app/lib/image-template-25-flat-serif';
 import {
   IMAGE_TEMPLATE23_COVER_BG,
   IMAGE_TEMPLATE23_COVER_SUBTITLE,
@@ -507,7 +519,7 @@ function pickRandomCopycatCompetitor(exclude?: CopycatCompetitorId): CopycatComp
 }
 
 /** Spill It image templates available inside Copycat. */
-const COPYCAT_TEMPLATE_IDS = [1, 2, 6, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24] as const;
+const COPYCAT_TEMPLATE_IDS = [1, 2, 6, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25] as const;
 type CopycatTemplateId = (typeof COPYCAT_TEMPLATE_IDS)[number];
 
 function isKawaiiStyleTemplateId(templateId: number | null | undefined): boolean {
@@ -2444,6 +2456,8 @@ export default function Home() {
     selectedAppId === 'spill-it' && isImageTemplate22Id(selectedImageTemplateId);
   const isFlatDarkImageTemplate =
     selectedAppId === 'spill-it' && isImageTemplate23Id(selectedImageTemplateId);
+  const isFlatSerifImageTemplate =
+    selectedAppId === 'spill-it' && isImageTemplate25Id(selectedImageTemplateId);
   const isPenguinImageTemplate =
     selectedAppId === 'spill-it' && isImageTemplate24Id(selectedImageTemplateId);
   const isPinterestCoverImageTemplate =
@@ -2473,7 +2487,9 @@ export default function Home() {
         ? IMAGE_TEMPLATE23_QUESTION_COUNT
         : isPenguinImageTemplate
           ? imageTemplate24QuestionCount
-          : 5;
+          : isFlatSerifImageTemplate
+            ? IMAGE_TEMPLATE25_QUESTION_COUNT
+            : 5;
   // These templates close on the last question. Template 2's App Store mock
   // sits on that slide; there is no extra CTA-only tab.
   const hasImageTemplateCtaTab =
@@ -2586,6 +2602,7 @@ export default function Home() {
         isBoldSolidImageTemplate ||
         isRedRoundedImageTemplate ||
         isFlatDarkImageTemplate ||
+        isFlatSerifImageTemplate ||
         isPenguinImageTemplate) &&
       selectedImageBrowserTab >= imageTemplateTabCount
     ) {
@@ -2603,6 +2620,7 @@ export default function Home() {
     isBoldSolidImageTemplate,
     isRedRoundedImageTemplate,
     isFlatDarkImageTemplate,
+    isFlatSerifImageTemplate,
     isPenguinImageTemplate,
     imageTemplateTabCount,
     selectedImageBrowserTab,
@@ -4899,6 +4917,21 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       return;
     }
 
+    if (selectedAppId === 'spill-it' && isImageTemplate25Id(tid)) {
+      const title = pickTitleForType('funny', imageTabTexts[0]);
+      const questions = pickTemplate25QuestionBodies(
+        IMAGE_TEMPLATE25_QUESTION_COUNT,
+        imageTabTexts.slice(1)
+      );
+      setImageTabFunnyQuestions(questions);
+      setImageTabFrameBg(IMAGE_TEMPLATE25_COVER_BG);
+      setImageTabPastelBgs([]);
+      setImageTabTypeLabel('Funny Questions');
+      setImageTabSources(Array.from({ length: IMAGE_TEMPLATE25_SLIDE_COUNT }, () => ''));
+      setImageTabTexts([title, ...questions, '']);
+      return;
+    }
+
     if (selectedAppId === 'spill-it' && isImageTemplate24Id(tid)) {
       const look = rollTemplate24Look(imageTemplate24QuestionCount, imageTemplate24Highlight);
       const title = template24CoverTitle(imageTemplate24QuestionCount, look.highlightWord);
@@ -5671,6 +5704,44 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           }, 'image/png');
         });
         entries.push({ path: `template-24-${name}.png`, blob });
+      }
+      return { entries, isKawaiiTemplate: false };
+    }
+    if (exportTemplateId === 25) {
+      const names = ['cover', 'q1', 'q2', 'q3', 'q4', 'q5', 'cta'] as const;
+      const frameWidth = 1080;
+      const frameHeight = 1440;
+      const loadImage = (src: string, label: string) =>
+        new Promise<HTMLImageElement>((resolve, reject) => {
+          const el = new Image();
+          el.onload = () => resolve(el);
+          el.onerror = () => reject(new Error(`Failed to load ${label}`));
+          el.src = src;
+        });
+      await loadTemplate25Fonts();
+      const promo = await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC, 'the App Store image');
+      const entries = [];
+      for (let i = 0; i < IMAGE_TEMPLATE25_SLIDE_COUNT; i++) {
+        const canvas = document.createElement('canvas');
+        canvas.width = frameWidth;
+        canvas.height = frameHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Failed to prepare the slide');
+        paintTemplate25Slide(ctx, frameWidth, frameHeight, {
+          text: (imageTabTexts[i] ?? '').trim(),
+          tabIndex: i,
+          slideCount: IMAGE_TEMPLATE25_SLIDE_COUNT,
+          isCover: i === 0,
+          isCta: i === IMAGE_TEMPLATE25_CTA_TAB,
+          promo: i === IMAGE_TEMPLATE25_CTA_TAB ? promo : null,
+        });
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((next) => {
+            if (next) resolve(next);
+            else reject(new Error('Failed to export the slide'));
+          }, 'image/png');
+        });
+        entries.push({ path: `template-25-${names[i] ?? `q${i}`}.png`, blob });
       }
       return { entries, isKawaiiTemplate: false };
     }
@@ -7723,6 +7794,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         isBoldSolidImageTemplate ||
                         isRedRoundedImageTemplate ||
                         isFlatDarkImageTemplate ||
+                        isFlatSerifImageTemplate ||
                         isPenguinImageTemplate ||
                         isPastelCarouselImageTemplate ||
                         isPinterestCoverImageTemplate ||
@@ -7998,6 +8070,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               ? IMAGE_TEMPLATE12_FRAME_BG
                               : isPinterestCoverOnlyImageTemplate
                               ? '#000000'
+                              : isFlatSerifImageTemplate
+                              ? template25Background(
+                                  selectedImageBrowserTab,
+                                  selectedImageBrowserTab === imageTemplateCtaTabIndex
+                                )
                               : activeImageFrameBg,
                           }}
                         >
@@ -8017,6 +8094,14 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               isCover={selectedImageBrowserTab === 0}
                               isCta={selectedImageBrowserTab === IMAGE_TEMPLATE23_CTA_TAB}
                               coverSubtitle={imageTemplate23CoverSubtitle}
+                            />
+                          ) : isFlatSerifImageTemplate ? (
+                            <FlatSerifPreview
+                              text={imageFrameTextForActiveTab}
+                              tabIndex={selectedImageBrowserTab}
+                              slideCount={imageTemplateTabCount}
+                              isCover={selectedImageBrowserTab === 0}
+                              isCta={selectedImageBrowserTab === imageTemplateCtaTabIndex}
                             />
                           ) : isPenguinImageTemplate ? (
                             <PenguinCardsPreview
@@ -9308,6 +9393,26 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                         setImageTabTexts(next);
                                         return;
                                       }
+                                      if (isFlatSerifImageTemplate) {
+                                        if (selectedImageBrowserTab === 0) {
+                                          const next = [...imageTabTexts];
+                                          next[0] = pickTitleForType(
+                                            'funny',
+                                            imageFrameTextForActiveTab
+                                          );
+                                          setImageTabTexts(next);
+                                          return;
+                                        }
+                                        if (selectedImageBrowserTab === imageTemplateCtaTabIndex) return;
+                                        const [nextQuestion] = pickTemplate25QuestionBodies(1, [
+                                          imageFrameTextForActiveTab,
+                                        ]);
+                                        if (!nextQuestion) return;
+                                        const next = [...imageTabTexts];
+                                        next[selectedImageBrowserTab] = nextQuestion;
+                                        setImageTabTexts(next);
+                                        return;
+                                      }
                                       if (isFlatDarkImageTemplate) {
                                         if (selectedImageBrowserTab === 0) {
                                           const next = [...imageTabTexts];
@@ -9485,7 +9590,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   </button>
                                 </div>
                               </div>
-                              {isOceanSlideshowImageTemplate || isFlatDarkImageTemplate ? (
+                              {isOceanSlideshowImageTemplate ||
+                              isFlatDarkImageTemplate ||
+                              isFlatSerifImageTemplate ? (
                                 <textarea
                                   value={imageFrameTextForActiveTab}
                                   rows={8}
