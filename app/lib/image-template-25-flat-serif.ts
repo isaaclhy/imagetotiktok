@@ -1,4 +1,4 @@
-import { IMAGE_TEMPLATE23_FOOTER_COLOR, IMAGE_TEMPLATE23_FOOTER_FONT_STACK, IMAGE_TEMPLATE23_TEXT } from '@/app/lib/image-template-23-flat-dark';
+import { IMAGE_TEMPLATE23_FOOTER_COLOR, IMAGE_TEMPLATE23_FOOTER_FONT_STACK } from '@/app/lib/image-template-23-flat-dark';
 import { IMAGE_TEMPLATE20_FONT_STACK } from '@/app/lib/image-template-20-ocean';
 import { IMAGE_TEMPLATE2_APP_FOOTER } from '@/app/lib/constants';
 import { splitCopycatQuestionAndOptions } from '@/app/lib/copycat/flamingo-cards';
@@ -39,7 +39,8 @@ export const IMAGE_TEMPLATE25_QUESTION_COLORS = [
   '#0B1E3E',
 ] as const;
 
-export const IMAGE_TEMPLATE25_TEXT = IMAGE_TEMPLATE23_TEXT;
+/** Near-white. 97% so the ink stays bright on the dark field. Footer stays dimmer. */
+export const IMAGE_TEMPLATE25_TEXT = 'rgba(250, 248, 250, 0.97)';
 export const IMAGE_TEMPLATE25_FOOTER = IMAGE_TEMPLATE2_APP_FOOTER;
 export const IMAGE_TEMPLATE25_FONT_STACK = IMAGE_TEMPLATE20_FONT_STACK;
 export const IMAGE_TEMPLATE25_FOOTER_FONT_STACK = IMAGE_TEMPLATE23_FOOTER_FONT_STACK;
@@ -64,10 +65,14 @@ const FOOTER_Y = 0.862;
 const FOOTER_SIZE = 0.038;
 const FOOTER_WEIGHT = 600;
 
-/** CTA heading sits in the reference band (y 0.11–0.26); the phone starts under it. */
-const CTA_HEADING_SIZE = 0.062;
-const CTA_HEADING_WIDTH = 0.78;
-const CTA_HEADING_CENTER = (0.11 + 0.26) / 2;
+/**
+ * CTA heading. About 20% smaller than the first pass so the glyph lines are
+ * ~0.027 × height and the pitch is ~0.055 × height. First line top is ~0.12.
+ */
+const CTA_HEADING_SIZE = 0.0496;
+/** Narrow enough that the label stays two lines at the smaller size. */
+const CTA_HEADING_WIDTH = 0.4;
+const CTA_HEADING_TOP = 0.12;
 const CTA_PHONE_TOP = 0.47;
 const CTA_PHONE_WIDTH = 0.64;
 
@@ -354,7 +359,7 @@ function paintQuestion(
 /**
  * Template 2's App Store mock, at the measured trydeepen placement:
  * centred, top at 47% of the height, 64% of the width, running off the bottom.
- * The heading is the template 2 label, in bold serif, in the upper band.
+ * The heading is the template 2 label, in bold serif, with the first line near 12%.
  */
 function paintCta(
   ctx: CanvasRenderingContext2D,
@@ -373,11 +378,10 @@ function paintCta(
   const descent = inkDescent(ctx, fontSize);
   const block = ascent + Math.max(0, lines.length - 1) * pitch + descent;
   const phoneTop = height * CTA_PHONE_TOP;
-  let inkTop = height * CTA_HEADING_CENTER - block / 2;
+  let inkTop = height * CTA_HEADING_TOP;
   if (inkTop + block > phoneTop - height * 0.03) {
     inkTop = phoneTop - height * 0.03 - block;
   }
-  if (inkTop < height * 0.05) inkTop = height * 0.05;
   ctx.fillStyle = IMAGE_TEMPLATE25_TEXT;
   drawCentered(ctx, lines, width / 2, inkTop + ascent, pitch);
 
