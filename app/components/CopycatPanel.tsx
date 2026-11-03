@@ -1693,7 +1693,11 @@ export function CopycatPanel({
                 setTemplate24Highlight(next);
                 setTemplate24Look((look) => ({
                   ...look,
-                  highlightWord: template24HighlightForCover(slideBodies[0] ?? '', next),
+                  highlightWord: template24HighlightForCover(
+                    slideBodies[0] ?? '',
+                    next,
+                    look.highlightWord
+                  ),
                 }));
               }}
               className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-800 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-200"

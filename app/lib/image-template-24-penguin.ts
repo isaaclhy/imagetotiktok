@@ -143,21 +143,59 @@ export function resolveTemplate24Highlight(
 }
 
 /**
- * Highlight word for a competitor cover. Random picks a keyword that is
- * actually in the text. A chosen word is returned even when it is absent;
- * the painter only draws the block when the word is present.
+ * Highlight word for a cover. Random prefers a keyword that is already in the
+ * text, and otherwise picks one so the painter can place it. A chosen word is
+ * returned even when the source title does not contain it yet.
  */
 export function template24HighlightForCover(
   text: string,
-  choice: Template24HighlightChoice
+  choice: Template24HighlightChoice,
+  avoid?: string
 ): string {
-  if (choice === 'random') {
-    const hits = shuffle(IMAGE_TEMPLATE24_HIGHLIGHT_WORDS).filter((word) =>
-      template24ContainsWord(text, word)
-    );
-    return hits[0] ?? '';
+  if (choice !== 'random') return choice;
+  const hits = shuffle(IMAGE_TEMPLATE24_HIGHLIGHT_WORDS).filter(
+    (word) => word !== avoid && template24ContainsWord(text, word)
+  );
+  if (hits[0]) return hits[0];
+  const present = IMAGE_TEMPLATE24_HIGHLIGHT_WORDS.filter((word) =>
+    template24ContainsWord(text, word)
+  );
+  if (present.length > 0) return present[0]!;
+  return resolveTemplate24Highlight('random', avoid);
+}
+
+/**
+ * Cover line that contains `word`, so the highlighter has something to paint.
+ * Competitor titles often have no keyword ("5 questions for deep convos").
+ * A known keyword is swapped in place. Otherwise the word is inserted in front
+ * of "questions", or after a leading count. Titles that already contain the
+ * word are returned unchanged.
+ */
+export function template24EnsureHighlight(title: string, word: string): string {
+  const keyword = word.trim();
+  if (!keyword || template24ContainsWord(title, keyword)) return title;
+  const trimmed = title.replace(/\s+/g, ' ').trim();
+  if (!trimmed) return title;
+  for (const known of IMAGE_TEMPLATE24_HIGHLIGHT_WORDS) {
+    if (known.toLowerCase() === keyword.toLowerCase()) continue;
+    if (!template24ContainsWord(trimmed, known)) continue;
+    return trimmed.replace(new RegExp(`\\b${escapeRegExp(known)}\\b`, 'i'), keyword);
   }
-  return choice;
+  const questions = trimmed.match(/\bquestions\b/i);
+  if (questions && questions.index != null) {
+    const before = trimmed.slice(0, questions.index);
+    // The inserted keyword is lowercase, so "Questions" joins it as "questions".
+    const after = trimmed.slice(questions.index).replace(/^Questions\b/, 'questions');
+    const lead = before.match(/^(.*?)(\S+)\s+$/);
+    if (!lead) return `${before}${keyword} ${after}`;
+    const prefix = lead[1] ?? '';
+    const token = lead[2] ?? '';
+    if (/^\d+$/.test(token)) return `${prefix}${token} ${keyword} ${after}`;
+    return `${prefix}${keyword} ${after}`;
+  }
+  const numbered = trimmed.match(/^(\d+)\s+/);
+  if (numbered) return `${numbered[1]} ${keyword} ${trimmed.slice(numbered[0].length)}`;
+  return `${keyword} ${trimmed}`;
 }
 
 function pickDifferent<T extends string>(options: readonly T[], avoid?: string): T {
@@ -400,6 +438,7 @@ function paintCover(
   highlightWord: string,
   highlightColor: string
 ) {
+  const coverTitle = template24EnsureHighlight(title, highlightWord);
   const maxWidth = width * 0.86;
   const pillHeight = width * 0.062;
   const pillCenter = height * 0.805;
@@ -414,7 +453,7 @@ function paintCover(
   const layoutAt = (size: number) => {
     ctx.font = `800 ${size}px ${fontFamily}`;
     setLetterSpacing(ctx, `${-size * 0.025}px`);
-    const lines = title.trim() ? wrapBlock(ctx, title, maxWidth) : [''];
+    const lines = coverTitle.trim() ? wrapBlock(ctx, coverTitle, maxWidth) : [''];
     const block = lines.length * size * linePitch;
     return { lines, block };
   };
@@ -471,11 +510,29 @@ function paintSwipePill(
   const label = 'swipe';
   ctx.font = `800 ${size}px ${fontFamily}`;
   setLetterSpacing(ctx, '0px');
-  const textWidth = ctx.measureText(label).width;
-  const arrow = size * 0.42;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  const metrics = ctx.measureText(label);
+  const ascent = metrics.actualBoundingBoxAscent;
+  const descent = metrics.actualBoundingBoxDescent;
+  const inkLeft = metrics.actualBoundingBoxLeft;
+  const inkRight = metrics.actualBoundingBoxRight;
+  const hasInk =
+    Number.isFinite(ascent) &&
+    Number.isFinite(descent) &&
+    ascent + descent > 0 &&
+    Number.isFinite(inkLeft) &&
+    Number.isFinite(inkRight) &&
+    inkLeft + inkRight > 0;
+  const textInkW = hasInk ? inkLeft + inkRight : metrics.width;
+  const lineWidth = Math.max(2.5, size * 0.12);
+  const arrowLen = size * 0.42;
+  const head = size * 0.24;
   const gap = size * 0.38;
   const padX = size * 0.95;
-  const content = textWidth + gap + arrow;
+  // Round caps extend lineWidth/2 past both ends of the shaft.
+  const arrowVisualW = arrowLen + lineWidth;
+  const content = textInkW + gap + arrowVisualW;
   const pillW = content + padX * 2;
   const pillH = size * 2.15;
   const x = (width - pillW) / 2;
@@ -483,23 +540,28 @@ function paintSwipePill(
   ctx.fillStyle = '#141414';
   roundRect(ctx, x, y, pillW, pillH, pillH / 2);
   ctx.fill();
+
+  const contentLeft = x + padX;
+  // Place the alphabetic baseline so the ink box (including the p descender)
+  // is centred on the pill, not the em-square middle.
+  const textX = contentLeft + (hasInk ? inkLeft : 0);
+  const baseline = hasInk ? centerY + (ascent - descent) / 2 : centerY;
   ctx.fillStyle = '#FFFFFF';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  const textX = x + padX;
-  ctx.fillText(label, textX, centerY + size * 0.04);
-  const ax = textX + textWidth + gap;
-  const head = size * 0.24;
+  if (!hasInk) ctx.textBaseline = 'middle';
+  ctx.fillText(label, textX, baseline);
+
+  const shaftStart = contentLeft + textInkW + gap + lineWidth / 2;
+  const shaftEnd = shaftStart + arrowLen;
   ctx.strokeStyle = '#FFFFFF';
-  ctx.lineWidth = Math.max(2.5, size * 0.12);
+  ctx.lineWidth = lineWidth;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.beginPath();
-  ctx.moveTo(ax, centerY);
-  ctx.lineTo(ax + arrow, centerY);
-  ctx.moveTo(ax + arrow - head, centerY - head);
-  ctx.lineTo(ax + arrow, centerY);
-  ctx.lineTo(ax + arrow - head, centerY + head);
+  ctx.moveTo(shaftStart, centerY);
+  ctx.lineTo(shaftEnd, centerY);
+  ctx.moveTo(shaftEnd - head, centerY - head);
+  ctx.lineTo(shaftEnd, centerY);
+  ctx.lineTo(shaftEnd - head, centerY + head);
   ctx.stroke();
 }
 
