@@ -5,6 +5,7 @@ import { IMAGE_TEMPLATE2_Q5_PROMO_SRC } from '@/app/lib/image-template-2-cover';
 import {
   loadTemplate26Fonts,
   paintTemplate26Slide,
+  IMAGE_TEMPLATE26_DEFAULT_BUNNY_SEED,
   template26Background,
   template26BoldFontStack,
   template26CanvasFontStack,
@@ -36,6 +37,7 @@ type AwwEwwPreviewProps = {
   slideCount?: number;
   isCover?: boolean;
   isCta?: boolean;
+  bunnySeed?: number;
 };
 
 /** Same `paintTemplate26Slide` call as the download, scaled into the 3:4 frame. */
@@ -45,6 +47,7 @@ export function AwwEwwPreview({
   slideCount = 7,
   isCover,
   isCta,
+  bunnySeed = IMAGE_TEMPLATE26_DEFAULT_BUNNY_SEED,
 }: AwwEwwPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cover = isCover ?? (tabIndex === 0 && !isCta);
@@ -73,6 +76,7 @@ export function AwwEwwPreview({
         promo,
         fontFamily: template26CanvasFontStack(),
         boldFontFamily: template26BoldFontStack(),
+        bunnySeed,
       });
     };
 
@@ -80,12 +84,12 @@ export function AwwEwwPreview({
     return () => {
       cancelled = true;
     };
-  }, [text, tabIndex, slideCount, cover, cta]);
+  }, [text, tabIndex, slideCount, cover, cta, bunnySeed]);
 
   return (
     <div
       className="absolute inset-0"
-      style={{ backgroundColor: template26Background(tabIndex, cta) }}
+      style={{ backgroundColor: template26Background(tabIndex) }}
     >
       <canvas
         ref={canvasRef}

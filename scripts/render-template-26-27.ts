@@ -8,6 +8,7 @@ import { IMAGE_TEMPLATE2_Q5_PROMO_SRC } from '../app/lib/image-template-2-cover'
 import {
   paintTemplate26Slide,
   template26AnswerLines,
+  template26BunnyLabel,
 } from '../app/lib/image-template-26-aww-eww';
 import {
   paintTemplate27Slide,
@@ -58,12 +59,13 @@ async function main() {
 
   const dir26 = 'docs/image-template-26';
   mkdirSync(dir26, { recursive: true });
-  const slides26 = [aww.cover, ...aww.questions, ''];
-  const names26 = ['cover', 'q1', 'q2', 'q3', 'q4', 'q5', 'cta'];
+  const slides26 = [aww.cover, ...aww.questions];
+  const names26 = ['cover', 'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7'];
+  const coverSeed = 7;
   for (let i = 0; i < slides26.length; i++) {
     const canvas = createCanvas(W, H);
     const ctx = canvas.getContext('2d');
-    const isCta = i === slides26.length - 1;
+    const isCta = i === slides26.length - 1 && i > 0;
     paintTemplate26Slide(ctx, W, H, {
       text: slides26[i],
       tabIndex: i,
@@ -72,11 +74,50 @@ async function main() {
       isCta,
       promo: isCta ? promo : null,
       fontFamily: UBUNTU,
+      bunnySeed: coverSeed,
     });
     const name = names26[i] ?? `s${i}`;
     write(canvas, `${dir26}/${name}.png`);
+    if (isCta) write(canvas, `${dir26}/cta.png`);
     if (i === 0) write(canvas, 'public/image-templates/template-26-cover.png');
   }
+
+  const bunnySeeds = [7, 11, 21, 42, 88, 144, 256, 1024];
+  for (const seed of bunnySeeds) {
+    const canvas = createCanvas(W, H);
+    paintTemplate26Slide(canvas.getContext('2d'), W, H, {
+      text: aww.cover,
+      tabIndex: 0,
+      slideCount: slides26.length,
+      isCover: true,
+      isCta: false,
+      fontFamily: UBUNTU,
+      bunnySeed: seed,
+    });
+    write(canvas, `${dir26}/bunny-${seed}.png`);
+    console.log('bunny', seed, template26BunnyLabel(seed));
+  }
+  const again = createCanvas(W, H);
+  paintTemplate26Slide(again.getContext('2d'), W, H, {
+    text: aww.cover,
+    tabIndex: 0,
+    slideCount: slides26.length,
+    isCover: true,
+    fontFamily: UBUNTU,
+    bunnySeed: 42,
+  });
+  const first = createCanvas(W, H);
+  paintTemplate26Slide(first.getContext('2d'), W, H, {
+    text: aww.cover,
+    tabIndex: 0,
+    slideCount: slides26.length,
+    isCover: true,
+    fontFamily: UBUNTU,
+    bunnySeed: 42,
+  });
+  const same = first.toBuffer('image/png').equals(again.toBuffer('image/png'));
+  console.log('bunny seed 42 stable', same);
+  if (!same) throw new Error('Bunny render was not stable for one seed');
 
   const statement = createCanvas(W, H);
   paintTemplate26Slide(statement.getContext('2d'), W, H, {
@@ -94,14 +135,14 @@ async function main() {
   console.log('27 cover', cover27, 'from', rage.cover);
   const dir27 = 'docs/image-template-27';
   mkdirSync(dir27, { recursive: true });
-  const slides27 = [cover27, ...rage.questions, ''];
-  const names27 = ['cover', 'q1', 'q2', 'q3', 'q4', 'q5', 'cta'];
+  const slides27 = [cover27, ...rage.questions];
+  const names27 = ['cover', 'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7'];
   for (let i = 0; i < slides27.length; i++) {
     const canvas = createCanvas(W, H);
     const ctx = canvas.getContext('2d');
-    const isCta = i === slides27.length - 1;
+    const isCta = i === slides27.length - 1 && i > 0;
     paintTemplate27Slide(ctx, W, H, {
-      text: isCta ? '' : slides27[i],
+      text: slides27[i],
       tabIndex: i,
       slideCount: slides27.length,
       isCover: i === 0,
@@ -114,6 +155,7 @@ async function main() {
     });
     const name = names27[i] ?? `s${i}`;
     write(canvas, `${dir27}/${name}.png`);
+    if (isCta) write(canvas, `${dir27}/cta.png`);
     if (i === 0) write(canvas, 'public/image-templates/template-27-cover.png');
   }
 
