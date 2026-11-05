@@ -151,6 +151,7 @@ import {
   template26BunnyLabel,
 } from '@/app/lib/image-template-26-aww-eww';
 import { PinkCardsPreview } from '@/app/components/PinkCardsPreview';
+import { DottedGridPreview } from '@/app/components/DottedGridPreview';
 import { RedGlowPreview } from '@/app/components/RedGlowPreview';
 import {
   pickDifferentTemplate19Color,
@@ -183,6 +184,14 @@ import {
   type Template27Audience,
   type Template27AudiencePick,
 } from '@/app/lib/image-template-27-pink-cards';
+import {
+  IMAGE_TEMPLATE28_DEFAULT_SEED,
+  fillTemplate28Questions,
+  rollTemplate28Seed,
+  template28CoverPlainText,
+  template28LookFromSeed,
+  template28LookLabel,
+} from '@/app/lib/image-template-28-dotted';
 
 const TIKTOK_SANS_STACK = '"TikTok Sans", system-ui, -apple-system, sans-serif';
 const COPYCAT_APP_NAME = 'Spill It';
@@ -191,7 +200,7 @@ const COPYCAT_COVER_HEARTS = '♥ ♥ ♥';
 const COPYCAT_TEXT_ONLY_COVER_TOP = 0.38;
 const COPYCAT_TEXT_ONLY_COVER_SIZE_T2 = 0.074;
 
-export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27;
+export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28;
 
 function CopycatAppMarkFooter({
   isCover,
@@ -436,6 +445,7 @@ function CopycatSlidePreview({
   template24Look,
   template27Audience,
   template26BunnySeed = IMAGE_TEMPLATE26_DEFAULT_BUNNY_SEED,
+  template28Seed = IMAGE_TEMPLATE28_DEFAULT_SEED,
 }: {
   templateId: CopycatTemplateId;
   tabIndex: number;
@@ -450,6 +460,7 @@ function CopycatSlidePreview({
   template24Look?: Template24Look;
   template27Audience?: Template27Audience;
   template26BunnySeed?: number;
+  template28Seed?: number;
   template15FrameBg?: string;
   illustrationSrc?: string;
   isCtaSlide?: boolean;
@@ -478,7 +489,8 @@ function CopycatSlidePreview({
     templateId !== 22 &&
     templateId !== 23 &&
     templateId !== 24 &&
-    templateId !== 25;
+    templateId !== 25 &&
+    templateId !== 28;
   const alignLeft = Boolean(leftAlign && !isCover) || templateId === 2;
   const pastelBg =
     IMAGE_TEMPLATE2_PASTEL_COLORS[tabIndex % IMAGE_TEMPLATE2_PASTEL_COLORS.length]!;
@@ -512,6 +524,21 @@ function CopycatSlidePreview({
           slideCount={slideCount}
           isCover={isCover}
           isCta={isCtaSlide}
+        />
+      </div>
+    );
+  }
+
+  if (templateId === 28) {
+    return (
+      <div className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4 bg-white">
+        <DottedGridPreview
+          text={text}
+          tabIndex={tabIndex}
+          slideCount={slideCount}
+          isCover={isCover}
+          isCta={isCtaSlide}
+          seed={template28Seed}
         />
       </div>
     );
@@ -1262,6 +1289,7 @@ export function CopycatPanel({
   const [template26BunnySeed, setTemplate26BunnySeed] = useState(
     IMAGE_TEMPLATE26_DEFAULT_BUNNY_SEED
   );
+  const [template28Seed, setTemplate28Seed] = useState(IMAGE_TEMPLATE28_DEFAULT_SEED);
   const [template27AudiencePick, setTemplate27AudiencePick] =
     useState<Template27AudiencePick>('auto');
   const template27RollRef = useRef<{ postId: string; n: number } | null>(null);
@@ -1341,6 +1369,7 @@ export function CopycatPanel({
     setTemplate18PastelBody(shuffleTemplate18PastelBody());
     setTemplate19Color(pickTemplate19ShuffleColor());
     setTemplate26BunnySeed(rollTemplate26BunnySeed());
+    setTemplate28Seed(rollTemplate28Seed());
   }
 
   postBagRef.current = selectedBag;
@@ -1377,10 +1406,18 @@ export function CopycatPanel({
     template27AudiencePick === 'auto'
       ? inferTemplate27Audience(slideBodies[0] ?? '')
       : template27AudiencePick;
+  const template28Look = template28LookFromSeed(template28Seed);
   const displayBodies = useMemo(() => {
+    if (templateId === 28) {
+      const look = template28LookFromSeed(template28Seed);
+      const questions = fillTemplate28Questions(slideBodies.slice(1), template28Seed);
+      const cover =
+        look.variant === 'old-new' ? look.topic : template28CoverPlainText(look);
+      return [cover, ...questions];
+    }
     if (templateId !== 27 || slideBodies.length === 0) return slideBodies;
     return [template27CoverTitle(template27Audience, template27Number), ...slideBodies.slice(1)];
-  }, [templateId, slideBodies, template27Audience, template27Number]);
+  }, [templateId, slideBodies, template27Audience, template27Number, template28Seed]);
   const template18PastelSlides = useMemo(
     () =>
       template18PastelSlidesForCount(
@@ -1408,14 +1445,19 @@ export function CopycatPanel({
   }, [templateId, selectedPostId, slideBodies]);
 
   // Template 25 keeps every question, then adds its own CTA slide.
-  // Templates 26 and 27 follow template 2: the promo sits on the last question.
+  // Templates 26, 27, and 28 follow template 2: the promo sits on the last question.
   const ctaIsOwnSlide = templateId === 25 && displayBodies.length > 0;
   const tabCount = displayBodies.length + (ctaIsOwnSlide ? 1 : 0);
-  const ctaTabIndex = ctaIsOwnSlide
-    ? slideBodies.length
-    : slideBodies.length > 1
-      ? slideBodies.length - 1
-      : -1;
+  const ctaTabIndex =
+    templateId === 28
+      ? displayBodies.length > 1
+        ? displayBodies.length - 1
+        : -1
+      : ctaIsOwnSlide
+        ? slideBodies.length
+        : slideBodies.length > 1
+          ? slideBodies.length - 1
+          : -1;
   const isCtaSlide = selectedTab === ctaTabIndex && ctaTabIndex > 0;
 
   const reshufflePost = useCallback(() => {
@@ -1436,6 +1478,7 @@ export function CopycatPanel({
     setTemplate18PastelBody(shuffleTemplate18PastelBody());
     setTemplate19Color(pickTemplate19ShuffleColor());
     setTemplate26BunnySeed(rollTemplate26BunnySeed());
+    setTemplate28Seed(rollTemplate28Seed());
   }, [postIds, postEpoch]);
 
   // First draw only. Later source/template changes are applied during render above
@@ -1461,6 +1504,7 @@ export function CopycatPanel({
     setTemplate18PastelBody(shuffleTemplate18PastelBody());
     setTemplate19Color(pickTemplate19ShuffleColor());
     setTemplate26BunnySeed(rollTemplate26BunnySeed());
+    setTemplate28Seed(rollTemplate28Seed());
   }, [postEpoch, postIds, selection, rollTemplate14StyleForSelection, rollTemplate18LookForSelection]);
 
   // Re-apply the scroll offset from the last "New random post" tap before paint,
@@ -1639,6 +1683,7 @@ export function CopycatPanel({
         template24Look,
         template27Audience,
         template26BunnySeed,
+        template28Seed,
       });
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
@@ -1674,6 +1719,7 @@ export function CopycatPanel({
     template24Look,
     template27Audience,
     template26BunnySeed,
+    template28Seed,
   ]);
 
   if (!selectedPost) {
@@ -1930,6 +1976,28 @@ export function CopycatPanel({
           </span>
         </div>
       ) : null}
+      {templateId === 28 ? (
+        <div
+          className="flex flex-wrap items-center gap-2"
+          data-template28-seed={template28Seed}
+          data-template28-look={template28LookLabel(template28Look)}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              setTemplate28Seed((current) => rollTemplate28Seed(current));
+            }}
+            className="inline-flex items-center gap-1.5 rounded-md bg-zinc-900 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+            aria-label="Randomize cover"
+          >
+            <span aria-hidden="true">🎲</span>
+            Randomize
+          </button>
+          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
+            {template28LookLabel(template28Look)}
+          </span>
+        </div>
+      ) : null}
       {templateId === 27 ? (
         <div className="flex flex-wrap items-center gap-2">
           <label className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-300">
@@ -1966,6 +2034,7 @@ export function CopycatPanel({
         template24Look={template24Look}
         template27Audience={template27Audience}
         template26BunnySeed={template26BunnySeed}
+        template28Seed={template28Seed}
         backgroundSrc={
           templateId === 17 ? template17BackgroundSrcAt(questionSlides, selectedTab) : undefined
         }
