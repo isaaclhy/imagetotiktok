@@ -1,0 +1,45 @@
+name: Daily know your girlfriend
+
+on:
+  schedule:
+    # 8:00 AM UTC — one spoken "How well do you know your girlfriend?" video
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+jobs:
+  daily-video:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Render and save the daily video
+        env:
+          PIXELS_API_KEY: ${{ secrets.PIXELS_API_KEY }}
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SPILL_QUIZ_TTS_MODEL: ${{ secrets.SPILL_QUIZ_TTS_MODEL }}
+          SPILL_QUIZ_VOICE_KNOW_HER: ${{ secrets.SPILL_QUIZ_VOICE_KNOW_HER }}
+          DAILY_QUIZ_DRIVE_FOLDER_ID: ${{ secrets.DAILY_QUIZ_DRIVE_FOLDER_ID }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_DRIVE_REFRESH_TOKEN: ${{ secrets.GOOGLE_DRIVE_REFRESH_TOKEN }}
+          GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
+          GOOGLE_REDIRECT_URI: ${{ secrets.GOOGLE_REDIRECT_URI }}
+        run: npm run daily:video-template-8
