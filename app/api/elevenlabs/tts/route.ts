@@ -5,6 +5,27 @@ import {
   FAB_AFFIRMATION_TTS_VOICE_SETTINGS,
 } from '@/app/lib/fab-video';
 
+function clampUnit(value: unknown, fallback: number): number {
+  const number = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.min(1, Math.max(0, number));
+}
+
+function voiceSettingsFromBody(value: unknown) {
+  const defaults = { ...FAB_AFFIRMATION_TTS_VOICE_SETTINGS };
+  if (!value || typeof value !== 'object') return defaults;
+  const raw = value as Record<string, unknown>;
+  const speed = typeof raw.speed === 'number' ? raw.speed : Number(raw.speed);
+  return {
+    stability: clampUnit(raw.stability, defaults.stability),
+    similarity_boost: clampUnit(raw.similarity_boost, defaults.similarity_boost),
+    style: clampUnit(raw.style, defaults.style),
+    use_speaker_boost:
+      typeof raw.use_speaker_boost === 'boolean' ? raw.use_speaker_boost : defaults.use_speaker_boost,
+    speed: Number.isFinite(speed) ? Math.min(1.2, Math.max(0.7, speed)) : defaults.speed,
+  };
+}
+
 /**
  * POST /api/elevenlabs/tts
  * Body: { text: string, voiceId?: string, modelId?: string }
@@ -33,6 +54,7 @@ export async function POST(request: NextRequest) {
     const modelId =
       (typeof body?.modelId === 'string' && body.modelId.trim()) ||
       FAB_AFFIRMATION_TTS_MODEL;
+    const voiceSettings = voiceSettingsFromBody(body?.voiceSettings);
 
     const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
@@ -44,7 +66,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         text,
         model_id: modelId,
-        voice_settings: { ...FAB_AFFIRMATION_TTS_VOICE_SETTINGS },
+        voice_settings: voiceSettings,
       }),
     });
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
+import Link from 'next/link';
 import JSZip from 'jszip';
 import type { CanvasData } from '@/app/lib/types';
 import { generateCardImage as generateCardImageLib } from '@/app/lib/generate-card-image';
@@ -373,6 +374,8 @@ import {
   resolveStudioAppId,
   type StudioAppId,
 } from '@/app/lib/apps';
+import { SpillQuizVideoStudio } from '@/app/components/SpillQuizVideoStudio';
+import { isSpillQuizTemplateId } from '@/app/lib/spill-quiz/script';
 import { getCharacterById, getCharactersForApp } from '@/app/lib/characters';
 import {
   FAB_HEART_MESSAGES,
@@ -2545,6 +2548,8 @@ export default function Home() {
     selectedAppId === 'spill-it' && selectedVideoTemplateId === 6;
   const isLoveLetterVideoTemplate =
     selectedAppId === 'spill-it' && selectedVideoTemplateId === 7;
+  const isSpillQuizVideoTemplate =
+    selectedAppId === 'spill-it' && isSpillQuizTemplateId(selectedVideoTemplateId);
   const isFreshBakedDonutVideoTemplate =
     selectedAppId === 'spill-it' && selectedVideoTemplateId === 5;
   const selectedFreshBakedDonut = freshBakedDonutSelectedPost(
@@ -9879,6 +9884,12 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                           ? 'No video templates for this app yet.'
                           : 'Select one to start.'}
                       </p>
+                      <Link
+                        href="/library"
+                        className="mt-3 inline-flex min-h-11 items-center rounded-lg border border-zinc-300 px-3 text-sm font-medium text-zinc-800 dark:border-zinc-600 dark:text-zinc-100"
+                      >
+                        Saved daily videos
+                      </Link>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                       {videoTemplateCards.map((card) => (
@@ -9899,6 +9910,12 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                       ))}
                     </div>
                   </>
+                ) : isSpillQuizVideoTemplate && isSpillQuizTemplateId(selectedVideoTemplateId) ? (
+                  <SpillQuizVideoStudio
+                    key={selectedVideoTemplateId}
+                    templateId={selectedVideoTemplateId}
+                    onBack={() => setSelectedVideoTemplateId(null)}
+                  />
                 ) : (
                   <div className="w-full min-w-0 max-w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 overflow-hidden">
                     <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-zinc-200 dark:border-zinc-700 min-w-0">

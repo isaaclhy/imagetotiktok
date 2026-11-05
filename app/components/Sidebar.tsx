@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { SettingsMenuPanel } from '@/app/components/SettingsMenuPanel';
 import { STUDIO_APPS, type StudioAppId } from '@/app/lib/apps';
 
@@ -318,6 +319,20 @@ export function Sidebar({
           <span className="text-sm font-medium">{tab.label}</span>
         </button>
       ))}
+      <Link
+        href="/library"
+        className="w-full py-3 px-4 flex items-center gap-3 rounded-lg transition-colors text-left text-zinc-500 dark:text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-700 dark:hover:text-zinc-300"
+      >
+        <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M8 12l4 4m0 0l4-4m-4 4V4"
+          />
+        </svg>
+        <span className="text-sm font-medium">Video library</span>
+      </Link>
     </div>
   );
 

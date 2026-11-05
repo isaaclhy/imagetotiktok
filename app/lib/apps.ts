@@ -228,6 +228,18 @@ export const VIDEO_TEMPLATES_BY_APP: Record<StudioAppId, VideoTemplateCard[]> = 
       subtitle: 'Quote or letter on a moody dark clip',
       coverSrc: '/video-templates/template-7-cover.jpg',
     },
+    {
+      id: 8,
+      title: 'How well do you know your girlfriend',
+      subtitle: 'Girls! Send it to him. Questions about her.',
+      coverSrc: '/video-templates/template-8-cover.png',
+    },
+    {
+      id: 9,
+      title: 'Quiz your boyfriend',
+      subtitle: 'Spoken quiz. Questions for him.',
+      coverSrc: '/video-templates/template-9-cover.png',
+    },
   ],
   fab: [
     { id: 1, title: 'Affirmation montage', subtitle: '' },
