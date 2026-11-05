@@ -113,6 +113,21 @@ import {
   type Template24Look,
 } from '@/app/lib/image-template-24-penguin';
 import {
+  loadTemplate26Fonts,
+  paintTemplate26Slide,
+  template26BoldFontStack,
+  template26CanvasFontStack,
+} from '@/app/lib/image-template-26-aww-eww';
+import {
+  IMAGE_TEMPLATE27_ICON_SRC,
+  loadTemplate27Fonts,
+  paintTemplate27Slide,
+  template27CanvasFontStack,
+  template27UiBoldFontStack,
+  template27UiFontStack,
+  type Template27Audience,
+} from '@/app/lib/image-template-27-pink-cards';
+import {
   IMAGE_TEMPLATE22_FONT_STACK,
   IMAGE_TEMPLATE22_FONT_WEIGHT,
   paintTemplate22Slide,
@@ -169,7 +184,9 @@ export type CopycatExportTemplateId =
   | 22
   | 23
   | 24
-  | 25;
+  | 25
+  | 26
+  | 27;
 
 export type CopycatExportSlide = {
   text: string;
@@ -273,7 +290,8 @@ async function paintSlide(
   },
   template19Color?: Template19ColorId,
   template14Style: Template14StyleId = IMAGE_TEMPLATE14_DEFAULT_STYLE,
-  template24Look?: Template24Look
+  template24Look?: Template24Look,
+  template27Audience?: Template27Audience
 ): Promise<Blob> {
   const { w, h } = frameSize(templateId);
   const canvas = document.createElement('canvas');
@@ -351,6 +369,47 @@ async function paintSlide(
       isCta: slide.isCta,
       promo,
       fontFamily: IMAGE_TEMPLATE25_FONT_STACK,
+    });
+    return canvasBlob(canvas);
+  }
+
+  if (templateId === 26) {
+    const fontFamily = template26CanvasFontStack();
+    const boldFontFamily = template26BoldFontStack();
+    await loadTemplate26Fonts();
+    const promo = slide.isCta ? await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC) : null;
+    paintTemplate26Slide(ctx, w, h, {
+      text: slide.text,
+      tabIndex,
+      slideCount,
+      isCover: slide.isCover,
+      isCta: slide.isCta,
+      promo,
+      fontFamily,
+      boldFontFamily,
+    });
+    return canvasBlob(canvas);
+  }
+
+  if (templateId === 27) {
+    const fontFamily = template27CanvasFontStack();
+    const uiFontFamily = template27UiFontStack();
+    const uiBoldFontFamily = template27UiBoldFontStack();
+    await loadTemplate27Fonts();
+    const promo = slide.isCta ? await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC) : null;
+    const icon = await loadImage(IMAGE_TEMPLATE27_ICON_SRC).catch(() => null);
+    paintTemplate27Slide(ctx, w, h, {
+      text: slide.text,
+      tabIndex,
+      slideCount,
+      isCover: slide.isCover,
+      isCta: slide.isCta,
+      audience: template27Audience,
+      promo,
+      icon,
+      fontFamily,
+      uiFontFamily,
+      uiBoldFontFamily,
     });
     return canvasBlob(canvas);
   }
@@ -821,6 +880,7 @@ export async function exportCopycatSlidesZip(options: {
   template18PastelSlides?: readonly Template18PastelTone[];
   template19Color?: Template19ColorId;
   template24Look?: Template24Look;
+  template27Audience?: Template27Audience;
 }): Promise<Blob> {
   const JSZip = (await import('jszip')).default;
   const zip = new JSZip();
@@ -841,7 +901,8 @@ export async function exportCopycatSlidesZip(options: {
       },
       options.template19Color,
       options.template14Style ?? IMAGE_TEMPLATE14_DEFAULT_STYLE,
-      options.template24Look
+      options.template24Look,
+      options.template27Audience
     );
     const name = i === 0 ? 'cover' : slide.isCta && !slide.text.trim() ? 'cta' : `q${i}`;
     zip.file(`template-${options.templateId}-${name}.png`, blob);

@@ -22,6 +22,7 @@ import { getDeepQuestionsAppPosts } from '@/app/lib/copycat/deepquestionsapp';
 import { getFlamingoCardsTiktokPosts } from '@/app/lib/copycat/flamingo-cards-tiktok';
 import { getQuestionsForTonightPosts } from '@/app/lib/copycat/questionsfortonight';
 import { getCoupleSyxPosts } from '@/app/lib/copycat/couple-syx';
+import { getMisunderstoodCou4Posts } from '@/app/lib/copycat/misunderstood-cou4';
 import { getCoupleCardsPosts } from '@/app/lib/copycat/couple-cards';
 import { getHhTalkPosts } from '@/app/lib/copycat/hhtalk';
 import { getGoldenThoughtsDailyPosts } from '@/app/lib/copycat/goldenthoughtsdaily';
@@ -143,6 +144,8 @@ import { BoldSolidPreview } from '@/app/components/BoldSolidPreview';
 import { FlatDarkPreview } from '@/app/components/FlatDarkPreview';
 import { FlatSerifPreview } from '@/app/components/FlatSerifPreview';
 import { PenguinCardsPreview } from '@/app/components/PenguinCardsPreview';
+import { AwwEwwPreview } from '@/app/components/AwwEwwPreview';
+import { PinkCardsPreview } from '@/app/components/PinkCardsPreview';
 import { RedGlowPreview } from '@/app/components/RedGlowPreview';
 import {
   pickDifferentTemplate19Color,
@@ -167,6 +170,14 @@ import {
   type Template24HighlightChoice,
   type Template24Look,
 } from '@/app/lib/image-template-24-penguin';
+import {
+  inferTemplate27Audience,
+  isTemplate27AudiencePick,
+  template27CoverLabel,
+  template27CoverTitle,
+  type Template27Audience,
+  type Template27AudiencePick,
+} from '@/app/lib/image-template-27-pink-cards';
 
 const TIKTOK_SANS_STACK = '"TikTok Sans", system-ui, -apple-system, sans-serif';
 const COPYCAT_APP_NAME = 'Spill It';
@@ -175,7 +186,7 @@ const COPYCAT_COVER_HEARTS = '♥ ♥ ♥';
 const COPYCAT_TEXT_ONLY_COVER_TOP = 0.38;
 const COPYCAT_TEXT_ONLY_COVER_SIZE_T2 = 0.074;
 
-export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25;
+export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27;
 
 function CopycatAppMarkFooter({
   isCover,
@@ -418,6 +429,7 @@ function CopycatSlidePreview({
   template18PastelSlides,
   template19Color = 'red',
   template24Look,
+  template27Audience,
 }: {
   templateId: CopycatTemplateId;
   tabIndex: number;
@@ -430,6 +442,7 @@ function CopycatSlidePreview({
   template18PastelSlides?: readonly Template18PastelTone[];
   template19Color?: Template19ColorId;
   template24Look?: Template24Look;
+  template27Audience?: Template27Audience;
   template15FrameBg?: string;
   illustrationSrc?: string;
   isCtaSlide?: boolean;
@@ -492,6 +505,35 @@ function CopycatSlidePreview({
           slideCount={slideCount}
           isCover={isCover}
           isCta={isCtaSlide}
+        />
+      </div>
+    );
+  }
+
+  if (templateId === 26) {
+    return (
+      <div className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4 bg-[#5C5C5C]">
+        <AwwEwwPreview
+          text={text}
+          tabIndex={tabIndex}
+          slideCount={slideCount}
+          isCover={isCover}
+          isCta={isCtaSlide}
+        />
+      </div>
+    );
+  }
+
+  if (templateId === 27) {
+    return (
+      <div className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4 bg-[#E85FA8]">
+        <PinkCardsPreview
+          text={text}
+          tabIndex={tabIndex}
+          slideCount={slideCount}
+          isCover={isCover}
+          isCta={isCtaSlide}
+          audience={template27Audience}
         />
       </div>
     );
@@ -1182,7 +1224,9 @@ export function CopycatPanel({
                                       ? getQuestionsForTonightPosts()
                                       : competitorId === 'couple-syx'
                                         ? getCoupleSyxPosts()
-                                        : [];
+                                        : competitorId === 'misunderstood-cou4'
+                                          ? getMisunderstoodCou4Posts()
+                                          : [];
     if (competitorId === 'flamingo-cards') return filterCopycatPostsByMinViews(raw);
     return raw;
   }, [competitorId, useHookPosts]);
@@ -1207,6 +1251,9 @@ export function CopycatPanel({
   const [template24Look, setTemplate24Look] = useState<Template24Look>(
     IMAGE_TEMPLATE24_DEFAULT_LOOK
   );
+  const [template27AudiencePick, setTemplate27AudiencePick] =
+    useState<Template27AudiencePick>('auto');
+  const template27RollRef = useRef<{ postId: string; n: number } | null>(null);
   const [template15FrameBg, setTemplate15FrameBg] = useState(() =>
     pickTemplate15FrameColor()
   );
@@ -1304,6 +1351,24 @@ export function CopycatPanel({
     () => (selectedPost ? copycatPostSlideBodiesClean(selectedPost) : []),
     [selectedPost]
   );
+  let template27Number = 4;
+  if (selectedPostId) {
+    const rolled = template27RollRef.current;
+    const nextRoll =
+      rolled && rolled.postId === selectedPostId
+        ? rolled
+        : { postId: selectedPostId, n: 1 + cryptoRandomInt(5) };
+    template27RollRef.current = nextRoll;
+    template27Number = nextRoll.n;
+  }
+  const template27Audience: Template27Audience =
+    template27AudiencePick === 'auto'
+      ? inferTemplate27Audience(slideBodies[0] ?? '')
+      : template27AudiencePick;
+  const displayBodies = useMemo(() => {
+    if (templateId !== 27 || slideBodies.length === 0) return slideBodies;
+    return [template27CoverTitle(template27Audience, template27Number), ...slideBodies.slice(1)];
+  }, [templateId, slideBodies, template27Audience, template27Number]);
   const template18PastelSlides = useMemo(
     () =>
       template18PastelSlidesForCount(
@@ -1331,8 +1396,9 @@ export function CopycatPanel({
   }, [templateId, selectedPostId, slideBodies]);
 
   // Template 25 keeps every question, then adds its own CTA slide.
-  const ctaIsOwnSlide = templateId === 25 && slideBodies.length > 0;
-  const tabCount = slideBodies.length + (ctaIsOwnSlide ? 1 : 0);
+  const ctaIsOwnSlide =
+    (templateId === 25 || templateId === 26 || templateId === 27) && displayBodies.length > 0;
+  const tabCount = displayBodies.length + (ctaIsOwnSlide ? 1 : 0);
   const ctaTabIndex = ctaIsOwnSlide
     ? slideBodies.length
     : slideBodies.length > 1
@@ -1477,7 +1543,7 @@ export function CopycatPanel({
   }, [templateId, selectedPostId, slideBodies.length, dogUrls]);
 
   const handleGenerateCaption = useCallback(async () => {
-    if (slideBodies.length === 0) return;
+    if (displayBodies.length === 0) return;
     setCaptionError(null);
     setIsGeneratingCaption(true);
     try {
@@ -1485,8 +1551,8 @@ export function CopycatPanel({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          cover: slideBodies[0] ?? '',
-          questions: slideBodies.slice(1),
+          cover: displayBodies[0] ?? '',
+          questions: displayBodies.slice(1),
         }),
       });
       const data = (await res.json()) as { caption?: string; error?: string };
@@ -1500,20 +1566,20 @@ export function CopycatPanel({
     } finally {
       setIsGeneratingCaption(false);
     }
-  }, [slideBodies]);
+  }, [displayBodies]);
 
   useEffect(() => {
     setCaption('');
     setCaptionError(null);
-    if (!selectedPostId || slideBodies.length === 0) return;
+    if (!selectedPostId || displayBodies.length === 0) return;
     void handleGenerateCaption();
-  }, [selectedPostId, handleGenerateCaption, slideBodies.length]);
+  }, [selectedPostId, handleGenerateCaption, displayBodies.length]);
 
   const handleDownload = useCallback(async () => {
-    if (!selectedPost || slideBodies.length === 0 || isDownloading) return;
+    if (!selectedPost || displayBodies.length === 0 || isDownloading) return;
     setIsDownloading(true);
     try {
-      const slides = slideBodies.map((text, index) => {
+      const slides = displayBodies.map((text, index) => {
         const isCta = ctaIsOwnSlide ? false : index === ctaTabIndex && ctaTabIndex > 0;
         const isCover = index === 0;
         return {
@@ -1557,6 +1623,7 @@ export function CopycatPanel({
         template18PastelSlides,
         template19Color,
         template24Look,
+        template27Audience,
       });
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
@@ -1574,7 +1641,7 @@ export function CopycatPanel({
     }
   }, [
     selectedPost,
-    slideBodies,
+    displayBodies,
     isDownloading,
     ctaTabIndex,
     ctaIsOwnSlide,
@@ -1590,6 +1657,7 @@ export function CopycatPanel({
     template18PastelSlides,
     template19Color,
     template24Look,
+    template27Audience,
   ]);
 
   if (!selectedPost) {
@@ -1824,16 +1892,41 @@ export function CopycatPanel({
           </button>
         </div>
       ) : null}
+      {templateId === 27 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+            Ask
+            <select
+              value={template27AudiencePick}
+              onChange={(e) => {
+                const next = e.target.value;
+                if (isTemplate27AudiencePick(next)) setTemplate27AudiencePick(next);
+              }}
+              className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-800 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-200"
+              aria-label="Who the cover is asking"
+            >
+              <option value="auto">From the post</option>
+              <option value="him">Him</option>
+              <option value="her">Her</option>
+              <option value="partner">Partner</option>
+            </select>
+          </label>
+          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
+            {template27CoverLabel(template27Audience)}
+          </span>
+        </div>
+      ) : null}
       <CopycatSlidePreview
         templateId={templateId}
         tabIndex={selectedTab}
         slideCount={tabCount}
-        text={ctaIsOwnSlide && selectedTab === ctaTabIndex ? '' : slideBodies[selectedTab] ?? ''}
+        text={ctaIsOwnSlide && selectedTab === ctaTabIndex ? '' : displayBodies[selectedTab] ?? ''}
         template18Style={template18Style}
         template18Scanlines={template18Scanlines}
         template18PastelSlides={template18PastelSlides}
         template19Color={template19Color}
         template24Look={template24Look}
+        template27Audience={template27Audience}
         backgroundSrc={
           templateId === 17 ? template17BackgroundSrcAt(questionSlides, selectedTab) : undefined
         }

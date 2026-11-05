@@ -29,6 +29,7 @@ import { getDeepQuestionsAppPosts } from '@/app/lib/copycat/deepquestionsapp';
 import { getFlamingoCardsTiktokPosts } from '@/app/lib/copycat/flamingo-cards-tiktok';
 import { getQuestionsForTonightPosts } from '@/app/lib/copycat/questionsfortonight';
 import { getCoupleSyxPosts } from '@/app/lib/copycat/couple-syx';
+import { getMisunderstoodCou4Posts } from '@/app/lib/copycat/misunderstood-cou4';
 
 type ChoiceBody = {
   body: string;
@@ -79,6 +80,7 @@ function choicePool(): ChoiceBody[] {
   collect(getFlamingoCardsTiktokPosts(), into);
   collect(getQuestionsForTonightPosts(), into);
   collect(getCoupleSyxPosts(), into);
+  collect(getMisunderstoodCou4Posts(), into);
   collect(getCoupleCardsPosts(), into);
   collect(getHhTalkPosts(), into);
   collect(getGoldenThoughtsDailyPosts(), into);

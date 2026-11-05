@@ -28,6 +28,7 @@ import { getDeepQuestionsAppPosts } from '@/app/lib/copycat/deepquestionsapp';
 import { getFlamingoCardsTiktokPosts } from '@/app/lib/copycat/flamingo-cards-tiktok';
 import { getQuestionsForTonightPosts } from '@/app/lib/copycat/questionsfortonight';
 import { getCoupleSyxPosts } from '@/app/lib/copycat/couple-syx';
+import { getMisunderstoodCou4Posts } from '@/app/lib/copycat/misunderstood-cou4';
 
 /**
  * Funny / chaotic question stems for image template 24.
@@ -88,6 +89,7 @@ function copycatBuckets(): { chaotic: string[]; rest: string[] } {
   collectStems(getFlamingoCardsTiktokPosts(), into);
   collectStems(getQuestionsForTonightPosts(), into);
   collectStems(getCoupleSyxPosts(), into);
+  collectStems(getMisunderstoodCou4Posts(), into);
   collectStems(getCoupleCardsPosts(), into);
   collectStems(getHhTalkPosts(), into);
   collectStems(getGoldenThoughtsDailyPosts(), into);
