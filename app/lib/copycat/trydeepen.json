@@ -2,7 +2,7 @@
   "handle": "trydeepen",
   "platform": "tiktok",
   "minViews": 50000,
-  "postCount": 30,
+  "postCount": 31,
   "creditsUsed": 3,
   "creditsRemaining": 95,
   "posts": [
@@ -886,6 +886,50 @@
         },
         {
           "text": "If I died and you got remarried, would you be buried next to me or your new one?"
+        }
+      ]
+    },
+    {
+      "id": "7704218600416021767",
+      "views": 87100,
+      "likes": 3366,
+      "coverText": "Be honest... I won't get mad (I guess)",
+      "slideText": [
+        {
+          "text": "What made you notice me first?",
+          "options": [
+            "My face",
+            "My vibe",
+            "My attitude",
+            "You don't even remember"
+          ]
+        },
+        {
+          "text": "What do you secretly love about me?",
+          "options": [
+            "My clinginess",
+            "My confidence",
+            "My energy",
+            "My unpredictability"
+          ]
+        },
+        {
+          "text": "What would hurt the most?",
+          "options": [
+            "My losing feelings",
+            "Me replacing you fast",
+            "Me lying",
+            "Me not caring more"
+          ]
+        },
+        {
+          "text": "When do you miss me the most?",
+          "options": [
+            "At night",
+            "When something reminds you of me",
+            "When you're bored",
+            "When I'm ignoring you"
+          ]
         }
       ]
     }
