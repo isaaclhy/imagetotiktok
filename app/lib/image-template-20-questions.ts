@@ -16,6 +16,7 @@ import { getDeepQuestionsAppPosts } from '@/app/lib/copycat/deepquestionsapp';
 import { getFlamingoCardsTiktokPosts } from '@/app/lib/copycat/flamingo-cards-tiktok';
 import { getQuestionsForTonightPosts } from '@/app/lib/copycat/questionsfortonight';
 import { getCoupleSyxPosts } from '@/app/lib/copycat/couple-syx';
+import { getMisunderstoodCou4Posts } from '@/app/lib/copycat/misunderstood-cou4';
 import { getCoupleCardsPosts } from '@/app/lib/copycat/couple-cards';
 import { getHhTalkPosts } from '@/app/lib/copycat/hhtalk';
 import { getGoldenThoughtsDailyPosts } from '@/app/lib/copycat/goldenthoughtsdaily';
@@ -47,6 +48,7 @@ function posts(): CopycatPost[] {
     ...getFlamingoCardsTiktokPosts(),
     ...getQuestionsForTonightPosts(),
     ...getCoupleSyxPosts(),
+    ...getMisunderstoodCou4Posts(),
     ...FLAMINGO_CARDS_FEED.posts,
     ...getFlamingoConvoPosts(),
     ...getQuestions21Posts(),

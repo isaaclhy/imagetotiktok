@@ -504,6 +504,7 @@ const COPYCAT_COMPETITORS = [
   { id: 'flamingo-cards-tiktok', label: 'Flamingo cards (TikTok)' },
   { id: 'questions-for-tonight', label: 'Questions for tonight' },
   { id: 'couple-syx', label: 'Couple syx' },
+  { id: 'misunderstood-cou4', label: 'Misunderstood cou4' },
 ] as const;
 
 type CopycatCompetitorId = (typeof COPYCAT_COMPETITORS)[number]['id'];
@@ -519,7 +520,7 @@ function pickRandomCopycatCompetitor(exclude?: CopycatCompetitorId): CopycatComp
 }
 
 /** Spill It image templates available inside Copycat. */
-const COPYCAT_TEMPLATE_IDS = [1, 2, 6, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25] as const;
+const COPYCAT_TEMPLATE_IDS = [1, 2, 6, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27] as const;
 type CopycatTemplateId = (typeof COPYCAT_TEMPLATE_IDS)[number];
 
 function isKawaiiStyleTemplateId(templateId: number | null | undefined): boolean {
@@ -2428,7 +2429,7 @@ export default function Home() {
   const prevFirstCardTextRef = useRef(firstCardTextValue);
 
   const imageTemplateCards = getImageTemplatesForApp(selectedAppId).filter(
-    (card) => card.id !== 15
+    (card) => card.id !== 15 && card.id !== 26 && card.id !== 27
   );
   const videoTemplateCards = getVideoTemplatesForApp(selectedAppId);
   const characterCards = getCharactersForApp(selectedAppId);

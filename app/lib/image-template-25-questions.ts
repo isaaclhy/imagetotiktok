@@ -30,6 +30,7 @@ import { getDeepQuestionsAppPosts } from '@/app/lib/copycat/deepquestionsapp';
 import { getFlamingoCardsTiktokPosts } from '@/app/lib/copycat/flamingo-cards-tiktok';
 import { getQuestionsForTonightPosts } from '@/app/lib/copycat/questionsfortonight';
 import { getCoupleSyxPosts } from '@/app/lib/copycat/couple-syx';
+import { getMisunderstoodCou4Posts } from '@/app/lib/copycat/misunderstood-cou4';
 
 function shuffle<T>(items: T[]): T[] {
   const next = [...items];
@@ -66,6 +67,7 @@ function posts(): CopycatPost[] {
     ...getFlamingoCardsTiktokPosts(),
     ...getQuestionsForTonightPosts(),
     ...getCoupleSyxPosts(),
+    ...getMisunderstoodCou4Posts(),
     ...getCoupleCardsPosts(),
     ...getHhTalkPosts(),
     ...getGoldenThoughtsDailyPosts(),
