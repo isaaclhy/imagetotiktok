@@ -128,6 +128,14 @@ import {
   type Template27Audience,
 } from '@/app/lib/image-template-27-pink-cards';
 import {
+  IMAGE_TEMPLATE28_DEFAULT_SEED,
+  loadTemplate28Fonts,
+  paintTemplate28Slide,
+  template28BodyFontStack,
+  template28DisplayFontStack,
+  template28UiFontStack,
+} from '@/app/lib/image-template-28-dotted';
+import {
   IMAGE_TEMPLATE22_FONT_STACK,
   IMAGE_TEMPLATE22_FONT_WEIGHT,
   paintTemplate22Slide,
@@ -186,7 +194,8 @@ export type CopycatExportTemplateId =
   | 24
   | 25
   | 26
-  | 27;
+  | 27
+  | 28;
 
 export type CopycatExportSlide = {
   text: string;
@@ -292,7 +301,8 @@ async function paintSlide(
   template14Style: Template14StyleId = IMAGE_TEMPLATE14_DEFAULT_STYLE,
   template24Look?: Template24Look,
   template27Audience?: Template27Audience,
-  template26BunnySeed?: number
+  template26BunnySeed?: number,
+  template28Seed?: number
 ): Promise<Blob> {
   const { w, h } = frameSize(templateId);
   const canvas = document.createElement('canvas');
@@ -389,6 +399,27 @@ async function paintSlide(
       fontFamily,
       boldFontFamily,
       bunnySeed: template26BunnySeed,
+    });
+    return canvasBlob(canvas);
+  }
+
+  if (templateId === 28) {
+    const displayFontFamily = template28DisplayFontStack();
+    const bodyFontFamily = template28BodyFontStack();
+    const uiFontFamily = template28UiFontStack();
+    await loadTemplate28Fonts();
+    const promo = slide.isCta ? await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC) : null;
+    paintTemplate28Slide(ctx, w, h, {
+      text: slide.text,
+      tabIndex,
+      slideCount,
+      isCover: slide.isCover,
+      isCta: slide.isCta,
+      seed: template28Seed ?? IMAGE_TEMPLATE28_DEFAULT_SEED,
+      promo,
+      displayFontFamily,
+      bodyFontFamily,
+      uiFontFamily,
     });
     return canvasBlob(canvas);
   }
@@ -884,6 +915,7 @@ export async function exportCopycatSlidesZip(options: {
   template24Look?: Template24Look;
   template27Audience?: Template27Audience;
   template26BunnySeed?: number;
+  template28Seed?: number;
 }): Promise<Blob> {
   const JSZip = (await import('jszip')).default;
   const zip = new JSZip();
@@ -906,7 +938,8 @@ export async function exportCopycatSlidesZip(options: {
       options.template14Style ?? IMAGE_TEMPLATE14_DEFAULT_STYLE,
       options.template24Look,
       options.template27Audience,
-      options.template26BunnySeed
+      options.template26BunnySeed,
+      options.template28Seed
     );
     const name = i === 0 ? 'cover' : slide.isCta && !slide.text.trim() ? 'cta' : `q${i}`;
     zip.file(`template-${options.templateId}-${name}.png`, blob);
