@@ -13,6 +13,8 @@ import {
  * Store promo (same mock, "Download for more questions!" label, and crop).
  * There is no extra CTA-only slide. The only illustration is an original
  * bunny sticker on the cover; its placement and features come from a seed.
+ * Whichever edge it sits on, the bunny leans there and turns its head
+ * toward the centre of the cover.
  */
 export const IMAGE_TEMPLATE26_FOOTER = IMAGE_TEMPLATE2_APP_FOOTER;
 export const IMAGE_TEMPLATE26_HEADER = IMAGE_TEMPLATE2_APP_FOOTER;
@@ -534,7 +536,8 @@ type BunnyAccessory = 'none' | 'bow' | 'glasses' | 'blush' | 'flower';
 type BunnyLook = {
   slot: number;
   scale: number;
-  rotation: number;
+  /** Small seeded settle, added to the edge-facing angle. */
+  lean: number;
   flip: boolean;
   earW: number;
   earH: number;
@@ -551,23 +554,31 @@ type BunnyLook = {
 type BunnySlot = {
   edge: 'top' | 'bottom' | 'left' | 'right';
   along: number;
-  /** Fraction of the sticker kept inside the frame along the peek axis. */
-  visible: number;
   scaleMul: number;
 };
 
 const BUNNY_SLOTS: readonly BunnySlot[] = [
-  { edge: 'bottom', along: 0.12, visible: 0.72, scaleMul: 1 },
-  { edge: 'bottom', along: 0.88, visible: 0.72, scaleMul: 1 },
-  { edge: 'bottom', along: 0.5, visible: 0.58, scaleMul: 0.92 },
-  { edge: 'left', along: 0.84, visible: 0.58, scaleMul: 0.95 },
-  { edge: 'right', along: 0.84, visible: 0.58, scaleMul: 0.95 },
-  { edge: 'top', along: 0.14, visible: 0.78, scaleMul: 0.58 },
-  { edge: 'top', along: 0.86, visible: 0.78, scaleMul: 0.58 },
-  { edge: 'top', along: 0.5, visible: 0.72, scaleMul: 0.52 },
-  { edge: 'left', along: 0.1, visible: 0.55, scaleMul: 0.64 },
-  { edge: 'right', along: 0.1, visible: 0.55, scaleMul: 0.64 },
+  { edge: 'bottom', along: 0.08, scaleMul: 1 },
+  { edge: 'bottom', along: 0.92, scaleMul: 1 },
+  { edge: 'bottom', along: 0.5, scaleMul: 0.92 },
+  { edge: 'left', along: 0.88, scaleMul: 0.88 },
+  { edge: 'right', along: 0.88, scaleMul: 0.88 },
+  { edge: 'top', along: 0.1, scaleMul: 0.55 },
+  { edge: 'top', along: 0.9, scaleMul: 0.55 },
+  { edge: 'top', along: 0.5, scaleMul: 0.5 },
+  // Top edge, inboard of the corner, still above the header.
+  { edge: 'top', along: 0.2, scaleMul: 0.48 },
+  { edge: 'top', along: 0.8, scaleMul: 0.48 },
 ];
+
+/** Belly and paws, in the bunny's local drawing space. Local +y is the edge it leans on. */
+const BUNNY_BODY = { x: 168, y: 304, rx: 76, ry: 48 };
+const BUNNY_PAWS = [
+  { x: 88, y: 328, rx: 34, ry: 22, rot: -0.6 },
+  { x: 248, y: 328, rx: 34, ry: 22, rot: 0.6 },
+] as const;
+/** Local y planted on the screen edge, just under the paws and belly. */
+const BUNNY_REST_Y = 356;
 
 const BUNNY_EAR_COLORS = ['#F7A8C4', '#F4A3BE', '#F08BB0', '#E8A0B8', '#F6B7A2', '#F3C4D0'] as const;
 const BUNNY_CHEEK_COLORS = ['#F4A3BE', '#F7B3C8', '#F0A0B4', '#F8C2B0', '#EFA8C0'] as const;
@@ -597,7 +608,9 @@ function bunnyLookFromSeed(seed: number): BunnyLook {
   return {
     slot: Math.floor(rand() * BUNNY_SLOTS.length),
     scale: 1.12 + rand() * 0.48,
-    rotation: (rand() - 0.5) * 0.9,
+    // Same random draw as the old free rotation, so ears and accessories stay put.
+    // The draw is only a slight settle; the edge chooses the facing direction.
+    lean: (rand() - 0.5) * 0.16,
     flip: rand() < 0.5,
     earW: 28 + rand() * 18,
     earH: 68 + rand() * 34,
@@ -637,7 +650,10 @@ function bunnyLocalBounds(look: BunnyLook) {
   let box = ellipseAabb(118, 78, look.earW + pad, look.earH + pad, look.earTiltL);
   box = unionAabb(box, ellipseAabb(196, 70, look.earW * 0.92 + pad, look.earH * 0.96 + pad, look.earTiltR));
   box = unionAabb(box, ellipseAabb(168, 196, 118 + pad, 108 + pad, 0));
-  box = unionAabb(box, ellipseAabb(250, 268, 32 + pad, 24 + pad, 0.45));
+  box = unionAabb(box, ellipseAabb(BUNNY_BODY.x, BUNNY_BODY.y, BUNNY_BODY.rx + pad, BUNNY_BODY.ry + pad, 0));
+  for (const paw of BUNNY_PAWS) {
+    box = unionAabb(box, ellipseAabb(paw.x, paw.y, paw.rx + pad, paw.ry + pad, paw.rot));
+  }
   return box;
 }
 
@@ -705,33 +721,69 @@ function visiblyInside(
   return w > width * 0.08 && h > height * 0.04;
 }
 
+/**
+ * Canvas rotation that aims the bunny's crown (local -y) at (tx, ty)
+ * from a sticker centre of (cx, cy). Positive rotation turns the crown clockwise.
+ */
+function facingRotation(cx: number, cy: number, tx: number, ty: number): number {
+  return Math.atan2(tx - cx, cy - ty);
+}
+
+/**
+ * Plant the paws (local y = BUNNY_REST_Y, on the sticker's vertical centre)
+ * on the slot's screen edge. The crown then points into the cover.
+ */
 function anchorBunny(
   slot: BunnySlot,
-  rel: { minX: number; minY: number; maxX: number; maxY: number },
+  width: number,
+  height: number,
+  rotation: number,
+  scale: number,
+  originY: number
+) {
+  const oy = (BUNNY_REST_Y - originY) * scale;
+  const sin = Math.sin(rotation);
+  const cos = Math.cos(rotation);
+  const tuck = Math.min(width, height) * 0.012;
+  const insetX = width * 0.05;
+  const insetY = height * 0.045;
+  const wx =
+    slot.edge === 'left'
+      ? -tuck
+      : slot.edge === 'right'
+        ? width + tuck
+        : insetX + (width - insetX * 2) * slot.along;
+  const wy =
+    slot.edge === 'bottom'
+      ? height + tuck
+      : slot.edge === 'top'
+        ? -tuck
+        : insetY + (height - insetY * 2) * slot.along;
+  return { cx: wx + oy * sin, cy: wy - oy * cos };
+}
+
+/** Head centre in the bunny's drawing space. Kept inside the frame so the face stays visible. */
+const BUNNY_HEAD = { x: 168, y: 196 };
+
+function headOnCanvas(
+  cx: number,
+  cy: number,
+  scale: number,
+  rotation: number,
+  flip: boolean,
+  originX: number,
+  originY: number,
   width: number,
   height: number
 ) {
-  const boxW = rel.maxX - rel.minX;
-  const boxH = rel.maxY - rel.minY;
-  if (slot.edge === 'bottom' || slot.edge === 'top') {
-    const minCx = boxW * 0.28;
-    const maxCx = Math.max(minCx, width - boxW * 0.28);
-    const cx = minCx + (maxCx - minCx) * slot.along;
-    // Bottom peeks clip the chin. Top peeks clip the ear tips so the face hangs in.
-    const cy =
-      slot.edge === 'bottom'
-        ? height - boxH * slot.visible - rel.minY
-        : -boxH * (1 - slot.visible) - rel.minY;
-    return { cx, cy };
-  }
-  const minCy = boxH * 0.28;
-  const maxCy = Math.max(minCy, height - boxH * 0.28);
-  const cy = minCy + (maxCy - minCy) * slot.along;
-  const cx =
-    slot.edge === 'left'
-      ? -boxW * (1 - slot.visible) - rel.minX
-      : width + boxW * (1 - slot.visible) - boxW - rel.minX;
-  return { cx, cy };
+  const dx = (BUNNY_HEAD.x - originX) * scale * (flip ? -1 : 1);
+  const dy = (BUNNY_HEAD.y - originY) * scale;
+  const cos = Math.cos(rotation);
+  const sin = Math.sin(rotation);
+  const x = cx + dx * cos - dy * sin;
+  const y = cy + dx * sin + dy * cos;
+  const margin = Math.max(36 * (width / 1080), 90 * scale);
+  return x >= margin && x <= width - margin && y >= margin && y <= height - margin;
 }
 
 function separateFromText(
@@ -742,27 +794,84 @@ function separateFromText(
   obstacles: readonly TextRect[],
   width: number,
   height: number,
-  pad: number
-) {
-  if (slot.edge === 'top') {
-    const box = worldBox(cx, cy, rel);
-    if (!hitsText(box, obstacles, pad) && visiblyInside(box, width, height)) return { cx, cy };
-    return null;
+  pad: number,
+  pose: {
+    scale: number;
+    rotation: number;
+    flip: boolean;
+    originX: number;
+    originY: number;
   }
+) {
   let x = cx;
   let y = cy;
-  const stepX = width * 0.02;
-  const stepY = height * 0.02;
-  for (let i = 0; i < 28; i++) {
+  const stepX = width * 0.016;
+  const stepY = height * 0.016;
+  for (let i = 0; i < 18; i++) {
     const box = worldBox(x, y, rel);
-    if (!hitsText(box, obstacles, pad) && visiblyInside(box, width, height)) return { cx: x, cy: y };
+    const faceIn = headOnCanvas(
+      x,
+      y,
+      pose.scale,
+      pose.rotation,
+      pose.flip,
+      pose.originX,
+      pose.originY,
+      width,
+      height
+    );
+    if (faceIn && !hitsText(box, obstacles, pad) && visiblyInside(box, width, height)) {
+      return { cx: x, cy: y };
+    }
+    // Nudging further out would slide the face off this edge. Shrink instead.
+    if (!faceIn) return null;
     if (slot.edge === 'bottom') y += stepY;
+    else if (slot.edge === 'top') y -= stepY;
     else if (slot.edge === 'left') x -= stepX;
     else x += stepX;
-    if (i === 8 || i === 16) {
-      if (slot.edge === 'left' || slot.edge === 'right') y += stepY * 4;
-      else x += (slot.along < 0.5 ? -1 : 1) * stepX * 4;
+    if (i === 6 || i === 12) {
+      if (slot.edge === 'left' || slot.edge === 'right') {
+        y += (slot.along < 0.5 ? -1 : 1) * stepY * 3;
+      } else {
+        x += (slot.along < 0.5 ? -1 : 1) * stepX * 3;
+      }
     }
+  }
+  return null;
+}
+
+function slotEdgePoint(slot: BunnySlot, width: number, height: number) {
+  if (slot.edge === 'left') return { x: 0, y: height * slot.along };
+  if (slot.edge === 'right') return { x: width, y: height * slot.along };
+  if (slot.edge === 'top') return { x: width * slot.along, y: 0 };
+  return { x: width * slot.along, y: height };
+}
+
+function tryPlaceSlot(
+  slot: BunnySlot,
+  rotation: number,
+  look: BunnyLook,
+  local: { minX: number; minY: number; maxX: number; maxY: number },
+  width: number,
+  height: number,
+  obstacles: readonly TextRect[],
+  pad: number
+) {
+  const originX = (local.minX + local.maxX) / 2;
+  const originY = (local.minY + local.maxY) / 2;
+  let scale = look.scale * slot.scaleMul * (width / 1080);
+  for (let shrink = 0; shrink < 8; shrink++) {
+    const rel = rotatedRelBounds(local, scale, rotation);
+    const anchored = anchorBunny(slot, width, height, rotation, scale, originY);
+    const cleared = separateFromText(slot, anchored.cx, anchored.cy, rel, obstacles, width, height, pad, {
+      scale,
+      rotation,
+      flip: look.flip,
+      originX,
+      originY,
+    });
+    if (cleared) return { ...cleared, scale, rotation };
+    scale *= 0.86;
   }
   return null;
 }
@@ -776,35 +885,49 @@ function resolveBunnyPlacement(
   const local = bunnyLocalBounds(look);
   const pad = width * 0.02;
   const order = [look.slot, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-  for (const slotIndex of order) {
-    const slot = BUNNY_SLOTS[slotIndex % BUNNY_SLOTS.length]!;
-    let scale = look.scale * slot.scaleMul * (width / 1080);
-    for (let shrink = 0; shrink < 6; shrink++) {
-      const rel = rotatedRelBounds(local, scale, look.rotation);
-      const anchored = anchorBunny(slot, rel, width, height);
-      const cleared = separateFromText(slot, anchored.cx, anchored.cy, rel, obstacles, width, height, pad);
-      if (cleared) return { ...cleared, scale, local };
-      scale *= 0.9;
+  const seen = new Set<number>();
+  for (const rawIndex of order) {
+    const index = rawIndex % BUNNY_SLOTS.length;
+    if (seen.has(index)) continue;
+    seen.add(index);
+    const slot = BUNNY_SLOTS[index]!;
+    const edge = slotEdgePoint(slot, width, height);
+    let rotation = facingRotation(edge.x, edge.y, width / 2, height / 2) + look.lean;
+    let placed = tryPlaceSlot(slot, rotation, look, local, width, height, obstacles, pad);
+    if (!placed) continue;
+    for (let pass = 0; pass < 3; pass++) {
+      const aimed = facingRotation(placed.cx, placed.cy, width / 2, height / 2) + look.lean;
+      if (Math.abs(Math.atan2(Math.sin(aimed - placed.rotation), Math.cos(aimed - placed.rotation))) < 0.03) {
+        break;
+      }
+      const next = tryPlaceSlot(slot, aimed, look, local, width, height, obstacles, pad);
+      if (!next) break;
+      placed = next;
     }
+    return { cx: placed.cx, cy: placed.cy, scale: placed.scale, rotation: placed.rotation, local };
   }
-  const scale = 1.15 * (width / 1080);
-  const rel = rotatedRelBounds(local, scale, look.rotation);
+  const scale = 1.05 * (width / 1080);
+  const originY = (local.minY + local.maxY) / 2;
   const slot = BUNNY_SLOTS[0]!;
-  const anchored = anchorBunny(slot, rel, width, height);
+  let rotation = facingRotation(width * 0.12, height, width / 2, height / 2) + look.lean;
+  const rel = rotatedRelBounds(local, scale, rotation);
+  const anchored = anchorBunny(slot, width, height, rotation, scale, originY);
   let y = anchored.cy;
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 24; i++) {
     const box = worldBox(anchored.cx, y, rel);
-    if (!hitsText(box, obstacles, pad)) break;
-    y += height * 0.025;
+    if (!hitsText(box, obstacles, pad) && visiblyInside(box, width, height)) break;
+    y += height * 0.02;
   }
-  return { cx: anchored.cx, cy: y, scale, local };
+  rotation = facingRotation(anchored.cx, y, width / 2, height / 2) + look.lean;
+  return { cx: anchored.cx, cy: y, scale, rotation, local };
 }
 
 /**
  * Original bunny. White head, pink inner ears and cheeks, dark outline.
- * Position, size, rotation, ears, expression, and an optional accessory
- * come from the seed. The sticker peeks in from a frame edge and is kept
- * clear of the cover header and title.
+ * Position, size, ears, expression, and an optional accessory come from
+ * the seed. The sticker leans on a frame edge: paws and belly on that
+ * edge, crown and face turned toward the centre of the cover, clear of
+ * the header and title.
  */
 function paintBunny(
   ctx: CanvasRenderingContext2D,
@@ -819,7 +942,7 @@ function paintBunny(
   const originY = (placed.local.minY + placed.local.maxY) / 2;
   ctx.save();
   ctx.translate(placed.cx, placed.cy);
-  ctx.rotate(look.rotation);
+  ctx.rotate(placed.rotation);
   ctx.scale(look.flip ? -placed.scale : placed.scale, placed.scale);
   ctx.translate(-originX, -originY);
   drawBunny(ctx, look);
@@ -855,6 +978,32 @@ function drawBunny(ctx: CanvasRenderingContext2D, look: BunnyLook) {
   if (look.accessory === 'bow') drawBow(ctx, 214, 8, look.earColor, outline);
   if (look.accessory === 'flower') drawFlower(ctx, 78, 36, look.earColor, outline);
 
+  // Belly and paws sit on the screen edge (local +y). The head covers the join.
+  ctx.beginPath();
+  ctx.ellipse(BUNNY_BODY.x, BUNNY_BODY.y, BUNNY_BODY.rx, BUNNY_BODY.ry, 0, 0, Math.PI * 2);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fill();
+  ctx.lineWidth = stroke;
+  ctx.strokeStyle = outline;
+  ctx.stroke();
+  for (const paw of BUNNY_PAWS) {
+    ctx.save();
+    ctx.translate(paw.x, paw.y);
+    ctx.rotate(paw.rot);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, paw.rx, paw.ry, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fill();
+    ctx.lineWidth = stroke;
+    ctx.strokeStyle = outline;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(0, 4, paw.rx * 0.42, paw.ry * 0.42, 0, 0, Math.PI * 2);
+    ctx.fillStyle = look.cheekColor;
+    ctx.fill();
+    ctx.restore();
+  }
+
   ctx.beginPath();
   ctx.ellipse(168, 196, 118, 108, 0, 0, Math.PI * 2);
   ctx.fillStyle = '#FFFFFF';
@@ -881,37 +1030,32 @@ function drawBunny(ctx: CanvasRenderingContext2D, look: BunnyLook) {
   ctx.ellipse(168, 214, 11, 8, 0, 0, Math.PI * 2);
   ctx.fill();
   drawMouth(ctx, look, outline);
-
-  ctx.beginPath();
-  ctx.ellipse(250, 268, 32, 24, 0.45, 0, Math.PI * 2);
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fill();
-  ctx.lineWidth = stroke;
-  ctx.strokeStyle = outline;
-  ctx.stroke();
 }
 
 function drawEyes(ctx: CanvasRenderingContext2D, look: BunnyLook, outline: string) {
   const left = { x: 128, y: 184 };
   const right = { x: 206, y: 180 };
+  // Pupils sit toward the crown. After the edge rotation, that is toward the centre.
+  const gaze = 6;
   const pupil = (x: number, y: number, rx: number, ry: number) => {
+    const py = y - gaze;
     ctx.fillStyle = '#2A1A17';
     ctx.beginPath();
-    ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, py, rx, ry, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#FFFFFF';
     ctx.beginPath();
-    ctx.arc(x + 3, y - 4, Math.max(2.5, rx * 0.34), 0, Math.PI * 2);
+    ctx.arc(x + 3, py - 4, Math.max(2.5, rx * 0.34), 0, Math.PI * 2);
     ctx.fill();
   };
   if (look.eye === 'happy') {
     ctx.strokeStyle = outline;
     ctx.lineWidth = 4.5;
     ctx.beginPath();
-    ctx.arc(left.x, left.y + 6, 14, Math.PI * 1.15, Math.PI * 1.85);
+    ctx.arc(left.x, left.y + 6 - gaze, 14, Math.PI * 1.15, Math.PI * 1.85);
     ctx.stroke();
     ctx.beginPath();
-    ctx.arc(right.x, right.y + 6, 14, Math.PI * 1.15, Math.PI * 1.85);
+    ctx.arc(right.x, right.y + 6 - gaze, 14, Math.PI * 1.15, Math.PI * 1.85);
     ctx.stroke();
     return;
   }
@@ -920,7 +1064,7 @@ function drawEyes(ctx: CanvasRenderingContext2D, look: BunnyLook, outline: strin
     ctx.strokeStyle = outline;
     ctx.lineWidth = 4.5;
     ctx.beginPath();
-    ctx.arc(left.x, left.y + 6, 14, Math.PI * 1.15, Math.PI * 1.85);
+    ctx.arc(left.x, left.y + 6 - gaze, 14, Math.PI * 1.15, Math.PI * 1.85);
     ctx.stroke();
     return;
   }
