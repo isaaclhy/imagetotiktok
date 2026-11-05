@@ -5790,7 +5790,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       return { entries, isKawaiiTemplate: false };
     }
     if (exportTemplateId === 28) {
-      const names = ['cover', 'q1', 'q2', 'q3'] as const;
+      const names = ['cover', 'q1', 'q2', 'q3', 'q4', 'q5'] as const;
       const frameWidth = 1080;
       const frameHeight = 1440;
       const loadImage = (src: string, label: string) =>

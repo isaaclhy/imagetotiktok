@@ -15,12 +15,12 @@ import {
 /**
  * Dotted-grid slideshow (image template 28), in the style of @thesenuka.
  * 1080×1440. White fading to light grey, faint dotted grid, navy and plum
- * type. Cover is one of two seeded variants. Three question slides follow.
+ * type. Cover is one of two seeded variants. Five question slides follow.
  * The last question keeps its copy and closes with template 2's App Store
  * promo (same mock, "Download for more questions!" label, and crop).
  * There is no extra CTA slide.
  */
-export const IMAGE_TEMPLATE28_QUESTION_COUNT = 3;
+export const IMAGE_TEMPLATE28_QUESTION_COUNT = 5;
 export const IMAGE_TEMPLATE28_SLIDE_COUNT = IMAGE_TEMPLATE28_QUESTION_COUNT + 1;
 /** Last question. The App Store mock sits on this slide. */
 export const IMAGE_TEMPLATE28_CTA_TAB = IMAGE_TEMPLATE28_QUESTION_COUNT;
@@ -72,8 +72,20 @@ const QUESTION_EMOJIS = [
   '💬',
 ] as const;
 
-const LABELS_OLD_NEW = ['QUESTION #1', 'QUESTION #2', 'QUESTION #3'] as const;
-const LABELS_STOP_ASKING = ['INSTEAD ASK', 'OR TRY', 'AND THE BOLD ONE'] as const;
+const LABELS_OLD_NEW = [
+  'QUESTION #1',
+  'QUESTION #2',
+  'QUESTION #3',
+  'QUESTION #4',
+  'QUESTION #5',
+] as const;
+const LABELS_STOP_ASKING = [
+  'INSTEAD ASK',
+  'OR TRY',
+  'AND THE BOLD ONE',
+  'THEN THIS',
+  'ONE MORE',
+] as const;
 
 const STOP_WORDS = new Set([
   'a',
@@ -278,7 +290,7 @@ export function pickTemplate28Questions(
   return shuffled.slice(0, count);
 }
 
-/** Keep up to three real questions, then fill from the banks. */
+/** Keep up to five real questions, then fill from the banks. */
 export function fillTemplate28Questions(existing: string[], seed: number): string[] {
   const picked: string[] = [];
   const seen = new Set<string>();
