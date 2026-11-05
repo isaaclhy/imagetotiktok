@@ -1,21 +1,24 @@
 import { IMAGE_TEMPLATE2_APP_FOOTER } from '@/app/lib/constants';
 import { splitCopycatQuestionAndOptions } from '@/app/lib/copycat/flamingo-cards';
-import { IMAGE_TEMPLATE2_Q5_PROMO_ASPECT } from '@/app/lib/image-template-2-cover';
+import {
+  imageTemplate2Q5PromoTextCeiling,
+  paintImageTemplate2Q5Promo,
+} from '@/app/lib/image-template-2-cover';
 import { IMAGE_TEMPLATE16_ICON_SRC } from '@/app/lib/image-template-16-notes';
 
 /**
  * Pink tilted-card slideshow (image template 27). 1080×1440.
  * Hot pink field, one cream card with a dark-brown offset shadow. The card
  * geometry follows template 24's tilted card (same rotate, fill, then stroke).
- * Copycat covers use "Ask him #N and watch his face". The last slide is a
- * CTA with template 2's App Store phone.
+ * Copycat covers use "Ask him #N and watch his face". The last question keeps
+ * its card and closes with template 2's App Store promo (same mock,
+ * "Download for more questions!" label, and crop). There is no extra CTA slide.
  */
 export const IMAGE_TEMPLATE27_BG = '#E85FA8';
 export const IMAGE_TEMPLATE27_CARD = '#FFF9EE';
 export const IMAGE_TEMPLATE27_INK = '#2A1A17';
 export const IMAGE_TEMPLATE27_FOOTER = IMAGE_TEMPLATE2_APP_FOOTER;
 export const IMAGE_TEMPLATE27_ICON_SRC = IMAGE_TEMPLATE16_ICON_SRC;
-export const IMAGE_TEMPLATE27_CTA_LABEL = 'Want 1,000+ more? Get Spill It on the App Store';
 export const IMAGE_TEMPLATE27_FONT_STACK =
   '"Lilita One", "Arial Rounded MT Bold", Nunito, Arial, sans-serif';
 export const IMAGE_TEMPLATE27_UI_FONT_STACK =
@@ -147,22 +150,25 @@ export function paintTemplate27Slide(
   ctx.fillStyle = IMAGE_TEMPLATE27_BG;
   ctx.fillRect(0, 0, width, height);
 
-  if (isCta) {
-    paintCta(ctx, width, height, fontFamily, uiFontFamily, uiBoldFontFamily, options.promo ?? null);
-    return;
-  }
-
   const questionIndex = Math.max(0, options.tabIndex - 1);
   const rotation = isCover ? -4 : template27QuestionTilt(questionIndex);
   const cardW = width * 0.84;
   const cardH = height * (isCover ? 0.54 : 0.6);
-  const centerY = height * (isCover ? 0.4 : 0.42);
+  let centerY = height * (isCover ? 0.4 : 0.42);
+  let paintedW = cardW;
+  let paintedH = cardH;
+  if (isCta) {
+    const fitted = fitCardAbovePromo(width, height, cardW, cardH, rotation);
+    centerY = fitted.centerY;
+    paintedW = fitted.cardW;
+    paintedH = fitted.cardH;
+  }
   const label = isCover ? template27CoverLabel(audience) : `QUESTION ${options.tabIndex}`;
-  paintCard(ctx, width, centerY, cardW, cardH, rotation, (card) => {
+  paintCard(ctx, width, centerY, paintedW, paintedH, rotation, (card) => {
     paintCardCopy(
       card,
-      cardW,
-      cardH,
+      paintedW,
+      paintedH,
       options.text,
       label,
       fontFamily,
@@ -171,6 +177,19 @@ export function paintTemplate27Slide(
       isCover
     );
   });
+
+  if (isCta) {
+    const visualBottom = cardVisualBottom(width, centerY, paintedW, paintedH, rotation);
+    const ceiling = imageTemplate2Q5PromoTextCeiling(width, height);
+    paintImageTemplate2Q5Promo(ctx, width, height, {
+      promo: options.promo ?? null,
+      fontFamily: uiBoldFontFamily,
+      textColor: '#FFFFFF',
+      fontWeight: 700,
+      textBottom: visualBottom > ceiling ? visualBottom : 0,
+    });
+    return;
+  }
 
   const rad = (rotation * Math.PI) / 180;
   const cardBottom = centerY + cardH / 2 + Math.abs(Math.sin(rad)) * (cardW / 2);
@@ -491,35 +510,44 @@ function paintFooter(
   ctx.fillText(label, x + size + gap, cy);
 }
 
-function paintCta(
-  ctx: CanvasRenderingContext2D,
+function rotatedHalfHeight(cardW: number, cardH: number, rotationDeg: number): number {
+  const rad = (Math.abs(rotationDeg) * Math.PI) / 180;
+  return Math.abs(Math.cos(rad)) * (cardH / 2) + Math.abs(Math.sin(rad)) * (cardW / 2);
+}
+
+function cardVisualBottom(
+  width: number,
+  centerY: number,
+  cardW: number,
+  cardH: number,
+  rotationDeg: number
+): number {
+  return centerY + rotatedHalfHeight(cardW, cardH, rotationDeg) + width * (30 / 1080);
+}
+
+/** Shrink and lift the question card so it stays above template 2's resting promo. */
+function fitCardAbovePromo(
   width: number,
   height: number,
-  fontFamily: string,
-  uiFontFamily: string,
-  uiBoldFontFamily: string,
-  promo: CanvasImageSource | null
-) {
-  const cardW = width * 0.84;
-  const cardH = height * 0.34;
-  const centerY = height * 0.28;
-  paintCard(ctx, width, centerY, cardW, cardH, -3, (card) => {
-    paintCardCopy(
-      card,
-      cardW,
-      cardH,
-      IMAGE_TEMPLATE27_CTA_LABEL,
-      'SPILL IT',
-      fontFamily,
-      uiFontFamily,
-      uiBoldFontFamily,
-      false
-    );
-  });
-  if (!promo) return;
-  const promoWidth = width * 0.58;
-  const promoHeight = promoWidth / IMAGE_TEMPLATE2_Q5_PROMO_ASPECT;
-  const phoneTop = centerY + cardH / 2 + height * 0.05;
-  ctx.imageSmoothingEnabled = true;
-  ctx.drawImage(promo, (width - promoWidth) / 2, phoneTop, promoWidth, promoHeight);
+  cardW: number,
+  cardH: number,
+  rotationDeg: number
+): { centerY: number; cardW: number; cardH: number } {
+  const ceiling = imageTemplate2Q5PromoTextCeiling(width, height) - height * 0.012;
+  const topPad = height * 0.075;
+  const shadowY = width * (30 / 1080);
+  let scale = 1;
+  while (scale > 0.52) {
+    const half = rotatedHalfHeight(cardW * scale, cardH * scale, rotationDeg);
+    if (half * 2 + shadowY <= ceiling - topPad) break;
+    scale = Math.max(0.52, scale - 0.03);
+    if (scale === 0.52) break;
+  }
+  const paintedW = cardW * scale;
+  const paintedH = cardH * scale;
+  const half = rotatedHalfHeight(paintedW, paintedH, rotationDeg);
+  const roomTop = topPad + half;
+  const roomBottom = ceiling - shadowY - half;
+  const centerY = roomBottom > roomTop ? (roomTop + roomBottom) / 2 : roomTop;
+  return { centerY, cardW: paintedW, cardH: paintedH };
 }

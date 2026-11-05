@@ -88,6 +88,59 @@ export function imageTemplate2Q5PromoLayout(
   return { x: (frameWidth - width) / 2, y, width, height };
 }
 
+/**
+ * Top of the resting Q5 label, minus the text gap. Question copy on a closing
+ * slide should end above this so the mock can stay at its 66% crop.
+ */
+export function imageTemplate2Q5PromoTextCeiling(
+  frameWidth: number,
+  frameHeight: number
+): number {
+  const resting = imageTemplate2Q5PromoLayout(frameWidth, frameHeight, 0);
+  const labelSize = frameHeight * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO;
+  const labelGap = frameHeight * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO;
+  return (
+    resting.y - labelGap - labelSize - frameHeight * IMAGE_TEMPLATE2_Q5_PROMO_TEXT_GAP_RATIO
+  );
+}
+
+/**
+ * Template 2's closing promo: the App Store mock (90% wide, top at 66% unless
+ * the question would run into it) and "Download for more questions!" just above.
+ * Shared by later templates so the crop, wording, and push-down behaviour stay
+ * the same as template 2's canvas export.
+ */
+export function paintImageTemplate2Q5Promo(
+  ctx: CanvasRenderingContext2D,
+  frameWidth: number,
+  frameHeight: number,
+  options: {
+    promo: CanvasImageSource | null;
+    fontFamily: string;
+    textColor: string;
+    /** Bottom of the question ink. 0 keeps the mock at its resting crop. */
+    textBottom?: number;
+    fontWeight?: number | string;
+  }
+): { x: number; y: number; width: number; height: number } {
+  const labelSize = Math.round(frameHeight * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO);
+  const labelGap = frameHeight * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_GAP_RATIO;
+  const textBottom = options.textBottom ?? 0;
+  const layout = imageTemplate2Q5PromoLayout(
+    frameWidth,
+    frameHeight,
+    textBottom > 0 ? textBottom + labelSize + labelGap : 0
+  );
+  if (options.promo) ctx.drawImage(options.promo, layout.x, layout.y, layout.width, layout.height);
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+  ctx.font = `${options.fontWeight ?? 700} ${labelSize}px ${options.fontFamily}`;
+  ctx.fillStyle = options.textColor;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(IMAGE_TEMPLATE2_Q5_PROMO_LABEL, frameWidth / 2, layout.y - labelGap);
+  return layout;
+}
+
 function wrapLines(
   ctx: CanvasRenderingContext2D,
   text: string,

@@ -291,7 +291,8 @@ async function paintSlide(
   template19Color?: Template19ColorId,
   template14Style: Template14StyleId = IMAGE_TEMPLATE14_DEFAULT_STYLE,
   template24Look?: Template24Look,
-  template27Audience?: Template27Audience
+  template27Audience?: Template27Audience,
+  template26BunnySeed?: number
 ): Promise<Blob> {
   const { w, h } = frameSize(templateId);
   const canvas = document.createElement('canvas');
@@ -387,6 +388,7 @@ async function paintSlide(
       promo,
       fontFamily,
       boldFontFamily,
+      bunnySeed: template26BunnySeed,
     });
     return canvasBlob(canvas);
   }
@@ -881,6 +883,7 @@ export async function exportCopycatSlidesZip(options: {
   template19Color?: Template19ColorId;
   template24Look?: Template24Look;
   template27Audience?: Template27Audience;
+  template26BunnySeed?: number;
 }): Promise<Blob> {
   const JSZip = (await import('jszip')).default;
   const zip = new JSZip();
@@ -902,7 +905,8 @@ export async function exportCopycatSlidesZip(options: {
       options.template19Color,
       options.template14Style ?? IMAGE_TEMPLATE14_DEFAULT_STYLE,
       options.template24Look,
-      options.template27Audience
+      options.template27Audience,
+      options.template26BunnySeed
     );
     const name = i === 0 ? 'cover' : slide.isCta && !slide.text.trim() ? 'cta' : `q${i}`;
     zip.file(`template-${options.templateId}-${name}.png`, blob);
