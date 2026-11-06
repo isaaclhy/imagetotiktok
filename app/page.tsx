@@ -386,7 +386,9 @@ import {
   resolveStudioAppId,
   type StudioAppId,
 } from '@/app/lib/apps';
+import { NightyCompositionStudio } from '@/app/components/NightyCompositionStudio';
 import { SpillQuizVideoStudio } from '@/app/components/SpillQuizVideoStudio';
+import { isNightyCompositionTemplateId } from '@/app/lib/nighty-video-templates/catalog';
 import { isSpillQuizTemplateId } from '@/app/lib/spill-quiz/script';
 import { getCharacterById, getCharactersForApp } from '@/app/lib/characters';
 import {
@@ -2575,6 +2577,8 @@ export default function Home() {
   const isFabAffirmationVideoTemplate = selectedAppId === 'fab' && selectedVideoTemplateId === 1;
   const isNightyParticleVideoTemplate = selectedAppId === 'nighty' && selectedVideoTemplateId === 1;
   const isNightyRainVideoTemplate = selectedAppId === 'nighty' && selectedVideoTemplateId === 2;
+  const isNightyCompositionVideoTemplate =
+    selectedAppId === 'nighty' && isNightyCompositionTemplateId(selectedVideoTemplateId);
   const usesPexelsVideoBackground =
     isCouplesNatureVideoTemplate ||
     isSpillItNotesVideoTemplate ||
@@ -3517,10 +3521,13 @@ export default function Home() {
 
 
   useEffect(() => {
+    // Wait until the URL has been read. Clearing before that races the
+    // initial tab and drops ?videoTemplate= on refresh.
+    if (!urlReady) return;
     if (contentTab !== 'video') {
       setSelectedVideoTemplateId(null);
     }
-  }, [contentTab]);
+  }, [contentTab, urlReady]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -10020,6 +10027,12 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                       ))}
                     </div>
                   </>
+                ) : isNightyCompositionVideoTemplate && selectedVideoTemplateId !== null ? (
+                  <NightyCompositionStudio
+                    key={`${selectedAppId}-${selectedVideoTemplateId}`}
+                    templateId={selectedVideoTemplateId}
+                    onBack={() => setSelectedVideoTemplateId(null)}
+                  />
                 ) : isSpillQuizVideoTemplate && isSpillQuizTemplateId(selectedVideoTemplateId) ? (
                   <SpillQuizVideoStudio
                     key={selectedVideoTemplateId}

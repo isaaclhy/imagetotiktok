@@ -1,0 +1,23 @@
+{
+  "sourceRepo": "https://github.com/isaaclhy/nighty",
+  "commit": "2a2f6febda6d80ed8d07b23965a4efcadb4a4b4e",
+  "commitDate": "2026-11-06T19:26:58Z",
+  "libraryDirectory": "assets/sounds",
+  "note": "These 14 files are the Nighty/GoSleep tracks used by the new video compositions. They live in public/nighty-source and do not replace public/nighty-rain. ID3 on the source files is an encoder tag (Lavf62.12.101) only. No license, copyright, or credits file was found for them. Do not treat this copy as royalty-free or as a license.",
+  "files": [
+    {"file": "light-rain.mp3", "trackId": "light-rain", "displayName": "Light rain on cement", "sha256": "149b7125e8dc507f1f1a25c9b4dc8e95d274e61f8e802d905d0dea31a04aed66"},
+    {"file": "heavy-rain.mp3", "trackId": "heavy-rain", "displayName": "Heavy Rain", "sha256": "e52304f9739e0e60e1d351ed41fb5696bb559578dd4c42d2b8952dd0cb6256be"},
+    {"file": "downpour.mp3", "trackId": "downpour", "displayName": "Downpour", "sha256": "94448e95804258f981cfe4d5bf00a82008382d7175c091c67c3e110c106babaf"},
+    {"file": "rain-on-window.mp3", "trackId": "rain-on-window", "displayName": "Rain on window", "sha256": "3c16f61faefc5f4a6381febb375250a5037b98efe5b4a8cadceed78f174a2872"},
+    {"file": "rain-on-roof.mp3", "trackId": "rain-on-roof", "displayName": "Rain on roof", "sha256": "7308ccdcacc2ffbdaae676fc45b763e3a8590343ecb4085496e3b4b240a5720f"},
+    {"file": "rain-on-leaves.mp3", "trackId": "rain-on-leaves", "displayName": "Rain on Leaves", "sha256": "08c94728f4d47e40138ae08a1275c9df323d5b78b715d9fdbd7c85663f8dfd35"},
+    {"file": "rain-on-banana-trees.mp3", "trackId": "rain-on-banana-trees", "displayName": "Rain on banana trees", "sha256": "25e5aa1b8b0fdd136fdfb43993595e07bc63e99e51c2af4e8d60c559c7a8cb65"},
+    {"file": "gentle-waves.mp3", "trackId": "gentle-waves", "displayName": "Gentle Waves", "sha256": "e6afaae6584821dd299403acb73b813a9cacb41bd9de52e62cf082c89044468c"},
+    {"file": "shore-waves.mp3", "trackId": "shore-waves", "displayName": "Shore Waves", "sha256": "252e7ed6949771a2f849dfaea7461d8ef965d26f29f9801e68fd9f2218fd849f"},
+    {"file": "waves-on-rocks.mp3", "trackId": "waves-on-rocks", "displayName": "Waves on rocks", "sha256": "9ec87d5f04df70f60485088f273751f2ce1714eccc2445f3ee5a3239a467eb0d"},
+    {"file": "waves-on-lava-rocks.mp3", "trackId": "waves-on-lava-rocks", "displayName": "Waves on lava rocks", "sha256": "81c9ebf1435aeba22bdd838145adc1db1507b3188924bfa5744c0dfb52b25c25"},
+    {"file": "waves-on-cliffs.mp3", "trackId": "waves-on-cliffs", "displayName": "Waves on cliffs", "sha256": "cf1b949c4c0ad78874795173c96432faa2b0d81a110914ad816b239cb53cf1f5"},
+    {"file": "white-noise.mp3", "trackId": "white-noise", "displayName": "White Noise", "sha256": "d644b0207e38cc73e395bd08d847dfdbecd39986aa3e8de4e69d9445b99fe417"},
+    {"file": "brown-noise.mp3", "trackId": "brown", "displayName": "Brown", "sha256": "0cd0bb9bebcd174cd68a2472c96303bae36c144ab3ad48e84843d0b61d27872b"}
+  ]
+}

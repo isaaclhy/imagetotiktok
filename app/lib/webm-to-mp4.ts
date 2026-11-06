@@ -11,6 +11,33 @@ export function preloadFfmpeg(): void {
   void getFfmpeg().catch(() => undefined);
 }
 
+/** Stop a hung wasm encode. Uses FFmpeg.terminate(), which rejects in-flight calls. */
+export function terminateLoadedFfmpeg(): void {
+  const ffmpeg = ffmpegInstance;
+  ffmpegInstance = null;
+  ffmpegLoadPromise = null;
+  if (!ffmpeg) return;
+  try {
+    ffmpeg.terminate();
+  } catch {
+    /* worker already stopped */
+  }
+}
+
+/**
+ * A blob copy of worker.js cannot resolve its relative imports, so load() never
+ * finishes. Point those imports at the CDN before making the blob URL.
+ */
+async function moduleWorkerUrl(ffmpegBaseURL: string): Promise<string> {
+  const response = await fetch(`${ffmpegBaseURL}/worker.js`);
+  if (!response.ok) throw new Error(`Failed to fetch ffmpeg worker (${response.status})`);
+  const source = await response.text();
+  const rewritten = source
+    .replaceAll('"./const.js"', `"${ffmpegBaseURL}/const.js"`)
+    .replaceAll('"./errors.js"', `"${ffmpegBaseURL}/errors.js"`);
+  return URL.createObjectURL(new Blob([rewritten], { type: 'text/javascript' }));
+}
+
 async function getFfmpeg(): Promise<FFmpeg> {
   if (ffmpegInstance) return ffmpegInstance;
   if (!ffmpegLoadPromise) {
@@ -23,7 +50,7 @@ async function getFfmpeg(): Promise<FFmpeg> {
       await ffmpeg.load({
         coreURL: await toBlobURL(`${coreBaseURL}/ffmpeg-core.js`, 'text/javascript'),
         wasmURL: await toBlobURL(`${coreBaseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-        classWorkerURL: await toBlobURL(`${ffmpegBaseURL}/worker.js`, 'text/javascript'),
+        classWorkerURL: await moduleWorkerUrl(ffmpegBaseURL),
       });
       ffmpegInstance = ffmpeg;
       return ffmpeg;
