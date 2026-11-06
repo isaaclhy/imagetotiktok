@@ -12,6 +12,7 @@ import {
   clampFadeOutSec,
   cloneCompositionState,
   getNightyComposition,
+  isReferenceLayout,
   loadCompositionState,
   NIGHTY_APP_STORE_URL,
   resetCompositionState,
@@ -146,7 +147,12 @@ export function NightyCompositionStudio({
     draw();
     const observer = new ResizeObserver(draw);
     observer.observe(stage);
-    const fontsReady = document.fonts?.ready.then(() => draw());
+    const fontsReady = document.fonts?.ready.then(async () => {
+      await document.fonts.load('400 48px "TikTok Sans"');
+      await document.fonts.load('500 48px "TikTok Sans"');
+      await document.fonts.load('700 48px "TikTok Sans"');
+      draw();
+    });
     return () => {
       observer.disconnect();
       void fontsReady;
@@ -235,10 +241,11 @@ export function NightyCompositionStudio({
         setExportLabel(`Recording ${Math.ceil(seconds)}s`);
       });
       setExportLabel('Encoding MP4…');
+      const encodeBudget = Math.max(45_000, Math.round(template.durationSec * 12_000));
       const file = await finalizeNightyRecording(
         recorded,
         (blob) => transcodeWebmToMp4(blob, null, { preset: 'veryfast' }),
-        45_000,
+        encodeBudget,
         terminateLoadedFfmpeg
       );
       const filename = `nighty-${template.slug}.${file.extension}`;
@@ -341,16 +348,23 @@ export function NightyCompositionStudio({
 
           <div>
             <label className={labelClass} htmlFor={`nighty-headline-${template.id}`}>
-              Headline
+              {isReferenceLayout(template.layout) ? 'On-screen text' : 'Headline'}
             </label>
             <textarea
               id={`nighty-headline-${template.id}`}
               data-testid="nighty-composition-headline"
               className={`${fieldClass} min-h-16 resize-y`}
+              wrap={isReferenceLayout(template.layout) ? 'off' : undefined}
               value={state.headline}
               onChange={(event) => update({ headline: event.target.value })}
             />
+            {isReferenceLayout(template.layout) ? (
+              <p className="mt-1 text-[11px] text-zinc-400">
+                Line breaks stay as typed. The caption holds still for the whole clip.
+              </p>
+            ) : null}
           </div>
+          {isReferenceLayout(template.layout) ? null : (
           <div>
             <label className={labelClass} htmlFor={`nighty-subline-${template.id}`}>
               {template.layout === 'sequence' ? 'Second line' : 'Subline'}
@@ -362,6 +376,8 @@ export function NightyCompositionStudio({
               onChange={(event) => update({ subline: event.target.value })}
             />
           </div>
+          )}
+          {isReferenceLayout(template.layout) ? null : (
           <div>
             <label className={labelClass} htmlFor={`nighty-scene-${template.id}`}>
               Scene
@@ -379,6 +395,7 @@ export function NightyCompositionStudio({
               ))}
             </select>
           </div>
+          )}
           <div>
             <label className={labelClass} htmlFor={`nighty-fade-${template.id}`}>
               Fade out (seconds)
@@ -409,7 +426,9 @@ export function NightyCompositionStudio({
               onChange={(event) => update({ endCta: event.target.value })}
             />
             <p className="mt-1 text-[11px] text-zinc-400">
-              Small line under Nighty in the last two seconds. Clear it to leave the end plain.{' '}
+              {isReferenceLayout(template.layout)
+                ? 'Off unless you type one. These references stay plain at the end.'
+                : 'Small line under Nighty in the last two seconds. Clear it to leave the end plain.'}{' '}
               <a href={NIGHTY_APP_STORE_URL} target="_blank" rel="noreferrer" className="underline">
                 App Store listing
               </a>
@@ -522,8 +541,9 @@ export function NightyCompositionStudio({
           <div className="rounded-lg border border-zinc-200 p-2 text-[11px] leading-relaxed text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
             <p className="font-medium text-zinc-600 dark:text-zinc-300">References</p>
             <p className="mt-1">
-              Original Nighty composition. Source videos were not downloaded, so this is not a frame
-              copy. Names below are research notes, not on-video branding.
+              {template.provenance.classification === 'supplied-reference'
+                ? 'Built from a user-supplied file. The picture is generated here. The supplied caption’s thinking claim is not used.'
+                : 'Original Nighty composition. Source videos were not downloaded, so this is not a frame copy. Names below are research notes, not on-video branding.'}
             </p>
             <ul className="mt-2 space-y-2">
               {template.provenance.references.map((reference) => (
@@ -532,15 +552,19 @@ export function NightyCompositionStudio({
                     {reference.evidence}
                   </span>{' '}
                   · {reference.when}
-                  <br />
-                  <a
-                    href={reference.sourceUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="break-all underline"
-                  >
-                    {reference.sourceUrl}
-                  </a>
+                  {reference.sourceUrl.startsWith('https://') ? (
+                    <>
+                      <br />
+                      <a
+                        href={reference.sourceUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="break-all underline"
+                      >
+                        {reference.sourceUrl}
+                      </a>
+                    </>
+                  ) : null}
                   <br />
                   {reference.note}
                 </li>

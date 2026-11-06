@@ -14,6 +14,11 @@ import {
 } from '../app/lib/nighty-video-templates/catalog';
 import { finalizeNightyRecording } from '../app/lib/nighty-video-templates/finalize-export';
 import { frameAt } from '../app/lib/nighty-video-templates/timeline';
+import {
+  referenceDarken,
+  referenceUnit,
+  seedScatterOccupancy,
+} from '../app/lib/nighty-video-templates/reference-paint';
 
 const root = process.cwd();
 
@@ -41,6 +46,8 @@ const BANNED = [
   /dark noise/i,
   /rainy mood/i,
   /\bsleepa\b/i,
+  /overthinking/i,
+  /blocks your brain/i,
 ];
 
 function customerStrings(): string[] {
@@ -57,21 +64,38 @@ const spill = getVideoTemplatesForApp('spill-it');
 const fab = getVideoTemplatesForApp('fab');
 const nighty = getVideoTemplatesForApp('nighty');
 
-assert.equal(NIGHTY_COMPOSITIONS.length, 8, 'eight original compositions');
+const originals = NIGHTY_COMPOSITIONS.filter(
+  (template) => template.provenance.classification === 'original'
+);
+const supplied = NIGHTY_COMPOSITIONS.filter(
+  (template) => template.provenance.classification === 'supplied-reference'
+);
+assert.equal(originals.length, 8, 'eight original compositions');
+assert.equal(supplied.length, 3, 'three supplied-reference recreations');
+assert.equal(NIGHTY_COMPOSITIONS.length, 11);
 assert.deepEqual(
-  NIGHTY_COMPOSITIONS.map((template) => template.id),
+  originals.map((template) => template.id),
   [3, 4, 5, 6, 7, 8, 9, 10]
+);
+assert.deepEqual(
+  supplied.map((template) => template.id),
+  [11, 12, 13]
 );
 
 for (const template of NIGHTY_COMPOSITIONS) {
-  assert.equal(template.provenance.classification, 'original');
-  assert.equal(template.provenance.watchedVideo, false);
+  const suppliedRef = template.provenance.classification === 'supplied-reference';
+  assert.equal(template.provenance.watchedVideo, suppliedRef);
   assert.ok(template.provenance.references.length > 0);
   assert.equal(template.provenance.references.some((ref) => /sleepa/i.test(ref.sourceUrl)), false);
   for (const reference of template.provenance.references) {
-    assert.ok(reference.sourceUrl.startsWith('https://'));
     assert.ok(reference.when.trim().length > 0);
-    assert.ok(['secondary-index', 'organic', 'organic-or-uncertain'].includes(reference.evidence));
+    if (suppliedRef) {
+      assert.equal(reference.evidence, 'supplied-reference');
+      assert.equal(reference.sourceUrl.startsWith('http'), false);
+    } else {
+      assert.ok(reference.sourceUrl.startsWith('https://'));
+      assert.ok(['secondary-index', 'organic', 'organic-or-uncertain'].includes(reference.evidence));
+    }
   }
   const fileIds = [template.defaults.soundA, template.defaults.soundB];
   for (const beat of template.defaults.beats) fileIds.push(beat.soundId);
@@ -118,7 +142,113 @@ assert.deepEqual(
 );
 assert.equal(nighty.some((card) => card.title === 'Particle'), true);
 assert.equal(nighty.some((card) => card.title === 'Rain'), true);
-assert.equal(nighty.length, 10);
+assert.equal(nighty.some((card) => card.title === 'Reference 1'), true);
+assert.equal(nighty.some((card) => card.title === 'Reference 2'), true);
+assert.equal(nighty.some((card) => card.title === 'Reference 3'), true);
+assert.equal(nighty.length, 13);
+
+assert.deepEqual(
+  supplied.map((template) => template.slug),
+  ['reference-1', 'reference-2', 'reference-3']
+);
+assert.deepEqual(
+  supplied.map((template) => template.layout),
+  ['particle-terrain', 'kaleidoscope', 'vortex']
+);
+assert.deepEqual(
+  supplied.map((template) => template.durationSec),
+  [9.045, 12.003, 10.048]
+);
+assert.ok(supplied.every((template) => template.exportFps === 30));
+assert.ok(supplied.every((template) => template.defaults.endCta === ''));
+assert.ok(supplied.every((template) => template.defaults.fadeOutSec === 0));
+assert.deepEqual(
+  supplied.map((template) => template.defaults.headline.split('\n').length),
+  [4, 3, 4]
+);
+assert.equal(supplied[0]?.defaults.soundA, 'brown-noise');
+assert.equal(supplied[1]?.defaults.soundA, 'white-noise');
+assert.equal(supplied[2]?.defaults.soundA, 'gentle-waves');
+for (const template of supplied) {
+  const state = cloneCompositionState(template.defaults);
+  const start = frameAt(template, state, 0);
+  const end = frameAt(template, state, template.durationSec);
+  assert.equal(start.headlineOpacity, 1);
+  assert.equal(end.headlineOpacity, 1);
+  assert.equal(start.brandOpacity, 0);
+  assert.equal(start.endCtaOpacity, 0);
+  assert.equal(end.endCtaOpacity, 0);
+  assert.equal(start.rain, 0);
+  assert.equal(start.waves, 0);
+  assert.equal(start.dim, 0);
+  assert.ok((start.gains.find((gain) => gain.soundId === template.defaults.soundA)?.gain ?? 0) > 0.9);
+}
+assert.equal(referenceDarken('kaleidoscope', 9.9, 12.003), 0);
+assert.ok(referenceDarken('kaleidoscope', 11, 12.003) > 0.4);
+assert.ok(referenceDarken('kaleidoscope', 12.003, 12.003) > 0.95);
+assert.equal(referenceDarken('vortex', 11, 10.048), 0);
+assert.equal(referenceDarken('particle-terrain', 8, 9.045), 0);
+
+const scatterBins = 24;
+const scatterCount = 4000;
+for (const [saltA, saltB] of [
+  [1, 2],
+  [3, 11],
+  [20, 21],
+] as const) {
+  const occupied = seedScatterOccupancy(scatterCount, scatterBins, saltA, saltB);
+  assert.ok(
+    occupied > scatterBins * scatterBins * 0.85,
+    `seeds (${saltA},${saltB}) occupied ${occupied}/${scatterBins * scatterBins}, expected a filled plane`
+  );
+  let sx = 0;
+  let sy = 0;
+  let sxx = 0;
+  let syy = 0;
+  let sxy = 0;
+  for (let i = 0; i < scatterCount; i += 1) {
+    const x = referenceUnit(i, saltA);
+    const y = referenceUnit(i, saltB);
+    sx += x;
+    sy += y;
+    sxx += x * x;
+    syy += y * y;
+    sxy += x * y;
+  }
+  const meanX = sx / scatterCount;
+  const meanY = sy / scatterCount;
+  const varX = sxx / scatterCount - meanX * meanX;
+  const varY = syy / scatterCount - meanY * meanY;
+  const cov = sxy / scatterCount - meanX * meanY;
+  const r2 = (cov * cov) / (varX * varY);
+  assert.ok(r2 < 0.02, `seeds (${saltA},${saltB}) correlation r2=${r2}`);
+  const trace = varX + varY;
+  const det = varX * varY - cov * cov;
+  const gap = Math.sqrt(Math.max(0, (trace * trace) / 4 - det));
+  const major = trace / 2 + gap;
+  const minor = trace / 2 - gap;
+  assert.ok(minor / major > 0.45, `seeds (${saltA},${saltB}) eigen ratio ${minor / major}`);
+}
+
+function affineUnit(n: number): number {
+  const x = (Math.imul(n, 1664525) + 1013904223) >>> 0;
+  return (x & 0xffffff) / 0x1000000;
+}
+{
+  const bins = 24;
+  const grid = new Uint8Array(bins * bins);
+  let occupied = 0;
+  for (let i = 0; i < 4000; i += 1) {
+    const x = Math.min(bins - 1, Math.floor(affineUnit(i + 3) * bins));
+    const y = Math.min(bins - 1, Math.floor(affineUnit(i + 11) * bins));
+    const cell = y * bins + x;
+    if (grid[cell] === 0) {
+      grid[cell] = 1;
+      occupied += 1;
+    }
+  }
+  assert.ok(occupied < bins * 3, `affine hash should stay near a line, occupied ${occupied}`);
+}
 
 const rainRainUrls = NIGHTY_COMPOSITIONS.flatMap((template) => template.provenance.references)
   .map((reference) => reference.sourceUrl)
@@ -242,7 +372,7 @@ async function checkExportFallback(): Promise<void> {
 checkExportFallback()
   .then(() => {
     console.log(
-      `ok: ${NIGHTY_COMPOSITIONS.length} original Nighty compositions, Spill It unchanged, audio files present, WebM falls back without system ffmpeg`
+      `ok: ${originals.length} original Nighty compositions, ${supplied.length} supplied references, Spill It unchanged, audio files present, WebM falls back without system ffmpeg`
     );
   })
   .catch((error: unknown) => {
