@@ -30,10 +30,12 @@ const template = NIGHTY_COMPOSITIONS.find((item) => item.slug === slug) ?? getNi
 const state = cloneCompositionState(template.defaults);
 const width = NIGHTY_COMPOSITION_EXPORT_WIDTH;
 const height = NIGHTY_COMPOSITION_EXPORT_HEIGHT;
-const fps = NIGHTY_COMPOSITION_EXPORT_FPS;
+const fps = template.exportFps ?? NIGHTY_COMPOSITION_EXPORT_FPS;
 
+GlobalFonts.registerFromPath('public/fonts/tiktok-sans/TikTokSans-400.ttf', 'TikTok Sans');
 GlobalFonts.registerFromPath('public/fonts/tiktok-sans/TikTokSans-500.ttf', 'TikTok Sans');
 GlobalFonts.registerFromPath('public/fonts/tiktok-sans/TikTokSans-600.ttf', 'TikTok Sans');
+GlobalFonts.registerFromPath('public/fonts/tiktok-sans/TikTokSans-700.ttf', 'TikTok Sans');
 
 const soundIds = compositionSoundIds(template, state);
 const dir = mkdtempSync(path.join(tmpdir(), 'nighty-comp-'));

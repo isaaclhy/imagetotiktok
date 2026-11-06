@@ -99,8 +99,10 @@ export async function recordNightyComposition(
 
   if (typeof document !== 'undefined' && document.fonts?.load) {
     try {
+      await document.fonts.load(`400 64px "TikTok Sans"`);
       await document.fonts.load(`500 64px "${NIGHTY_COMPOSITION_FONT.split(',')[0]?.trim()}"`);
       await document.fonts.load(`600 80px "TikTok Sans"`);
+      await document.fonts.load(`700 64px "TikTok Sans"`);
     } catch {
       /* system font fallback */
     }
@@ -142,7 +144,8 @@ export async function recordNightyComposition(
     }
     paintNightyFrame(ctx, w, h, opening);
 
-    const canvasStream = canvas.captureStream(NIGHTY_COMPOSITION_EXPORT_FPS);
+    const exportFps = template.exportFps ?? NIGHTY_COMPOSITION_EXPORT_FPS;
+    const canvasStream = canvas.captureStream(exportFps);
     const out = new MediaStream();
     for (const track of canvasStream.getVideoTracks()) out.addTrack(track);
     for (const track of destination.stream.getAudioTracks()) out.addTrack(track);
@@ -195,7 +198,7 @@ export async function recordNightyComposition(
         onProgress?.(t);
         if (elapsed >= durationMs) finish();
       };
-      const timer = window.setInterval(tick, 1000 / NIGHTY_COMPOSITION_EXPORT_FPS);
+      const timer = window.setInterval(tick, 1000 / exportFps);
       const backup = window.setTimeout(finish, durationMs + 500);
       tick();
     });

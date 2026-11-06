@@ -4,6 +4,7 @@ import {
 } from '@/app/lib/nighty-video-templates/sounds';
 import {
   clampFadeOutSec,
+  isReferenceLayout,
   type NightyCompositionState,
   type NightyCompositionTemplate,
 } from '@/app/lib/nighty-video-templates/catalog';
@@ -102,6 +103,44 @@ export function frameAt(
   let cardLabel = '';
   let activeIndex: number | null = null;
   let slotCount = 0;
+
+  if (isReferenceLayout(template.layout)) {
+    pushGain(gains, state.soundA, 1);
+    let master = 1;
+    if (fadeOutSec > 0) {
+      const start = duration - fadeOutSec;
+      master = 1 - smoothstep(start, duration, t);
+      for (const item of gains) item.gain *= master;
+    }
+    const endCta = state.endCta.trim();
+    const ctaStart = Math.max(0, duration - 1.7);
+    const endCtaOpacity = endCta
+      ? smoothstep(ctaStart, Math.min(duration, ctaStart + 0.65), t)
+      : 0;
+    return {
+      t,
+      duration,
+      scene: state.scene,
+      layout: template.layout,
+      headline: state.headline,
+      headlineOpacity: 1,
+      primary: '',
+      primaryOpacity: 0,
+      subline: '',
+      sublineOpacity: 0,
+      brandOpacity: 0,
+      showCard: false,
+      cardLabel: '',
+      endCta,
+      endCtaOpacity,
+      activeIndex: null,
+      slotCount: 0,
+      gains,
+      rain: 0,
+      waves: 0,
+      dim: fadeOutSec > 0 ? (1 - master) * 0.62 : 0,
+    };
+  }
 
   if (template.layout === 'compare') {
     const split = duration / 2;
