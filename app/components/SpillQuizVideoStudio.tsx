@@ -3,6 +3,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { SpillQuizTemplateId } from '@/app/lib/spill-quiz/script';
+import {
+  QUIZ_GALLERY_GRID_CLASS,
+  matchesQuizTemplate,
+  quizPosterSrc,
+  quizTemplateCover,
+} from '@/app/lib/spill-quiz/gallery';
 
 type LibraryVideo = {
   id: string;
@@ -19,18 +25,14 @@ type Props = {
   onBack: () => void;
 };
 
-function matchesTemplate(video: LibraryVideo, templateId: SpillQuizTemplateId): boolean {
-  if (templateId === 8) return video.templateKey === 'know-girlfriend';
-  return video.templateKey === 'quiz-girlfriend';
-}
-
 export function SpillQuizVideoStudio({ templateId, onBack }: Props) {
   const [videos, setVideos] = useState<LibraryVideo[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [playingId, setPlayingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [posterFallback, setPosterFallback] = useState<Record<string, true>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -43,11 +45,11 @@ export function SpillQuizVideoStudio({ templateId, onBack }: Props) {
         return;
       }
       if (!res.ok) throw new Error(data.error || 'Could not load videos');
-      const mine = (data.videos ?? []).filter((video) => matchesTemplate(video, templateId));
-      setVideos(mine);
-      setSelectedId((current) =>
-        current && mine.some((video) => video.id === current) ? current : (mine[0]?.id ?? null)
+      const mine = (data.videos ?? []).filter((video) =>
+        matchesQuizTemplate(video.templateKey, templateId)
       );
+      setVideos(mine);
+      setPlayingId((current) => (current && mine.some((video) => video.id === current) ? current : null));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Could not load videos');
     } finally {
@@ -59,7 +61,8 @@ export function SpillQuizVideoStudio({ templateId, onBack }: Props) {
     void load();
   }, [load]);
 
-  const selected = videos.find((video) => video.id === selectedId) ?? null;
+  const playing = videos.find((video) => video.id === playingId) ?? null;
+  const cover = quizTemplateCover(templateId);
 
   async function downloadVideo(video: LibraryVideo) {
     setPendingId(video.id);
@@ -100,6 +103,7 @@ export function SpillQuizVideoStudio({ templateId, onBack }: Props) {
       const res = await fetch(`/api/video-library/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Delete failed');
       setConfirmId(null);
+      setPlayingId(null);
       await load();
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : 'Delete failed');
@@ -109,14 +113,21 @@ export function SpillQuizVideoStudio({ templateId, onBack }: Props) {
   }
 
   return (
-    <div className="w-full min-w-0 rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+    <div className="w-full min-w-0 max-w-full overflow-x-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
       <div className="flex flex-wrap items-center gap-2 border-b border-zinc-200 px-3 py-2 dark:border-zinc-700">
         <button
           type="button"
-          onClick={onBack}
+          onClick={() => {
+            if (playing) {
+              setPlayingId(null);
+              setConfirmId(null);
+              return;
+            }
+            onBack();
+          }}
           className="rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-700 dark:border-zinc-600 dark:text-zinc-200"
         >
-          Back
+          {playing ? 'All videos' : 'Back'}
         </button>
         <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
           {templateId === 8 ? 'How well do you know your girlfriend?' : 'Quiz your girlfriend'}
@@ -129,38 +140,73 @@ export function SpillQuizVideoStudio({ templateId, onBack }: Props) {
         </Link>
       </div>
       <div className="space-y-4 p-3">
-        {loading ? <p className="text-sm text-zinc-500">Loading the cartoon…</p> : null}
+        {loading ? <p className="text-sm text-zinc-500">Loading saved videos…</p> : null}
         {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
-        {!loading && !selected ? (
+        {!loading && videos.length === 0 ? (
           <p className="rounded-xl border border-dashed border-zinc-300 px-4 py-8 text-center text-sm text-zinc-600 dark:border-zinc-700">
             No saved cartoon for this template. Unused daily videos show up here and stay until you delete them.
           </p>
         ) : null}
-        {selected ? (
+        {!loading && videos.length > 0 && !playing ? (
+          <ul data-video-gallery={templateId} className={`${QUIZ_GALLERY_GRID_CLASS} min-w-0 list-none p-0`}>
+            {videos.map((video) => {
+              const poster = posterFallback[video.id] ? cover : quizPosterSrc(video.filename, templateId);
+              return (
+                <li key={video.id} className="min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConfirmId(null);
+                      setPlayingId(video.id);
+                    }}
+                    className="w-full min-w-0 rounded-xl border border-zinc-200 bg-zinc-50 p-2 text-left hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800/60 dark:hover:border-zinc-500"
+                  >
+                    <span className="block aspect-[9/16] overflow-hidden rounded-lg bg-[#c6dbf0]">
+                      <img
+                        src={poster}
+                        alt=""
+                        className="h-full w-full object-cover"
+                        onError={() =>
+                          setPosterFallback((current) =>
+                            current[video.id] ? current : { ...current, [video.id]: true }
+                          )
+                        }
+                      />
+                    </span>
+                    <span className="mt-2 line-clamp-3 block text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                      {video.title}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        ) : null}
+        {playing ? (
           <div className="mx-auto w-full max-w-sm">
             <video
-              key={selected.id}
-              src={`/api/video-library/${selected.id}`}
+              key={playing.id}
+              src={`/api/video-library/${playing.id}`}
               controls
               playsInline
               preload="metadata"
               className="aspect-[9/16] w-full rounded-xl bg-black object-contain"
             />
-            <p className="mt-3 text-base font-medium">{selected.title}</p>
+            <p className="mt-3 text-base font-medium">{playing.title}</p>
             <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <button
                 type="button"
-                onClick={() => void downloadVideo(selected)}
-                disabled={pendingId === selected.id}
+                onClick={() => void downloadVideo(playing)}
+                disabled={pendingId === playing.id}
                 className="min-h-12 rounded-xl bg-zinc-900 text-base font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
               >
                 Download
               </button>
-              {confirmId === selected.id ? (
+              {confirmId === playing.id ? (
                 <button
                   type="button"
-                  onClick={() => void deleteVideo(selected.id)}
-                  disabled={pendingId === selected.id}
+                  onClick={() => void deleteVideo(playing.id)}
+                  disabled={pendingId === playing.id}
                   className="min-h-12 rounded-xl bg-red-600 text-base font-medium text-white"
                 >
                   Delete this video
@@ -168,7 +214,7 @@ export function SpillQuizVideoStudio({ templateId, onBack }: Props) {
               ) : (
                 <button
                   type="button"
-                  onClick={() => setConfirmId(selected.id)}
+                  onClick={() => setConfirmId(playing.id)}
                   className="min-h-12 rounded-xl border border-zinc-300 text-base font-medium dark:border-zinc-700"
                 >
                   Delete
@@ -176,25 +222,6 @@ export function SpillQuizVideoStudio({ templateId, onBack }: Props) {
               )}
             </div>
           </div>
-        ) : null}
-        {videos.length > 1 ? (
-          <ul className="space-y-2">
-            {videos.map((video) => (
-              <li key={video.id}>
-                <button
-                  type="button"
-                  onClick={() => setSelectedId(video.id)}
-                  className={`w-full rounded-lg px-3 py-3 text-left text-sm ${
-                    video.id === selectedId
-                      ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-                      : 'bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100'
-                  }`}
-                >
-                  {video.title}
-                </button>
-              </li>
-            ))}
-          </ul>
         ) : null}
       </div>
     </div>
