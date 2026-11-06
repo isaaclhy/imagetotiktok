@@ -1,3 +1,4 @@
+import { nightyCompositionCards } from '@/app/lib/nighty-video-templates/catalog';
 import { FRESH_BAKED_DONUT_POSTS } from '@/app/lib/video-template-fresh-baked-donut';
 
 export type StudioAppId = 'spill-it' | 'fab' | 'nighty';
@@ -256,6 +257,7 @@ export const VIDEO_TEMPLATES_BY_APP: Record<StudioAppId, VideoTemplateCard[]> = 
   nighty: [
     { id: 1, title: 'Particle', subtitle: '' },
     { id: 2, title: 'Rain', subtitle: '' },
+    ...nightyCompositionCards(),
   ],
 };
 
