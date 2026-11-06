@@ -28,6 +28,11 @@ const nextConfig: NextConfig = {
   outputFileTracingExcludes: {
     '*': ['public/copycat-backgrounds/**/*'],
   },
+  outputFileTracingIncludes: {
+    '/api/video-library/route': ['./data/cartoon-originals/**/*'],
+    '/api/video-library/[id]/route': ['./data/cartoon-originals/**/*'],
+    '/api/video-library/test-artifact/route': ['./data/cartoon-originals/test-artifact.mp4'],
+  },
 };
 
 export default nextConfig;

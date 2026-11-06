@@ -1,68 +1,75 @@
+import { spawn } from 'child_process';
 import fs from 'fs/promises';
-import { fetchRandomPexelsPortraitVideo } from '@/app/lib/video-template-2/fetch-pexels';
-import { getRefreshTokenForAutomation, uploadBufferToDrive } from '@/app/lib/google-drive';
-import { renderSpokenQuizMp4 } from '@/app/lib/spill-quiz/render';
-import { pickSpillQuizScript, type SpillQuizTemplateId } from '@/app/lib/spill-quiz/script';
-import { synthesizeSpillQuizLines } from '@/app/lib/spill-quiz/tts';
+import path from 'path';
+import type { SpillQuizTemplateId, SpillQuizTemplateKey } from '@/app/lib/spill-quiz/script';
 import { findDailyVideoForDay, saveDailyVideo } from '@/app/lib/video-library/store';
 
 export type DailySpillQuizResult = {
   ok: true;
   skipped: boolean;
   templateId: SpillQuizTemplateId;
-  templateKey: string;
+  templateKey: SpillQuizTemplateKey;
   title: string;
   day: string;
   filename: string;
-  provider?: string;
   libraryId?: string;
   blobPathname?: string;
-  driveWebViewLink?: string | null;
-  driveWarning?: string | null;
 };
 
-function utcDay(date = new Date()): string {
-  return date.toISOString().slice(0, 10);
+function utcDay(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
-function outputFilename(templateKey: string, day: string): string {
-  const stamp = new Date().toISOString().slice(11, 19).replace(/:/g, '');
-  return `${templateKey}-${day}-${stamp}.mp4`;
-}
-
-async function maybeUploadDrive(mp4: Buffer, filename: string): Promise<{
-  driveWebViewLink: string | null;
-  driveWarning: string | null;
-}> {
-  const folderId = process.env.DAILY_QUIZ_DRIVE_FOLDER_ID?.trim();
-  if (!folderId) return { driveWebViewLink: null, driveWarning: null };
-  try {
-    const refreshToken = getRefreshTokenForAutomation();
-    const uploaded = await uploadBufferToDrive(refreshToken, mp4, filename, 'video/mp4', folderId);
-    return { driveWebViewLink: uploaded.webViewLink ?? null, driveWarning: null };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return { driveWebViewLink: null, driveWarning: message };
-  }
+function runPython(root: string, templateId: SpillQuizTemplateId, day: string, outPath: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(
+      'python3',
+      [path.join(root, 'scripts', 'render_daily.py')],
+      {
+        cwd: root,
+        env: {
+          ...process.env,
+          CARTOON_QUIZ_ROOT: root,
+          CARTOON_TEMPLATE: String(templateId),
+          CARTOON_DAY: day,
+          CARTOON_OUT: outPath,
+          KOKORO_ONNX: process.env.KOKORO_ONNX || path.join(root, 'models', 'kokoro-v1.0.onnx'),
+          KOKORO_VOICES: process.env.KOKORO_VOICES || path.join(root, 'models', 'voices-v1.0.bin'),
+        },
+      }
+    );
+    let stderr = '';
+    child.stdout.on('data', (chunk: Buffer) => process.stdout.write(chunk));
+    child.stderr.on('data', (chunk: Buffer) => {
+      stderr += chunk.toString();
+      process.stderr.write(chunk);
+    });
+    child.on('error', reject);
+    child.on('close', (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(stderr.trim().slice(-500) || `Cartoon render exited ${code}`));
+    });
+  });
 }
 
 export async function runDailySpillQuiz(templateId: SpillQuizTemplateId): Promise<DailySpillQuizResult> {
-  if (!process.env.PIXELS_API_KEY?.trim()) throw new Error('Missing PIXELS_API_KEY');
   if (!process.env.BLOB_READ_WRITE_TOKEN?.trim()) throw new Error('Missing BLOB_READ_WRITE_TOKEN');
   if (!process.env.MONGODB_URI?.trim()) throw new Error('Missing MONGODB_URI');
 
-  const script = pickSpillQuizScript(templateId);
+  const templateKey: SpillQuizTemplateKey = templateId === 8 ? 'know-girlfriend' : 'quiz-girlfriend';
+  const title =
+    templateId === 8 ? 'How well do you know your girlfriend?' : 'Quiz your girlfriend';
   const day = utcDay();
-  const filename = outputFilename(script.templateKey, day);
+  const filename = `${templateKey}-${day}.mp4`;
 
   if (process.env.DAILY_QUIZ_FORCE !== '1') {
-    const existing = await findDailyVideoForDay(script.templateKey, day);
-    if (existing) {
+    const existing = await findDailyVideoForDay(templateKey, day);
+    if (existing && existing.day !== 'original') {
       return {
         ok: true,
         skipped: true,
         templateId,
-        templateKey: script.templateKey,
+        templateKey,
         title: existing.title,
         day,
         filename: existing.filename,
@@ -72,48 +79,30 @@ export async function runDailySpillQuiz(templateId: SpillQuizTemplateId): Promis
     }
   }
 
-  const { provider, clips } = await synthesizeSpillQuizLines(
+  const root = path.join(process.cwd(), 'cartoon-quiz');
+  const outPath = path.join(root, 'out', filename);
+  await fs.mkdir(path.dirname(outPath), { recursive: true });
+  await runPython(root, templateId, day, outPath);
+  const mp4 = await fs.readFile(outPath);
+  const saved = await saveDailyVideo({
     templateId,
-    script.lines.map((line) => line.text)
-  );
-  const query = script.pexelsQueries[Math.floor(Math.random() * script.pexelsQueries.length)]!;
-  const { videoUrl } = await fetchRandomPexelsPortraitVideo({ query });
-  const rendered = await renderSpokenQuizMp4({
-    videoUrl,
-    segments: script.lines.map((line, index) => ({
-      text: line.text,
-      role: line.role,
-      audio: clips[index]!.audio,
-    })),
+    templateKey,
+    title,
+    filename,
+    day,
+    lines: [`Cartoon quiz for ${day}`],
+    mp4,
+    origin: `daily:${templateKey}:${day}`,
   });
-
-  try {
-    const mp4 = await fs.readFile(rendered.outputPath);
-    const saved = await saveDailyVideo({
-      templateId,
-      templateKey: script.templateKey,
-      title: script.title,
-      filename,
-      day,
-      lines: script.lines.map((line) => line.text),
-      mp4,
-    });
-    const drive = await maybeUploadDrive(mp4, filename);
-    return {
-      ok: true,
-      skipped: false,
-      templateId,
-      templateKey: script.templateKey,
-      title: script.title,
-      day,
-      filename,
-      provider,
-      libraryId: saved.id,
-      blobPathname: saved.pathname,
-      driveWebViewLink: drive.driveWebViewLink,
-      driveWarning: drive.driveWarning,
-    };
-  } finally {
-    await rendered.cleanup();
-  }
+  return {
+    ok: true,
+    skipped: false,
+    templateId,
+    templateKey,
+    title,
+    day,
+    filename,
+    libraryId: saved.id,
+    blobPathname: saved.pathname,
+  };
 }

@@ -16,7 +16,9 @@ type LibraryVideo = {
 
 function templateLabel(templateKey: string): string {
   if (templateKey === 'know-girlfriend') return 'How well do you know your girlfriend';
+  if (templateKey === 'quiz-girlfriend') return 'Quiz your girlfriend';
   if (templateKey === 'quiz-boyfriend') return 'Quiz your boyfriend';
+  if (templateKey === 'test-artifact') return 'Test artifact';
   return 'Daily video';
 }
 

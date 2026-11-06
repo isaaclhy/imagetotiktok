@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createReadStream, statSync } from 'fs';
+import { Readable } from 'stream';
 import { isAppAuthed, unauthorizedAppResponse } from '@/app/lib/app-auth';
-import { deleteVideoLibraryItem, getVideoLibraryDoc } from '@/app/lib/video-library/store';
+import {
+  bundledCartoonPath,
+  deleteVideoLibraryItem,
+  getVideoLibraryDoc,
+} from '@/app/lib/video-library/store';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -17,11 +23,17 @@ export async function GET(request: NextRequest, context: RouteContext) {
   const { id } = await context.params;
   try {
     const doc = await getVideoLibraryDoc(id);
-    if (!doc?.blobUrl) {
+    if (!doc) {
       return NextResponse.json({ error: 'Video not found' }, { status: 404 });
     }
 
     const download = request.nextUrl.searchParams.get('download') === '1';
+    if (doc.bundledFile && !doc.blobUrl) {
+      return streamBundledFile(doc.bundledFile, doc.filename, request, download);
+    }
+    if (!doc.blobUrl) {
+      return NextResponse.json({ error: 'Video not found' }, { status: 404 });
+    }
     const upstreamHeaders = new Headers();
     const range = request.headers.get('range');
     if (range && !download) upstreamHeaders.set('range', range);
@@ -61,4 +73,49 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     const message = error instanceof Error ? error.message : 'Failed to delete video';
     return NextResponse.json({ error: message }, { status: 500 });
   }
+}
+
+function streamBundledFile(
+  bundledFile: string,
+  filename: string,
+  request: NextRequest,
+  download: boolean
+): NextResponse {
+  const filePath = bundledCartoonPath(bundledFile);
+  if (!filePath) return NextResponse.json({ error: 'Video not found' }, { status: 404 });
+  let size = 0;
+  try {
+    size = statSync(filePath).size;
+  } catch {
+    return NextResponse.json({ error: 'Video not found' }, { status: 404 });
+  }
+  const headers = new Headers();
+  headers.set('Content-Type', 'video/mp4');
+  headers.set('Accept-Ranges', 'bytes');
+  headers.set('Cache-Control', 'private, no-store');
+  headers.set(
+    'Content-Disposition',
+    `${download ? 'attachment' : 'inline'}; filename="${attachmentName(filename)}"`
+  );
+  const range = download ? null : request.headers.get('range');
+  const match = range ? /bytes=(\d+)-(\d*)/.exec(range) : null;
+  if (match) {
+    const start = Number(match[1]);
+    const end = match[2] ? Number(match[2]) : size - 1;
+    if (start > end || start >= size) {
+      return new NextResponse(null, {
+        status: 416,
+        headers: { 'Content-Range': `bytes */${size}` },
+      });
+    }
+    headers.set('Content-Range', `bytes ${start}-${end}/${size}`);
+    headers.set('Content-Length', String(end - start + 1));
+    const nodeStream = createReadStream(filePath, { start, end });
+    return new NextResponse(Readable.toWeb(nodeStream) as ReadableStream, { status: 206, headers });
+  }
+  headers.set('Content-Length', String(size));
+  return new NextResponse(Readable.toWeb(createReadStream(filePath)) as ReadableStream, {
+    status: 200,
+    headers,
+  });
 }

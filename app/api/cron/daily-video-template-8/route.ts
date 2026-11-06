@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(
     {
       error:
-        'Daily know-your-girlfriend video must run via GitHub Actions (ffmpeg required). Use workflow "Daily know your girlfriend" or: npm run daily:video-template-8',
+        'Daily know-your-girlfriend cartoon must run via GitHub Actions. Use workflow "Daily know your girlfriend" or: npm run daily:video-template-8',
       hint: 'See .github/workflows/daily-video-template-8.yml',
     },
     { status: 501 }
