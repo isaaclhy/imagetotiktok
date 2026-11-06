@@ -147,6 +147,7 @@ export async function deleteVideoLibraryItem(id: string): Promise<boolean> {
 const SEED_MARKER_ID = 'cartoon-originals-v1';
 const BATCH_MARKER_ID = 'cartoon-binary-batch-v1';
 const PHOTO_MARKER_ID = 'cartoon-binary-batch-photo-v1';
+const QUIZ_ORIENTATION_MARKER_ID = 'cartoon-quiz-orientation-v1';
 
 const CARTOON_ORIGINALS = [
   {
@@ -295,7 +296,7 @@ export function bundledCartoonPath(fileName: string): string | null {
 type SeedItem = {
   origin: string;
   templateId: 8 | 9;
-  templateKey: 'know-girlfriend' | 'quiz-girlfriend';
+  templateKey: 'know-girlfriend' | 'quiz-girlfriend' | 'quiz-boyfriend';
   title: string;
   filename: string;
   file: string;
@@ -403,5 +404,55 @@ export async function ensurePhotoRevision(): Promise<void> {
   });
   if (updatedCount >= existingCount) {
     await meta.updateOne({ _id: PHOTO_MARKER_ID }, { $set: { status: 'done', seededAt: new Date() } });
+  }
+}
+
+/**
+ * Add the five girlfriend and five boyfriend quizzes to template 9.
+ * A missing origin is inserted once. After the marker is done, a delete stays deleted.
+ */
+export async function ensureQuizOrientationBatch(): Promise<void> {
+  const items = ((publishedBatch.items ?? []) as PublishedSeedItem[]).filter(
+    (item) => item.revision === 3 && item.blobUrl
+  );
+  if (items.length === 0) return;
+
+  const meta = await metaCollection();
+  const now = new Date();
+  const previous = await meta.findOneAndUpdate(
+    { _id: QUIZ_ORIENTATION_MARKER_ID },
+    { $setOnInsert: { status: 'seeding', seededAt: now } },
+    { upsert: true, returnDocument: 'before' }
+  );
+  if (previous?.status === 'done') return;
+
+  const docs = await collection();
+  for (const item of items) {
+    const blobUrl = item.blobUrl;
+    if (!blobUrl) continue;
+    const existing = await docs.findOne({ origin: item.origin });
+    if (existing) continue;
+    await docs.insertOne({
+      _id: new ObjectId(),
+      templateId: item.templateId,
+      templateKey: item.templateKey,
+      title: item.title,
+      filename: item.filename,
+      blobUrl,
+      blobPathname: item.blobPathname ?? '',
+      day: item.day,
+      lines: item.lines,
+      createdAt: new Date(),
+      origin: item.origin,
+      revision: 3,
+    });
+  }
+
+  const present = await docs.countDocuments({ origin: { $in: items.map((item) => item.origin) } });
+  if (present >= items.length) {
+    await meta.updateOne(
+      { _id: QUIZ_ORIENTATION_MARKER_ID },
+      { $set: { status: 'done', seededAt: new Date() } }
+    );
   }
 }

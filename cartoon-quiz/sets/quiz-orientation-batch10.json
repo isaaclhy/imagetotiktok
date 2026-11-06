@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "template": "quiz_your_girlfriend_v5b_orientation",
+  "note": "Open questions in the original v5b layout. Viewers answer. Photos show the topic, not a correct preference.",
+  "videos": [
+    {
+      "videoId": "quiz_gf_01",
+      "orientation": "girlfriend",
+      "title": "Quiz your girlfriend — his favorites",
+      "topicHint": "his favorites",
+      "questions": [
+        {"say": "What is his favorite food?", "photo": "burgers"},
+        {"say": "What is his favorite video game?", "photo": "video-games"},
+        {"say": "What is his go-to drink?", "photo": "coffee"},
+        {"say": "What show does he rewatch?", "photo": "netflix"},
+        {"say": "What is his favorite snack?", "photo": "chips"},
+        {"say": "What shoe does he wear every day?", "photo": "sneakers"},
+        {"say": "What is his favorite dessert?", "photo": "cake"},
+        {"say": "What does he order for breakfast?", "photo": "pancakes"}
+      ]
+    },
+    {
+      "videoId": "quiz_gf_02",
+      "orientation": "girlfriend",
+      "title": "Quiz your girlfriend — his people",
+      "topicHint": "his people",
+      "questions": [
+        {"say": "What are his parents' names?", "photo": "dinner-at-home"},
+        {"say": "Who is his best friend?", "photo": "hugs"},
+        {"say": "When is his birthday?", "photo": "surprise-date"},
+        {"say": "What is his pet's name?", "photo": "dogs"},
+        {"say": "What does he do on a day off?", "photo": "long-walks"},
+        {"say": "What time does he usually wake up?", "photo": "sunrise"},
+        {"say": "Who does he call first with good news?", "photo": "call"},
+        {"say": "What is his favorite weekend plan?", "photo": "picnic-in-the-park"}
+      ]
+    },
+    {
+      "videoId": "quiz_gf_03",
+      "orientation": "girlfriend",
+      "title": "Quiz your girlfriend — his habits",
+      "topicHint": "his habits",
+      "questions": [
+        {"say": "What is his morning routine?", "photo": "early-bird"},
+        {"say": "What music is always in his headphones?", "photo": "playlist"},
+        {"say": "What does he do on his phone?", "photo": "tiktok"},
+        {"say": "How does he take his coffee?", "photo": "hot-coffee"},
+        {"say": "What is his comfort meal?", "photo": "mild-food"},
+        {"say": "What does he wear to relax?", "photo": "sweatpants"},
+        {"say": "What game is always on his screen?", "photo": "video-games"},
+        {"say": "What is his late-night snack?", "photo": "fries"}
+      ]
+    },
+    {
+      "videoId": "quiz_gf_04",
+      "orientation": "girlfriend",
+      "title": "Quiz your girlfriend — his taste",
+      "topicHint": "his taste",
+      "questions": [
+        {"say": "What car would he pick?", "photo": "road-trip"},
+        {"say": "What is his favorite pizza topping?", "photo": "pizza"},
+        {"say": "What is his favorite movie?", "photo": "movie"},
+        {"say": "What candy does he pick?", "photo": "sweet"},
+        {"say": "What hobby does he talk about?", "photo": "board-games"},
+        {"say": "What is his favorite season?", "photo": "summer"},
+        {"say": "What does he cook on his night?", "photo": "cook-at-home"},
+        {"say": "What city does he want to visit?", "photo": "big-city"}
+      ]
+    },
+    {
+      "videoId": "quiz_gf_05",
+      "orientation": "girlfriend",
+      "title": "Quiz your girlfriend — his little facts",
+      "topicHint": "his little facts",
+      "questions": [
+        {"say": "What is his favorite fruit?", "photo": "strawberries"},
+        {"say": "What does he bring to a party?", "photo": "planned-presents"},
+        {"say": "What does he do when he cannot sleep?", "photo": "night-owl"},
+        {"say": "What jeans does he live in?", "photo": "jeans"},
+        {"say": "What board game does he pick?", "photo": "board-games"},
+        {"say": "What snack does he hide?", "photo": "chocolate"},
+        {"say": "What does he snack on at the movies?", "photo": "popcorn-with-butter"},
+        {"say": "What does he drink with dinner?", "photo": "hot-coffee"}
+      ]
+    },
+    {
+      "videoId": "quiz_bf_01",
+      "orientation": "boyfriend",
+      "title": "Quiz your boyfriend — her favorites",
+      "topicHint": "her favorites",
+      "questions": [
+        {"say": "What is her favorite food?", "photo": "sushi"},
+        {"say": "What show does she rewatch?", "photo": "youtube"},
+        {"say": "What is her coffee order?", "photo": "iced-coffee"},
+        {"say": "What is her favorite dessert?", "photo": "pie"},
+        {"say": "What shoes does she wear most?", "photo": "boots"},
+        {"say": "What is her favorite flower?", "photo": "flowers"},
+        {"say": "What is her go-to snack?", "photo": "raspberries"},
+        {"say": "What does she order for breakfast?", "photo": "sweet-breakfast"}
+      ]
+    },
+    {
+      "videoId": "quiz_bf_02",
+      "orientation": "boyfriend",
+      "title": "Quiz your boyfriend — her people",
+      "topicHint": "her people",
+      "questions": [
+        {"say": "What are her parents' names?", "photo": "dinner-at-home"},
+        {"say": "Who is her best friend?", "photo": "hugs"},
+        {"say": "When is her birthday?", "photo": "surprise-date"},
+        {"say": "What is her pet's name?", "photo": "cats"},
+        {"say": "What is her favorite Sunday plan?", "photo": "picnic-in-the-park"},
+        {"say": "What song does she play on repeat?", "photo": "love-songs"},
+        {"say": "Who does she text with good news?", "photo": "text"},
+        {"say": "What is her rainy-day plan?", "photo": "rain"}
+      ]
+    },
+    {
+      "videoId": "quiz_bf_03",
+      "orientation": "boyfriend",
+      "title": "Quiz your boyfriend — her habits",
+      "topicHint": "her habits",
+      "questions": [
+        {"say": "What is her real morning mood?", "photo": "early-bird"},
+        {"say": "What book is she reading?", "photo": "book"},
+        {"say": "What scent does she like?", "photo": "spa-day"},
+        {"say": "What is her comfort meal?", "photo": "mild-food"},
+        {"say": "What does she wear at home?", "photo": "sweatpants"},
+        {"say": "How does she take her tea?", "photo": "tea"},
+        {"say": "What hobby does she talk about?", "photo": "singing"},
+        {"say": "What is her late-night snack?", "photo": "chocolate"}
+      ]
+    },
+    {
+      "videoId": "quiz_bf_04",
+      "orientation": "boyfriend",
+      "title": "Quiz your boyfriend — her taste",
+      "topicHint": "her taste",
+      "questions": [
+        {"say": "What is her favorite movie?", "photo": "movie-theater"},
+        {"say": "What does she wear on a night out?", "photo": "friday-night-out"},
+        {"say": "What is her favorite pizza topping?", "photo": "pizza"},
+        {"say": "What city does she want to visit?", "photo": "big-city"},
+        {"say": "What is her favorite season?", "photo": "winter"},
+        {"say": "What jewelry does she wear most?", "photo": "gold"},
+        {"say": "What fruit does she pick?", "photo": "strawberries"},
+        {"say": "What does she cook on her night?", "photo": "cook-at-home"}
+      ]
+    },
+    {
+      "videoId": "quiz_bf_05",
+      "orientation": "boyfriend",
+      "title": "Quiz your boyfriend — her little facts",
+      "topicHint": "her little facts",
+      "questions": [
+        {"say": "What candy does she pick?", "photo": "sweet"},
+        {"say": "What does she bring to a party?", "photo": "planned-presents"},
+        {"say": "What does she do when she cannot sleep?", "photo": "night-owl"},
+        {"say": "What is her favorite walk?", "photo": "long-walks"},
+        {"say": "What game does she pick?", "photo": "board-games"},
+        {"say": "What snack does she think she is hiding?", "photo": "chips"},
+        {"say": "What does she bring to the beach?", "photo": "beach"},
+        {"say": "What pastry does she pick?", "photo": "sweet-breakfast"}
+      ]
+    }
+  ]
+}

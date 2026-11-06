@@ -11,7 +11,7 @@ export function quizTemplateCover(templateId: SpillQuizTemplateId): string {
 
 export function matchesQuizTemplate(templateKey: string, templateId: SpillQuizTemplateId): boolean {
   if (templateId === 8) return templateKey === 'know-girlfriend';
-  return templateKey === 'quiz-girlfriend';
+  return templateKey === 'quiz-girlfriend' || templateKey === 'quiz-boyfriend';
 }
 
 /** Static poster only. The gallery must not point a card at the MP4. */
