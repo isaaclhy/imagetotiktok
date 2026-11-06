@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { nightyRainAudioSrc } from '../app/lib/constants';
+import { NIGHTY_SOURCE_SOUND_OPTIONS, nightySourceAudioSrc } from '../app/lib/nighty-video-templates/sounds';
 import { getVideoTemplatesForApp } from '../app/lib/apps';
 import {
   NIGHTY_COMPOSITIONS,
@@ -34,9 +35,6 @@ const BANNED = [
   /sleep tracking/i,
   /\bstories\b/i,
   /fireplace/i,
-  /white noise/i,
-  /brown noise/i,
-  /\bcement\b/i,
   /fried chicken/i,
   /bettersleep/i,
   /rain rain/i,
@@ -78,7 +76,7 @@ for (const template of NIGHTY_COMPOSITIONS) {
   const fileIds = [template.defaults.soundA, template.defaults.soundB];
   for (const beat of template.defaults.beats) fileIds.push(beat.soundId);
   for (const id of fileIds) {
-    const rel = nightyRainAudioSrc(id).replace(/^\//, '');
+    const rel = nightySourceAudioSrc(id).replace(/^\//, '');
     assert.ok(fs.existsSync(path.join(root, 'public', rel)), rel);
   }
 }
@@ -139,10 +137,10 @@ const whichState = cloneCompositionState(which.defaults);
 const early = frameAt(which, whichState, 1);
 assert.ok((early.gains.find((gain) => gain.soundId === 'rain-on-window')?.gain ?? 0) > 0.9);
 assert.ok((early.gains.find((gain) => gain.soundId === 'rain-on-roof')?.gain ?? 0) < 0.05);
-assert.equal(early.primary, 'On the window');
+assert.equal(early.primary, 'Rain on window');
 const late = frameAt(which, whichState, 8);
 assert.ok((late.gains.find((gain) => gain.soundId === 'rain-on-roof')?.gain ?? 0) > 0.9);
-assert.equal(late.primary, 'On the roof');
+assert.equal(late.primary, 'Rain on roof');
 
 const fade = NIGHTY_COMPOSITIONS.find((template) => template.slug === 'lights-low')!;
 const fadeEnd = frameAt(fade, cloneCompositionState(fade.defaults), fade.durationSec - 0.05);
@@ -152,9 +150,9 @@ assert.ok(fadeEnd.dim > 0.4);
 const tour = NIGHTY_COMPOSITIONS.find((template) => template.slug === 'same-night')!;
 const tourStart = frameAt(tour, cloneCompositionState(tour.defaults), 0.4);
 const tourOcean = frameAt(tour, cloneCompositionState(tour.defaults), 10.5);
-assert.equal(tourStart.primary, 'Light rain');
-assert.equal(tourOcean.primary, 'Calm waves');
-assert.ok((tourOcean.gains.find((gain) => gain.soundId === 'calm-waves')?.gain ?? 0) > 0.8);
+assert.equal(tourStart.primary, 'Light rain on cement');
+assert.equal(tourOcean.primary, 'Gentle Waves');
+assert.ok((tourOcean.gains.find((gain) => gain.soundId === 'gentle-waves')?.gain ?? 0) > 0.8);
 
 const ambience = NIGHTY_COMPOSITIONS.find((template) => template.slug === 'window-rain')!;
 assert.ok(frameAt(ambience, cloneCompositionState(ambience.defaults), 0.4).headlineOpacity < 0.05);
@@ -196,10 +194,20 @@ edited.headline = 'Saved in this browser';
 edited.endCta = 'App Store';
 saveCompositionState(editable.id, edited);
 assert.equal(loadCompositionState(editable).headline, 'Saved in this browser');
-assert.ok(store.get('nighty-composition-edits-v1')?.includes('Saved in this browser'));
+assert.ok(store.get('nighty-composition-edits-v2')?.includes('Saved in this browser'));
 resetCompositionState(editable.id);
 assert.equal(loadCompositionState(editable).headline, editable.defaults.headline);
-assert.equal(store.get('nighty-composition-edits-v1')?.includes('Saved in this browser'), false);
+assert.equal(store.get('nighty-composition-edits-v2')?.includes('Saved in this browser'), false);
+
+for (const sound of NIGHTY_SOURCE_SOUND_OPTIONS) {
+  const rel = sound.audioSrc.replace(/^\//, '');
+  const bytes = fs.readFileSync(path.join(root, 'public', rel));
+  const digest = createHash('sha256').update(bytes).digest('hex');
+  assert.equal(digest, sound.sha256, sound.id);
+}
+for (const legacy of ['light-rain.mp3', 'calm-waves.mp3', 'rain-on-trees.mp3', 'heavy-rain.mp3']) {
+  assert.ok(fs.existsSync(path.join(root, 'public/nighty-rain', legacy)), legacy);
+}
 
 async function checkExportFallback(): Promise<void> {
   const webm = new Blob(['webm-bytes'], { type: 'video/webm' });

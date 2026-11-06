@@ -18,7 +18,9 @@ export type NightyExportFile = {
 export async function finalizeNightyRecording(
   recorded: NightyRecording,
   transcode: (blob: Blob) => Promise<Blob>,
-  timeoutMs = 45_000
+  timeoutMs = 45_000,
+  /** Called when the encode is abandoned so the wasm worker can be terminated. */
+  onGiveUp?: () => void
 ): Promise<NightyExportFile> {
   if (recorded.extension === 'mp4' || recorded.blob.type.includes('mp4')) {
     return { blob: recorded.blob, extension: 'mp4', fallback: false };
@@ -27,7 +29,14 @@ export async function finalizeNightyRecording(
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const mp4 = await new Promise<Blob>((resolve, reject) => {
-      timer = setTimeout(() => reject(new Error('MP4 encode timed out')), timeoutMs);
+      timer = setTimeout(() => {
+        try {
+          onGiveUp?.();
+        } catch {
+          /* stopping the worker should not hide the fallback */
+        }
+        reject(new Error('MP4 encode timed out'));
+      }, timeoutMs);
       transcode(recorded.blob).then(resolve, reject);
     });
     return { blob: mp4, extension: 'mp4', fallback: false };

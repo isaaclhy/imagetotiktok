@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
-  NIGHTY_RAIN_SOUND_OPTIONS,
-  nightyRainAudioSrc,
-  nightyRainSoundOption,
-  type NightyRainSoundId,
-} from '@/app/lib/constants';
+  NIGHTY_SOURCE_COMMIT,
+  NIGHTY_SOURCE_SOUND_OPTIONS,
+  nightySourceAudioSrc,
+  nightySourceSound,
+  type NightySourceSoundId,
+} from '@/app/lib/nighty-video-templates/sounds';
 import {
   clampFadeOutSec,
   cloneCompositionState,
@@ -23,7 +24,7 @@ import { paintNightyFrame } from '@/app/lib/nighty-video-templates/paint';
 import { recordNightyComposition } from '@/app/lib/nighty-video-templates/record';
 import { finalizeNightyRecording } from '@/app/lib/nighty-video-templates/finalize-export';
 import { compositionSoundIds, frameAt } from '@/app/lib/nighty-video-templates/timeline';
-import { preloadFfmpeg, transcodeWebmToMp4 } from '@/app/lib/webm-to-mp4';
+import { preloadFfmpeg, terminateLoadedFfmpeg, transcodeWebmToMp4 } from '@/app/lib/webm-to-mp4';
 
 const SCENES: { id: NightySceneId; label: string }[] = [
   { id: 'night', label: 'Night' },
@@ -44,8 +45,8 @@ function SoundSelect({
 }: {
   id: string;
   label: string;
-  value: NightyRainSoundId;
-  onChange: (id: NightyRainSoundId) => void;
+  value: NightySourceSoundId;
+  onChange: (id: NightySourceSoundId) => void;
 }) {
   return (
     <div>
@@ -56,15 +57,15 @@ function SoundSelect({
         id={id}
         className={fieldClass}
         value={value}
-        onChange={(event) => onChange(event.target.value as NightyRainSoundId)}
+        onChange={(event) => onChange(event.target.value as NightySourceSoundId)}
       >
-        {NIGHTY_RAIN_SOUND_OPTIONS.map((sound) => (
+        {NIGHTY_SOURCE_SOUND_OPTIONS.map((sound) => (
           <option key={sound.id} value={sound.id}>
             {sound.label}
           </option>
         ))}
       </select>
-      <p className="mt-1 text-[11px] text-zinc-400">{nightyRainAudioSrc(value)}</p>
+      <p className="mt-1 text-[11px] text-zinc-400">{nightySourceAudioSrc(value)}</p>
     </div>
   );
 }
@@ -81,7 +82,7 @@ export function NightyCompositionStudio({
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [exportLabel, setExportLabel] = useState('Download MP4');
+  const [exportLabel, setExportLabel] = useState('Download video');
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportNote, setExportNote] = useState<string | null>(null);
 
@@ -90,7 +91,7 @@ export function NightyCompositionStudio({
   }, []);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
-  const audioRef = useRef<Map<NightyRainSoundId, HTMLAudioElement>>(new Map());
+  const audioRef = useRef<Map<NightySourceSoundId, HTMLAudioElement>>(new Map());
   const timeRef = useRef(0);
   const stateRef = useRef(state);
   const drawRef = useRef<(t: number) => void>(() => {});
@@ -119,7 +120,7 @@ export function NightyCompositionStudio({
     const needed = new Set(compositionSoundIds(template, state));
     for (const id of needed) {
       let el = audioRef.current.get(id);
-      const src = nightyRainAudioSrc(id);
+      const src = nightySourceAudioSrc(id);
       if (!el) {
         el = new Audio(src);
         el.preload = 'auto';
@@ -234,8 +235,11 @@ export function NightyCompositionStudio({
         setExportLabel(`Recording ${Math.ceil(seconds)}s`);
       });
       setExportLabel('Encoding MP4…');
-      const file = await finalizeNightyRecording(recorded, (blob) =>
-        transcodeWebmToMp4(blob, null, { preset: 'veryfast' })
+      const file = await finalizeNightyRecording(
+        recorded,
+        (blob) => transcodeWebmToMp4(blob, null, { preset: 'veryfast' }),
+        45_000,
+        terminateLoadedFfmpeg
       );
       const filename = `nighty-${template.slug}.${file.extension}`;
       setExportNote(
@@ -255,7 +259,7 @@ export function NightyCompositionStudio({
       setExportError(error instanceof Error ? error.message : 'Export failed');
     } finally {
       setExporting(false);
-      setExportLabel('Download MP4');
+      setExportLabel('Download video');
     }
   };
 
@@ -280,7 +284,7 @@ export function NightyCompositionStudio({
           disabled={exporting}
           className="ml-auto rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-600 dark:text-zinc-100 dark:hover:bg-zinc-800"
         >
-          {exporting ? exportLabel : 'Download MP4'}
+          {exporting ? exportLabel : 'Download video'}
         </button>
       </div>
 
@@ -543,10 +547,11 @@ export function NightyCompositionStudio({
               ))}
             </ul>
             <p className="mt-2">
-              Sounds on hand: rain and ocean files already in this app (
-              {nightyRainSoundOption(state.soundA).label}
-              {template.layout === 'compare' ? ` and ${nightyRainSoundOption(state.soundB).label}` : ''}
-              ). Cement, fireplace, forest, wind, and noise colors are not in this library.
+              Composition audio is the Nighty track set in /nighty-source (commit {NIGHTY_SOURCE_COMMIT.slice(0, 7)}
+              ). Current: {nightySourceSound(state.soundA).label}
+              {template.layout === 'compare' ? ` and ${nightySourceSound(state.soundB).label}` : ''}. Those
+              files have an encoder tag only. No license was found, so this is not a royalty-free claim.
+              Particle and Rain still use the separate public/nighty-rain beds.
             </p>
           </div>
         </div>

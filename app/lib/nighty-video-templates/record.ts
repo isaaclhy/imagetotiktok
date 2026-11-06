@@ -1,4 +1,7 @@
-import { nightyRainAudioSrc, type NightyRainSoundId } from '@/app/lib/constants';
+import {
+  nightySourceAudioSrc,
+  type NightySourceSoundId,
+} from '@/app/lib/nighty-video-templates/sounds';
 import type {
   NightyCompositionState,
   NightyCompositionTemplate,
@@ -118,11 +121,11 @@ export async function recordNightyComposition(
   const destination = audioCtx.createMediaStreamDestination();
 
   const soundIds = compositionSoundIds(template, state);
-  const beds: { id: NightyRainSoundId; el: HTMLAudioElement; gain: GainNode }[] = [];
+  const beds: { id: NightySourceSoundId; el: HTMLAudioElement; gain: GainNode }[] = [];
 
   try {
     for (const id of soundIds) {
-      const el = await loadBed(nightyRainAudioSrc(id));
+      const el = await loadBed(nightySourceAudioSrc(id));
       el.setAttribute('data-nighty-export-bed', id);
       const source = audioCtx.createMediaElementSource(el);
       const gain = audioCtx.createGain();

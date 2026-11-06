@@ -1,4 +1,7 @@
-import { NIGHTY_RAIN_SOUND_OPTIONS, type NightyRainSoundId } from '@/app/lib/constants';
+import {
+  NIGHTY_SOURCE_SOUND_OPTIONS,
+  type NightySourceSoundId,
+} from '@/app/lib/nighty-video-templates/sounds';
 
 /**
  * Original Nighty video compositions for the Nighty Video tab.
@@ -46,7 +49,7 @@ export const NIGHTY_DEFAULT_END_CTA = 'App Store';
 
 export type NightyBeat = {
   label: string;
-  soundId: NightyRainSoundId;
+  soundId: NightySourceSoundId;
 };
 
 export type NightyCompositionState = {
@@ -55,8 +58,8 @@ export type NightyCompositionState = {
   scene: NightySceneId;
   labelA: string;
   labelB: string;
-  soundA: NightyRainSoundId;
-  soundB: NightyRainSoundId;
+  soundA: NightySourceSoundId;
+  soundB: NightySourceSoundId;
   /** Seconds of gentle fade at the end. 0 leaves the bed at full level. */
   fadeOutSec: number;
   /** Small end line under the Nighty mark. Empty hides it. */
@@ -102,8 +105,8 @@ export const NIGHTY_COMPOSITIONS: readonly NightyCompositionTemplate[] = [
       headline: 'Which rain is this?',
       subline: 'Nighty',
       scene: NIGHT,
-      labelA: 'On the window',
-      labelB: 'On the roof',
+      labelA: 'Rain on window',
+      labelB: 'Rain on roof',
       soundA: 'rain-on-window',
       soundB: 'rain-on-roof',
       fadeOutSec: 0,
@@ -136,8 +139,8 @@ export const NIGHTY_COMPOSITIONS: readonly NightyCompositionTemplate[] = [
       headline: 'Light, or heavy?',
       subline: 'Nighty',
       scene: NIGHT,
-      labelA: 'Light rain',
-      labelB: 'Heavy rain',
+      labelA: 'Light rain on cement',
+      labelB: 'Heavy Rain',
       soundA: 'light-rain',
       soundB: 'heavy-rain',
       fadeOutSec: 0,
@@ -212,7 +215,7 @@ export const NIGHTY_COMPOSITIONS: readonly NightyCompositionTemplate[] = [
       headline: 'No account.',
       subline: 'The rain starts anyway.',
       scene: ROOM,
-      labelA: 'Rain on the roof',
+      labelA: 'Rain on roof',
       labelB: '',
       soundA: 'rain-on-roof',
       soundB: 'rain-on-roof',
@@ -331,7 +334,7 @@ export const NIGHTY_COMPOSITIONS: readonly NightyCompositionTemplate[] = [
     id: 9,
     slug: 'same-night',
     title: 'Same night',
-    subtitle: 'Four owned sounds',
+      subtitle: 'Four Nighty sounds',
     layout: 'tour',
     durationSec: 12,
     defaults: state({
@@ -341,20 +344,20 @@ export const NIGHTY_COMPOSITIONS: readonly NightyCompositionTemplate[] = [
       labelA: '',
       labelB: '',
       soundA: 'light-rain',
-      soundB: 'calm-waves',
+      soundB: 'gentle-waves',
       fadeOutSec: 0,
       beats: [
-        { label: 'Light rain', soundId: 'light-rain' },
-        { label: 'Heavy rain', soundId: 'heavy-rain' },
-        { label: 'Rain on trees', soundId: 'rain-on-trees' },
-        { label: 'Calm waves', soundId: 'calm-waves' },
+        { label: 'Light rain on cement', soundId: 'light-rain' },
+        { label: 'Heavy Rain', soundId: 'heavy-rain' },
+        { label: 'Rain on Leaves', soundId: 'rain-on-leaves' },
+        { label: 'Gentle Waves', soundId: 'gentle-waves' },
       ],
     }),
     provenance: {
       classification: 'original',
       watchedVideo: false,
       summary:
-        'Original tour of four files already in this app: three rains and calm waves. Not a screen recording and not a control-center demo.',
+        'Original tour of four Nighty tracks: light rain on cement, heavy rain, rain on leaves, and gentle waves. Not a screen recording.',
       references: [
         {
           id: 'dn-yt-SLjjZ2k0ld0',
@@ -386,8 +389,8 @@ export const NIGHTY_COMPOSITIONS: readonly NightyCompositionTemplate[] = [
       scene: ROOM,
       labelA: '',
       labelB: '',
-      soundA: 'rain-on-trees',
-      soundB: 'rain-on-trees',
+      soundA: 'rain-on-leaves',
+      soundB: 'rain-on-leaves',
       fadeOutSec: 2.4,
       beats: [],
     }),
@@ -417,8 +420,8 @@ export const NIGHTY_COMPOSITIONS: readonly NightyCompositionTemplate[] = [
 ];
 
 const edits = new Map<number, NightyCompositionState>();
-const EDIT_STORAGE_KEY = 'nighty-composition-edits-v1';
-const SOUND_IDS = new Set(NIGHTY_RAIN_SOUND_OPTIONS.map((sound) => sound.id));
+const EDIT_STORAGE_KEY = 'nighty-composition-edits-v2';
+const SOUND_IDS = new Set(NIGHTY_SOURCE_SOUND_OPTIONS.map((sound) => sound.id));
 const SCENE_IDS = new Set<NightySceneId>(['night', 'ocean', 'room']);
 
 function browserStorage(): Storage | null {

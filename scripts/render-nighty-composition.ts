@@ -10,7 +10,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createCanvas, GlobalFonts } from '@napi-rs/canvas';
-import { nightyRainAudioSrc } from '../app/lib/constants';
+import { nightySourceAudioSrc } from '../app/lib/nighty-video-templates/sounds';
 import {
   cloneCompositionState,
   getNightyComposition,
@@ -72,7 +72,7 @@ const args = [
   String(fps),
   '-i',
   'pipe:0',
-  ...soundIds.flatMap((id) => ['-i', path.join('public', nightyRainAudioSrc(id).replace(/^\//, ''))]),
+  ...soundIds.flatMap((id) => ['-i', path.join('public', nightySourceAudioSrc(id).replace(/^\//, ''))]),
   '-filter_complex',
   filterParts.join(';'),
   '-map',

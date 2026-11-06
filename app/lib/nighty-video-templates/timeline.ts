@@ -1,4 +1,7 @@
-import { nightyRainSoundOption, type NightyRainSoundId } from '@/app/lib/constants';
+import {
+  nightySourceSound,
+  type NightySourceSoundId,
+} from '@/app/lib/nighty-video-templates/sounds';
 import {
   clampFadeOutSec,
   type NightyCompositionState,
@@ -6,7 +9,7 @@ import {
 } from '@/app/lib/nighty-video-templates/catalog';
 
 export type NightySoundGain = {
-  soundId: NightyRainSoundId;
+  soundId: NightySourceSoundId;
   gain: number;
 };
 
@@ -46,7 +49,7 @@ function smoothstep(edge0: number, edge1: number, value: number): number {
   return t * t * (3 - 2 * t);
 }
 
-function pushGain(gains: NightySoundGain[], soundId: NightyRainSoundId, gain: number): void {
+function pushGain(gains: NightySoundGain[], soundId: NightySourceSoundId, gain: number): void {
   if (gain <= 0.001) return;
   const existing = gains.find((item) => item.soundId === soundId);
   if (existing) existing.gain = Math.min(1, existing.gain + gain);
@@ -57,9 +60,9 @@ function moodFromGains(gains: NightySoundGain[]): { rain: number; waves: number 
   let rain = 0;
   let waves = 0;
   for (const item of gains) {
-    const kind = nightyRainSoundOption(item.soundId).kind;
+    const kind = nightySourceSound(item.soundId).kind;
     if (kind === 'waves') waves += item.gain;
-    else rain += item.gain;
+    else if (kind === 'rain') rain += item.gain;
   }
   return { rain: clamp01(rain), waves: clamp01(waves) };
 }
@@ -67,9 +70,9 @@ function moodFromGains(gains: NightySoundGain[]): { rain: number; waves: number 
 export function compositionSoundIds(
   template: NightyCompositionTemplate,
   state: NightyCompositionState
-): NightyRainSoundId[] {
-  const ids: NightyRainSoundId[] = [];
-  const add = (id: NightyRainSoundId) => {
+): NightySourceSoundId[] {
+  const ids: NightySourceSoundId[] = [];
+  const add = (id: NightySourceSoundId) => {
     if (!ids.includes(id)) ids.push(id);
   };
   if (template.layout === 'tour') {
