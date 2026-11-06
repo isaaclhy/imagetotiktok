@@ -18,25 +18,43 @@ async function main() {
     return;
   }
 
-  const { put } = require('@vercel/blob');
+  let put;
+  try {
+    ({ put } = require('@vercel/blob'));
+  } catch (error) {
+    console.error('[cartoon-batch] blob client unavailable', error instanceof Error ? error.message : error);
+    return;
+  }
   const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
   const items = [];
   for (const item of manifest) {
-    const body = fs.readFileSync(path.join(dir, item.file));
-    const blob = await put(`cartoon-batch/${item.file}`, body, {
-      access: 'public',
-      addRandomSuffix: false,
-      contentType: 'video/mp4',
-      token,
-    });
-    items.push({
-      ...item,
-      blobUrl: blob.url,
-      blobPathname: blob.pathname,
-    });
-    console.log('[cartoon-batch] published', item.file);
+    try {
+      const body = fs.readFileSync(path.join(dir, item.file));
+      const blob = await put(`cartoon-batch/${item.file}`, body, {
+        access: 'public',
+        addRandomSuffix: false,
+        contentType: 'video/mp4',
+        token,
+      });
+      items.push({
+        ...item,
+        blobUrl: blob.url,
+        blobPathname: blob.pathname,
+      });
+      console.log('[cartoon-batch] published', item.file);
+    } catch (error) {
+      console.error(
+        '[cartoon-batch] skipped',
+        item.file,
+        error instanceof Error ? error.message : 'upload failed'
+      );
+    }
   }
-  fs.writeFileSync(publishedPath, JSON.stringify({ items }, null, 2));
+  if (items.length === manifest.length) {
+    fs.writeFileSync(publishedPath, JSON.stringify({ items }, null, 2));
+  } else {
+    console.error(`[cartoon-batch] published ${items.length} of ${manifest.length}; leaving library seed unchanged`);
+  }
 }
 
 main().catch((error) => {
