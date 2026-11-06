@@ -241,10 +241,11 @@ export function NightyCompositionStudio({
         setExportLabel(`Recording ${Math.ceil(seconds)}s`);
       });
       setExportLabel('Encoding MP4…');
+      const encodeBudget = Math.max(45_000, Math.round(template.durationSec * 12_000));
       const file = await finalizeNightyRecording(
         recorded,
         (blob) => transcodeWebmToMp4(blob, null, { preset: 'veryfast' }),
-        45_000,
+        encodeBudget,
         terminateLoadedFfmpeg
       );
       const filename = `nighty-${template.slug}.${file.extension}`;
@@ -353,6 +354,7 @@ export function NightyCompositionStudio({
               id={`nighty-headline-${template.id}`}
               data-testid="nighty-composition-headline"
               className={`${fieldClass} min-h-16 resize-y`}
+              wrap={isReferenceLayout(template.layout) ? 'off' : undefined}
               value={state.headline}
               onChange={(event) => update({ headline: event.target.value })}
             />

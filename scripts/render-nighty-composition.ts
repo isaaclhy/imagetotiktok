@@ -17,6 +17,7 @@ import {
   NIGHTY_COMPOSITIONS,
 } from '../app/lib/nighty-video-templates/catalog';
 import { paintNightyFrame } from '../app/lib/nighty-video-templates/paint';
+import { installNightyScratchCanvas } from '../app/lib/nighty-video-templates/reference-paint';
 import {
   NIGHTY_COMPOSITION_EXPORT_FPS,
   NIGHTY_COMPOSITION_EXPORT_HEIGHT,
@@ -31,6 +32,8 @@ const state = cloneCompositionState(template.defaults);
 const width = NIGHTY_COMPOSITION_EXPORT_WIDTH;
 const height = NIGHTY_COMPOSITION_EXPORT_HEIGHT;
 const fps = template.exportFps ?? NIGHTY_COMPOSITION_EXPORT_FPS;
+
+installNightyScratchCanvas((w, h) => createCanvas(w, h));
 
 GlobalFonts.registerFromPath('public/fonts/tiktok-sans/TikTokSans-400.ttf', 'TikTok Sans');
 GlobalFonts.registerFromPath('public/fonts/tiktok-sans/TikTokSans-500.ttf', 'TikTok Sans');

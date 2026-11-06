@@ -99,10 +99,11 @@ export async function recordNightyComposition(
 
   if (typeof document !== 'undefined' && document.fonts?.load) {
     try {
-      await document.fonts.load(`400 64px "TikTok Sans"`);
+      await document.fonts.load('400 64px "TikTok Sans"');
       await document.fonts.load(`500 64px "${NIGHTY_COMPOSITION_FONT.split(',')[0]?.trim()}"`);
-      await document.fonts.load(`600 80px "TikTok Sans"`);
-      await document.fonts.load(`700 64px "TikTok Sans"`);
+      await document.fonts.load('600 80px "TikTok Sans"');
+      await document.fonts.load('700 64px "TikTok Sans"');
+      await document.fonts.ready;
     } catch {
       /* system font fallback */
     }
