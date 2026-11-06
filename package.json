@@ -7,6 +7,7 @@
     "build": "node scripts/publish-cartoon-batch.cjs && next build",
     "start": "next start",
     "lint": "eslint",
+    "check:nighty-templates": "tsx scripts/check-nighty-video-templates.ts",
     "daily:video-template-2": "tsx scripts/run-daily-video-template-2.ts",
     "daily:video-template-8": "tsx scripts/run-daily-video-template-8.ts",
     "daily:video-template-9": "tsx scripts/run-daily-video-template-9.ts"

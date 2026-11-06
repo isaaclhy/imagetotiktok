@@ -7,7 +7,11 @@ import {
   NIGHTY_COMPOSITIONS,
   cloneCompositionState,
   isNightyCompositionTemplateId,
+  loadCompositionState,
+  resetCompositionState,
+  saveCompositionState,
 } from '../app/lib/nighty-video-templates/catalog';
+import { finalizeNightyRecording } from '../app/lib/nighty-video-templates/finalize-export';
 import { frameAt } from '../app/lib/nighty-video-templates/timeline';
 
 const root = process.cwd();
@@ -45,7 +49,7 @@ function customerStrings(): string[] {
   const strings: string[] = [];
   for (const template of NIGHTY_COMPOSITIONS) {
     strings.push(template.title, template.subtitle, template.defaults.headline, template.defaults.subline);
-    strings.push(template.defaults.labelA, template.defaults.labelB);
+    strings.push(template.defaults.labelA, template.defaults.labelB, template.defaults.endCta);
     for (const beat of template.defaults.beats) strings.push(beat.label);
   }
   return strings;
@@ -156,6 +160,84 @@ const ambience = NIGHTY_COMPOSITIONS.find((template) => template.slug === 'windo
 assert.ok(frameAt(ambience, cloneCompositionState(ambience.defaults), 0.4).headlineOpacity < 0.05);
 assert.ok(frameAt(ambience, cloneCompositionState(ambience.defaults), 7).headlineOpacity > 0.9);
 
-console.log(
-  `ok: ${NIGHTY_COMPOSITIONS.length} original Nighty compositions, Spill It unchanged, audio files present`
+const lights = NIGHTY_COMPOSITIONS.find((template) => template.slug === 'lights-low')!;
+const lightsState = cloneCompositionState(lights.defaults);
+assert.equal(lightsState.endCta, 'App Store');
+assert.ok(frameAt(lights, lightsState, 1).endCtaOpacity < 0.05);
+const lightsEnd = frameAt(lights, lightsState, lights.durationSec - 0.15);
+assert.ok(lightsEnd.endCtaOpacity > 0.85);
+assert.equal(lightsEnd.endCta, 'App Store');
+const hidden = frameAt(lights, { ...lightsState, endCta: '   ' }, lights.durationSec - 0.15);
+assert.equal(hidden.endCtaOpacity, 0);
+
+const paintSrc = fs.readFileSync(
+  path.join(root, 'app/lib/nighty-video-templates/paint.ts'),
+  'utf8'
 );
+assert.equal(paintSrc.includes('Fading out'), false);
+
+const store = new Map<string, string>();
+Object.defineProperty(globalThis, 'localStorage', {
+  configurable: true,
+  value: {
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      store.set(key, value);
+    },
+    removeItem: (key: string) => {
+      store.delete(key);
+    },
+  },
+});
+
+const editable = NIGHTY_COMPOSITIONS.find((template) => template.slug === 'lights-low')!;
+const edited = cloneCompositionState(editable.defaults);
+edited.headline = 'Saved in this browser';
+edited.endCta = 'App Store';
+saveCompositionState(editable.id, edited);
+assert.equal(loadCompositionState(editable).headline, 'Saved in this browser');
+assert.ok(store.get('nighty-composition-edits-v1')?.includes('Saved in this browser'));
+resetCompositionState(editable.id);
+assert.equal(loadCompositionState(editable).headline, editable.defaults.headline);
+assert.equal(store.get('nighty-composition-edits-v1')?.includes('Saved in this browser'), false);
+
+async function checkExportFallback(): Promise<void> {
+  const webm = new Blob(['webm-bytes'], { type: 'video/webm' });
+  const mp4 = new Blob(['mp4-bytes'], { type: 'video/mp4' });
+  const converted = await finalizeNightyRecording({ blob: webm, extension: 'webm' }, async () => mp4);
+  assert.equal(converted.extension, 'mp4');
+  assert.equal(converted.fallback, false);
+  assert.equal(await converted.blob.text(), 'mp4-bytes');
+
+  const failed = await finalizeNightyRecording({ blob: webm, extension: 'webm' }, async () => {
+    throw new Error('ffmpeg.wasm unavailable');
+  });
+  assert.equal(failed.extension, 'webm');
+  assert.equal(failed.fallback, true);
+  assert.equal(await failed.blob.text(), 'webm-bytes');
+
+  const timedOut = await finalizeNightyRecording(
+    { blob: webm, extension: 'webm' },
+    () => new Promise<Blob>(() => undefined),
+    30
+  );
+  assert.equal(timedOut.extension, 'webm');
+  assert.equal(timedOut.fallback, true);
+
+  const alreadyMp4 = await finalizeNightyRecording({ blob: mp4, extension: 'mp4' }, async () => {
+    throw new Error('should not transcode');
+  });
+  assert.equal(alreadyMp4.extension, 'mp4');
+  assert.equal(alreadyMp4.fallback, false);
+}
+
+checkExportFallback()
+  .then(() => {
+    console.log(
+      `ok: ${NIGHTY_COMPOSITIONS.length} original Nighty compositions, Spill It unchanged, audio files present, WebM falls back without system ffmpeg`
+    );
+  })
+  .catch((error: unknown) => {
+    console.error(error);
+    process.exit(1);
+  });

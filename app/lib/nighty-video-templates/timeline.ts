@@ -24,7 +24,9 @@ export type NightyFrame = {
   brandOpacity: number;
   showCard: boolean;
   cardLabel: string;
-  fading: boolean;
+  endCta: string;
+  /** 0–1. Rises in the last moments. The line is drawn after the fade dim. */
+  endCtaOpacity: number;
   activeIndex: number | null;
   slotCount: number;
   gains: NightySoundGain[];
@@ -153,6 +155,13 @@ export function frameAt(
 
   const mood = moodFromGains(gains);
   const sublineIsBrand = state.subline.trim().toLowerCase() === 'nighty';
+  const endCta = state.endCta.trim();
+  const ctaStart = Math.max(0, duration - 1.7);
+  const endCtaOpacity = endCta
+    ? smoothstep(ctaStart, Math.min(duration, ctaStart + 0.65), t)
+    : 0;
+  const settledBrand =
+    brandOpacity * (template.layout === 'ambience' ? 1 : Math.max(master, 0.35));
 
   return {
     t,
@@ -165,10 +174,11 @@ export function frameAt(
     primaryOpacity,
     subline: sublineIsBrand ? '' : state.subline,
     sublineOpacity: sublineIsBrand ? 0 : sublineOpacity,
-    brandOpacity: brandOpacity * (template.layout === 'ambience' ? 1 : Math.max(master, 0.35)),
+    brandOpacity: settledBrand * (1 - endCtaOpacity),
     showCard,
     cardLabel,
-    fading: fadeOutSec > 0 && master < 0.98,
+    endCta,
+    endCtaOpacity,
     activeIndex,
     slotCount,
     gains,

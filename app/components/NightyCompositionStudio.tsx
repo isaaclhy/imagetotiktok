@@ -12,6 +12,7 @@ import {
   cloneCompositionState,
   getNightyComposition,
   loadCompositionState,
+  NIGHTY_APP_STORE_URL,
   resetCompositionState,
   saveCompositionState,
   type NightyBeat,
@@ -20,7 +21,9 @@ import {
 } from '@/app/lib/nighty-video-templates/catalog';
 import { paintNightyFrame } from '@/app/lib/nighty-video-templates/paint';
 import { recordNightyComposition } from '@/app/lib/nighty-video-templates/record';
+import { finalizeNightyRecording } from '@/app/lib/nighty-video-templates/finalize-export';
 import { compositionSoundIds, frameAt } from '@/app/lib/nighty-video-templates/timeline';
+import { preloadFfmpeg, transcodeWebmToMp4 } from '@/app/lib/webm-to-mp4';
 
 const SCENES: { id: NightySceneId; label: string }[] = [
   { id: 'night', label: 'Night' },
@@ -80,6 +83,11 @@ export function NightyCompositionStudio({
   const [exporting, setExporting] = useState(false);
   const [exportLabel, setExportLabel] = useState('Download MP4');
   const [exportError, setExportError] = useState<string | null>(null);
+  const [exportNote, setExportNote] = useState<string | null>(null);
+
+  useEffect(() => {
+    preloadFfmpeg();
+  }, []);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const audioRef = useRef<Map<NightyRainSoundId, HTMLAudioElement>>(new Map());
@@ -220,28 +228,25 @@ export function NightyCompositionStudio({
     setExporting(true);
     setExportLabel('Recording…');
     setExportError(null);
+    setExportNote(null);
     try {
       const recorded = await recordNightyComposition(template, stateRef.current, (seconds) => {
         setExportLabel(`Recording ${Math.ceil(seconds)}s`);
       });
-      let blob = recorded.blob;
-      let extension: 'webm' | 'mp4' = recorded.extension;
-      if (extension !== 'mp4') {
-        setExportLabel('Encoding MP4…');
-        const form = new FormData();
-        form.append('file', recorded.blob, `nighty-${template.slug}.webm`);
-        const res = await fetch('/api/nighty/transcode', { method: 'POST', body: form });
-        if (!res.ok) {
-          const fallback = (await res.json().catch(() => null)) as { error?: string } | null;
-          throw new Error(fallback?.error || `MP4 encode failed (${res.status})`);
-        }
-        blob = await res.blob();
-        extension = 'mp4';
-      }
-      const url = URL.createObjectURL(blob);
+      setExportLabel('Encoding MP4…');
+      const file = await finalizeNightyRecording(recorded, (blob) =>
+        transcodeWebmToMp4(blob, null, { preset: 'veryfast' })
+      );
+      const filename = `nighty-${template.slug}.${file.extension}`;
+      setExportNote(
+        file.fallback
+          ? `Downloaded ${filename}. MP4 encode isn’t available in this browser, so this file is WebM.`
+          : `Downloaded ${filename}.`
+      );
+      const url = URL.createObjectURL(file.blob);
       const anchor = document.createElement('a');
       anchor.href = url;
-      anchor.download = `nighty-${template.slug}.${extension}`;
+      anchor.download = filename;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
@@ -320,6 +325,11 @@ export function NightyCompositionStudio({
               {exportError}
             </p>
           ) : null}
+          {exportNote ? (
+            <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-300" data-testid="nighty-export-result">
+              {exportNote}
+            </p>
+          ) : null}
         </div>
 
         <div className="w-full space-y-3 md:max-h-[calc(100vh-8rem)] md:w-96 md:overflow-y-auto md:pr-1">
@@ -380,8 +390,25 @@ export function NightyCompositionStudio({
               onChange={(event) => update({ fadeOutSec: Number(event.target.value) })}
             />
             <p className="mt-1 text-[11px] text-zinc-400">
-              Fades the owned audio at the end of this video. Nighty’s app has a sleep timer with a
-              gentle fade; this number only changes the video.
+              Fades the audio at the end of this video. Nighty’s app has a sleep timer with a gentle
+              fade; this number only changes the video.
+            </p>
+          </div>
+          <div>
+            <label className={labelClass} htmlFor={`nighty-cta-${template.id}`}>
+              End line
+            </label>
+            <input
+              id={`nighty-cta-${template.id}`}
+              className={fieldClass}
+              value={state.endCta}
+              onChange={(event) => update({ endCta: event.target.value })}
+            />
+            <p className="mt-1 text-[11px] text-zinc-400">
+              Small line under Nighty in the last two seconds. Clear it to leave the end plain.{' '}
+              <a href={NIGHTY_APP_STORE_URL} target="_blank" rel="noreferrer" className="underline">
+                App Store listing
+              </a>
             </p>
           </div>
 
@@ -483,6 +510,10 @@ export function NightyCompositionStudio({
           >
             Reset text and sound
           </button>
+          <p className="text-[11px] text-zinc-400">
+            The template stays in the Nighty library. Your text, sound, scene, and end line are
+            saved in this browser only. They are not synced to an account or the video library.
+          </p>
 
           <div className="rounded-lg border border-zinc-200 p-2 text-[11px] leading-relaxed text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
             <p className="font-medium text-zinc-600 dark:text-zinc-300">References</p>

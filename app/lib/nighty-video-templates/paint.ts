@@ -250,14 +250,24 @@ export function paintNightyFrame(
 
   drawDots(ctx, w, h, frame);
 
-  if (frame.fading) {
-    drawTextBlock(ctx, 'Fading out', w / 2, h * 0.86, w * 0.028, 500, maxWidth, 0.8);
-  }
-
-  drawTextBlock(ctx, 'Nighty', w / 2, h * 0.93, w * 0.03, 500, maxWidth, frame.brandOpacity);
+  drawTextBlock(ctx, 'Nighty', w / 2, h * 0.9, w * 0.03, 500, maxWidth, frame.brandOpacity);
 
   if (frame.dim > 0.01) {
     ctx.fillStyle = `rgba(0, 0, 0, ${frame.dim})`;
     ctx.fillRect(0, 0, w, h);
+  }
+
+  if (frame.endCta && frame.endCtaOpacity > 0.01) {
+    drawTextBlock(ctx, 'Nighty', w / 2, h * 0.9, w * 0.032, 500, maxWidth, frame.endCtaOpacity);
+    drawTextBlock(
+      ctx,
+      frame.endCta,
+      w / 2,
+      h * 0.945,
+      w * 0.026,
+      500,
+      maxWidth,
+      frame.endCtaOpacity
+    );
   }
 }

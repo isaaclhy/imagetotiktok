@@ -1,4 +1,4 @@
-import type { NightyRainSoundId } from '@/app/lib/constants';
+import { NIGHTY_RAIN_SOUND_OPTIONS, type NightyRainSoundId } from '@/app/lib/constants';
 
 /**
  * Original Nighty video compositions for the Nighty Video tab.
@@ -37,6 +37,13 @@ export type NightyTemplateReference = {
   note: string;
 };
 
+/** Public App Store listing for Nighty. Not burned into the picture as a long URL. */
+export const NIGHTY_APP_STORE_URL =
+  'https://apps.apple.com/us/app/nighty-sleep-and-sound/id6804306705';
+
+/** Short end line. Empty string hides it. */
+export const NIGHTY_DEFAULT_END_CTA = 'App Store';
+
 export type NightyBeat = {
   label: string;
   soundId: NightyRainSoundId;
@@ -52,6 +59,8 @@ export type NightyCompositionState = {
   soundB: NightyRainSoundId;
   /** Seconds of gentle fade at the end. 0 leaves the bed at full level. */
   fadeOutSec: number;
+  /** Small end line under the Nighty mark. Empty hides it. */
+  endCta: string;
   beats: NightyBeat[];
 };
 
@@ -75,8 +84,10 @@ export type NightyCompositionTemplate = {
 const NIGHT: NightySceneId = 'night';
 const ROOM: NightySceneId = 'room';
 
-function state(partial: NightyCompositionState): NightyCompositionState {
-  return partial;
+function state(
+  partial: Omit<NightyCompositionState, 'endCta'> & { endCta?: string }
+): NightyCompositionState {
+  return { endCta: NIGHTY_DEFAULT_END_CTA, ...partial };
 }
 
 export const NIGHTY_COMPOSITIONS: readonly NightyCompositionTemplate[] = [
@@ -406,6 +417,63 @@ export const NIGHTY_COMPOSITIONS: readonly NightyCompositionTemplate[] = [
 ];
 
 const edits = new Map<number, NightyCompositionState>();
+const EDIT_STORAGE_KEY = 'nighty-composition-edits-v1';
+const SOUND_IDS = new Set(NIGHTY_RAIN_SOUND_OPTIONS.map((sound) => sound.id));
+const SCENE_IDS = new Set<NightySceneId>(['night', 'ocean', 'room']);
+
+function browserStorage(): Storage | null {
+  try {
+    if (typeof globalThis.localStorage === 'undefined') return null;
+    return globalThis.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function isCompositionState(value: unknown): value is NightyCompositionState {
+  if (!value || typeof value !== 'object') return false;
+  const state = value as NightyCompositionState;
+  if (typeof state.headline !== 'string' || typeof state.subline !== 'string') return false;
+  if (typeof state.labelA !== 'string' || typeof state.labelB !== 'string') return false;
+  if (typeof state.endCta !== 'string' || typeof state.fadeOutSec !== 'number') return false;
+  if (!SCENE_IDS.has(state.scene)) return false;
+  if (!SOUND_IDS.has(state.soundA) || !SOUND_IDS.has(state.soundB)) return false;
+  if (!Array.isArray(state.beats)) return false;
+  return state.beats.every(
+    (beat) =>
+      !!beat &&
+      typeof beat.label === 'string' &&
+      SOUND_IDS.has(beat.soundId)
+  );
+}
+
+function readStoredEdits(): Record<string, NightyCompositionState> {
+  const storage = browserStorage();
+  if (!storage) return {};
+  try {
+    const raw = storage.getItem(EDIT_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== 'object') return {};
+    const kept: Record<string, NightyCompositionState> = {};
+    for (const [id, value] of Object.entries(parsed)) {
+      if (isCompositionState(value)) kept[id] = value;
+    }
+    return kept;
+  } catch {
+    return {};
+  }
+}
+
+function writeStoredEdits(all: Record<string, NightyCompositionState>): void {
+  const storage = browserStorage();
+  if (!storage) return;
+  try {
+    storage.setItem(EDIT_STORAGE_KEY, JSON.stringify(all));
+  } catch {
+    /* private mode or a full disk; the in-memory copy still works this tab */
+  }
+}
 
 export function cloneCompositionState(state: NightyCompositionState): NightyCompositionState {
   return {
@@ -433,16 +501,30 @@ export function nightyCompositionCards(): { id: number; title: string; subtitle:
 }
 
 export function loadCompositionState(template: NightyCompositionTemplate): NightyCompositionState {
-  const saved = edits.get(template.id);
-  return cloneCompositionState(saved ?? template.defaults);
+  const memory = edits.get(template.id);
+  if (memory) return cloneCompositionState(memory);
+  const stored = readStoredEdits()[String(template.id)];
+  if (stored) {
+    const next = cloneCompositionState(stored);
+    edits.set(template.id, next);
+    return cloneCompositionState(next);
+  }
+  return cloneCompositionState(template.defaults);
 }
 
 export function saveCompositionState(id: number, state: NightyCompositionState): void {
-  edits.set(id, cloneCompositionState(state));
+  const next = cloneCompositionState(state);
+  edits.set(id, next);
+  const all = readStoredEdits();
+  all[String(id)] = next;
+  writeStoredEdits(all);
 }
 
 export function resetCompositionState(id: number): void {
   edits.delete(id);
+  const all = readStoredEdits();
+  delete all[String(id)];
+  writeStoredEdits(all);
 }
 
 export function clampFadeOutSec(value: number, durationSec: number): number {
