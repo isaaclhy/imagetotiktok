@@ -107,6 +107,12 @@ import {
   paintTemplate25Slide,
 } from '@/app/lib/image-template-25-flat-serif';
 import {
+  IMAGE_TEMPLATE29_CATS_SRC,
+  IMAGE_TEMPLATE29_FONT_STACK,
+  loadTemplate29Fonts,
+  paintTemplate29Slide,
+} from '@/app/lib/image-template-29-dark-cats';
+import {
   loadTemplate24Fonts,
   paintTemplate24Slide,
   template24CanvasFontStack,
@@ -195,7 +201,8 @@ export type CopycatExportTemplateId =
   | 25
   | 26
   | 27
-  | 28;
+  | 28
+  | 29;
 
 export type CopycatExportSlide = {
   text: string;
@@ -380,6 +387,23 @@ async function paintSlide(
       isCta: slide.isCta,
       promo,
       fontFamily: IMAGE_TEMPLATE25_FONT_STACK,
+    });
+    return canvasBlob(canvas);
+  }
+
+  if (templateId === 29) {
+    await loadTemplate29Fonts();
+    const promo = slide.isCta ? await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC) : null;
+    const cats = slide.isCover ? await loadImage(IMAGE_TEMPLATE29_CATS_SRC).catch(() => null) : null;
+    paintTemplate29Slide(ctx, w, h, {
+      text: slide.text,
+      tabIndex,
+      slideCount,
+      isCover: slide.isCover,
+      isCta: slide.isCta,
+      promo,
+      cats,
+      fontFamily: IMAGE_TEMPLATE29_FONT_STACK,
     });
     return canvasBlob(canvas);
   }

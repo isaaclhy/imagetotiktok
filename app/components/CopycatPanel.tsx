@@ -143,6 +143,7 @@ import {
 import { BoldSolidPreview } from '@/app/components/BoldSolidPreview';
 import { FlatDarkPreview } from '@/app/components/FlatDarkPreview';
 import { FlatSerifPreview } from '@/app/components/FlatSerifPreview';
+import { DarkCatsPreview } from '@/app/components/DarkCatsPreview';
 import { PenguinCardsPreview } from '@/app/components/PenguinCardsPreview';
 import { AwwEwwPreview } from '@/app/components/AwwEwwPreview';
 import {
@@ -200,7 +201,7 @@ const COPYCAT_COVER_HEARTS = '♥ ♥ ♥';
 const COPYCAT_TEXT_ONLY_COVER_TOP = 0.38;
 const COPYCAT_TEXT_ONLY_COVER_SIZE_T2 = 0.074;
 
-export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28;
+export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29;
 
 function CopycatAppMarkFooter({
   isCover,
@@ -490,7 +491,8 @@ function CopycatSlidePreview({
     templateId !== 23 &&
     templateId !== 24 &&
     templateId !== 25 &&
-    templateId !== 28;
+    templateId !== 28 &&
+    templateId !== 29;
   const alignLeft = Boolean(leftAlign && !isCover) || templateId === 2;
   const pastelBg =
     IMAGE_TEMPLATE2_PASTEL_COLORS[tabIndex % IMAGE_TEMPLATE2_PASTEL_COLORS.length]!;
@@ -578,6 +580,20 @@ function CopycatSlidePreview({
     return (
       <div className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4 bg-[#241033]">
         <FlatSerifPreview
+          text={text}
+          tabIndex={tabIndex}
+          slideCount={slideCount}
+          isCover={isCover}
+          isCta={isCtaSlide}
+        />
+      </div>
+    );
+  }
+
+  if (templateId === 29) {
+    return (
+      <div className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4 bg-[#2B111A]">
+        <DarkCatsPreview
           text={text}
           tabIndex={tabIndex}
           slideCount={slideCount}
@@ -1444,9 +1460,9 @@ export function CopycatPanel({
     });
   }, [templateId, selectedPostId, slideBodies]);
 
-  // Template 25 keeps every question, then adds its own CTA slide.
+  // Templates 25 and 29 keep every question, then add their own CTA slide.
   // Templates 26, 27, and 28 follow template 2: the promo sits on the last question.
-  const ctaIsOwnSlide = templateId === 25 && displayBodies.length > 0;
+  const ctaIsOwnSlide = (templateId === 25 || templateId === 29) && displayBodies.length > 0;
   const tabCount = displayBodies.length + (ctaIsOwnSlide ? 1 : 0);
   const ctaTabIndex =
     templateId === 28
