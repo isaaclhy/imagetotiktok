@@ -13,7 +13,7 @@ ff = rr.ff
 RED = (225, 30, 45)
 INTRO = [("Quiz your girlfriend!", [("Quiz your", 0, 112), ("Girlfriend!", 2, 112)]),
          ("Boys, send this to her.", [(w, i, 150) for i, w in enumerate(["Boys!", "send", "this", "to", "her."])]),
-         ("If she gets two wrong, she owes you a massage!", [(w, i, 150) for i, w in enumerate(["If", "she", "gets", "2", "wrong,", "she", "owes", "you", "a", "massage!"])])]
+         ("If he gets 2 or more wrong, he has to say Yes for a whole day.", [(w, i, 200 if w == "YES" else 132) for i, w in enumerate(["If", "he", "gets", "2", "or", "more", "wrong,", "he", "has", "to", "say", "YES", "for", "a", "whole", "day."])])]
 QS = [("What is his favorite food?", 1), ("What is his favorite video game?", 2), "MID",
       ("What are his parents' names?", 3), ("Who is his best friend?", 4), ("What is his favorite pastime?", 5),
       ("When is his birthday?", 6), ("What is his favorite sports team?", 7), ("What is his pet's name?", 8)]
@@ -132,7 +132,13 @@ def build():
             if ts <= prev + 1e-6: ts = prev + 1 / FPS   # whisper gave two words the same time: show 2nd one frame later
             prev = ts; text_ev(fr, ts, max(ts, wts[min(wi, len(wts) - 1)]))
             if fr == "Boys!": ev.append((ts, S["qsw"], .35, "swoosh Boys!", ts))
-            items.append((fr, ts, sz, RED if fr in ("2", "wrong,") else (255, 255, 255)))
+            if fr == "YES":
+                fill = qv.PINK
+            elif fr in ("2", "wrong,"):
+                fill = RED
+            else:
+                fill = (255, 255, 255)
+            items.append((fr, ts, sz, fill))
         screens.append((ff(wts[0]), items)); T = end + GAP_LINE
     lvl_t = screens[0][1][1][1] + .2
     def intro(tl):

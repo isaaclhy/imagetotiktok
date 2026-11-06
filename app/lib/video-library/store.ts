@@ -148,6 +148,7 @@ const SEED_MARKER_ID = 'cartoon-originals-v1';
 const BATCH_MARKER_ID = 'cartoon-binary-batch-v1';
 const PHOTO_MARKER_ID = 'cartoon-binary-batch-photo-v1';
 const QUIZ_ORIENTATION_MARKER_ID = 'cartoon-quiz-orientation-v1';
+const TEMPLATE9_YES_MARKER_ID = 'cartoon-template9-yes-v1';
 
 const CARTOON_ORIGINALS = [
   {
@@ -452,6 +453,64 @@ export async function ensureQuizOrientationBatch(): Promise<void> {
   if (present >= items.length) {
     await meta.updateOne(
       { _id: QUIZ_ORIENTATION_MARKER_ID },
+      { $set: { status: 'done', seededAt: new Date() } }
+    );
+  }
+}
+
+/**
+ * Replace the template 9 stake line on videos that are already saved.
+ * A deleted entry is left missing. The previous file stays in Blob.
+ */
+export async function ensureTemplate9YesStake(): Promise<void> {
+  const items = ((publishedBatch.items ?? []) as PublishedSeedItem[]).filter(
+    (item) => item.revision === 4 && item.blobUrl
+  );
+  if (items.length === 0) return;
+
+  const meta = await metaCollection();
+  const now = new Date();
+  const previous = await meta.findOneAndUpdate(
+    { _id: TEMPLATE9_YES_MARKER_ID },
+    { $setOnInsert: { status: 'seeding', seededAt: now } },
+    { upsert: true, returnDocument: 'before' }
+  );
+  if (previous?.status === 'done') return;
+
+  const docs = await collection();
+  for (const item of items) {
+    const blobUrl = item.blobUrl;
+    if (!blobUrl) continue;
+    const existing = await docs.findOne({ origin: item.origin });
+    if (!existing) continue;
+    if (existing.filename === item.filename && existing.blobUrl === blobUrl) continue;
+    await docs.updateOne(
+      { _id: existing._id },
+      {
+        $set: {
+          filename: item.filename,
+          title: item.title,
+          lines: item.lines,
+          blobUrl,
+          blobPathname: item.blobPathname ?? '',
+          revision: 4,
+          previousBlobUrl: existing.blobUrl || existing.previousBlobUrl || '',
+          previousFilename: existing.filename,
+        },
+      }
+    );
+  }
+
+  const origins = items.map((item) => item.origin);
+  const filenames = items.map((item) => item.filename);
+  const existingCount = await docs.countDocuments({ origin: { $in: origins } });
+  const updatedCount = await docs.countDocuments({
+    origin: { $in: origins },
+    filename: { $in: filenames },
+  });
+  if (updatedCount >= existingCount) {
+    await meta.updateOne(
+      { _id: TEMPLATE9_YES_MARKER_ID },
       { $set: { status: 'done', seededAt: new Date() } }
     );
   }

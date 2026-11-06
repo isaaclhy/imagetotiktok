@@ -37,7 +37,7 @@ if orientation == "girlfriend":
     v5b.INTRO = [
         ("Quiz your girlfriend!", [("Quiz your", 0, 112), ("Girlfriend!", 2, 112)]),
         ("Boys, send this to her.", [(word, i, 150) for i, word in enumerate(["Boys!", "send", "this", "to", "her."])]),
-        ("If she gets two wrong, she owes you a massage!", [(word, i, 150) for i, word in enumerate(["If", "she", "gets", "2", "wrong,", "she", "owes", "you", "a", "massage!"])]),
+        ("If he gets 2 or more wrong, he has to say Yes for a whole day.", [(word, i, 200 if word == "YES" else 132) for i, word in enumerate(["If", "he", "gets", "2", "or", "more", "wrong,", "he", "has", "to", "say", "YES", "for", "a", "whole", "day."])]),
     ]
     v5b.MID_SAY = "Can you type his name with your eyes shut? Try it in the comments. I'll give you extra time for this one."
     v5b.MID_W = [
@@ -50,7 +50,7 @@ elif orientation == "boyfriend":
     v5b.INTRO = [
         ("Quiz your boyfriend!", [("Quiz your", 0, 112), ("Boyfriend!", 2, 112)]),
         ("Girls, send this to him.", [(word, i, 150) for i, word in enumerate(["Girls!", "send", "this", "to", "him."])]),
-        ("If he gets two wrong, he owes you a massage!", [(word, i, 150) for i, word in enumerate(["If", "he", "gets", "2", "wrong,", "he", "owes", "you", "a", "massage!"])]),
+        ("If he gets 2 or more wrong, he has to say Yes for a whole day.", [(word, i, 200 if word == "YES" else 132) for i, word in enumerate(["If", "he", "gets", "2", "or", "more", "wrong,", "he", "has", "to", "say", "YES", "for", "a", "whole", "day."])]),
     ]
     v5b.MID_SAY = "Can you type her name with your eyes shut? Try it in the comments. I'll give you extra time for this one."
     v5b.MID_W = [
