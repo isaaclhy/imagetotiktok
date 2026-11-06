@@ -9,7 +9,6 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import choice_icons
 import quiz_video as qv
 import recreate_reference as rr
 import recreate_reference_v15 as v15
@@ -46,9 +45,13 @@ CLOCK_CY = 1395
 qv.SW_C = (540, CLOCK_CY)
 
 
-SPOKEN_FIX = {
-    "Would she choose beach or mountains?": "Would she choose the beach or the mountains?",
-}
+def concise_question(option_a: str, option_b: str) -> str:
+    """Spoken line and on-screen caption. No 'would she choose' lead-in."""
+    left = option_a.strip()
+    right = option_b.strip()
+    if not left or not right:
+        raise SystemExit("Each choice needs two options")
+    return f"{left[:1].upper()}{left[1:]} or {right}?"
 
 LEVEL_TEXT = os.environ.get("CARTOON_LEVEL", "level: medium").strip()
 if not LEVEL_TEXT.startswith("("):
@@ -67,12 +70,13 @@ def load_questions():
     for i, raw in enumerate(questions, start=1):
         if i == 3:
             out.append("MID")
-        spoken = raw.get("spokenQuestion") or raw.get("say")
-        spoken = SPOKEN_FIX.get(spoken, spoken)
+        left = (raw.get("optionA") or raw.get("left") or "").strip()
+        right = (raw.get("optionB") or raw.get("right") or "").strip()
+        spoken = concise_question(left, right)
         out.append({
             "say": spoken,
-            "left": (raw.get("optionA") or raw.get("left") or "").strip(),
-            "right": (raw.get("optionB") or raw.get("right") or "").strip(),
+            "left": left[:1].upper() + left[1:],
+            "right": right[:1].upper() + right[1:],
             "illustrationLeft": raw.get("illustrationA") or raw.get("iconLeft"),
             "illustrationRight": raw.get("illustrationB") or raw.get("iconRight"),
             "id": raw.get("id", str(i)),
@@ -105,15 +109,25 @@ def heart_tile(size=130):
 HEART = heart_tile()
 
 
+def choice_photo(label):
+    import re
+    slug = re.sub(r"[^a-z0-9]+", "-", label.lower()).strip("-")
+    path = os.path.join(ROOT, "assets", "choice-photos", f"{slug}.jpg")
+    if not os.path.exists(path):
+        raise SystemExit(f"Missing real photograph for {label}: {path}")
+    return Image.open(path).convert("RGB")
+
+
 def choice_card(illustration, label, size=CARD):
-    art = choice_icons.icon_for(illustration, label).convert("RGBA").resize((size - 28, size - 28), Image.LANCZOS)
+    del illustration
+    photo = choice_photo(label).resize((size, size), Image.LANCZOS)
     canvas = Image.new("RGBA", (size + 16, size + 86), (0, 0, 0, 0))
     mask = Image.new("L", (size, size), 0)
     ImageDraw.Draw(mask).rounded_rectangle((0, 0, size - 1, size - 1), 36, fill=255)
     shadow = Image.new("RGBA", (size, size), (0, 0, 0, 255))
     canvas.paste(shadow, (14, 14), mask)
     art_canvas = Image.new("RGBA", (size, size), (255, 255, 255, 255))
-    art_canvas.paste(art, (14, 14), art)
+    art_canvas.paste(photo, (0, 0))
     art_canvas.putalpha(mask)
     canvas.alpha_composite(art_canvas, (0, 0))
     label_size = 52

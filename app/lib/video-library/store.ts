@@ -24,6 +24,11 @@ export type VideoLibraryDoc = {
   origin?: string;
   /** Basename under data/cartoon-originals when the file ships with the app. */
   bundledFile?: string;
+  /** 2 means the this-or-that entry plays the photo revision. */
+  revision?: number;
+  /** Earlier Blob object, kept so a photo update can be reversed. */
+  previousBlobUrl?: string;
+  previousFilename?: string;
 };
 
 export type VideoLibraryItem = {
@@ -141,6 +146,7 @@ export async function deleteVideoLibraryItem(id: string): Promise<boolean> {
 
 const SEED_MARKER_ID = 'cartoon-originals-v1';
 const BATCH_MARKER_ID = 'cartoon-binary-batch-v1';
+const PHOTO_MARKER_ID = 'cartoon-binary-batch-photo-v1';
 
 const CARTOON_ORIGINALS = [
   {
@@ -297,7 +303,11 @@ type SeedItem = {
   day: string;
 };
 
-type PublishedSeedItem = SeedItem & { blobUrl?: string; blobPathname?: string };
+type PublishedSeedItem = SeedItem & {
+  blobUrl?: string;
+  blobPathname?: string;
+  revision?: number;
+};
 
 async function seedPublishedBatch(items: PublishedSeedItem[]): Promise<void> {
   const meta = await metaCollection();
@@ -339,5 +349,59 @@ export async function ensureBinaryBatch(): Promise<void> {
   const items = (publishedBatch.items ?? []) as PublishedSeedItem[];
   if (items.length > 0 && items.every((item) => item.blobUrl)) {
     await seedPublishedBatch(items);
+  }
+}
+
+/**
+ * Point the existing ten quizzes at the photo revision.
+ * Missing origins are left missing, so a deleted video stays deleted.
+ * The previous Blob file is kept.
+ */
+export async function ensurePhotoRevision(): Promise<void> {
+  const items = ((publishedBatch.items ?? []) as PublishedSeedItem[]).filter(
+    (item) => item.revision === 2 && item.blobUrl
+  );
+  if (items.length === 0) return;
+
+  const meta = await metaCollection();
+  const now = new Date();
+  const previous = await meta.findOneAndUpdate(
+    { _id: PHOTO_MARKER_ID },
+    { $setOnInsert: { status: 'seeding', seededAt: now } },
+    { upsert: true, returnDocument: 'before' }
+  );
+  if (previous?.status === 'done') return;
+
+  const docs = await collection();
+  for (const item of items) {
+    const existing = await docs.findOne({ origin: item.origin });
+    if (!existing) continue;
+    if (existing.filename === item.filename && existing.blobUrl === item.blobUrl) continue;
+    await docs.updateOne(
+      { _id: existing._id },
+      {
+        $set: {
+          filename: item.filename,
+          title: item.title,
+          lines: item.lines,
+          blobUrl: item.blobUrl,
+          blobPathname: item.blobPathname ?? '',
+          revision: 2,
+          previousBlobUrl: existing.blobUrl || existing.previousBlobUrl || '',
+          previousFilename: existing.filename,
+        },
+      }
+    );
+  }
+
+  const origins = items.map((item) => item.origin);
+  const filenames = items.map((item) => item.filename);
+  const existingCount = await docs.countDocuments({ origin: { $in: origins } });
+  const updatedCount = await docs.countDocuments({
+    origin: { $in: origins },
+    filename: { $in: filenames },
+  });
+  if (updatedCount >= existingCount) {
+    await meta.updateOne({ _id: PHOTO_MARKER_ID }, { $set: { status: 'done', seededAt: new Date() } });
   }
 }

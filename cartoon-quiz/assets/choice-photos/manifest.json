@@ -1,0 +1,1181 @@
+{
+  "items": {
+    "tea": {
+      "label": "tea",
+      "file": "tea.jpg",
+      "title": "File:Cup of Milk Tea.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ACup_of_Milk_Tea.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Gaurav Dhwaj Khadka",
+      "query": "intitle:tea cup",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cup_of_Milk_Tea.jpg"
+    },
+    "coffee": {
+      "label": "coffee",
+      "file": "coffee.jpg",
+      "title": "File:Cup of coffee (Serbian cuisine, Grand kava).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ACup_of_coffee_%28Serbian_cuisine%2C_Grand_kava%29.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Petar Milo\u0161evi\u0107",
+      "query": "intitle:cappuccino",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cup_of_coffee_(Serbian_cuisine,_Grand_kava).jpg"
+    },
+    "pizza": {
+      "label": "pizza",
+      "file": "pizza.jpg",
+      "title": "File:Vegetarian Pizza.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AVegetarian_Pizza.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Petar Milo\u0161evi\u0107",
+      "query": "intitle:pizza",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Vegetarian_Pizza.jpg"
+    },
+    "tacos": {
+      "label": "tacos",
+      "file": "tacos.jpg",
+      "title": "File:Birria tacos at Teddy's Red Tacos in Venice, California.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ABirria_tacos_at_Teddy%27s_Red_Tacos_in_Venice%2C_California.jpg",
+      "license": "CC BY 2.0",
+      "artist": "T.Tseng",
+      "query": "intitle:tacos",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Birria_tacos_at_Teddy%27s_Red_Tacos_in_Venice,_California.jpg"
+    },
+    "pancakes": {
+      "label": "pancakes",
+      "file": "pancakes.jpg",
+      "title": "File:Foodiesfeed.com pouring-honey-on-pancakes-with-walnuts.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AFoodiesfeed.com_pouring-honey-on-pancakes-with-walnuts.jpg",
+      "license": "CC0",
+      "artist": "Mae Mu",
+      "query": "intitle:pancakes",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Foodiesfeed.com_pouring-honey-on-pancakes-with-walnuts.jpg"
+    },
+    "waffles": {
+      "label": "waffles",
+      "file": "waffles.jpg",
+      "title": "File:Waffle, Baytree Waffle House, Remerton.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AWaffle%2C_Baytree_Waffle_House%2C_Remerton.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Michael Rivera",
+      "query": "intitle:waffle",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Waffle,_Baytree_Waffle_House,_Remerton.jpg"
+    },
+    "fries": {
+      "label": "fries",
+      "file": "fries.jpg",
+      "title": "File:Cajun fries from Popeyes Louisiana Kitchen, Stratford, Ontario, 2025-08-04.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ACajun_fries_from_Popeyes_Louisiana_Kitchen%2C_Stratford%2C_Ontario%2C_2025-08-04.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Chris Woodrich",
+      "query": "intitle:fries",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cajun_fries_from_Popeyes_Louisiana_Kitchen,_Stratford,_Ontario,_2025-08-04.jpg"
+    },
+    "chips": {
+      "label": "chips",
+      "file": "chips.jpg",
+      "title": "File:Tyrrells veg crisps 2.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ATyrrells_veg_crisps_2.jpg",
+      "license": "CC0",
+      "artist": "Mx. Granger",
+      "query": "intitle:crisps",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tyrrells_veg_crisps_2.jpg"
+    },
+    "iced coffee": {
+      "label": "iced coffee",
+      "file": "iced-coffee.jpg",
+      "title": "File:Iced Coffee in Ipil Zamboanga Sibugay.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AIced_Coffee_in_Ipil_Zamboanga_Sibugay.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Gellie Joyce",
+      "query": "intitle:iced coffee",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Iced_Coffee_in_Ipil_Zamboanga_Sibugay.jpg"
+    },
+    "hot coffee": {
+      "label": "hot coffee",
+      "file": "hot-coffee.jpg",
+      "title": "File:A small cup of coffee.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File%3AA_small_cup_of_coffee.JPG",
+      "license": "CC BY-SA 2.0",
+      "artist": "Julius Schorzman",
+      "query": "intitle:coffee mug",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:A_small_cup_of_coffee.JPG"
+    },
+    "chocolate": {
+      "label": "chocolate",
+      "file": "chocolate.jpg",
+      "title": "File:Green and Black's dark chocolate bar 2.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AGreen_and_Black%27s_dark_chocolate_bar_2.jpg",
+      "license": "CC0",
+      "artist": "Mx. Granger",
+      "query": "intitle:chocolate bar",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Green_and_Black%27s_dark_chocolate_bar_2.jpg"
+    },
+    "sushi": {
+      "label": "sushi",
+      "file": "sushi.jpg",
+      "title": "File:Sushi Plate in Organic Sushi Prague 4 K.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ASushi_Plate_in_Organic_Sushi_Prague_4_K.jpg",
+      "license": "CC0",
+      "artist": "Mojmir Churavy",
+      "query": "intitle:sushi",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sushi_Plate_in_Organic_Sushi_Prague_4_K.jpg"
+    },
+    "burgers": {
+      "label": "burgers",
+      "file": "burgers.jpg",
+      "title": "File:Big Mac hamburger.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ABig_Mac_hamburger.jpg",
+      "license": "CC0",
+      "artist": "Evan-Amos",
+      "query": "intitle:hamburger",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Big_Mac_hamburger.jpg"
+    },
+    "cake": {
+      "label": "cake",
+      "file": "cake.jpg",
+      "title": "File:Slice of Lemon Cake.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ASlice_of_Lemon_Cake.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Whoisjohngalt",
+      "query": "intitle:cake slice",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Slice_of_Lemon_Cake.jpg"
+    },
+    "pie": {
+      "label": "pie",
+      "file": "pie.jpg",
+      "title": "File:Apple Pie Pondicherry.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AApple_Pie_Pondicherry.jpg",
+      "license": "CC BY 4.0",
+      "artist": "Dr. Chinchu C.",
+      "query": "intitle:apple pie",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Apple_Pie_Pondicherry.jpg"
+    },
+    "hotdog": {
+      "label": "hotdog",
+      "file": "hotdog.jpg",
+      "title": "File:Hotdog too.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AHotdog_too.jpg",
+      "license": "CC BY-SA 3.0",
+      "artist": "",
+      "query": "intitle:hotdog",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hotdog_too.jpg"
+    },
+    "strawberries": {
+      "label": "strawberries",
+      "file": "strawberries.jpg",
+      "title": "File:Garden strawberry (Fragaria \u00d7 ananassa) single2.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AGarden_strawberry_%28Fragaria_%C3%97_ananassa%29_single2.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Ivar Leidus",
+      "query": "intitle:strawberries",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Garden_strawberry_(Fragaria_%C3%97_ananassa)_single2.jpg"
+    },
+    "raspberries": {
+      "label": "raspberries",
+      "file": "raspberries.jpg",
+      "title": "File:Fresh raspberries 02.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AFresh_raspberries_02.jpg",
+      "license": "CC BY 2.0",
+      "artist": "Chris Eason",
+      "query": "intitle:raspberries bowl",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Fresh_raspberries_02.jpg"
+    },
+    "spicy food": {
+      "label": "spicy food",
+      "file": "spicy-food.jpg",
+      "title": "File:Man turns drying chili peppers, Turkey.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AMan_turns_drying_chili_peppers%2C_Turkey.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Rotadefterim",
+      "query": "intitle:chili peppers",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Man_turns_drying_chili_peppers,_Turkey.jpg"
+    },
+    "mild food": {
+      "label": "mild food",
+      "file": "mild-food.jpg",
+      "title": "File:Spaghetti alla Carbonara.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ASpaghetti_alla_Carbonara.jpg",
+      "license": "Public domain",
+      "artist": "Mattes Boch ( Mboch on English Wikipedia)",
+      "query": "intitle:spaghetti",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Spaghetti_alla_Carbonara.jpg"
+    },
+    "cook at home": {
+      "label": "cook at home",
+      "file": "cook-at-home.jpg",
+      "title": "File:Namche Bazaar, Cooking in the kitchen, Nepal.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ANamche_Bazaar%2C_Cooking_in_the_kitchen%2C_Nepal.jpg",
+      "license": "CC BY 4.0",
+      "artist": "Vyacheslav Argenberg",
+      "query": "intitle:cooking kitchen",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Namche_Bazaar,_Cooking_in_the_kitchen,_Nepal.jpg"
+    },
+    "order takeout": {
+      "label": "order takeout",
+      "file": "order-takeout.jpg",
+      "title": "File:Doner kebab takeaway focus 1.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ADoner_kebab_takeaway_focus_1.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Acabashi",
+      "query": "intitle:takeaway food",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Doner_kebab_takeaway_focus_1.jpg"
+    },
+    "beach": {
+      "label": "beach",
+      "file": "beach.jpg",
+      "title": "File:02 Cyprus vacation, sandy beach of Ayia Thekla, Sotira, Cyprus.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3A02_Cyprus_vacation%2C_sandy_beach_of_Ayia_Thekla%2C_Sotira%2C_Cyprus.jpg",
+      "license": "CC BY 3.0",
+      "artist": "Marek \u015alusarczyk ( Tupungato ) Photo portfolio",
+      "query": "intitle:sandy beach",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:02_Cyprus_vacation,_sandy_beach_of_Ayia_Thekla,_Sotira,_Cyprus.jpg"
+    },
+    "mountains": {
+      "label": "mountains",
+      "file": "mountains.jpg",
+      "title": "File:Mountain Peak, Alaska (1999).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AMountain_Peak%2C_Alaska_%281999%29.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Godot13",
+      "query": "intitle:mountain peak",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Mountain_Peak,_Alaska_(1999).jpg"
+    },
+    "road trip": {
+      "label": "road trip",
+      "file": "road-trip.jpg",
+      "title": "File:A car on Nairobi-Nakuru highway.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AA_car_on_Nairobi-Nakuru_highway.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "zacharia_nyambu",
+      "query": "intitle:highway car",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:A_car_on_Nairobi-Nakuru_highway.jpg"
+    },
+    "flight": {
+      "label": "flight",
+      "file": "flight.jpg",
+      "title": "File:Ocean Airways Beech 99 Airliner N7099N.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AOcean_Airways_Beech_99_Airliner_N7099N.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Richard Vandervord",
+      "query": "intitle:airliner",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ocean_Airways_Beech_99_Airliner_N7099N.jpg"
+    },
+    "plan every hour": {
+      "label": "plan every hour",
+      "file": "plan-every-hour.jpg",
+      "title": "File:Woman looking at an appointment book.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AWoman_looking_at_an_appointment_book.jpg",
+      "license": "Public domain",
+      "artist": "Bill Branson (Photographer)",
+      "query": "intitle:diary planner",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Woman_looking_at_an_appointment_book.jpg"
+    },
+    "wing it": {
+      "label": "wing it",
+      "file": "wing-it.jpg",
+      "title": "File:Backpacker in Goat Rocks Wilderness.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ABackpacker_in_Goat_Rocks_Wilderness.jpg",
+      "license": "CC BY 4.0",
+      "artist": "Mattsjc",
+      "query": "intitle:backpacker",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Backpacker_in_Goat_Rocks_Wilderness.jpg"
+    },
+    "fancy hotel": {
+      "label": "fancy hotel",
+      "file": "fancy-hotel.jpg",
+      "title": "File:Lobby lounge of Amantaka Suite Amantaka luxury Resort & Hotel Luang Prabang Laos.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ALobby_lounge_of_Amantaka_Suite_Amantaka_luxury_Resort_%26_Hotel_Luang_Prabang_Laos.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Basile Morin",
+      "query": "intitle:hotel lobby",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Lobby_lounge_of_Amantaka_Suite_Amantaka_luxury_Resort_%26_Hotel_Luang_Prabang_Laos.jpg"
+    },
+    "cozy cabin": {
+      "label": "cozy cabin",
+      "file": "cozy-cabin.jpg",
+      "title": "File:Audie Murphy American Cotton Museum July 2015 49 (Wilkins Log Cabin).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AAudie_Murphy_American_Cotton_Museum_July_2015_49_%28Wilkins_Log_Cabin%29.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Michael Barera",
+      "query": "intitle:log cabin",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Audie_Murphy_American_Cotton_Museum_July_2015_49_(Wilkins_Log_Cabin).jpg"
+    },
+    "sunrise": {
+      "label": "sunrise",
+      "file": "sunrise.jpg",
+      "title": "File:015a Angolan giraffe silhouette at sunrise in the Kalahari Desert of Namibia Photo by Giles Laurent.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3A015a_Angolan_giraffe_silhouette_at_sunrise_in_the_Kalahari_Desert_of_Namibia_Photo_by_Giles_Laurent.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Giles Laurent",
+      "query": "intitle:sunrise",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:015a_Angolan_giraffe_silhouette_at_sunrise_in_the_Kalahari_Desert_of_Namibia_Photo_by_Giles_Laurent.jpg"
+    },
+    "sunset": {
+      "label": "sunset",
+      "file": "sunset.jpg",
+      "title": "File:Sunset Key and Sailboats, Florida, 2025.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ASunset_Key_and_Sailboats%2C_Florida%2C_2025.jpg",
+      "license": "CC0",
+      "artist": "Julian Lupyan",
+      "query": "intitle:sunset",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sunset_Key_and_Sailboats,_Florida,_2025.jpg"
+    },
+    "window seat": {
+      "label": "window seat",
+      "file": "window-seat.jpg",
+      "title": "File:Airplane window capture.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AAirplane_window_capture.jpg",
+      "license": "CC BY 4.0",
+      "artist": "Marcelomenezes96",
+      "query": "intitle:airplane window",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Airplane_window_capture.jpg"
+    },
+    "aisle seat": {
+      "label": "aisle seat",
+      "file": "aisle-seat.jpg",
+      "title": "File:Swiss International Air Lines (SWISS) Airplane Cabin - Feb 2013 01.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ASwiss_International_Air_Lines_%28SWISS%29_Airplane_Cabin_-_Feb_2013_01.jpg",
+      "license": "CC BY-SA 3.0",
+      "artist": "WestportWiki",
+      "query": "intitle:airplane cabin",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Swiss_International_Air_Lines_(SWISS)_Airplane_Cabin_-_Feb_2013_01.jpg"
+    },
+    "picnic in the park": {
+      "label": "picnic in the park",
+      "file": "picnic-in-the-park.jpg",
+      "title": "File:Chess, boy, kid, picnic, card game, snocks, shorts, cigarette, smoking, glasses, colorful, blanket Fortepan 77329.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AChess%2C_boy%2C_kid%2C_picnic%2C_card_game%2C_snocks%2C_shorts%2C_cigarette%2C_smoking%2C_glasses%2C_colorful%2C_blanket_Fortepan_77329.jpg",
+      "license": "CC BY-SA 3.0",
+      "artist": "FOTO:Fortepan \u2014 ID 77329 : Adom\u00e1nyoz\u00f3/Donor: tm. archive copy at the Wayback Machine",
+      "query": "intitle:picnic blanket",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Chess,_boy,_kid,_picnic,_card_game,_snocks,_shorts,_cigarette,_smoking,_glasses,_colorful,_blanket_Fortepan_77329.jpg"
+    },
+    "rooftop dinner": {
+      "label": "rooftop dinner",
+      "file": "rooftop-dinner.jpg",
+      "title": "File:Rooftop Restaurant - geograph.org.uk - 5385539.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ARooftop_Restaurant_-_geograph.org.uk_-_5385539.jpg",
+      "license": "CC BY-SA 2.0",
+      "artist": "Chris Thomas-Atkin",
+      "query": "intitle:rooftop restaurant",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Rooftop_Restaurant_-_geograph.org.uk_-_5385539.jpg"
+    },
+    "surprise date": {
+      "label": "surprise date",
+      "file": "surprise-date.jpg",
+      "title": "File:Secretary Kerry Receives a Surprise Birthday Cake in Vietnam (11403205775).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ASecretary_Kerry_Receives_a_Surprise_Birthday_Cake_in_Vietnam_%2811403205775%29.jpg",
+      "license": "Public domain",
+      "artist": "U.S. Department of State from United States",
+      "query": "intitle:surprise gift",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Secretary_Kerry_Receives_a_Surprise_Birthday_Cake_in_Vietnam_(11403205775).jpg"
+    },
+    "planned date": {
+      "label": "planned date",
+      "file": "planned-date.jpg",
+      "title": "File:Restaurant room of Amantaka luxury Resort & Hotel in Luang Prabang Laos.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ARestaurant_room_of_Amantaka_luxury_Resort_%26_Hotel_in_Luang_Prabang_Laos.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Basile Morin",
+      "query": "intitle:restaurant table",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Restaurant_room_of_Amantaka_luxury_Resort_%26_Hotel_in_Luang_Prabang_Laos.jpg"
+    },
+    "dinner at home": {
+      "label": "dinner at home",
+      "file": "dinner-at-home.jpg",
+      "title": "File:Home dinner - Bali.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AHome_dinner_-_Bali.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Withlocals B.V.",
+      "query": "intitle:home dinner",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Home_dinner_-_Bali.jpg"
+    },
+    "fancy restaurant": {
+      "label": "fancy restaurant",
+      "file": "fancy-restaurant.jpg",
+      "title": "File:Pan seared scallops with grilled asparagus fine dining appetizer.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3APan_seared_scallops_with_grilled_asparagus_fine_dining_appetizer.jpg",
+      "license": "CC0",
+      "artist": "Wiki.cullin",
+      "query": "intitle:plated dinner restaurant",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pan_seared_scallops_with_grilled_asparagus_fine_dining_appetizer.jpg"
+    },
+    "spa day": {
+      "label": "spa day",
+      "file": "spa-day.jpg",
+      "title": "File:Massage Center Ajman Muskaan Spa.webp",
+      "page": "https://commons.wikimedia.org/wiki/File%3AMassage_Center_Ajman_Muskaan_Spa.webp",
+      "license": "CC0",
+      "artist": "Muskaanuae",
+      "query": "intitle:spa massage",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Massage_Center_Ajman_Muskaan_Spa.webp"
+    },
+    "adventure hike": {
+      "label": "adventure hike",
+      "file": "adventure-hike.jpg",
+      "title": "File:Landscape during Laugavegur hiking trail 2-CA reduced.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ALandscape_during_Laugavegur_hiking_trail_2-CA_reduced.jpg",
+      "license": "CC BY 3.0",
+      "artist": "Chmee2 / Valtameri",
+      "query": "intitle:hiking trail",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Landscape_during_Laugavegur_hiking_trail_2-CA_reduced.jpg"
+    },
+    "camping": {
+      "label": "camping",
+      "file": "camping.jpg",
+      "title": "File:Zagedan Ridge, Camping tent, Caucasus Mountains.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AZagedan_Ridge%2C_Camping_tent%2C_Caucasus_Mountains.jpg",
+      "license": "CC BY 4.0",
+      "artist": "Vyacheslav Argenberg",
+      "query": "intitle:camping tent",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Zagedan_Ridge,_Camping_tent,_Caucasus_Mountains.jpg"
+    },
+    "luxury hotel": {
+      "label": "luxury hotel",
+      "file": "luxury-hotel.jpg",
+      "title": "File:Restaurant room of Amantaka luxury Resort & Hotel in Luang Prabang Laos.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ARestaurant_room_of_Amantaka_luxury_Resort_%26_Hotel_in_Luang_Prabang_Laos.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Basile Morin",
+      "query": "intitle:hotel room",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Restaurant_room_of_Amantaka_luxury_Resort_%26_Hotel_in_Luang_Prabang_Laos.jpg"
+    },
+    "museums": {
+      "label": "museums",
+      "file": "museums.jpg",
+      "title": "File:Worcester Art Museum (Massachusetts).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AWorcester_Art_Museum_%28Massachusetts%29.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Kenneth C. Zirkel",
+      "query": "intitle:art museum",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Worcester_Art_Museum_(Massachusetts).jpg"
+    },
+    "street food tours": {
+      "label": "street food tours",
+      "file": "street-food-tours.jpg",
+      "title": "File:Gu Choki Pan's stall at SH\u014cTENGAI Pan-Asian Market, Lower Stable Street, London 2025-09-18.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AGu_Choki_Pan%27s_stall_at_SH%C5%8CTENGAI_Pan-Asian_Market%2C_Lower_Stable_Street%2C_London_2025-09-18.jpg",
+      "license": "CC0",
+      "artist": "Andy Li",
+      "query": "intitle:street food stall",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Gu_Choki_Pan%27s_stall_at_SH%C5%8CTENGAI_Pan-Asian_Market,_Lower_Stable_Street,_London_2025-09-18.jpg"
+    },
+    "Netflix": {
+      "label": "Netflix",
+      "file": "netflix.jpg",
+      "title": "File:Family watching television 1958 cropped2.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AFamily_watching_television_1958_cropped2.jpg",
+      "license": "CC0",
+      "artist": "Evert F. Baumgardner - National Archives and Records Administration.",
+      "query": "intitle:watching television",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Family_watching_television_1958_cropped2.jpg"
+    },
+    "YouTube": {
+      "label": "YouTube",
+      "file": "youtube.jpg",
+      "title": "File:Sony Vaio Laptop showing video with man lying in bed watching TV.jpeg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ASony_Vaio_Laptop_showing_video_with_man_lying_in_bed_watching_TV.jpeg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Pittigrilli",
+      "query": "intitle:watching laptop",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sony_Vaio_Laptop_showing_video_with_man_lying_in_bed_watching_TV.jpeg"
+    },
+    "action movies": {
+      "label": "action movies",
+      "file": "action-movies.jpg",
+      "title": "File:Stunt Pyrotechnics Luc Viatour.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AStunt_Pyrotechnics_Luc_Viatour.jpg",
+      "license": "CC BY-SA 3.0",
+      "artist": "Luc Viatour",
+      "query": "intitle:action movie",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Stunt_Pyrotechnics_Luc_Viatour.jpg"
+    },
+    "board games": {
+      "label": "board games",
+      "file": "board-games.jpg",
+      "title": "File:The Balderdash board game and pieces 02.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AThe_Balderdash_board_game_and_pieces_02.jpg",
+      "license": "CC BY 4.0",
+      "artist": "Harrison Keely",
+      "query": "intitle:board game",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:The_Balderdash_board_game_and_pieces_02.jpg"
+    },
+    "video games": {
+      "label": "video games",
+      "file": "video-games.jpg",
+      "title": "File:Hands holding video game controller (50811892858).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AHands_holding_video_game_controller_%2850811892858%29.jpg",
+      "license": "CC BY 2.0",
+      "artist": "Vu Hoang",
+      "query": "intitle:game controller",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hands_holding_video_game_controller_(50811892858).jpg"
+    },
+    "book": {
+      "label": "book",
+      "file": "book.jpg",
+      "title": "File:Open Internal Pages of the Book Detr\u00e1s del espejo 08.png",
+      "page": "https://commons.wikimedia.org/wiki/File%3AOpen_Internal_Pages_of_the_Book_Detr%C3%A1s_del_espejo_08.png",
+      "license": "CC BY-SA 4.0",
+      "artist": "HonysTorresArt",
+      "query": "intitle:open book",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Open_Internal_Pages_of_the_Book_Detr%C3%A1s_del_espejo_08.png"
+    },
+    "movie": {
+      "label": "movie",
+      "file": "movie.jpg",
+      "title": "File:Movie theater popcorn machine.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AMovie_theater_popcorn_machine.jpg",
+      "license": "CC BY-SA 2.0",
+      "artist": "Tim Evanson",
+      "query": "intitle:popcorn cinema",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Movie_theater_popcorn_machine.jpg"
+    },
+    "movie theater": {
+      "label": "movie theater",
+      "file": "movie-theater.jpg",
+      "title": "File:Luxury Movie Theater Seats.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ALuxury_Movie_Theater_Seats.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Author0612",
+      "query": "intitle:movie theater seats",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Luxury_Movie_Theater_Seats.jpg"
+    },
+    "couch": {
+      "label": "couch",
+      "file": "couch.jpg",
+      "title": "File:Couch-furniture-living-room-sofa (24300293356).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ACouch-furniture-living-room-sofa_%2824300293356%29.jpg",
+      "license": "CC0",
+      "artist": "www.Pixel.la Free Stock Photos",
+      "query": "intitle:living room sofa",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Couch-furniture-living-room-sofa_(24300293356).jpg"
+    },
+    "singing": {
+      "label": "singing",
+      "file": "singing.jpg",
+      "title": "File:Rocknroll singer amk.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ARocknroll_singer_amk.jpg",
+      "license": "CC BY-SA 2.5",
+      "artist": "user:AngMoKio",
+      "query": "intitle:singer microphone",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Rocknroll_singer_amk.jpg"
+    },
+    "dancing": {
+      "label": "dancing",
+      "file": "dancing.jpg",
+      "title": "File:Kinnauri dance being performed by the people of Chitkul.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AKinnauri_dance_being_performed_by_the_people_of_Chitkul.jpg",
+      "license": "CC0",
+      "artist": "BhotaRohit",
+      "query": "intitle:people dancing",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Kinnauri_dance_being_performed_by_the_people_of_Chitkul.jpg"
+    },
+    "horror movies": {
+      "label": "horror movies",
+      "file": "horror-movies.jpg",
+      "title": "File:Mountain View Cemetery, foggy (3).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AMountain_View_Cemetery%2C_foggy_%283%29.jpg",
+      "license": "CC BY-SA 2.0",
+      "artist": "Colin Knowles",
+      "query": "intitle:scary movie",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Mountain_View_Cemetery,_foggy_(3).jpg"
+    },
+    "concerts": {
+      "label": "concerts",
+      "file": "concerts.jpg",
+      "title": "File:Crowd at Noam Rotem concert.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ACrowd_at_Noam_Rotem_concert.jpg",
+      "license": "CC BY 2.0",
+      "artist": "Asaf antman",
+      "query": "intitle:concert crowd",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Crowd_at_Noam_Rotem_concert.jpg"
+    },
+    "comedy shows": {
+      "label": "comedy shows",
+      "file": "comedy-shows.jpg",
+      "title": "File:Stand-up comedy Bulgaria Club.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AStand-up_comedy_Bulgaria_Club.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Stanimira dimitrova",
+      "query": "intitle:stand-up comedy",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Stand-up_comedy_Bulgaria_Club.jpg"
+    },
+    "binge the whole season": {
+      "label": "binge the whole season",
+      "file": "binge-the-whole-season.jpg",
+      "title": "File:Watching World Cup 2006 TV at FamilyMart in Seoul.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AWatching_World_Cup_2006_TV_at_FamilyMart_in_Seoul.jpg",
+      "license": "CC BY-SA 2.0",
+      "artist": "d'n'c",
+      "query": "intitle:watching television night",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Watching_World_Cup_2006_TV_at_FamilyMart_in_Seoul.jpg"
+    },
+    "one episode a week": {
+      "label": "one episode a week",
+      "file": "one-episode-a-week.jpg",
+      "title": "File:Television remote control - black 01.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ATelevision_remote_control_-_black_01.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Dmitry Makeev",
+      "query": "intitle:remote control television",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Television_remote_control_-_black_01.jpg"
+    },
+    "podcast": {
+      "label": "podcast",
+      "file": "podcast.jpg",
+      "title": "File:Microphone in SPNN Podcast studio.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AMicrophone_in_SPNN_Podcast_studio.jpg",
+      "license": "CC BY 4.0",
+      "artist": "Myotus",
+      "query": "intitle:podcast microphone",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Microphone_in_SPNN_Podcast_studio.jpg"
+    },
+    "playlist": {
+      "label": "playlist",
+      "file": "playlist.jpg",
+      "title": "File:GradoPrestige-HeadphoneArticle.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AGradoPrestige-HeadphoneArticle.jpg",
+      "license": "Public domain",
+      "artist": "PiccoloNamek at English Wikipedia",
+      "query": "intitle:headphones",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:GradoPrestige-HeadphoneArticle.jpg"
+    },
+    "big city": {
+      "label": "big city",
+      "file": "big-city.jpg",
+      "title": "File:Chateau Frontenac illuminated at night in Quebec City.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AChateau_Frontenac_illuminated_at_night_in_Quebec_City.jpg",
+      "license": "CC0",
+      "artist": "Wilfredor",
+      "query": "intitle:city skyline night",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Chateau_Frontenac_illuminated_at_night_in_Quebec_City.jpg"
+    },
+    "tiny village": {
+      "label": "tiny village",
+      "file": "tiny-village.jpg",
+      "title": "File:Luo village 05.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ALuo_village_05.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Alexander Leisser",
+      "query": "intitle:village houses",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Luo_village_05.jpg"
+    },
+    "one long trip": {
+      "label": "one long trip",
+      "file": "one-long-trip.jpg",
+      "title": "File:Suitcase, 1880-1910 by Nellie Two Bear Gates.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ASuitcase%2C_1880-1910_by_Nellie_Two_Bear_Gates.jpg",
+      "license": "CC0",
+      "artist": "Suitcase by Nellie Two Bear Gates. Photograph by Mia employee.",
+      "query": "intitle:suitcase",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Suitcase,_1880-1910_by_Nellie_Two_Bear_Gates.jpg"
+    },
+    "early bird": {
+      "label": "early bird",
+      "file": "early-bird.jpg",
+      "title": "File:Cup of coffee at sunrise.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ACup_of_coffee_at_sunrise.jpg",
+      "license": "CC BY 2.0",
+      "artist": "Kristina Alexanderson",
+      "query": "intitle:sunrise coffee",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cup_of_coffee_at_sunrise.jpg"
+    },
+    "night owl": {
+      "label": "night owl",
+      "file": "night-owl.jpg",
+      "title": "File:Homo sapien using laptop at night.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AHomo_sapien_using_laptop_at_night.jpg",
+      "license": "CC BY 4.0",
+      "artist": "Javan Rhino",
+      "query": "intitle:laptop night",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Homo_sapien_using_laptop_at_night.jpg"
+    },
+    "text": {
+      "label": "text",
+      "file": "text.jpg",
+      "title": "File:Woman texting on a smartphone.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AWoman_texting_on_a_smartphone.jpg",
+      "license": "CC0",
+      "artist": "Kristin Hardwick",
+      "query": "intitle:texting",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Woman_texting_on_a_smartphone.jpg"
+    },
+    "call": {
+      "label": "call",
+      "file": "call.jpg",
+      "title": "File:Man talking on the phone in Montr\u00e9al-Pierre Elliott Trudeau International Airport 006.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AMan_talking_on_the_phone_in_Montr%C3%A9al-Pierre_Elliott_Trudeau_International_Airport_006.jpg",
+      "license": "CC0",
+      "artist": "Wilfredor",
+      "query": "intitle:talking on phone",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Man_talking_on_the_phone_in_Montr%C3%A9al-Pierre_Elliott_Trudeau_International_Airport_006.jpg"
+    },
+    "dogs": {
+      "label": "dogs",
+      "file": "dogs.jpg",
+      "title": "File:Portrait of a dog, seated on a red cushion, by Henri van Assche, 1801.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3APortrait_of_a_dog%2C_seated_on_a_red_cushion%2C_by_Henri_van_Assche%2C_1801.jpg",
+      "license": "Public domain",
+      "artist": "Henri Van Assche",
+      "query": "intitle:dog portrait",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Portrait_of_a_dog,_seated_on_a_red_cushion,_by_Henri_van_Assche,_1801.jpg"
+    },
+    "cats": {
+      "label": "cats",
+      "file": "cats.jpg",
+      "title": "File:Tabby cat with blue eyes-3336579.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ATabby_cat_with_blue_eyes-3336579.jpg",
+      "license": "CC0",
+      "artist": "AdinaVoicu",
+      "query": "intitle:tabby cat",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tabby_cat_with_blue_eyes-3336579.jpg"
+    },
+    "hugs": {
+      "label": "hugs",
+      "file": "hugs.jpg",
+      "title": "File:Friends, Jimma (10923360765).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AFriends%2C_Jimma_%2810923360765%29.jpg",
+      "license": "CC BY-SA 2.0",
+      "artist": "Rod Waddington from Kergunyah, Australia",
+      "query": "intitle:couple hug",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Friends,_Jimma_(10923360765).jpg"
+    },
+    "kisses": {
+      "label": "kisses",
+      "file": "kisses.jpg",
+      "title": "File:Wedding Kiss - Ukraine.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AWedding_Kiss_-_Ukraine.jpg",
+      "license": "CC BY 2.0",
+      "artist": "Vladimir Pustovit",
+      "query": "intitle:couple kissing",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Wedding_Kiss_-_Ukraine.jpg"
+    },
+    "gold": {
+      "label": "gold",
+      "file": "gold.jpg",
+      "title": "File:Dogri Gold Necklace, Jammu Culture.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ADogri_Gold_Necklace%2C_Jammu_Culture.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "SpeakingArch",
+      "query": "intitle:gold necklace",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dogri_Gold_Necklace,_Jammu_Culture.jpg"
+    },
+    "silver": {
+      "label": "silver",
+      "file": "silver.jpg",
+      "title": "File:Bhil community woman wearing traditional silver hand jewelry, Jhabua, Madhya Pradesh, India (2).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ABhil_community_woman_wearing_traditional_silver_hand_jewelry%2C_Jhabua%2C_Madhya_Pradesh%2C_India_%282%29.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Suyash Dwivedi",
+      "query": "intitle:silver jewelry",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bhil_community_woman_wearing_traditional_silver_hand_jewelry,_Jhabua,_Madhya_Pradesh,_India_(2).jpg"
+    },
+    "summer": {
+      "label": "summer",
+      "file": "summer.jpg",
+      "title": "File:Bagayevskaya, Don River, Beach, Trees, Summer in Russia.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ABagayevskaya%2C_Don_River%2C_Beach%2C_Trees%2C_Summer_in_Russia.jpg",
+      "license": "CC BY 4.0",
+      "artist": "Vyacheslav Argenberg",
+      "query": "intitle:summer beach",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bagayevskaya,_Don_River,_Beach,_Trees,_Summer_in_Russia.jpg"
+    },
+    "winter": {
+      "label": "winter",
+      "file": "winter.jpg",
+      "title": "File:RhB ABe 8-12 Malans winter.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ARhB_ABe_8-12_Malans_winter.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Kabelleger / David Gubler",
+      "query": "intitle:winter snow",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:RhB_ABe_8-12_Malans_winter.jpg"
+    },
+    "big spoon": {
+      "label": "big spoon",
+      "file": "big-spoon.jpg",
+      "title": "File:Couple hugging.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ACouple_hugging.jpg",
+      "license": "CC BY-SA 2.0",
+      "artist": "Photocapy",
+      "query": "intitle:couple cuddling",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Couple_hugging.jpg"
+    },
+    "little spoon": {
+      "label": "little spoon",
+      "file": "little-spoon.jpg",
+      "title": "File:Just friends (5892848323).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AJust_friends_%285892848323%29.jpg",
+      "license": "CC BY-SA 2.0",
+      "artist": "Fedor Leukhin",
+      "query": "intitle:couple lying together",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Just_friends_(5892848323).jpg"
+    },
+    "flowers": {
+      "label": "flowers",
+      "file": "flowers.jpg",
+      "title": "File:Rose and carnation flower bouquet 01.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ARose_and_carnation_flower_bouquet_01.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Suyash Dwivedi",
+      "query": "intitle:flower bouquet",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Rose_and_carnation_flower_bouquet_01.jpg"
+    },
+    "chocolates": {
+      "label": "chocolates",
+      "file": "chocolates.jpg",
+      "title": "File:Box of Valentine Chocolates.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File%3ABox_of_Valentine_Chocolates.JPG",
+      "license": "CC BY 3.0",
+      "artist": "Dwight Burdette",
+      "query": "intitle:box of chocolates",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Box_of_Valentine_Chocolates.JPG"
+    },
+    "public affection": {
+      "label": "public affection",
+      "file": "public-affection.jpg",
+      "title": "File:Wedding couple holding hands closeup.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AWedding_couple_holding_hands_closeup.jpg",
+      "license": "CC BY 2.0",
+      "artist": "Shixart1985",
+      "query": "intitle:holding hands couple",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Wedding_couple_holding_hands_closeup.jpg"
+    },
+    "private moments": {
+      "label": "private moments",
+      "file": "private-moments.jpg",
+      "title": "File:Couple working at home (Unsplash).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ACouple_working_at_home_%28Unsplash%29.jpg",
+      "license": "CC0",
+      "artist": "Crew crew",
+      "query": "intitle:couple at home",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Couple_working_at_home_(Unsplash).jpg"
+    },
+    "surprise gifts": {
+      "label": "surprise gifts",
+      "file": "surprise-gifts.jpg",
+      "title": "File:Opening my gift (331500230).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AOpening_my_gift_%28331500230%29.jpg",
+      "license": "CC BY-SA 2.0",
+      "artist": "Mack Male from Edmonton, AB, Canada",
+      "query": "intitle:opening gift",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Opening_my_gift_(331500230).jpg"
+    },
+    "planned presents": {
+      "label": "planned presents",
+      "file": "planned-presents.jpg",
+      "title": "File:Wrapped gift.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AWrapped_gift.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Loneshieling",
+      "query": "intitle:wrapped gift",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Wrapped_gift.jpg"
+    },
+    "love notes": {
+      "label": "love notes",
+      "file": "love-notes.jpg",
+      "title": "File:Francis Ford Coppola's handwritten casting notes for The Godfather, at Francis Ford Coppola Winery, near Geyserville, 2011.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AFrancis_Ford_Coppola%27s_handwritten_casting_notes_for_The_Godfather%2C_at_Francis_Ford_Coppola_Winery%2C_near_Geyserville%2C_2011.jpg",
+      "license": "CC0",
+      "artist": "DimiTalen",
+      "query": "intitle:handwritten letter",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Francis_Ford_Coppola%27s_handwritten_casting_notes_for_The_Godfather,_at_Francis_Ford_Coppola_Winery,_near_Geyserville,_2011.jpg"
+    },
+    "love songs": {
+      "label": "love songs",
+      "file": "love-songs.jpg",
+      "title": "File:12in-Vinyl-LP-Record-Angle.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3A12in-Vinyl-LP-Record-Angle.jpg",
+      "license": "Public domain",
+      "artist": "Evan-Amos",
+      "query": "intitle:vinyl record",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:12in-Vinyl-LP-Record-Angle.jpg"
+    },
+    "good morning text": {
+      "label": "good morning text",
+      "file": "good-morning-text.jpg",
+      "title": "File:Woman sitting in the bed in the morning, drinking coffee and scrolling through her phone.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AWoman_sitting_in_the_bed_in_the_morning%2C_drinking_coffee_and_scrolling_through_her_phone.jpg",
+      "license": "CC BY 2.0",
+      "artist": "Shixart1985",
+      "query": "intitle:morning coffee phone",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Woman_sitting_in_the_bed_in_the_morning,_drinking_coffee_and_scrolling_through_her_phone.jpg"
+    },
+    "jeans": {
+      "label": "jeans",
+      "file": "jeans.jpg",
+      "title": "File:High waisted jeans 1435042736.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AHigh_waisted_jeans_1435042736.jpg",
+      "license": "CC BY-SA 2.0",
+      "artist": "iluvrhinestones from seattle, oceania, upload by Herrick 08:08, 7 December 2007 (UTC)",
+      "query": "intitle:jeans",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:High_waisted_jeans_1435042736.jpg"
+    },
+    "sweatpants": {
+      "label": "sweatpants",
+      "file": "sweatpants.jpg",
+      "title": "File:Layered-sweatpants.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ALayered-sweatpants.jpg",
+      "license": "CC BY-SA 3.0",
+      "artist": "Qwentl",
+      "query": "intitle:sweatpants",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Layered-sweatpants.jpg"
+    },
+    "rain": {
+      "label": "rain",
+      "file": "rain.jpg",
+      "title": "File:A man walks through heavy rain under an umbrella in Kigali, Rwanda. Emmanuel Kwizera.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AA_man_walks_through_heavy_rain_under_an_umbrella_in_Kigali%2C_Rwanda._Emmanuel_Kwizera.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Emmanuelkwizera",
+      "query": "intitle:rain umbrella",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:A_man_walks_through_heavy_rain_under_an_umbrella_in_Kigali,_Rwanda._Emmanuel_Kwizera.jpg"
+    },
+    "snow": {
+      "label": "snow",
+      "file": "snow.jpg",
+      "title": "File:Iridescent clouds during snowfall 1.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AIridescent_clouds_during_snowfall_1.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "W.carter",
+      "query": "intitle:snowfall",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Iridescent_clouds_during_snowfall_1.jpg"
+    },
+    "salty": {
+      "label": "salty",
+      "file": "salty.jpg",
+      "title": "File:Clara Peeters - Still Life with Cheeses, Almonds and Pretzels.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AClara_Peeters_-_Still_Life_with_Cheeses%2C_Almonds_and_Pretzels.jpg",
+      "license": "Public domain",
+      "artist": "Clara Peeters",
+      "query": "intitle:pretzels",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Clara_Peeters_-_Still_Life_with_Cheeses,_Almonds_and_Pretzels.jpg"
+    },
+    "sweet": {
+      "label": "sweet",
+      "file": "sweet.jpg",
+      "title": "File:Jelly Beans (3454180394).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AJelly_Beans_%283454180394%29.jpg",
+      "license": "CC BY 2.0",
+      "artist": "Sir Mildred Pierce",
+      "query": "intitle:jelly beans",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Jelly_Beans_(3454180394).jpg"
+    },
+    "Friday night out": {
+      "label": "Friday night out",
+      "file": "friday-night-out.jpg",
+      "title": "File:Yerevan, Republic Square at night, Yerevan city life, Nightlife, Armenia.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AYerevan%2C_Republic_Square_at_night%2C_Yerevan_city_life%2C_Nightlife%2C_Armenia.jpg",
+      "license": "CC BY 4.0",
+      "artist": "Vyacheslav Argenberg",
+      "query": "intitle:nightlife city",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Yerevan,_Republic_Square_at_night,_Yerevan_city_life,_Nightlife,_Armenia.jpg"
+    },
+    "gym": {
+      "label": "gym",
+      "file": "gym.jpg",
+      "title": "File:Colorful pile of dumbbells at the gym 2.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AColorful_pile_of_dumbbells_at_the_gym_2.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Ser Amantio di Nicolao",
+      "query": "intitle:dumbbell",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Colorful_pile_of_dumbbells_at_the_gym_2.jpg"
+    },
+    "long walks": {
+      "label": "long walks",
+      "file": "long-walks.jpg",
+      "title": "File:Oulton Park golf course - permissive path - geograph.org.uk - 6495660.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AOulton_Park_golf_course_-_permissive_path_-_geograph.org.uk_-_6495660.jpg",
+      "license": "CC BY-SA 2.0",
+      "artist": "Stephen Craven",
+      "query": "intitle:park path",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Oulton_Park_golf_course_-_permissive_path_-_geograph.org.uk_-_6495660.jpg"
+    },
+    "morning shower": {
+      "label": "morning shower",
+      "file": "morning-shower.jpg",
+      "title": "File:1823 Bathroom New Orleans - Shower Stall.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3A1823_Bathroom_New_Orleans_-_Shower_Stall.jpg",
+      "license": "CC BY 2.0",
+      "artist": "Wendy Harman",
+      "query": "intitle:shower bathroom",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:1823_Bathroom_New_Orleans_-_Shower_Stall.jpg"
+    },
+    "night shower": {
+      "label": "night shower",
+      "file": "night-shower.jpg",
+      "title": "File:EFTA00000809 - White bathroom with glass shower door sink and marble floor tiles viewed through an open doorway.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AEFTA00000809_-_White_bathroom_with_glass_shower_door_sink_and_marble_floor_tiles_viewed_through_an_open_doorway.jpg",
+      "license": "Public domain",
+      "artist": "Federal Bureau of Investigation",
+      "query": "intitle:bathroom shower",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:EFTA00000809_-_White_bathroom_with_glass_shower_door_sink_and_marble_floor_tiles_viewed_through_an_open_doorway.jpg"
+    },
+    "sweet breakfast": {
+      "label": "sweet breakfast",
+      "file": "sweet-breakfast.jpg",
+      "title": "File:BreakfastPastries.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File%3ABreakfastPastries.JPG",
+      "license": "CC0",
+      "artist": "Raysonho @ Open Grid Scheduler / Grid Engine",
+      "query": "intitle:breakfast pastry",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:BreakfastPastries.JPG"
+    },
+    "savory breakfast": {
+      "label": "savory breakfast",
+      "file": "savory-breakfast.jpg",
+      "title": "File:Eggs and bacon.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AEggs_and_bacon.jpg",
+      "license": "Public domain",
+      "artist": "Jon Sullivan",
+      "query": "intitle:fried eggs",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Eggs_and_bacon.jpg"
+    },
+    "ranch": {
+      "label": "ranch",
+      "file": "ranch.jpg",
+      "title": "File:Ranch dressing.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ARanch_dressing.jpg",
+      "license": "CC BY 2.0",
+      "artist": "Whitney from Chicago, IL",
+      "query": "intitle:ranch dressing",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ranch_dressing.jpg"
+    },
+    "ketchup": {
+      "label": "ketchup",
+      "file": "ketchup.jpg",
+      "title": "File:Ketchup bottle over some grass.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AKetchup_bottle_over_some_grass.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Aykhan Zayedzadeh",
+      "query": "intitle:ketchup bottle",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ketchup_bottle_over_some_grass.jpg"
+    },
+    "popcorn with butter": {
+      "label": "popcorn with butter",
+      "file": "popcorn-with-butter.jpg",
+      "title": "File:Popcorn for sale at the Monday Market in Kakuri, Kaduna 01.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3APopcorn_for_sale_at_the_Monday_Market_in_Kakuri%2C_Kaduna_01.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Kambai Akau",
+      "query": "intitle:popcorn bowl",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Popcorn_for_sale_at_the_Monday_Market_in_Kakuri,_Kaduna_01.jpg"
+    },
+    "caramel popcorn": {
+      "label": "caramel popcorn",
+      "file": "caramel-popcorn.jpg",
+      "title": "File:Caramel Popcorn (32402585090).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ACaramel_Popcorn_%2832402585090%29.jpg",
+      "license": "CC BY 2.0",
+      "artist": "Steven Miller",
+      "query": "intitle:caramel popcorn",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Caramel_Popcorn_(32402585090).jpg"
+    },
+    "coordinated colors": {
+      "label": "coordinated colors",
+      "file": "coordinated-colors.jpg",
+      "title": "File:Trash the dress - Wetlook in wedding clothes - Heterosexual couple in sea.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ATrash_the_dress_-_Wetlook_in_wedding_clothes_-_Heterosexual_couple_in_sea.jpg",
+      "license": "CC BY-SA 2.0",
+      "artist": "Casa Fragma",
+      "query": "intitle:couple clothes",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Trash_the_dress_-_Wetlook_in_wedding_clothes_-_Heterosexual_couple_in_sea.jpg"
+    },
+    "sneakers": {
+      "label": "sneakers",
+      "file": "sneakers.jpg",
+      "title": "File:Professional Sneakers - Sneakers for hostesses, pilots and other professionals. Comfortable sneakers produced in leather inside and outside.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AProfessional_Sneakers_-_Sneakers_for_hostesses%2C_pilots_and_other_professionals._Comfortable_sneakers_produced_in_leather_inside_and_outside.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Ricardovfo",
+      "query": "intitle:sneakers",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Professional_Sneakers_-_Sneakers_for_hostesses,_pilots_and_other_professionals._Comfortable_sneakers_produced_in_leather_inside_and_outside.jpg"
+    },
+    "boots": {
+      "label": "boots",
+      "file": "boots.jpg",
+      "title": "File:Black 8cm high-heeled ankle boots (20211007153232).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ABlack_8cm_high-heeled_ankle_boots_%2820211007153232%29.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "N509FZ",
+      "query": "intitle:ankle boots",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Black_8cm_high-heeled_ankle_boots_(20211007153232).jpg"
+    },
+    "Instagram": {
+      "label": "Instagram",
+      "file": "instagram.jpg",
+      "title": "File:SZ \u6df1\u5733 Shenzhen \u9f8d\u83ef Longhua \u6df1\u5733\u7f8e\u8853\u9928 Shenzhen Art Museum lady taking photo with smartphone May 2024 R12S 02.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ASZ_%E6%B7%B1%E5%9C%B3_Shenzhen_%E9%BE%8D%E8%8F%AF_Longhua_%E6%B7%B1%E5%9C%B3%E7%BE%8E%E8%A1%93%E9%A4%A8_Shenzhen_Art_Museum_lady_taking_photo_with_smartphone_May_2024_R12S_02.jpg",
+      "license": "CC0",
+      "artist": "TANNMY NAISZE Wanguo",
+      "query": "intitle:taking photo smartphone",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:SZ_%E6%B7%B1%E5%9C%B3_Shenzhen_%E9%BE%8D%E8%8F%AF_Longhua_%E6%B7%B1%E5%9C%B3%E7%BE%8E%E8%A1%93%E9%A4%A8_Shenzhen_Art_Museum_lady_taking_photo_with_smartphone_May_2024_R12S_02.jpg"
+    },
+    "TikTok": {
+      "label": "TikTok",
+      "file": "tiktok.jpg",
+      "title": "File:Smartphone Use.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ASmartphone_Use.jpg",
+      "license": "CC0",
+      "artist": "Oc\u00e9anos y dados",
+      "query": "intitle:using smartphone",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Smartphone_Use.jpg"
+    },
+    "rom-coms": {
+      "label": "rom-coms",
+      "file": "rom-coms.jpg",
+      "title": "File:Nature couple sunset 09.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ANature_couple_sunset_09.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Shrinivaskulkarni1388",
+      "query": "intitle:couple cinema",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nature_couple_sunset_09.jpg"
+    },
+    "goodnight call": {
+      "label": "goodnight call",
+      "file": "goodnight-call.jpg",
+      "title": "File:Dirty Linen Night 12 Bike Cab Phone Call.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ADirty_Linen_Night_12_Bike_Cab_Phone_Call.jpg",
+      "license": "CC BY 2.0",
+      "artist": "Infrogmation of New Orleans",
+      "query": "intitle:phone in bed",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dirty_Linen_Night_12_Bike_Cab_Phone_Call.jpg"
+    },
+    "Friday night in": {
+      "label": "Friday night in",
+      "file": "friday-night-in.jpg",
+      "title": "File:Family watching a movie on the couch (14963809100).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3AFamily_watching_a_movie_on_the_couch_%2814963809100%29.jpg",
+      "license": "CC BY 2.0",
+      "artist": "Personal Creations",
+      "query": "intitle:watching tv couch",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Family_watching_a_movie_on_the_couch_(14963809100).jpg"
+    },
+    "matching outfits": {
+      "label": "matching outfits",
+      "title": "File:Tweeling2.jpg",
+      "file": "matching-outfits.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ATweeling2.jpg",
+      "license": "CC BY-SA 3.0",
+      "artist": "We El at Dutch Wikipedia",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tweeling2.jpg"
+    },
+    "four weekend trips": {
+      "label": "four weekend trips",
+      "title": "File:Duffel bags, Interboot 2020, Friedrichshafen (IB200172).jpg",
+      "file": "four-weekend-trips.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ADuffel_bags%2C_Interboot_2020%2C_Friedrichshafen_%28IB200172%29.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Matti Blume",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Duffel_bags,_Interboot_2020,_Friedrichshafen_(IB200172).jpg"
+    },
+    "burger": {
+      "label": "burger",
+      "title": "File:Big Mac hamburger.jpg",
+      "file": "burger.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File%3ABig_Mac_hamburger.jpg",
+      "license": "CC0",
+      "artist": "Evan-Amos",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Big_Mac_hamburger.jpg"
+    }
+  }
+}
