@@ -104,7 +104,7 @@ function fitFontSize(
   return size;
 }
 
-function drawCaption(
+export function drawReferenceCaption(
   ctx: CanvasRenderingContext2D,
   w: number,
   h: number,
@@ -125,7 +125,9 @@ function drawCaption(
   ctx.shadowOffsetY = 0;
   const lineH = size * 1.14;
   const blockH = lines.length * lineH;
-  let y = h / 2 - blockH / 2 + lineH / 2;
+  const center =
+    layout === 'kaleidoscope' ? 0.5 : layout === 'vortex' ? 0.473 : 0.476;
+  let y = h * center - blockH / 2 + lineH / 2;
   for (const line of lines) {
     const x = w / 2;
     if (style === 'heavy-outline') {
@@ -487,7 +489,7 @@ export function paintReferenceFrame(
   if (frame.headlineOpacity > 0.01) {
     ctx.save();
     ctx.globalAlpha = frame.headlineOpacity;
-    drawCaption(ctx, w, h, frame.headline, frame.layout);
+    drawReferenceCaption(ctx, w, h, frame.headline, frame.layout);
     ctx.restore();
   }
 
