@@ -14,7 +14,11 @@ import {
 } from '../app/lib/nighty-video-templates/catalog';
 import { finalizeNightyRecording } from '../app/lib/nighty-video-templates/finalize-export';
 import { frameAt } from '../app/lib/nighty-video-templates/timeline';
-import { referenceDarken } from '../app/lib/nighty-video-templates/reference-paint';
+import {
+  referenceDarken,
+  referenceUnit,
+  seedScatterOccupancy,
+} from '../app/lib/nighty-video-templates/reference-paint';
 
 const root = process.cwd();
 
@@ -184,6 +188,67 @@ assert.ok(referenceDarken('kaleidoscope', 11, 12.003) > 0.4);
 assert.ok(referenceDarken('kaleidoscope', 12.003, 12.003) > 0.95);
 assert.equal(referenceDarken('vortex', 11, 10.048), 0);
 assert.equal(referenceDarken('particle-terrain', 8, 9.045), 0);
+
+const scatterBins = 24;
+const scatterCount = 4000;
+for (const [saltA, saltB] of [
+  [1, 2],
+  [3, 11],
+  [20, 21],
+] as const) {
+  const occupied = seedScatterOccupancy(scatterCount, scatterBins, saltA, saltB);
+  assert.ok(
+    occupied > scatterBins * scatterBins * 0.85,
+    `seeds (${saltA},${saltB}) occupied ${occupied}/${scatterBins * scatterBins}, expected a filled plane`
+  );
+  let sx = 0;
+  let sy = 0;
+  let sxx = 0;
+  let syy = 0;
+  let sxy = 0;
+  for (let i = 0; i < scatterCount; i += 1) {
+    const x = referenceUnit(i, saltA);
+    const y = referenceUnit(i, saltB);
+    sx += x;
+    sy += y;
+    sxx += x * x;
+    syy += y * y;
+    sxy += x * y;
+  }
+  const meanX = sx / scatterCount;
+  const meanY = sy / scatterCount;
+  const varX = sxx / scatterCount - meanX * meanX;
+  const varY = syy / scatterCount - meanY * meanY;
+  const cov = sxy / scatterCount - meanX * meanY;
+  const r2 = (cov * cov) / (varX * varY);
+  assert.ok(r2 < 0.02, `seeds (${saltA},${saltB}) correlation r2=${r2}`);
+  const trace = varX + varY;
+  const det = varX * varY - cov * cov;
+  const gap = Math.sqrt(Math.max(0, (trace * trace) / 4 - det));
+  const major = trace / 2 + gap;
+  const minor = trace / 2 - gap;
+  assert.ok(minor / major > 0.45, `seeds (${saltA},${saltB}) eigen ratio ${minor / major}`);
+}
+
+function affineUnit(n: number): number {
+  const x = (Math.imul(n, 1664525) + 1013904223) >>> 0;
+  return (x & 0xffffff) / 0x1000000;
+}
+{
+  const bins = 24;
+  const grid = new Uint8Array(bins * bins);
+  let occupied = 0;
+  for (let i = 0; i < 4000; i += 1) {
+    const x = Math.min(bins - 1, Math.floor(affineUnit(i + 3) * bins));
+    const y = Math.min(bins - 1, Math.floor(affineUnit(i + 11) * bins));
+    const cell = y * bins + x;
+    if (grid[cell] === 0) {
+      grid[cell] = 1;
+      occupied += 1;
+    }
+  }
+  assert.ok(occupied < bins * 3, `affine hash should stay near a line, occupied ${occupied}`);
+}
 
 const rainRainUrls = NIGHTY_COMPOSITIONS.flatMap((template) => template.provenance.references)
   .map((reference) => reference.sourceUrl)

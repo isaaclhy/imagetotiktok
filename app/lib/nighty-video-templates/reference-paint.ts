@@ -6,12 +6,12 @@ const CAPTION_FONT = 'TikTok Sans, sans-serif';
 /**
  * Supplied-reference pictures.
  *
- * Reference 1 draws a perspective mound: hashed samples on an irregular
- * height field, lit by the surface normal, with larger dimmer grains off the
- * focal plane. Reference 2 shades a 4-fold ribbed surface at 360×640 (the
- * source frame size) and scales it, so a 1080×1920 export does not run a
- * per-pixel loop over two million pixels. Reference 3 advects one shared
- * velocity field around exactly three nodes and draws varied-length trails.
+ * Samples use an avalanched uint32 mix. An affine LCG made x and y the same
+ * sequence, so grains and trails collapsed onto a curve.
+ * Reference 1 projects independent disk samples through a 2D height field.
+ * Far grains are smaller. Reference 2 shades a continuous 4-lobe rib surface
+ * at 360×640 and scales it. Reference 3 integrates long streamlines with RK4
+ * around exactly three nodes and moves a highlight along each one.
  * None of these are frame copies of the supplied footage.
  */
 
@@ -154,21 +154,56 @@ function drawCaption(
   }
 }
 
-function unit(n: number): number {
-  const x = (Math.imul(n, 1664525) + 1013904223) >>> 0;
-  return (x & 0xffffff) / 0x1000000;
+/** SplitMix-style avalanche. Adjacent integers are not an affine line. */
+function mixUint32(n: number): number {
+  let z = (n >>> 0) + 0x9e3779b9;
+  z = Math.imul(z ^ (z >>> 16), 0x85ebca6b);
+  z = Math.imul(z ^ (z >>> 13), 0xc2b2ae35);
+  return (z ^ (z >>> 16)) >>> 0;
+}
+
+/** Independent unit sample. `salt` is mixed, not added, so salt+1 is not a shift of salt. */
+export function referenceUnit(index: number, salt: number): number {
+  const mixed = mixUint32(Math.imul(index >>> 0, 0x9e3779b9) ^ mixUint32(salt >>> 0));
+  return mixed / 4294967296;
+}
+
+/** How many cells of a bins×bins grid the first `count` pairs land in. A line fills about `bins` cells. */
+export function seedScatterOccupancy(count: number, bins: number, saltA: number, saltB: number): number {
+  const grid = new Uint8Array(bins * bins);
+  let occupied = 0;
+  for (let i = 0; i < count; i += 1) {
+    const x = Math.min(bins - 1, Math.floor(referenceUnit(i, saltA) * bins));
+    const y = Math.min(bins - 1, Math.floor(referenceUnit(i, saltB) * bins));
+    const cell = y * bins + x;
+    if (grid[cell] === 0) {
+      grid[cell] = 1;
+      occupied += 1;
+    }
+  }
+  return occupied;
+}
+
+function moundHeight(x: number, z: number, t: number): number {
+  const drift = 0.07 * Math.sin(t * 0.42);
+  const x1 = x - drift;
+  const z1 = z + 0.05 * Math.cos(t * 0.33);
+  const dome = Math.exp(-(x1 * x1 * 0.95 + z1 * z1 * 1.15));
+  const lump = Math.exp(-((x + 0.38) * (x + 0.38) * 2.6 + (z - 0.22) * (z - 0.22) * 2.2));
+  const fold = Math.sin(x * 2.4 + t * 0.48) * Math.cos(z * 1.8 - t * 0.27);
+  return dome * 0.78 + lump * 0.26 + fold * 0.1 * dome;
 }
 
 function paintParticleTerrain(ctx: CanvasRenderingContext2D, w: number, h: number, t: number): void {
-  ctx.fillStyle = '#07080c';
+  ctx.fillStyle = '#05060a';
   ctx.fillRect(0, 0, w, h);
-  const smoke = ctx.createRadialGradient(w * 0.46, h * 0.46, w * 0.02, w * 0.5, h * 0.5, w * 0.72);
-  smoke.addColorStop(0, 'rgba(42, 42, 48, 0.55)');
+  const smoke = ctx.createRadialGradient(w * 0.48, h * 0.42, w * 0.02, w * 0.5, h * 0.48, w * 0.7);
+  smoke.addColorStop(0, 'rgba(28, 28, 34, 0.45)');
   smoke.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = smoke;
   ctx.fillRect(0, 0, w, h);
 
-  const count = Math.round(Math.min(5000, Math.max(3200, (w * h) / 200)));
+  const count = Math.round(Math.min(9000, Math.max(6400, (w * h) / 220)));
   const px = new Float32Array(count);
   const py = new Float32Array(count);
   const depth = new Float32Array(count);
@@ -177,32 +212,37 @@ function paintParticleTerrain(ctx: CanvasRenderingContext2D, w: number, h: numbe
   const green = new Uint8Array(count);
   const blue = new Uint8Array(count);
   const order = new Uint16Array(count);
+    const focal = w * 1.42;
+  const eps = 0.03;
 
   for (let i = 0; i < count; i += 1) {
-    const spin = unit(i + 3) * Math.PI * 2;
-    const reach = Math.pow(unit(i + 11), 1.4);
-    const depthMix = unit(i + 19);
-    const nx = Math.cos(spin) * reach;
-    const ny = Math.sin(spin) * reach * 0.92;
-    const fold = Math.sin(t * 0.36);
-    const height = Math.exp(-(nx * nx * 0.9 + (ny + 0.08 * fold) * (ny + 0.08 * fold) * 0.75));
-    const lump = Math.exp(-((nx + 0.35) * (nx + 0.35) * 3 + (ny - 0.2) * (ny - 0.2) * 2.2));
-    const ridge = Math.exp(-Math.pow(ny - 0.18 * Math.sin(nx * 2.4 + t * 0.5), 2) * 18) * height;
-    const surface = height * 0.85 + lump * 0.35 + ridge * 0.4;
-    const gx = nx * height * -1.6;
-    const gy = (ny + 0.08 * fold) * height * -1.3;
-    const lambert = Math.max(0.15, 0.55 + gx * -0.35 + gy * 0.15 + surface * 0.4);
-    const scale = w * (0.34 + depthMix * 0.1);
-    px[i] = w * 0.5 + nx * scale;
-    py[i] = h * 0.46 + ny * scale * 1.25 - surface * h * 0.16 + (depthMix - 0.5) * h * 0.04;
-    depth[i] = 1.2 + depthMix + (1 - surface);
-    radius[i] = (w / 360) * (1.5 + depthMix * 2.2) * (0.8 + surface);
-    const cool = Math.max(0, -gx - 0.15) * surface;
-    const warm = Math.max(0, gx - 0.05) * surface;
-    const gray = 36 + surface * 70 + lambert * 48;
-    red[i] = Math.min(255, gray + warm * 90);
-    green[i] = Math.min(255, gray + cool * 40);
-    blue[i] = Math.min(255, gray + 8 + cool * 80);
+    const spin = referenceUnit(i, 1) * Math.PI * 2;
+    const reach = Math.sqrt(referenceUnit(i, 2));
+    const x = Math.cos(spin) * reach;
+    const z = Math.sin(spin) * reach * 0.9;
+    const y = moundHeight(x, z, t) + (referenceUnit(i, 4) - 0.5) * 0.04;
+    const hx = moundHeight(x + eps, z, t) - moundHeight(x - eps, z, t);
+    const hz = moundHeight(x, z + eps, t) - moundHeight(x, z - eps, t);
+    let nx = -hx;
+    let ny = eps * 2;
+    let nz = -hz;
+    const nlen = Math.hypot(nx, ny, nz) || 1;
+    nx /= nlen;
+    ny /= nlen;
+    nz /= nlen;
+    const camY = y - 0.1;
+    const camZ = z + 2.45;
+    px[i] = w * 0.5 + (x / camZ) * focal;
+    py[i] = h * 0.58 - (camY / camZ) * focal;
+    depth[i] = camZ;
+    radius[i] = Math.max(0.45, ((w / 360) * 3.6) / camZ);
+    const lambert = Math.max(0, nx * -0.22 + ny * 0.88 + nz * 0.2);
+    const cool = Math.max(0, -nx * 0.85 + ny * 0.12) * lambert;
+    const warm = Math.max(0, nx * 0.8) * lambert;
+    const gray = 24 + lambert * 118;
+    red[i] = Math.min(255, gray + warm * 70);
+    green[i] = Math.min(255, gray + cool * 36);
+    blue[i] = Math.min(255, gray + 4 + cool * 64);
     order[i] = i;
   }
 
@@ -211,13 +251,7 @@ function paintParticleTerrain(ctx: CanvasRenderingContext2D, w: number, h: numbe
     const i = order[n]!;
     const rad = radius[i]!;
     ctx.fillStyle = `rgb(${red[i]},${green[i]},${blue[i]})`;
-    if (rad < 1.7) {
-      ctx.fillRect(px[i]! - rad, py[i]! - rad, rad * 2, rad * 2);
-    } else {
-      ctx.beginPath();
-      ctx.arc(px[i]!, py[i]!, rad, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    ctx.fillRect(px[i]! - rad, py[i]! - rad, rad * 2, rad * 2);
   }
 }
 
@@ -255,23 +289,18 @@ function paintKaleidoscope(
       ang %= sector;
       if (ang < 0) ang += sector;
       const across = Math.abs(ang - sector * 0.5);
-      const leaf = r > 0.02 && r < 0.9 ? Math.sin(((r - 0.02) / 0.88) * Math.PI) : 0;
-      const angWidth = 0.16 + 0.2 * leaf * (0.45 + 0.55 * breathe);
-      const mask = across < angWidth ? (1 - across / angWidth) ** 1.35 : 0;
-      const edge = r > 0.8 ? Math.max(0, 1 - (r - 0.8) / 0.14) : 1;
-      const body = mask * leaf * edge;
-      const phase = r * freq - t * 3.1 + across * r * bend;
-      const wave = Math.sin(phase);
-      const facing = wave > 0 ? wave : 0;
-      const flank = facing * facing;
-      const rib = flank * flank * facing;
-      const eye =
-        Math.exp(-((r - (0.3 + 0.06 * pinch)) * (r - (0.3 + 0.06 * pinch))) / 0.008) * mask * flank;
+      const lobe = Math.cos(across * 2);
+      const warped = r / (0.68 + 0.42 * Math.max(0, lobe));
+      const phase = warped * freq - t * 2.4 + Math.sin(across * bend) * 0.6;
+      const crest = Math.sin(phase);
+      const lit = 0.48 + 0.52 * Math.max(0, crest);
+      const spec = Math.max(0, crest) ** 5;
+      const fall = warped > 1.05 ? Math.max(0, 1 - (warped - 1.05) / 0.2) : 1;
+      const cover = lit * fall * (0.78 + 0.22 * (0.5 + 0.5 * lobe)) * (0.9 + 0.1 * pinch);
       const i = row + x * 4;
-      const cover = body;
-      data[i] = Math.min(255, cover * (flank * 36 + rib * 230 + eye * 160));
-      data[i + 1] = Math.min(255, cover * (flank * 78 + rib * 245 + eye * 190));
-      data[i + 2] = Math.min(255, cover * (flank * 190 + rib * 255 + eye * 230));
+      data[i] = Math.min(255, cover * 18 + spec * 160);
+      data[i + 1] = Math.min(255, cover * 55 + spec * 200);
+      data[i + 2] = Math.min(255, cover * 165 + spec * 90);
       data[i + 3] = 255;
     }
   }
@@ -285,93 +314,150 @@ function paintKaleidoscope(
   }
 }
 
+type VortexStream = {
+  xs: Float32Array;
+  ys: Float32Array;
+  samples: number;
+  span: number;
+  speed: number;
+};
+
+let vortexCache: { w: number; h: number; streams: VortexStream[] } | null = null;
+
+function vortexVelocity(x: number, y: number, w: number, h: number): { vx: number; vy: number } {
+  const nodes = [
+    { x: 0.5 * w, y: 0.74 * h, k: 1 },
+    { x: 0.19 * w, y: 0.41 * h, k: 0.62 },
+    { x: 0.79 * w, y: 0.19 * h, k: 0.68 },
+  ];
+  const soft = (w * 0.09) ** 2;
+  let vx = 0;
+  let vy = 0;
+  for (let n = 0; n < 3; n += 1) {
+    const node = nodes[n]!;
+    const dx = x - node.x;
+    const dy = y - node.y;
+    const r2 = dx * dx + dy * dy + soft;
+    const spin = (node.k * w * w * 0.055) / r2;
+    vx += -dy * spin;
+    vy += dx * spin;
+  }
+  vx += Math.sin(x * 0.012 + y * 0.005) * w * 0.012;
+  vy += Math.cos(x * 0.006 - y * 0.014) * w * 0.012;
+  const speed = Math.hypot(vx, vy) || 1;
+  const cap = w * 0.22;
+  if (speed > cap) {
+    vx = (vx / speed) * cap;
+    vy = (vy / speed) * cap;
+  }
+  return { vx, vy };
+}
+
+function vortexRk4(x: number, y: number, dt: number, w: number, h: number): { x: number; y: number } {
+  const k1 = vortexVelocity(x, y, w, h);
+  const k2 = vortexVelocity(x + k1.vx * dt * 0.5, y + k1.vy * dt * 0.5, w, h);
+  const k3 = vortexVelocity(x + k2.vx * dt * 0.5, y + k2.vy * dt * 0.5, w, h);
+  const k4 = vortexVelocity(x + k3.vx * dt, y + k3.vy * dt, w, h);
+  return {
+    x: x + ((k1.vx + 2 * k2.vx + 2 * k3.vx + k4.vx) * dt) / 6,
+    y: y + ((k1.vy + 2 * k2.vy + 2 * k3.vy + k4.vy) * dt) / 6,
+  };
+}
+
+function vortexStreams(w: number, h: number): VortexStream[] {
+  if (vortexCache && vortexCache.w === w && vortexCache.h === h) return vortexCache.streams;
+  const streams: VortexStream[] = [];
+  const count = 72;
+  const steps = 280;
+  const dt = 0.045;
+  for (let i = 0; i < count; i += 1) {
+    const xs = new Float32Array(steps);
+    const ys = new Float32Array(steps);
+    let x = referenceUnit(i, 20) * w;
+    let y = referenceUnit(i, 21) * h;
+    if (i < 18) {
+      const node = i % 3;
+      const fx = node === 0 ? 0.5 : node === 1 ? 0.19 : 0.79;
+      const fy = node === 0 ? 0.74 : node === 1 ? 0.41 : 0.19;
+      const ang = referenceUnit(i, 22) * Math.PI * 2;
+      const rad = 0.04 + referenceUnit(i, 23) * 0.12;
+      x = (fx + Math.cos(ang) * rad) * w;
+      y = (fy + Math.sin(ang) * rad) * h;
+    }
+    let samples = 0;
+    for (let step = 0; step < steps; step += 1) {
+      xs[step] = x;
+      ys[step] = y;
+      samples += 1;
+      const next = vortexRk4(x, y, dt, w, h);
+      if (next.x < -w * 0.05 || next.y < -h * 0.05 || next.x > w * 1.05 || next.y > h * 1.05) break;
+      x = next.x;
+      y = next.y;
+    }
+    if (samples < 24) continue;
+    streams.push({
+      xs,
+      ys,
+      samples,
+      span: 70 + Math.floor(referenceUnit(i, 24) * 140),
+      speed: 0.55 + referenceUnit(i, 25) * 0.9,
+    });
+  }
+  vortexCache = { w, h, streams };
+  return streams;
+}
+
 function paintVortex(ctx: CanvasRenderingContext2D, w: number, h: number, t: number): void {
   ctx.save();
   const bg = ctx.createLinearGradient(0, 0, 0, h);
   bg.addColorStop(0, '#0a1c38');
-  bg.addColorStop(0.28, '#061226');
+  bg.addColorStop(0.32, '#061226');
   bg.addColorStop(1, '#02040c');
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, w, h);
-  const haze = ctx.createRadialGradient(w * 0.62, h * 0.16, w * 0.02, w * 0.55, h * 0.2, w * 0.78);
-  haze.addColorStop(0, 'rgba(30, 80, 150, 0.28)');
+  const haze = ctx.createRadialGradient(w * 0.62, h * 0.16, w * 0.02, w * 0.55, h * 0.22, w * 0.78);
+  haze.addColorStop(0, 'rgba(30, 80, 150, 0.32)');
   haze.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = haze;
   ctx.fillRect(0, 0, w, h * 0.62);
 
-  const nodes = [
-    { x: 0.5 * w, y: 0.74 * h, k: 1 },
-    { x: 0.19 * w, y: 0.41 * h, k: 0.56 },
-    { x: 0.79 * w, y: 0.19 * h, k: 0.64 },
-  ];
-  const soft = w * w * 0.018;
-  const turb = w * 0.018;
-
-  const velocity = (x: number, y: number, time: number): { vx: number; vy: number } => {
-    let vx = 0;
-    let vy = 0;
-    for (let n = 0; n < 3; n += 1) {
-      const node = nodes[n]!;
-      const dx = x - node.x;
-      const dy = y - node.y;
-      const r2 = dx * dx + dy * dy + soft;
-      const inv = (node.k * w * w * 0.085) / r2;
-      vx += -dy * inv;
-      vy += dx * inv;
-    }
-    const nx = x / w;
-    const ny = y / h;
-    vx += Math.sin(nx * 8.2 + ny * 3.4 + time * 0.7) * turb;
-    vy += Math.cos(nx * 3.6 - ny * 7.6 + time * 0.55) * turb * 0.85;
-    return { vx, vy };
-  };
-
-  const count = Math.round(Math.min(3600, Math.max(2400, (w * h) / 260)));
+  const streams = vortexStreams(w, h);
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  const bucketCount = 4;
-  for (let bucket = 0; bucket < bucketCount; bucket += 1) {
-    const near = bucket / (bucketCount - 1);
-    ctx.beginPath();
-    ctx.lineWidth = Math.max(1, (w / 360) * (1.05 + near * 0.55));
-    ctx.strokeStyle = `rgba(${60 + near * 100}, ${150 + near * 80}, 255, ${0.5 + near * 0.4})`;
-    for (let i = bucket; i < count; i += bucketCount) {
-      const z = 0.25 + unit(i * 2 + 5) * 0.75;
-      let x = unit(i * 2) * w;
-      let y = unit(i * 2 + 1) * h;
-      const adv = t * (0.55 + z * 0.35);
-      const v0 = velocity(x, y, adv);
-      const speed0 = Math.hypot(v0.vx, v0.vy) || 1;
-      const travel = (t * (4 + z * 5)) % (w * 0.035);
-      x += (v0.vx / speed0) * travel;
-      y += (v0.vy / speed0) * travel;
-      if (x < 0) x += w;
-      else if (x > w) x -= w;
-      if (y < 0) y += h;
-      else if (y > h) y -= h;
-      const length = 2 + Math.floor(unit(i * 2 + 7) * (2 + z * 4));
-      ctx.moveTo(x, y);
-      let px = x;
-      let py = y;
-      for (let step = 0; step < length; step += 1) {
-        const v = velocity(px, py, adv);
-        const speed = Math.hypot(v.vx, v.vy) || 1;
-        const stepPx = (w / 360) * (1.05 + z * 1.15);
-        px -= (v.vx / speed) * stepPx;
-        py -= (v.vy / speed) * stepPx;
-        ctx.lineTo(px, py);
-      }
-    }
-    ctx.stroke();
+  ctx.lineWidth = Math.max(1, w / 520);
+  ctx.strokeStyle = 'rgba(70, 150, 220, 0.42)';
+  ctx.beginPath();
+  for (const stream of streams) {
+    ctx.moveTo(stream.xs[0]!, stream.ys[0]!);
+    for (let s = 1; s < stream.samples; s += 1) ctx.lineTo(stream.xs[s]!, stream.ys[s]!);
   }
+  ctx.stroke();
 
-  for (let n = 0; n < nodes.length; n += 1) {
-    const node = nodes[n]!;
-    const rad = w * (0.075 + n * 0.008);
+  ctx.lineWidth = Math.max(1.25, w / 340);
+  ctx.strokeStyle = 'rgba(170, 230, 255, 0.9)';
+  ctx.beginPath();
+  for (const stream of streams) {
+    const span = Math.min(stream.span, stream.samples - 1);
+    const start = Math.floor(t * stream.speed * 36) % Math.max(1, stream.samples - span);
+    ctx.moveTo(stream.xs[start]!, stream.ys[start]!);
+    for (let s = 1; s <= span; s += 1) {
+      const index = start + s;
+      ctx.lineTo(stream.xs[index]!, stream.ys[index]!);
+    }
+  }
+  ctx.stroke();
+
+  const glows = [
+    { x: 0.5 * w, y: 0.74 * h },
+    { x: 0.19 * w, y: 0.41 * h },
+    { x: 0.79 * w, y: 0.19 * h },
+  ];
+  for (const node of glows) {
+    const rad = w * 0.07;
     const glow = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, rad);
     glow.addColorStop(0, 'rgba(245, 252, 255, 0.95)');
-    glow.addColorStop(0.14, 'rgba(90, 200, 255, 0.75)');
-    glow.addColorStop(0.42, 'rgba(20, 70, 170, 0.22)');
+    glow.addColorStop(0.16, 'rgba(90, 200, 255, 0.72)');
+    glow.addColorStop(0.45, 'rgba(20, 70, 170, 0.2)');
     glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = glow;
     ctx.beginPath();
