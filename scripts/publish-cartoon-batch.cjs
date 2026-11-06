@@ -26,6 +26,10 @@ async function main() {
     return;
   }
   const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
+  const extraPath = path.join(dir, 'quiz-orientation-manifest.json');
+  if (fs.existsSync(extraPath)) {
+    manifest.push(...JSON.parse(fs.readFileSync(extraPath, 'utf8')));
+  }
   const items = [];
   for (const item of manifest) {
     try {

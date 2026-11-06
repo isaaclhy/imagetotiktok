@@ -10,6 +10,8 @@ test('template 8 and template 9 stay on their own saved videos', () => {
   assert.equal(matchesQuizTemplate('know-girlfriend', 8), true);
   assert.equal(matchesQuizTemplate('quiz-girlfriend', 8), false);
   assert.equal(matchesQuizTemplate('quiz-girlfriend', 9), true);
+  assert.equal(matchesQuizTemplate('quiz-boyfriend', 9), true);
+  assert.equal(matchesQuizTemplate('quiz-boyfriend', 8), false);
   assert.equal(matchesQuizTemplate('know-girlfriend', 9), false);
   assert.equal(matchesQuizTemplate('test-artifact', 8), false);
 });
