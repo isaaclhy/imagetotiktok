@@ -42,3 +42,12 @@ next-env.d.ts
 
 # Large local test assets
 /public/nighty-particle/test-background.mp4
+
+# Cartoon renderer intermediates
+cartoon-quiz/out/
+cartoon-quiz/models/
+cartoon-quiz/**/mix.f32
+cartoon-quiz/**/voice.f32
+
+__pycache__/
+*.pyc

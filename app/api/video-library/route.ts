@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAppAuthed, unauthorizedAppResponse } from '@/app/lib/app-auth';
-import { listVideoLibrary } from '@/app/lib/video-library/store';
+import { ensureCartoonOriginals, listVideoLibrary } from '@/app/lib/video-library/store';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+export const maxDuration = 60;
 
-/** Saved daily quiz videos. Requires the same site password cookie as the rest of the app. */
+/** Saved cartoon quiz videos. Requires the same site password cookie as the rest of the app. */
 export async function GET(request: NextRequest) {
   if (!isAppAuthed(request)) return unauthorizedAppResponse();
   try {
+    await ensureCartoonOriginals();
     const videos = await listVideoLibrary();
     return NextResponse.json({ videos });
   } catch (error) {

@@ -10,7 +10,11 @@ import {
 export const SPILL_QUIZ_TEMPLATE_IDS = [8, 9] as const;
 export type SpillQuizTemplateId = (typeof SPILL_QUIZ_TEMPLATE_IDS)[number];
 
-export type SpillQuizTemplateKey = 'know-girlfriend' | 'quiz-boyfriend';
+export type SpillQuizTemplateKey =
+  | 'know-girlfriend'
+  | 'quiz-girlfriend'
+  | 'quiz-boyfriend'
+  | 'test-artifact';
 
 export type SpillQuizLineRole = 'hook' | 'cta' | 'question' | 'close';
 
@@ -98,13 +102,14 @@ export function isSpillQuizTemplateId(value: number | null | undefined): value i
 }
 
 export function spillQuizTemplateKey(templateId: SpillQuizTemplateId): SpillQuizTemplateKey {
-  return templateId === 8 ? 'know-girlfriend' : 'quiz-boyfriend';
+  return templateId === 8 ? 'know-girlfriend' : 'quiz-girlfriend';
 }
 
 export function spillQuizLabel(templateKey: SpillQuizTemplateKey): string {
-  return templateKey === 'know-girlfriend'
-    ? 'How well do you know your girlfriend'
-    : 'Quiz your boyfriend';
+  if (templateKey === 'know-girlfriend') return 'How well do you know your girlfriend';
+  if (templateKey === 'quiz-girlfriend') return 'Quiz your girlfriend';
+  if (templateKey === 'test-artifact') return 'Test artifact';
+  return 'Quiz your boyfriend';
 }
 
 function shuffleCopy<T>(items: readonly T[]): T[] {
