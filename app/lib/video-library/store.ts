@@ -1,5 +1,6 @@
 import { del, put, BlobNotFoundError } from '@vercel/blob';
 import fs from 'fs/promises';
+import { existsSync } from 'fs';
 import { ObjectId } from 'mongodb';
 import path from 'path';
 import type { SpillQuizTemplateId, SpillQuizTemplateKey } from '@/app/lib/spill-quiz/script';
@@ -138,6 +139,7 @@ export async function deleteVideoLibraryItem(id: string): Promise<boolean> {
 }
 
 const SEED_MARKER_ID = 'cartoon-originals-v1';
+const BATCH_MARKER_ID = 'cartoon-binary-batch-v1';
 
 const CARTOON_ORIGINALS = [
   {
@@ -189,6 +191,10 @@ const CARTOON_ORIGINALS = [
 
 function originalsDir(): string {
   return path.join(process.cwd(), 'data', 'cartoon-originals');
+}
+
+function batchDir(): string {
+  return path.join(process.cwd(), 'data', 'cartoon-batch');
 }
 
 async function metaCollection() {
@@ -276,5 +282,88 @@ export async function ensureCartoonOriginals(): Promise<void> {
 export function bundledCartoonPath(fileName: string): string | null {
   const base = path.basename(fileName);
   if (base !== fileName || !base.endsWith('.mp4')) return null;
-  return path.join(originalsDir(), base);
+  for (const dir of [originalsDir(), batchDir()]) {
+    const full = path.join(dir, base);
+    if (existsSync(full)) return full;
+  }
+  return null;
+}
+
+type SeedItem = {
+  origin: string;
+  templateId: 8 | 9;
+  templateKey: 'know-girlfriend' | 'quiz-girlfriend';
+  title: string;
+  filename: string;
+  file: string;
+  lines: string[];
+  day: string;
+};
+
+async function seedMarkedSet(markerId: string, items: SeedItem[], directory: string): Promise<void> {
+  const meta = await metaCollection();
+  const now = new Date();
+  const previous = await meta.findOneAndUpdate(
+    { _id: markerId },
+    { $setOnInsert: { status: 'seeding', seededAt: now } },
+    { upsert: true, returnDocument: 'before' }
+  );
+  if (previous?.status === 'done') return;
+  if (
+    previous?.status === 'seeding' &&
+    now.getTime() - new Date(previous.seededAt).getTime() < 2 * 60 * 1000
+  ) {
+    return;
+  }
+
+  const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
+  for (const item of items) {
+    const docs = await collection();
+    const existing = await docs.findOne({ origin: item.origin });
+    if (existing) continue;
+    const filePath = path.join(directory, item.file);
+    const mp4 = await fs.readFile(filePath);
+    if (token) {
+      try {
+        await saveDailyVideo({
+          templateId: item.templateId,
+          templateKey: item.templateKey,
+          title: item.title,
+          filename: item.filename,
+          day: item.day,
+          lines: item.lines,
+          mp4,
+          origin: item.origin,
+        });
+        continue;
+      } catch (error) {
+        console.error('[video-library] blob seed failed, keeping the file in the deployment', error);
+      }
+    }
+    const docsAgain = await collection();
+    if (await docsAgain.findOne({ origin: item.origin })) continue;
+    await docsAgain.insertOne({
+      _id: new ObjectId(),
+      templateId: item.templateId,
+      templateKey: item.templateKey,
+      title: item.title,
+      filename: item.filename,
+      blobUrl: '',
+      blobPathname: '',
+      bundledFile: item.file,
+      day: item.day,
+      lines: item.lines,
+      createdAt: new Date(),
+      origin: item.origin,
+    });
+  }
+  await meta.updateOne({ _id: markerId }, { $set: { status: 'done', seededAt: new Date() } });
+}
+
+/** Ten this-or-that editions. A separate marker from the original cartoons. */
+export async function ensureBinaryBatch(): Promise<void> {
+  const manifestPath = path.join(batchDir(), 'manifest.json');
+  if (!existsSync(manifestPath)) return;
+  const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8')) as SeedItem[];
+  await seedMarkedSet(BATCH_MARKER_ID, manifest, batchDir());
 }

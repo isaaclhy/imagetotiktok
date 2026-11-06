@@ -1,0 +1,734 @@
+{
+  "schemaVersion": 1,
+  "template": "how_well_girlfriend_this_or_that",
+  "questionsPerVideo": 6,
+  "totalVideos": 10,
+  "timingNote": "Original v15 used 8 open-ended questions in 56.03s. Recommend 6 this-or-that questions to stay ~56-60s.",
+  "introPreserve": {
+    "title": "How well do you know your girlfriend?",
+    "girlsLine": "Girls!",
+    "sendLine": "Send this to him!",
+    "stakeLine": "If he gets two wrong, he owes you unlimited kisses tonight!",
+    "mid": "Can you type her name with your eyes shut? Try it in the comments.",
+    "end": "How many did he get?",
+    "cta": "Download Spill It for more questions!"
+  },
+  "unusedQuestionIdsForSwaps": [
+    "gfot_015",
+    "gfot_057",
+    "gfot_060",
+    "gfot_063"
+  ],
+  "videos": [
+    {
+      "videoId": "howwell_gf_tot_01",
+      "titleHint": "How well do you know your girlfriend?",
+      "levelLabel": "level: easy",
+      "topicHint": "food & drinks",
+      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; square illustration cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
+      "questionIds": [
+        "gfot_001",
+        "gfot_002",
+        "gfot_003",
+        "gfot_007",
+        "gfot_012",
+        "gfot_005"
+      ],
+      "questions": [
+        {
+          "id": "gfot_001",
+          "spokenQuestion": "Would she choose tea or coffee?",
+          "optionA": "tea",
+          "optionB": "coffee",
+          "topic": "food_drink",
+          "illustrationA": "cute steaming teacup with tea bag tag",
+          "illustrationB": "cute coffee cup with latte foam heart"
+        },
+        {
+          "id": "gfot_002",
+          "spokenQuestion": "Would she choose pizza or tacos?",
+          "optionA": "pizza",
+          "optionB": "tacos",
+          "topic": "food_drink",
+          "illustrationA": "cartoon pizza slice with melting cheese",
+          "illustrationB": "soft taco with colorful fillings"
+        },
+        {
+          "id": "gfot_003",
+          "spokenQuestion": "Would she choose pancakes or waffles?",
+          "optionA": "pancakes",
+          "optionB": "waffles",
+          "topic": "food_drink",
+          "illustrationA": "stack of fluffy pancakes with syrup",
+          "illustrationB": "golden waffle with butter square"
+        },
+        {
+          "id": "gfot_007",
+          "spokenQuestion": "Would she choose fries or chips?",
+          "optionA": "fries",
+          "optionB": "chips",
+          "topic": "food_drink",
+          "illustrationA": "carton of golden french fries",
+          "illustrationB": "bag of crunchy chips spilling out"
+        },
+        {
+          "id": "gfot_012",
+          "spokenQuestion": "Would she choose iced coffee or hot coffee?",
+          "optionA": "iced coffee",
+          "optionB": "hot coffee",
+          "topic": "food_drink",
+          "illustrationA": "iced coffee cup with straw and ice",
+          "illustrationB": "steaming hot coffee mug"
+        },
+        {
+          "id": "gfot_005",
+          "spokenQuestion": "Would she choose chocolate or chips?",
+          "optionA": "chocolate",
+          "optionB": "chips",
+          "topic": "food_drink",
+          "illustrationA": "bar of chocolate with pieces broken",
+          "illustrationB": "bowl of crispy potato chips"
+        }
+      ]
+    },
+    {
+      "videoId": "howwell_gf_tot_02",
+      "titleHint": "How well do you know your girlfriend?",
+      "levelLabel": "level: medium",
+      "topicHint": "food night",
+      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; square illustration cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
+      "questionIds": [
+        "gfot_004",
+        "gfot_006",
+        "gfot_008",
+        "gfot_009",
+        "gfot_011",
+        "gfot_016"
+      ],
+      "questions": [
+        {
+          "id": "gfot_004",
+          "spokenQuestion": "Would she choose sushi or burgers?",
+          "optionA": "sushi",
+          "optionB": "burgers",
+          "topic": "food_drink",
+          "illustrationA": "cute sushi rolls on a plate",
+          "illustrationB": "juicy burger with lettuce"
+        },
+        {
+          "id": "gfot_006",
+          "spokenQuestion": "Would she choose cake or pie?",
+          "optionA": "cake",
+          "optionB": "pie",
+          "topic": "food_drink",
+          "illustrationA": "slice of frosted layer cake",
+          "illustrationB": "slice of pie with lattice crust"
+        },
+        {
+          "id": "gfot_008",
+          "spokenQuestion": "Would she choose burger or hotdog?",
+          "optionA": "burger",
+          "optionB": "hotdog",
+          "topic": "food_drink",
+          "illustrationA": "cartoon burger",
+          "illustrationB": "cartoon hotdog in bun with mustard"
+        },
+        {
+          "id": "gfot_009",
+          "spokenQuestion": "Would she choose strawberries or raspberries?",
+          "optionA": "strawberries",
+          "optionB": "raspberries",
+          "topic": "food_drink",
+          "illustrationA": "bowl of bright strawberries",
+          "illustrationB": "handful of raspberries"
+        },
+        {
+          "id": "gfot_011",
+          "spokenQuestion": "Would she choose spicy food or mild food?",
+          "optionA": "spicy food",
+          "optionB": "mild food",
+          "topic": "food_drink",
+          "illustrationA": "chili peppers with flame accents",
+          "illustrationB": "mild pasta bowl steam soft"
+        },
+        {
+          "id": "gfot_016",
+          "spokenQuestion": "Would she choose cook at home or order takeout?",
+          "optionA": "cook at home",
+          "optionB": "order takeout",
+          "topic": "food_drink",
+          "illustrationA": "couple cooking at stove pot",
+          "illustrationB": "delivery bag and takeout boxes"
+        }
+      ]
+    },
+    {
+      "videoId": "howwell_gf_tot_03",
+      "titleHint": "How well do you know your girlfriend?",
+      "levelLabel": "level: medium",
+      "topicHint": "travel vibes",
+      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; square illustration cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
+      "questionIds": [
+        "gfot_017",
+        "gfot_018",
+        "gfot_019",
+        "gfot_020",
+        "gfot_026",
+        "gfot_027"
+      ],
+      "questions": [
+        {
+          "id": "gfot_017",
+          "spokenQuestion": "Would she choose beach or mountains?",
+          "optionA": "beach",
+          "optionB": "mountains",
+          "topic": "travel_date",
+          "illustrationA": "sunny beach with umbrella and waves",
+          "illustrationB": "snowy mountain peaks and pines"
+        },
+        {
+          "id": "gfot_018",
+          "spokenQuestion": "Would she choose road trip or flight?",
+          "optionA": "road trip",
+          "optionB": "flight",
+          "topic": "travel_date",
+          "illustrationA": "car on open highway with suitcase",
+          "illustrationB": "airplane window seat clouds"
+        },
+        {
+          "id": "gfot_019",
+          "spokenQuestion": "Would she choose plan every hour or wing it?",
+          "optionA": "plan every hour",
+          "optionB": "wing it",
+          "topic": "travel_date",
+          "illustrationA": "clipboard itinerary with checkmarks",
+          "illustrationB": "spontaneous compass and map swirl"
+        },
+        {
+          "id": "gfot_020",
+          "spokenQuestion": "Would she choose fancy hotel or cozy cabin?",
+          "optionA": "fancy hotel",
+          "optionB": "cozy cabin",
+          "topic": "travel_date",
+          "illustrationA": "luxury hotel lobby chandelier",
+          "illustrationB": "wood cabin with fireplace"
+        },
+        {
+          "id": "gfot_026",
+          "spokenQuestion": "Would she choose sunrise or sunset?",
+          "optionA": "sunrise",
+          "optionB": "sunset",
+          "topic": "travel_date",
+          "illustrationA": "soft sunrise over water",
+          "illustrationB": "orange pink sunset sky"
+        },
+        {
+          "id": "gfot_027",
+          "spokenQuestion": "Would she choose window seat or aisle seat?",
+          "optionA": "window seat",
+          "optionB": "aisle seat",
+          "topic": "travel_date",
+          "illustrationA": "plane window looking at clouds",
+          "illustrationB": "aisle seat with walking space"
+        }
+      ]
+    },
+    {
+      "videoId": "howwell_gf_tot_04",
+      "titleHint": "How well do you know your girlfriend?",
+      "levelLabel": "level: medium",
+      "topicHint": "date style",
+      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; square illustration cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
+      "questionIds": [
+        "gfot_022",
+        "gfot_023",
+        "gfot_024",
+        "gfot_025",
+        "gfot_021",
+        "gfot_029"
+      ],
+      "questions": [
+        {
+          "id": "gfot_022",
+          "spokenQuestion": "Would she choose picnic in the park or rooftop dinner?",
+          "optionA": "picnic in the park",
+          "optionB": "rooftop dinner",
+          "topic": "travel_date",
+          "illustrationA": "picnic blanket basket flowers",
+          "illustrationB": "rooftop table city lights"
+        },
+        {
+          "id": "gfot_023",
+          "spokenQuestion": "Would she choose surprise date or planned date?",
+          "optionA": "surprise date",
+          "optionB": "planned date",
+          "topic": "travel_date",
+          "illustrationA": "blindfold gift box surprise sparkles",
+          "illustrationB": "calendar with heart date marked"
+        },
+        {
+          "id": "gfot_024",
+          "spokenQuestion": "Would she choose dinner at home or fancy restaurant?",
+          "optionA": "dinner at home",
+          "optionB": "fancy restaurant",
+          "topic": "travel_date",
+          "illustrationA": "candlelit home table for two",
+          "illustrationB": "elegant restaurant table setting"
+        },
+        {
+          "id": "gfot_025",
+          "spokenQuestion": "Would she choose spa day or adventure hike?",
+          "optionA": "spa day",
+          "optionB": "adventure hike",
+          "topic": "travel_date",
+          "illustrationA": "spa towels candles cucumber",
+          "illustrationB": "hiking boots trail mountain view"
+        },
+        {
+          "id": "gfot_021",
+          "spokenQuestion": "Would she choose camping or luxury hotel?",
+          "optionA": "camping",
+          "optionB": "luxury hotel",
+          "topic": "travel_date",
+          "illustrationA": "tent under starry sky",
+          "illustrationB": "hotel room with room service tray"
+        },
+        {
+          "id": "gfot_029",
+          "spokenQuestion": "Would she choose museums or street food tours?",
+          "optionA": "museums",
+          "optionB": "street food tours",
+          "topic": "travel_date",
+          "illustrationA": "art museum gallery frame",
+          "illustrationB": "street food stall skewers steam"
+        }
+      ]
+    },
+    {
+      "videoId": "howwell_gf_tot_05",
+      "titleHint": "How well do you know your girlfriend?",
+      "levelLabel": "level: easy",
+      "topicHint": "entertainment",
+      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; square illustration cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
+      "questionIds": [
+        "gfot_031",
+        "gfot_032",
+        "gfot_034",
+        "gfot_035",
+        "gfot_038",
+        "gfot_040"
+      ],
+      "questions": [
+        {
+          "id": "gfot_031",
+          "spokenQuestion": "Would she choose Netflix or YouTube?",
+          "optionA": "Netflix",
+          "optionB": "YouTube",
+          "topic": "entertainment",
+          "illustrationA": "TV remote sofa binge icons",
+          "illustrationB": "phone play button video stack"
+        },
+        {
+          "id": "gfot_032",
+          "spokenQuestion": "Would she choose rom-coms or action movies?",
+          "optionA": "rom-coms",
+          "optionB": "action movies",
+          "topic": "entertainment",
+          "illustrationA": "heart movie ticket couple silhouette",
+          "illustrationB": "explosion action hero pose"
+        },
+        {
+          "id": "gfot_034",
+          "spokenQuestion": "Would she choose board games or video games?",
+          "optionA": "board games",
+          "optionB": "video games",
+          "topic": "entertainment",
+          "illustrationA": "dice and board game pieces",
+          "illustrationB": "game controller neon glow"
+        },
+        {
+          "id": "gfot_035",
+          "spokenQuestion": "Would she choose book or movie?",
+          "optionA": "book",
+          "optionB": "movie",
+          "topic": "entertainment",
+          "illustrationA": "open book with bookmark",
+          "illustrationB": "movie clapper and popcorn"
+        },
+        {
+          "id": "gfot_038",
+          "spokenQuestion": "Would she choose movie theater or couch?",
+          "optionA": "movie theater",
+          "optionB": "couch",
+          "topic": "entertainment",
+          "illustrationA": "cinema seats big screen",
+          "illustrationB": "cozy couch blanket snacks"
+        },
+        {
+          "id": "gfot_040",
+          "spokenQuestion": "Would she choose singing or dancing?",
+          "optionA": "singing",
+          "optionB": "dancing",
+          "topic": "entertainment",
+          "illustrationA": "karaoke mic music notes",
+          "illustrationB": "dance shoes sparkles"
+        }
+      ]
+    },
+    {
+      "videoId": "howwell_gf_tot_06",
+      "titleHint": "How well do you know your girlfriend?",
+      "levelLabel": "level: medium",
+      "topicHint": "movie night",
+      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; square illustration cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
+      "questionIds": [
+        "gfot_033",
+        "gfot_036",
+        "gfot_037",
+        "gfot_039",
+        "gfot_028",
+        "gfot_030"
+      ],
+      "questions": [
+        {
+          "id": "gfot_033",
+          "spokenQuestion": "Would she choose horror movies or rom-coms?",
+          "optionA": "horror movies",
+          "optionB": "rom-coms",
+          "topic": "entertainment",
+          "illustrationA": "spooky popcorn ghost",
+          "illustrationB": "hearts and soft movie glow"
+        },
+        {
+          "id": "gfot_036",
+          "spokenQuestion": "Would she choose concerts or comedy shows?",
+          "optionA": "concerts",
+          "optionB": "comedy shows",
+          "topic": "entertainment",
+          "illustrationA": "stage lights mic crowd",
+          "illustrationB": "standup mic spotlight laugh bubbles"
+        },
+        {
+          "id": "gfot_037",
+          "spokenQuestion": "Would she choose binge the whole season or one episode a week?",
+          "optionA": "binge the whole season",
+          "optionB": "one episode a week",
+          "topic": "entertainment",
+          "illustrationA": "stack of episode tiles all open",
+          "illustrationB": "calendar with one episode mark"
+        },
+        {
+          "id": "gfot_039",
+          "spokenQuestion": "Would she choose podcast or playlist?",
+          "optionA": "podcast",
+          "optionB": "playlist",
+          "topic": "entertainment",
+          "illustrationA": "headphones mic podcast waves",
+          "illustrationB": "music notes playlist phone"
+        },
+        {
+          "id": "gfot_028",
+          "spokenQuestion": "Would she choose big city or tiny village?",
+          "optionA": "big city",
+          "optionB": "tiny village",
+          "topic": "travel_date",
+          "illustrationA": "city skyline night lights",
+          "illustrationB": "quiet village cottages"
+        },
+        {
+          "id": "gfot_030",
+          "spokenQuestion": "Would she choose one long trip or four weekend trips?",
+          "optionA": "one long trip",
+          "optionB": "four weekend trips",
+          "topic": "travel_date",
+          "illustrationA": "passport with long itinerary",
+          "illustrationB": "four mini suitcase icons"
+        }
+      ]
+    },
+    {
+      "videoId": "howwell_gf_tot_07",
+      "titleHint": "How well do you know your girlfriend?",
+      "levelLabel": "level: easy",
+      "topicHint": "everyday her",
+      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; square illustration cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
+      "questionIds": [
+        "gfot_041",
+        "gfot_042",
+        "gfot_043",
+        "gfot_044",
+        "gfot_050",
+        "gfot_052"
+      ],
+      "questions": [
+        {
+          "id": "gfot_041",
+          "spokenQuestion": "Would she choose early bird or night owl?",
+          "optionA": "early bird",
+          "optionB": "night owl",
+          "topic": "everyday",
+          "illustrationA": "sunrise alarm clock coffee",
+          "illustrationB": "moon lamp laptop late night"
+        },
+        {
+          "id": "gfot_042",
+          "spokenQuestion": "Would she choose text or call?",
+          "optionA": "text",
+          "optionB": "call",
+          "topic": "everyday",
+          "illustrationA": "phone chat bubbles hearts",
+          "illustrationB": "phone ringing call icon"
+        },
+        {
+          "id": "gfot_043",
+          "spokenQuestion": "Would she choose dogs or cats?",
+          "optionA": "dogs",
+          "optionB": "cats",
+          "topic": "everyday",
+          "illustrationA": "cute cartoon dog wagging",
+          "illustrationB": "cute cartoon cat curling"
+        },
+        {
+          "id": "gfot_044",
+          "spokenQuestion": "Would she choose hugs or kisses?",
+          "optionA": "hugs",
+          "optionB": "kisses",
+          "topic": "everyday",
+          "illustrationA": "couple hug silhouette soft",
+          "illustrationB": "couple kiss cheek hearts"
+        },
+        {
+          "id": "gfot_050",
+          "spokenQuestion": "Would she choose gold or silver?",
+          "optionA": "gold",
+          "optionB": "silver",
+          "topic": "everyday",
+          "illustrationA": "gold jewelry sparkle",
+          "illustrationB": "silver jewelry shine"
+        },
+        {
+          "id": "gfot_052",
+          "spokenQuestion": "Would she choose summer or winter?",
+          "optionA": "summer",
+          "optionB": "winter",
+          "topic": "everyday",
+          "illustrationA": "sun sunglasses beach hat",
+          "illustrationB": "snowflake scarf mittens"
+        }
+      ]
+    },
+    {
+      "videoId": "howwell_gf_tot_08",
+      "titleHint": "How well do you know your girlfriend?",
+      "levelLabel": "level: medium",
+      "topicHint": "soft romance",
+      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; square illustration cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
+      "questionIds": [
+        "gfot_045",
+        "gfot_046",
+        "gfot_048",
+        "gfot_049",
+        "gfot_058",
+        "gfot_064"
+      ],
+      "questions": [
+        {
+          "id": "gfot_045",
+          "spokenQuestion": "Would she choose big spoon or little spoon?",
+          "optionA": "big spoon",
+          "optionB": "little spoon",
+          "topic": "everyday",
+          "illustrationA": "big spoon cuddling from behind",
+          "illustrationB": "little spoon tucked in"
+        },
+        {
+          "id": "gfot_046",
+          "spokenQuestion": "Would she choose flowers or chocolates?",
+          "optionA": "flowers",
+          "optionB": "chocolates",
+          "topic": "everyday",
+          "illustrationA": "bouquet of colorful flowers",
+          "illustrationB": "box of fancy chocolates"
+        },
+        {
+          "id": "gfot_048",
+          "spokenQuestion": "Would she choose public affection or private moments?",
+          "optionA": "public affection",
+          "optionB": "private moments",
+          "topic": "everyday",
+          "illustrationA": "holding hands in busy street",
+          "illustrationB": "cozy private home moment"
+        },
+        {
+          "id": "gfot_049",
+          "spokenQuestion": "Would she choose surprise gifts or planned presents?",
+          "optionA": "surprise gifts",
+          "optionB": "planned presents",
+          "topic": "everyday",
+          "illustrationA": "unexpected gift box pop",
+          "illustrationB": "wrapped gift with calendar"
+        },
+        {
+          "id": "gfot_058",
+          "spokenQuestion": "Would she choose love notes or love songs?",
+          "optionA": "love notes",
+          "optionB": "love songs",
+          "topic": "everyday",
+          "illustrationA": "handwritten love note envelope",
+          "illustrationB": "music note heart playlist"
+        },
+        {
+          "id": "gfot_064",
+          "spokenQuestion": "Would she choose good morning text or goodnight call?",
+          "optionA": "good morning text",
+          "optionB": "goodnight call",
+          "topic": "everyday",
+          "illustrationA": "sunrise phone text bubble",
+          "illustrationB": "moon phone call hearts"
+        }
+      ]
+    },
+    {
+      "videoId": "howwell_gf_tot_09",
+      "titleHint": "How well do you know your girlfriend?",
+      "levelLabel": "level: medium",
+      "topicHint": "weekend her",
+      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; square illustration cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
+      "questionIds": [
+        "gfot_051",
+        "gfot_053",
+        "gfot_054",
+        "gfot_055",
+        "gfot_056",
+        "gfot_059"
+      ],
+      "questions": [
+        {
+          "id": "gfot_051",
+          "spokenQuestion": "Would she choose jeans or sweatpants?",
+          "optionA": "jeans",
+          "optionB": "sweatpants",
+          "topic": "everyday",
+          "illustrationA": "folded jeans casual chic",
+          "illustrationB": "cozy sweatpants lounge"
+        },
+        {
+          "id": "gfot_053",
+          "spokenQuestion": "Would she choose rain or snow?",
+          "optionA": "rain",
+          "optionB": "snow",
+          "topic": "everyday",
+          "illustrationA": "rain boots umbrella puddles",
+          "illustrationB": "snowflakes cozy scarf"
+        },
+        {
+          "id": "gfot_054",
+          "spokenQuestion": "Would she choose salty or sweet?",
+          "optionA": "salty",
+          "optionB": "sweet",
+          "topic": "everyday",
+          "illustrationA": "pretzel and salty snacks",
+          "illustrationB": "candy and cupcake"
+        },
+        {
+          "id": "gfot_055",
+          "spokenQuestion": "Would she choose Friday night in or Friday night out?",
+          "optionA": "Friday night in",
+          "optionB": "Friday night out",
+          "topic": "everyday",
+          "illustrationA": "couch movies blankets",
+          "illustrationB": "city night neon going out"
+        },
+        {
+          "id": "gfot_056",
+          "spokenQuestion": "Would she choose gym or long walks?",
+          "optionA": "gym",
+          "optionB": "long walks",
+          "topic": "everyday",
+          "illustrationA": "dumbbells gym sneakers",
+          "illustrationB": "park path walking shoes"
+        },
+        {
+          "id": "gfot_059",
+          "spokenQuestion": "Would she choose morning shower or night shower?",
+          "optionA": "morning shower",
+          "optionB": "night shower",
+          "topic": "everyday",
+          "illustrationA": "morning shower steam sunrise",
+          "illustrationB": "evening shower candle steam"
+        }
+      ]
+    },
+    {
+      "videoId": "howwell_gf_tot_10",
+      "titleHint": "How well do you know your girlfriend?",
+      "levelLabel": "level: medium",
+      "topicHint": "mixed prefs",
+      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; square illustration cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
+      "questionIds": [
+        "gfot_010",
+        "gfot_013",
+        "gfot_014",
+        "gfot_047",
+        "gfot_061",
+        "gfot_062"
+      ],
+      "questions": [
+        {
+          "id": "gfot_010",
+          "spokenQuestion": "Would she choose sweet breakfast or savory breakfast?",
+          "optionA": "sweet breakfast",
+          "optionB": "savory breakfast",
+          "topic": "food_drink",
+          "illustrationA": "pastries and fruit yogurt bowl",
+          "illustrationB": "eggs toast and avocado plate"
+        },
+        {
+          "id": "gfot_013",
+          "spokenQuestion": "Would she choose ranch or ketchup?",
+          "optionA": "ranch",
+          "optionB": "ketchup",
+          "topic": "food_drink",
+          "illustrationA": "ranch dip cup next to fries",
+          "illustrationB": "ketchup bottle squeeze"
+        },
+        {
+          "id": "gfot_014",
+          "spokenQuestion": "Would she choose popcorn with butter or caramel popcorn?",
+          "optionA": "popcorn with butter",
+          "optionB": "caramel popcorn",
+          "topic": "food_drink",
+          "illustrationA": "buttery popcorn bucket",
+          "illustrationB": "caramel-coated popcorn"
+        },
+        {
+          "id": "gfot_047",
+          "spokenQuestion": "Would she choose matching outfits or coordinated colors?",
+          "optionA": "matching outfits",
+          "optionB": "coordinated colors",
+          "topic": "everyday",
+          "illustrationA": "couple in identical outfits",
+          "illustrationB": "couple in matching color palette"
+        },
+        {
+          "id": "gfot_061",
+          "spokenQuestion": "Would she choose sneakers or boots?",
+          "optionA": "sneakers",
+          "optionB": "boots",
+          "topic": "everyday",
+          "illustrationA": "cute sneakers with laces",
+          "illustrationB": "stylish boots ankle height"
+        },
+        {
+          "id": "gfot_062",
+          "spokenQuestion": "Would she choose Instagram or TikTok?",
+          "optionA": "Instagram",
+          "optionB": "TikTok",
+          "topic": "everyday",
+          "illustrationA": "camera frame photo grid",
+          "illustrationB": "phone vertical video scroll"
+        }
+      ]
+    }
+  ]
+}

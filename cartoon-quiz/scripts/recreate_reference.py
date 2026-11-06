@@ -36,7 +36,11 @@ def line(key, text):
     c = a[s0:s1].copy(); f = int(.003 * SR); c[:f] *= np.linspace(0, 1, f); c[-f:] *= np.linspace(1, 0, f)
     offs = [max(qv.PRE, w[0] - s0 / SR) for w in words]
     want = len([x for x in text.split() if any(ch.isalnum() for ch in x)])
-    if len(offs) < want and offs[0] > .15: offs = [qv.PRE] + offs   # whisper dropped the first word
+    if not offs:
+        span = max(0.2, len(c) / SR - qv.PRE)
+        offs = [qv.PRE + span * i / max(1, want) for i in range(max(1, want))]
+    elif len(offs) < want and offs[0] > .15:
+        offs = [qv.PRE] + offs   # whisper dropped the first word
     offs[0] = qv.PRE
     # refine each word onset with energy rise near whisper time
     E = qv.env(c, .003); pk = E.max()
