@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import { existsSync } from 'fs';
 import { ObjectId } from 'mongodb';
 import path from 'path';
+import publishedBatch from '@/data/cartoon-batch/published.json';
 import type { SpillQuizTemplateId, SpillQuizTemplateKey } from '@/app/lib/spill-quiz/script';
 
 export const VIDEO_LIBRARY_DB = 'bleamies';
@@ -193,10 +194,6 @@ function originalsDir(): string {
   return path.join(process.cwd(), 'data', 'cartoon-originals');
 }
 
-function batchDir(): string {
-  return path.join(process.cwd(), 'data', 'cartoon-batch');
-}
-
 async function metaCollection() {
   const uri = process.env.MONGODB_URI?.trim();
   if (!uri) throw new Error('Missing MONGODB_URI');
@@ -282,7 +279,7 @@ export async function ensureCartoonOriginals(): Promise<void> {
 export function bundledCartoonPath(fileName: string): string | null {
   const base = path.basename(fileName);
   if (base !== fileName || !base.endsWith('.mp4')) return null;
-  for (const dir of [originalsDir(), batchDir()]) {
+  for (const dir of [originalsDir()]) {
     const full = path.join(dir, base);
     if (existsSync(full)) return full;
   }
@@ -299,66 +296,6 @@ type SeedItem = {
   lines: string[];
   day: string;
 };
-
-async function seedMarkedSet(markerId: string, items: SeedItem[], directory: string): Promise<void> {
-  const meta = await metaCollection();
-  const now = new Date();
-  const previous = await meta.findOneAndUpdate(
-    { _id: markerId },
-    { $setOnInsert: { status: 'seeding', seededAt: now } },
-    { upsert: true, returnDocument: 'before' }
-  );
-  if (previous?.status === 'done') return;
-  if (
-    previous?.status === 'seeding' &&
-    now.getTime() - new Date(previous.seededAt).getTime() < 2 * 60 * 1000
-  ) {
-    return;
-  }
-
-  const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
-  for (const item of items) {
-    const docs = await collection();
-    const existing = await docs.findOne({ origin: item.origin });
-    if (existing) continue;
-    const filePath = path.join(directory, item.file);
-    const mp4 = await fs.readFile(filePath);
-    if (token) {
-      try {
-        await saveDailyVideo({
-          templateId: item.templateId,
-          templateKey: item.templateKey,
-          title: item.title,
-          filename: item.filename,
-          day: item.day,
-          lines: item.lines,
-          mp4,
-          origin: item.origin,
-        });
-        continue;
-      } catch (error) {
-        console.error('[video-library] blob seed failed, keeping the file in the deployment', error);
-      }
-    }
-    const docsAgain = await collection();
-    if (await docsAgain.findOne({ origin: item.origin })) continue;
-    await docsAgain.insertOne({
-      _id: new ObjectId(),
-      templateId: item.templateId,
-      templateKey: item.templateKey,
-      title: item.title,
-      filename: item.filename,
-      blobUrl: '',
-      blobPathname: '',
-      bundledFile: item.file,
-      day: item.day,
-      lines: item.lines,
-      createdAt: new Date(),
-      origin: item.origin,
-    });
-  }
-  await meta.updateOne({ _id: markerId }, { $set: { status: 'done', seededAt: new Date() } });
-}
 
 type PublishedSeedItem = SeedItem & { blobUrl?: string; blobPathname?: string };
 
@@ -399,24 +336,8 @@ async function seedPublishedBatch(items: PublishedSeedItem[]): Promise<void> {
 
 /** Ten this-or-that editions. A separate marker from the original cartoons. */
 export async function ensureBinaryBatch(): Promise<void> {
-  const publishedPath = path.join(batchDir(), 'published.json');
-  if (existsSync(publishedPath)) {
-    const published = JSON.parse(await fs.readFile(publishedPath, 'utf8')) as {
-      items?: PublishedSeedItem[];
-    };
-    if (published.items && published.items.length > 0 && published.items.every((item) => item.blobUrl)) {
-      await seedPublishedBatch(published.items);
-      return;
-    }
-  }
-  const manifestPath = path.join(batchDir(), 'manifest.json');
-  if (!existsSync(manifestPath)) return;
-  const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8')) as SeedItem[];
-  const readable: SeedItem[] = [];
-  for (const item of manifest) {
-    if (existsSync(path.join(batchDir(), item.file))) readable.push(item);
-  }
-  if (readable.length === manifest.length) {
-    await seedMarkedSet(BATCH_MARKER_ID, readable, batchDir());
+  const items = (publishedBatch.items ?? []) as PublishedSeedItem[];
+  if (items.length > 0 && items.every((item) => item.blobUrl)) {
+    await seedPublishedBatch(items);
   }
 }

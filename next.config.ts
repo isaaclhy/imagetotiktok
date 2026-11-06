@@ -29,7 +29,7 @@ const nextConfig: NextConfig = {
     '*': ['public/copycat-backgrounds/**/*'],
   },
   outputFileTracingIncludes: {
-    '/api/video-library/route': ['./data/cartoon-originals/**/*', './data/cartoon-batch/published.json', './data/cartoon-batch/manifest.json'],
+    '/api/video-library/route': ['./data/cartoon-originals/**/*'],
     '/api/video-library/[id]/route': ['./data/cartoon-originals/**/*'],
     '/api/video-library/test-artifact/route': ['./data/cartoon-originals/test-artifact.mp4'],
   },
