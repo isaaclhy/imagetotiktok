@@ -1,0 +1,710 @@
+Choice photographs for the girlfriend this-or-that quizzes.
+Each file is a cached Wikimedia Commons photograph. The card label is the quiz option.
+
+action movies
+  file: action-movies.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AStunt_Pyrotechnics_Luc_Viatour.jpg
+  license: CC BY-SA 3.0
+  credit: Luc Viatour
+
+adventure hike
+  file: adventure-hike.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ALandscape_during_Laugavegur_hiking_trail_2-CA_reduced.jpg
+  license: CC BY 3.0
+  credit: Chmee2 / Valtameri
+
+aisle seat
+  file: aisle-seat.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ASwiss_International_Air_Lines_%28SWISS%29_Airplane_Cabin_-_Feb_2013_01.jpg
+  license: CC BY-SA 3.0
+  credit: WestportWiki
+
+beach
+  file: beach.jpg
+  source: https://commons.wikimedia.org/wiki/File%3A02_Cyprus_vacation%2C_sandy_beach_of_Ayia_Thekla%2C_Sotira%2C_Cyprus.jpg
+  license: CC BY 3.0
+  credit: Marek Ślusarczyk ( Tupungato ) Photo portfolio
+
+big city
+  file: big-city.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AChateau_Frontenac_illuminated_at_night_in_Quebec_City.jpg
+  license: CC0
+  credit: Wilfredor
+
+big spoon
+  file: big-spoon.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ACouple_hugging.jpg
+  license: CC BY-SA 2.0
+  credit: Photocapy
+
+binge the whole season
+  file: binge-the-whole-season.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AWatching_World_Cup_2006_TV_at_FamilyMart_in_Seoul.jpg
+  license: CC BY-SA 2.0
+  credit: d'n'c
+
+board games
+  file: board-games.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AThe_Balderdash_board_game_and_pieces_02.jpg
+  license: CC BY 4.0
+  credit: Harrison Keely
+
+book
+  file: book.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AOpen_Internal_Pages_of_the_Book_Detr%C3%A1s_del_espejo_08.png
+  license: CC BY-SA 4.0
+  credit: HonysTorresArt
+
+boots
+  file: boots.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ABlack_8cm_high-heeled_ankle_boots_%2820211007153232%29.jpg
+  license: CC BY-SA 4.0
+  credit: N509FZ
+
+burger
+  file: burger.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ABig_Mac_hamburger.jpg
+  license: CC0
+  credit: Evan-Amos
+
+burgers
+  file: burgers.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ABig_Mac_hamburger.jpg
+  license: CC0
+  credit: Evan-Amos
+
+cake
+  file: cake.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ASlice_of_Lemon_Cake.jpg
+  license: CC BY-SA 4.0
+  credit: Whoisjohngalt
+
+call
+  file: call.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AMan_talking_on_the_phone_in_Montr%C3%A9al-Pierre_Elliott_Trudeau_International_Airport_006.jpg
+  license: CC0
+  credit: Wilfredor
+
+camping
+  file: camping.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AZagedan_Ridge%2C_Camping_tent%2C_Caucasus_Mountains.jpg
+  license: CC BY 4.0
+  credit: Vyacheslav Argenberg
+
+caramel popcorn
+  file: caramel-popcorn.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ACaramel_Popcorn_%2832402585090%29.jpg
+  license: CC BY 2.0
+  credit: Steven Miller
+
+cats
+  file: cats.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ATabby_cat_with_blue_eyes-3336579.jpg
+  license: CC0
+  credit: AdinaVoicu
+
+chips
+  file: chips.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ATyrrells_veg_crisps_2.jpg
+  license: CC0
+  credit: Mx. Granger
+
+chocolate
+  file: chocolate.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AGreen_and_Black%27s_dark_chocolate_bar_2.jpg
+  license: CC0
+  credit: Mx. Granger
+
+chocolates
+  file: chocolates.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ABox_of_Valentine_Chocolates.JPG
+  license: CC BY 3.0
+  credit: Dwight Burdette
+
+coffee
+  file: coffee.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ACup_of_coffee_%28Serbian_cuisine%2C_Grand_kava%29.jpg
+  license: CC BY-SA 4.0
+  credit: Petar Milošević
+
+comedy shows
+  file: comedy-shows.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AStand-up_comedy_Bulgaria_Club.jpg
+  license: CC BY-SA 4.0
+  credit: Stanimira dimitrova
+
+concerts
+  file: concerts.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ACrowd_at_Noam_Rotem_concert.jpg
+  license: CC BY 2.0
+  credit: Asaf antman
+
+cook at home
+  file: cook-at-home.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ANamche_Bazaar%2C_Cooking_in_the_kitchen%2C_Nepal.jpg
+  license: CC BY 4.0
+  credit: Vyacheslav Argenberg
+
+coordinated colors
+  file: coordinated-colors.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ATrash_the_dress_-_Wetlook_in_wedding_clothes_-_Heterosexual_couple_in_sea.jpg
+  license: CC BY-SA 2.0
+  credit: Casa Fragma
+
+couch
+  file: couch.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ACouch-furniture-living-room-sofa_%2824300293356%29.jpg
+  license: CC0
+  credit: www.Pixel.la Free Stock Photos
+
+cozy cabin
+  file: cozy-cabin.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AAudie_Murphy_American_Cotton_Museum_July_2015_49_%28Wilkins_Log_Cabin%29.jpg
+  license: CC BY-SA 4.0
+  credit: Michael Barera
+
+dancing
+  file: dancing.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AKinnauri_dance_being_performed_by_the_people_of_Chitkul.jpg
+  license: CC0
+  credit: BhotaRohit
+
+dinner at home
+  file: dinner-at-home.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AHome_dinner_-_Bali.jpg
+  license: CC BY-SA 4.0
+  credit: Withlocals B.V.
+
+dogs
+  file: dogs.jpg
+  source: https://commons.wikimedia.org/wiki/File%3APortrait_of_a_dog%2C_seated_on_a_red_cushion%2C_by_Henri_van_Assche%2C_1801.jpg
+  license: Public domain
+  credit: Henri Van Assche
+
+early bird
+  file: early-bird.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ACup_of_coffee_at_sunrise.jpg
+  license: CC BY 2.0
+  credit: Kristina Alexanderson
+
+fancy hotel
+  file: fancy-hotel.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ALobby_lounge_of_Amantaka_Suite_Amantaka_luxury_Resort_%26_Hotel_Luang_Prabang_Laos.jpg
+  license: CC BY-SA 4.0
+  credit: Basile Morin
+
+fancy restaurant
+  file: fancy-restaurant.jpg
+  source: https://commons.wikimedia.org/wiki/File%3APan_seared_scallops_with_grilled_asparagus_fine_dining_appetizer.jpg
+  license: CC0
+  credit: Wiki.cullin
+
+flight
+  file: flight.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AOcean_Airways_Beech_99_Airliner_N7099N.jpg
+  license: CC BY-SA 4.0
+  credit: Richard Vandervord
+
+flowers
+  file: flowers.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ARose_and_carnation_flower_bouquet_01.jpg
+  license: CC BY-SA 4.0
+  credit: Suyash Dwivedi
+
+four weekend trips
+  file: four-weekend-trips.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ADuffel_bags%2C_Interboot_2020%2C_Friedrichshafen_%28IB200172%29.jpg
+  license: CC BY-SA 4.0
+  credit: Matti Blume
+
+Friday night in
+  file: friday-night-in.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AFamily_watching_a_movie_on_the_couch_%2814963809100%29.jpg
+  license: CC BY 2.0
+  credit: Personal Creations
+
+Friday night out
+  file: friday-night-out.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AYerevan%2C_Republic_Square_at_night%2C_Yerevan_city_life%2C_Nightlife%2C_Armenia.jpg
+  license: CC BY 4.0
+  credit: Vyacheslav Argenberg
+
+fries
+  file: fries.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ACajun_fries_from_Popeyes_Louisiana_Kitchen%2C_Stratford%2C_Ontario%2C_2025-08-04.jpg
+  license: CC BY-SA 4.0
+  credit: Chris Woodrich
+
+gold
+  file: gold.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ADogri_Gold_Necklace%2C_Jammu_Culture.jpg
+  license: CC BY-SA 4.0
+  credit: SpeakingArch
+
+good morning text
+  file: good-morning-text.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AWoman_sitting_in_the_bed_in_the_morning%2C_drinking_coffee_and_scrolling_through_her_phone.jpg
+  license: CC BY 2.0
+  credit: Shixart1985
+
+goodnight call
+  file: goodnight-call.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ADirty_Linen_Night_12_Bike_Cab_Phone_Call.jpg
+  license: CC BY 2.0
+  credit: Infrogmation of New Orleans
+
+gym
+  file: gym.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AColorful_pile_of_dumbbells_at_the_gym_2.jpg
+  license: CC BY-SA 4.0
+  credit: Ser Amantio di Nicolao
+
+horror movies
+  file: horror-movies.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AMountain_View_Cemetery%2C_foggy_%283%29.jpg
+  license: CC BY-SA 2.0
+  credit: Colin Knowles
+
+hot coffee
+  file: hot-coffee.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AA_small_cup_of_coffee.JPG
+  license: CC BY-SA 2.0
+  credit: Julius Schorzman
+
+hotdog
+  file: hotdog.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AHotdog_too.jpg
+  license: CC BY-SA 3.0
+  credit: 
+
+hugs
+  file: hugs.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AFriends%2C_Jimma_%2810923360765%29.jpg
+  license: CC BY-SA 2.0
+  credit: Rod Waddington from Kergunyah, Australia
+
+iced coffee
+  file: iced-coffee.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AIced_Coffee_in_Ipil_Zamboanga_Sibugay.jpg
+  license: CC BY-SA 4.0
+  credit: Gellie Joyce
+
+Instagram
+  file: instagram.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ASZ_%E6%B7%B1%E5%9C%B3_Shenzhen_%E9%BE%8D%E8%8F%AF_Longhua_%E6%B7%B1%E5%9C%B3%E7%BE%8E%E8%A1%93%E9%A4%A8_Shenzhen_Art_Museum_lady_taking_photo_with_smartphone_May_2024_R12S_02.jpg
+  license: CC0
+  credit: TANNMY NAISZE Wanguo
+
+jeans
+  file: jeans.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AHigh_waisted_jeans_1435042736.jpg
+  license: CC BY-SA 2.0
+  credit: iluvrhinestones from seattle, oceania, upload by Herrick 08:08, 7 December 2007 (UTC)
+
+ketchup
+  file: ketchup.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AKetchup_bottle_over_some_grass.jpg
+  license: CC BY-SA 4.0
+  credit: Aykhan Zayedzadeh
+
+kisses
+  file: kisses.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AWedding_Kiss_-_Ukraine.jpg
+  license: CC BY 2.0
+  credit: Vladimir Pustovit
+
+little spoon
+  file: little-spoon.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AJust_friends_%285892848323%29.jpg
+  license: CC BY-SA 2.0
+  credit: Fedor Leukhin
+
+long walks
+  file: long-walks.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AOulton_Park_golf_course_-_permissive_path_-_geograph.org.uk_-_6495660.jpg
+  license: CC BY-SA 2.0
+  credit: Stephen Craven
+
+love notes
+  file: love-notes.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AFrancis_Ford_Coppola%27s_handwritten_casting_notes_for_The_Godfather%2C_at_Francis_Ford_Coppola_Winery%2C_near_Geyserville%2C_2011.jpg
+  license: CC0
+  credit: DimiTalen
+
+love songs
+  file: love-songs.jpg
+  source: https://commons.wikimedia.org/wiki/File%3A12in-Vinyl-LP-Record-Angle.jpg
+  license: Public domain
+  credit: Evan-Amos
+
+luxury hotel
+  file: luxury-hotel.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ARestaurant_room_of_Amantaka_luxury_Resort_%26_Hotel_in_Luang_Prabang_Laos.jpg
+  license: CC BY-SA 4.0
+  credit: Basile Morin
+
+matching outfits
+  file: matching-outfits.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ATweeling2.jpg
+  license: CC BY-SA 3.0
+  credit: We El at Dutch Wikipedia
+
+mild food
+  file: mild-food.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ASpaghetti_alla_Carbonara.jpg
+  license: Public domain
+  credit: Mattes Boch ( Mboch on English Wikipedia)
+
+morning shower
+  file: morning-shower.jpg
+  source: https://commons.wikimedia.org/wiki/File%3A1823_Bathroom_New_Orleans_-_Shower_Stall.jpg
+  license: CC BY 2.0
+  credit: Wendy Harman
+
+mountains
+  file: mountains.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AMountain_Peak%2C_Alaska_%281999%29.jpg
+  license: CC BY-SA 4.0
+  credit: Godot13
+
+movie
+  file: movie.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AMovie_theater_popcorn_machine.jpg
+  license: CC BY-SA 2.0
+  credit: Tim Evanson
+
+movie theater
+  file: movie-theater.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ALuxury_Movie_Theater_Seats.jpg
+  license: CC BY-SA 4.0
+  credit: Author0612
+
+museums
+  file: museums.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AWorcester_Art_Museum_%28Massachusetts%29.jpg
+  license: CC BY-SA 4.0
+  credit: Kenneth C. Zirkel
+
+Netflix
+  file: netflix.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AFamily_watching_television_1958_cropped2.jpg
+  license: CC0
+  credit: Evert F. Baumgardner - National Archives and Records Administration.
+
+night owl
+  file: night-owl.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AHomo_sapien_using_laptop_at_night.jpg
+  license: CC BY 4.0
+  credit: Javan Rhino
+
+night shower
+  file: night-shower.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AEFTA00000809_-_White_bathroom_with_glass_shower_door_sink_and_marble_floor_tiles_viewed_through_an_open_doorway.jpg
+  license: Public domain
+  credit: Federal Bureau of Investigation
+
+one episode a week
+  file: one-episode-a-week.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ATelevision_remote_control_-_black_01.jpg
+  license: CC BY-SA 4.0
+  credit: Dmitry Makeev
+
+one long trip
+  file: one-long-trip.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ASuitcase%2C_1880-1910_by_Nellie_Two_Bear_Gates.jpg
+  license: CC0
+  credit: Suitcase by Nellie Two Bear Gates. Photograph by Mia employee.
+
+order takeout
+  file: order-takeout.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ADoner_kebab_takeaway_focus_1.jpg
+  license: CC BY-SA 4.0
+  credit: Acabashi
+
+pancakes
+  file: pancakes.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AFoodiesfeed.com_pouring-honey-on-pancakes-with-walnuts.jpg
+  license: CC0
+  credit: Mae Mu
+
+picnic in the park
+  file: picnic-in-the-park.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AChess%2C_boy%2C_kid%2C_picnic%2C_card_game%2C_snocks%2C_shorts%2C_cigarette%2C_smoking%2C_glasses%2C_colorful%2C_blanket_Fortepan_77329.jpg
+  license: CC BY-SA 3.0
+  credit: FOTO:Fortepan — ID 77329 : Adományozó/Donor: tm. archive copy at the Wayback Machine
+
+pie
+  file: pie.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AApple_Pie_Pondicherry.jpg
+  license: CC BY 4.0
+  credit: Dr. Chinchu C.
+
+pizza
+  file: pizza.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AVegetarian_Pizza.jpg
+  license: CC BY-SA 4.0
+  credit: Petar Milošević
+
+plan every hour
+  file: plan-every-hour.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AWoman_looking_at_an_appointment_book.jpg
+  license: Public domain
+  credit: Bill Branson (Photographer)
+
+planned date
+  file: planned-date.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ARestaurant_room_of_Amantaka_luxury_Resort_%26_Hotel_in_Luang_Prabang_Laos.jpg
+  license: CC BY-SA 4.0
+  credit: Basile Morin
+
+planned presents
+  file: planned-presents.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AWrapped_gift.jpg
+  license: CC BY-SA 4.0
+  credit: Loneshieling
+
+playlist
+  file: playlist.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AGradoPrestige-HeadphoneArticle.jpg
+  license: Public domain
+  credit: PiccoloNamek at English Wikipedia
+
+podcast
+  file: podcast.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AMicrophone_in_SPNN_Podcast_studio.jpg
+  license: CC BY 4.0
+  credit: Myotus
+
+popcorn with butter
+  file: popcorn-with-butter.jpg
+  source: https://commons.wikimedia.org/wiki/File%3APopcorn_for_sale_at_the_Monday_Market_in_Kakuri%2C_Kaduna_01.jpg
+  license: CC BY-SA 4.0
+  credit: Kambai Akau
+
+private moments
+  file: private-moments.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ACouple_working_at_home_%28Unsplash%29.jpg
+  license: CC0
+  credit: Crew crew
+
+public affection
+  file: public-affection.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AWedding_couple_holding_hands_closeup.jpg
+  license: CC BY 2.0
+  credit: Shixart1985
+
+rain
+  file: rain.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AA_man_walks_through_heavy_rain_under_an_umbrella_in_Kigali%2C_Rwanda._Emmanuel_Kwizera.jpg
+  license: CC BY-SA 4.0
+  credit: Emmanuelkwizera
+
+ranch
+  file: ranch.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ARanch_dressing.jpg
+  license: CC BY 2.0
+  credit: Whitney from Chicago, IL
+
+raspberries
+  file: raspberries.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AFresh_raspberries_02.jpg
+  license: CC BY 2.0
+  credit: Chris Eason
+
+road trip
+  file: road-trip.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AA_car_on_Nairobi-Nakuru_highway.jpg
+  license: CC BY-SA 4.0
+  credit: zacharia_nyambu
+
+rom-coms
+  file: rom-coms.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ANature_couple_sunset_09.jpg
+  license: CC BY-SA 4.0
+  credit: Shrinivaskulkarni1388
+
+rooftop dinner
+  file: rooftop-dinner.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ARooftop_Restaurant_-_geograph.org.uk_-_5385539.jpg
+  license: CC BY-SA 2.0
+  credit: Chris Thomas-Atkin
+
+salty
+  file: salty.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AClara_Peeters_-_Still_Life_with_Cheeses%2C_Almonds_and_Pretzels.jpg
+  license: Public domain
+  credit: Clara Peeters
+
+savory breakfast
+  file: savory-breakfast.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AEggs_and_bacon.jpg
+  license: Public domain
+  credit: Jon Sullivan
+
+silver
+  file: silver.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ABhil_community_woman_wearing_traditional_silver_hand_jewelry%2C_Jhabua%2C_Madhya_Pradesh%2C_India_%282%29.jpg
+  license: CC BY-SA 4.0
+  credit: Suyash Dwivedi
+
+singing
+  file: singing.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ARocknroll_singer_amk.jpg
+  license: CC BY-SA 2.5
+  credit: user:AngMoKio
+
+sneakers
+  file: sneakers.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AProfessional_Sneakers_-_Sneakers_for_hostesses%2C_pilots_and_other_professionals._Comfortable_sneakers_produced_in_leather_inside_and_outside.jpg
+  license: CC BY-SA 4.0
+  credit: Ricardovfo
+
+snow
+  file: snow.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AIridescent_clouds_during_snowfall_1.jpg
+  license: CC BY-SA 4.0
+  credit: W.carter
+
+spa day
+  file: spa-day.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AMassage_Center_Ajman_Muskaan_Spa.webp
+  license: CC0
+  credit: Muskaanuae
+
+spicy food
+  file: spicy-food.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AMan_turns_drying_chili_peppers%2C_Turkey.jpg
+  license: CC BY-SA 4.0
+  credit: Rotadefterim
+
+strawberries
+  file: strawberries.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AGarden_strawberry_%28Fragaria_%C3%97_ananassa%29_single2.jpg
+  license: CC BY-SA 4.0
+  credit: Ivar Leidus
+
+street food tours
+  file: street-food-tours.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AGu_Choki_Pan%27s_stall_at_SH%C5%8CTENGAI_Pan-Asian_Market%2C_Lower_Stable_Street%2C_London_2025-09-18.jpg
+  license: CC0
+  credit: Andy Li
+
+summer
+  file: summer.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ABagayevskaya%2C_Don_River%2C_Beach%2C_Trees%2C_Summer_in_Russia.jpg
+  license: CC BY 4.0
+  credit: Vyacheslav Argenberg
+
+sunrise
+  file: sunrise.jpg
+  source: https://commons.wikimedia.org/wiki/File%3A015a_Angolan_giraffe_silhouette_at_sunrise_in_the_Kalahari_Desert_of_Namibia_Photo_by_Giles_Laurent.jpg
+  license: CC BY-SA 4.0
+  credit: Giles Laurent
+
+sunset
+  file: sunset.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ASunset_Key_and_Sailboats%2C_Florida%2C_2025.jpg
+  license: CC0
+  credit: Julian Lupyan
+
+surprise date
+  file: surprise-date.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ASecretary_Kerry_Receives_a_Surprise_Birthday_Cake_in_Vietnam_%2811403205775%29.jpg
+  license: Public domain
+  credit: U.S. Department of State from United States
+
+surprise gifts
+  file: surprise-gifts.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AOpening_my_gift_%28331500230%29.jpg
+  license: CC BY-SA 2.0
+  credit: Mack Male from Edmonton, AB, Canada
+
+sushi
+  file: sushi.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ASushi_Plate_in_Organic_Sushi_Prague_4_K.jpg
+  license: CC0
+  credit: Mojmir Churavy
+
+sweatpants
+  file: sweatpants.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ALayered-sweatpants.jpg
+  license: CC BY-SA 3.0
+  credit: Qwentl
+
+sweet
+  file: sweet.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AJelly_Beans_%283454180394%29.jpg
+  license: CC BY 2.0
+  credit: Sir Mildred Pierce
+
+sweet breakfast
+  file: sweet-breakfast.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ABreakfastPastries.JPG
+  license: CC0
+  credit: Raysonho @ Open Grid Scheduler / Grid Engine
+
+tacos
+  file: tacos.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ABirria_tacos_at_Teddy%27s_Red_Tacos_in_Venice%2C_California.jpg
+  license: CC BY 2.0
+  credit: T.Tseng
+
+tea
+  file: tea.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ACup_of_Milk_Tea.jpg
+  license: CC BY-SA 4.0
+  credit: Gaurav Dhwaj Khadka
+
+text
+  file: text.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AWoman_texting_on_a_smartphone.jpg
+  license: CC0
+  credit: Kristin Hardwick
+
+TikTok
+  file: tiktok.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ASmartphone_Use.jpg
+  license: CC0
+  credit: Océanos y dados
+
+tiny village
+  file: tiny-village.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ALuo_village_05.jpg
+  license: CC BY-SA 4.0
+  credit: Alexander Leisser
+
+video games
+  file: video-games.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AHands_holding_video_game_controller_%2850811892858%29.jpg
+  license: CC BY 2.0
+  credit: Vu Hoang
+
+waffles
+  file: waffles.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AWaffle%2C_Baytree_Waffle_House%2C_Remerton.jpg
+  license: CC BY-SA 4.0
+  credit: Michael Rivera
+
+window seat
+  file: window-seat.jpg
+  source: https://commons.wikimedia.org/wiki/File%3AAirplane_window_capture.jpg
+  license: CC BY 4.0
+  credit: Marcelomenezes96
+
+wing it
+  file: wing-it.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ABackpacker_in_Goat_Rocks_Wilderness.jpg
+  license: CC BY 4.0
+  credit: Mattsjc
+
+winter
+  file: winter.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ARhB_ABe_8-12_Malans_winter.jpg
+  license: CC BY-SA 4.0
+  credit: Kabelleger / David Gubler
+
+YouTube
+  file: youtube.jpg
+  source: https://commons.wikimedia.org/wiki/File%3ASony_Vaio_Laptop_showing_video_with_man_lying_in_bed_watching_TV.jpeg
+  license: CC BY-SA 4.0
+  credit: Pittigrilli

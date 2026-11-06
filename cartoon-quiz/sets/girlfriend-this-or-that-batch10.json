@@ -3,7 +3,7 @@
   "template": "how_well_girlfriend_this_or_that",
   "questionsPerVideo": 6,
   "totalVideos": 10,
-  "timingNote": "Original v15 used 8 open-ended questions in 56.03s. Recommend 6 this-or-that questions to stay ~56-60s.",
+  "timingNote": "Six concise this-or-that questions. Spoken and on-screen text is 'A or B?' with no lead-in.",
   "introPreserve": {
     "title": "How well do you know your girlfriend?",
     "girlsLine": "Girls!",
@@ -25,7 +25,7 @@
       "titleHint": "How well do you know your girlfriend?",
       "levelLabel": "level: easy",
       "topicHint": "food & drinks",
-      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; square illustration cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
+      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; real photo choice cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
       "questionIds": [
         "gfot_001",
         "gfot_002",
@@ -37,7 +37,7 @@
       "questions": [
         {
           "id": "gfot_001",
-          "spokenQuestion": "Would she choose tea or coffee?",
+          "spokenQuestion": "Tea or coffee?",
           "optionA": "tea",
           "optionB": "coffee",
           "topic": "food_drink",
@@ -46,7 +46,7 @@
         },
         {
           "id": "gfot_002",
-          "spokenQuestion": "Would she choose pizza or tacos?",
+          "spokenQuestion": "Pizza or tacos?",
           "optionA": "pizza",
           "optionB": "tacos",
           "topic": "food_drink",
@@ -55,7 +55,7 @@
         },
         {
           "id": "gfot_003",
-          "spokenQuestion": "Would she choose pancakes or waffles?",
+          "spokenQuestion": "Pancakes or waffles?",
           "optionA": "pancakes",
           "optionB": "waffles",
           "topic": "food_drink",
@@ -64,7 +64,7 @@
         },
         {
           "id": "gfot_007",
-          "spokenQuestion": "Would she choose fries or chips?",
+          "spokenQuestion": "Fries or chips?",
           "optionA": "fries",
           "optionB": "chips",
           "topic": "food_drink",
@@ -73,7 +73,7 @@
         },
         {
           "id": "gfot_012",
-          "spokenQuestion": "Would she choose iced coffee or hot coffee?",
+          "spokenQuestion": "Iced coffee or hot coffee?",
           "optionA": "iced coffee",
           "optionB": "hot coffee",
           "topic": "food_drink",
@@ -82,7 +82,7 @@
         },
         {
           "id": "gfot_005",
-          "spokenQuestion": "Would she choose chocolate or chips?",
+          "spokenQuestion": "Chocolate or chips?",
           "optionA": "chocolate",
           "optionB": "chips",
           "topic": "food_drink",
@@ -96,7 +96,7 @@
       "titleHint": "How well do you know your girlfriend?",
       "levelLabel": "level: medium",
       "topicHint": "food night",
-      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; square illustration cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
+      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; real photo choice cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
       "questionIds": [
         "gfot_004",
         "gfot_006",
@@ -108,7 +108,7 @@
       "questions": [
         {
           "id": "gfot_004",
-          "spokenQuestion": "Would she choose sushi or burgers?",
+          "spokenQuestion": "Sushi or burgers?",
           "optionA": "sushi",
           "optionB": "burgers",
           "topic": "food_drink",
@@ -117,7 +117,7 @@
         },
         {
           "id": "gfot_006",
-          "spokenQuestion": "Would she choose cake or pie?",
+          "spokenQuestion": "Cake or pie?",
           "optionA": "cake",
           "optionB": "pie",
           "topic": "food_drink",
@@ -126,7 +126,7 @@
         },
         {
           "id": "gfot_008",
-          "spokenQuestion": "Would she choose burger or hotdog?",
+          "spokenQuestion": "Burger or hotdog?",
           "optionA": "burger",
           "optionB": "hotdog",
           "topic": "food_drink",
@@ -135,7 +135,7 @@
         },
         {
           "id": "gfot_009",
-          "spokenQuestion": "Would she choose strawberries or raspberries?",
+          "spokenQuestion": "Strawberries or raspberries?",
           "optionA": "strawberries",
           "optionB": "raspberries",
           "topic": "food_drink",
@@ -144,7 +144,7 @@
         },
         {
           "id": "gfot_011",
-          "spokenQuestion": "Would she choose spicy food or mild food?",
+          "spokenQuestion": "Spicy food or mild food?",
           "optionA": "spicy food",
           "optionB": "mild food",
           "topic": "food_drink",
@@ -153,7 +153,7 @@
         },
         {
           "id": "gfot_016",
-          "spokenQuestion": "Would she choose cook at home or order takeout?",
+          "spokenQuestion": "Cook at home or order takeout?",
           "optionA": "cook at home",
           "optionB": "order takeout",
           "topic": "food_drink",
@@ -167,7 +167,7 @@
       "titleHint": "How well do you know your girlfriend?",
       "levelLabel": "level: medium",
       "topicHint": "travel vibes",
-      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; square illustration cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
+      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; real photo choice cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
       "questionIds": [
         "gfot_017",
         "gfot_018",
@@ -179,7 +179,7 @@
       "questions": [
         {
           "id": "gfot_017",
-          "spokenQuestion": "Would she choose beach or mountains?",
+          "spokenQuestion": "Beach or mountains?",
           "optionA": "beach",
           "optionB": "mountains",
           "topic": "travel_date",
@@ -188,7 +188,7 @@
         },
         {
           "id": "gfot_018",
-          "spokenQuestion": "Would she choose road trip or flight?",
+          "spokenQuestion": "Road trip or flight?",
           "optionA": "road trip",
           "optionB": "flight",
           "topic": "travel_date",
@@ -197,7 +197,7 @@
         },
         {
           "id": "gfot_019",
-          "spokenQuestion": "Would she choose plan every hour or wing it?",
+          "spokenQuestion": "Plan every hour or wing it?",
           "optionA": "plan every hour",
           "optionB": "wing it",
           "topic": "travel_date",
@@ -206,7 +206,7 @@
         },
         {
           "id": "gfot_020",
-          "spokenQuestion": "Would she choose fancy hotel or cozy cabin?",
+          "spokenQuestion": "Fancy hotel or cozy cabin?",
           "optionA": "fancy hotel",
           "optionB": "cozy cabin",
           "topic": "travel_date",
@@ -215,7 +215,7 @@
         },
         {
           "id": "gfot_026",
-          "spokenQuestion": "Would she choose sunrise or sunset?",
+          "spokenQuestion": "Sunrise or sunset?",
           "optionA": "sunrise",
           "optionB": "sunset",
           "topic": "travel_date",
@@ -224,7 +224,7 @@
         },
         {
           "id": "gfot_027",
-          "spokenQuestion": "Would she choose window seat or aisle seat?",
+          "spokenQuestion": "Window seat or aisle seat?",
           "optionA": "window seat",
           "optionB": "aisle seat",
           "topic": "travel_date",
@@ -238,7 +238,7 @@
       "titleHint": "How well do you know your girlfriend?",
       "levelLabel": "level: medium",
       "topicHint": "date style",
-      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; square illustration cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
+      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; real photo choice cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
       "questionIds": [
         "gfot_022",
         "gfot_023",
@@ -250,7 +250,7 @@
       "questions": [
         {
           "id": "gfot_022",
-          "spokenQuestion": "Would she choose picnic in the park or rooftop dinner?",
+          "spokenQuestion": "Picnic in the park or rooftop dinner?",
           "optionA": "picnic in the park",
           "optionB": "rooftop dinner",
           "topic": "travel_date",
@@ -259,7 +259,7 @@
         },
         {
           "id": "gfot_023",
-          "spokenQuestion": "Would she choose surprise date or planned date?",
+          "spokenQuestion": "Surprise date or planned date?",
           "optionA": "surprise date",
           "optionB": "planned date",
           "topic": "travel_date",
@@ -268,7 +268,7 @@
         },
         {
           "id": "gfot_024",
-          "spokenQuestion": "Would she choose dinner at home or fancy restaurant?",
+          "spokenQuestion": "Dinner at home or fancy restaurant?",
           "optionA": "dinner at home",
           "optionB": "fancy restaurant",
           "topic": "travel_date",
@@ -277,7 +277,7 @@
         },
         {
           "id": "gfot_025",
-          "spokenQuestion": "Would she choose spa day or adventure hike?",
+          "spokenQuestion": "Spa day or adventure hike?",
           "optionA": "spa day",
           "optionB": "adventure hike",
           "topic": "travel_date",
@@ -286,7 +286,7 @@
         },
         {
           "id": "gfot_021",
-          "spokenQuestion": "Would she choose camping or luxury hotel?",
+          "spokenQuestion": "Camping or luxury hotel?",
           "optionA": "camping",
           "optionB": "luxury hotel",
           "topic": "travel_date",
@@ -295,7 +295,7 @@
         },
         {
           "id": "gfot_029",
-          "spokenQuestion": "Would she choose museums or street food tours?",
+          "spokenQuestion": "Museums or street food tours?",
           "optionA": "museums",
           "optionB": "street food tours",
           "topic": "travel_date",
@@ -309,7 +309,7 @@
       "titleHint": "How well do you know your girlfriend?",
       "levelLabel": "level: easy",
       "topicHint": "entertainment",
-      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; square illustration cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
+      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; real photo choice cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
       "questionIds": [
         "gfot_031",
         "gfot_032",
@@ -321,7 +321,7 @@
       "questions": [
         {
           "id": "gfot_031",
-          "spokenQuestion": "Would she choose Netflix or YouTube?",
+          "spokenQuestion": "Netflix or YouTube?",
           "optionA": "Netflix",
           "optionB": "YouTube",
           "topic": "entertainment",
@@ -330,7 +330,7 @@
         },
         {
           "id": "gfot_032",
-          "spokenQuestion": "Would she choose rom-coms or action movies?",
+          "spokenQuestion": "Rom-coms or action movies?",
           "optionA": "rom-coms",
           "optionB": "action movies",
           "topic": "entertainment",
@@ -339,7 +339,7 @@
         },
         {
           "id": "gfot_034",
-          "spokenQuestion": "Would she choose board games or video games?",
+          "spokenQuestion": "Board games or video games?",
           "optionA": "board games",
           "optionB": "video games",
           "topic": "entertainment",
@@ -348,7 +348,7 @@
         },
         {
           "id": "gfot_035",
-          "spokenQuestion": "Would she choose book or movie?",
+          "spokenQuestion": "Book or movie?",
           "optionA": "book",
           "optionB": "movie",
           "topic": "entertainment",
@@ -357,7 +357,7 @@
         },
         {
           "id": "gfot_038",
-          "spokenQuestion": "Would she choose movie theater or couch?",
+          "spokenQuestion": "Movie theater or couch?",
           "optionA": "movie theater",
           "optionB": "couch",
           "topic": "entertainment",
@@ -366,7 +366,7 @@
         },
         {
           "id": "gfot_040",
-          "spokenQuestion": "Would she choose singing or dancing?",
+          "spokenQuestion": "Singing or dancing?",
           "optionA": "singing",
           "optionB": "dancing",
           "topic": "entertainment",
@@ -380,7 +380,7 @@
       "titleHint": "How well do you know your girlfriend?",
       "levelLabel": "level: medium",
       "topicHint": "movie night",
-      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; square illustration cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
+      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; real photo choice cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
       "questionIds": [
         "gfot_033",
         "gfot_036",
@@ -392,7 +392,7 @@
       "questions": [
         {
           "id": "gfot_033",
-          "spokenQuestion": "Would she choose horror movies or rom-coms?",
+          "spokenQuestion": "Horror movies or rom-coms?",
           "optionA": "horror movies",
           "optionB": "rom-coms",
           "topic": "entertainment",
@@ -401,7 +401,7 @@
         },
         {
           "id": "gfot_036",
-          "spokenQuestion": "Would she choose concerts or comedy shows?",
+          "spokenQuestion": "Concerts or comedy shows?",
           "optionA": "concerts",
           "optionB": "comedy shows",
           "topic": "entertainment",
@@ -410,7 +410,7 @@
         },
         {
           "id": "gfot_037",
-          "spokenQuestion": "Would she choose binge the whole season or one episode a week?",
+          "spokenQuestion": "Binge the whole season or one episode a week?",
           "optionA": "binge the whole season",
           "optionB": "one episode a week",
           "topic": "entertainment",
@@ -419,7 +419,7 @@
         },
         {
           "id": "gfot_039",
-          "spokenQuestion": "Would she choose podcast or playlist?",
+          "spokenQuestion": "Podcast or playlist?",
           "optionA": "podcast",
           "optionB": "playlist",
           "topic": "entertainment",
@@ -428,7 +428,7 @@
         },
         {
           "id": "gfot_028",
-          "spokenQuestion": "Would she choose big city or tiny village?",
+          "spokenQuestion": "Big city or tiny village?",
           "optionA": "big city",
           "optionB": "tiny village",
           "topic": "travel_date",
@@ -437,7 +437,7 @@
         },
         {
           "id": "gfot_030",
-          "spokenQuestion": "Would she choose one long trip or four weekend trips?",
+          "spokenQuestion": "One long trip or four weekend trips?",
           "optionA": "one long trip",
           "optionB": "four weekend trips",
           "topic": "travel_date",
@@ -451,7 +451,7 @@
       "titleHint": "How well do you know your girlfriend?",
       "levelLabel": "level: easy",
       "topicHint": "everyday her",
-      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; square illustration cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
+      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; real photo choice cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
       "questionIds": [
         "gfot_041",
         "gfot_042",
@@ -463,7 +463,7 @@
       "questions": [
         {
           "id": "gfot_041",
-          "spokenQuestion": "Would she choose early bird or night owl?",
+          "spokenQuestion": "Early bird or night owl?",
           "optionA": "early bird",
           "optionB": "night owl",
           "topic": "everyday",
@@ -472,7 +472,7 @@
         },
         {
           "id": "gfot_042",
-          "spokenQuestion": "Would she choose text or call?",
+          "spokenQuestion": "Text or call?",
           "optionA": "text",
           "optionB": "call",
           "topic": "everyday",
@@ -481,7 +481,7 @@
         },
         {
           "id": "gfot_043",
-          "spokenQuestion": "Would she choose dogs or cats?",
+          "spokenQuestion": "Dogs or cats?",
           "optionA": "dogs",
           "optionB": "cats",
           "topic": "everyday",
@@ -490,7 +490,7 @@
         },
         {
           "id": "gfot_044",
-          "spokenQuestion": "Would she choose hugs or kisses?",
+          "spokenQuestion": "Hugs or kisses?",
           "optionA": "hugs",
           "optionB": "kisses",
           "topic": "everyday",
@@ -499,7 +499,7 @@
         },
         {
           "id": "gfot_050",
-          "spokenQuestion": "Would she choose gold or silver?",
+          "spokenQuestion": "Gold or silver?",
           "optionA": "gold",
           "optionB": "silver",
           "topic": "everyday",
@@ -508,7 +508,7 @@
         },
         {
           "id": "gfot_052",
-          "spokenQuestion": "Would she choose summer or winter?",
+          "spokenQuestion": "Summer or winter?",
           "optionA": "summer",
           "optionB": "winter",
           "topic": "everyday",
@@ -522,7 +522,7 @@
       "titleHint": "How well do you know your girlfriend?",
       "levelLabel": "level: medium",
       "topicHint": "soft romance",
-      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; square illustration cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
+      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; real photo choice cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
       "questionIds": [
         "gfot_045",
         "gfot_046",
@@ -534,7 +534,7 @@
       "questions": [
         {
           "id": "gfot_045",
-          "spokenQuestion": "Would she choose big spoon or little spoon?",
+          "spokenQuestion": "Big spoon or little spoon?",
           "optionA": "big spoon",
           "optionB": "little spoon",
           "topic": "everyday",
@@ -543,7 +543,7 @@
         },
         {
           "id": "gfot_046",
-          "spokenQuestion": "Would she choose flowers or chocolates?",
+          "spokenQuestion": "Flowers or chocolates?",
           "optionA": "flowers",
           "optionB": "chocolates",
           "topic": "everyday",
@@ -552,7 +552,7 @@
         },
         {
           "id": "gfot_048",
-          "spokenQuestion": "Would she choose public affection or private moments?",
+          "spokenQuestion": "Public affection or private moments?",
           "optionA": "public affection",
           "optionB": "private moments",
           "topic": "everyday",
@@ -561,7 +561,7 @@
         },
         {
           "id": "gfot_049",
-          "spokenQuestion": "Would she choose surprise gifts or planned presents?",
+          "spokenQuestion": "Surprise gifts or planned presents?",
           "optionA": "surprise gifts",
           "optionB": "planned presents",
           "topic": "everyday",
@@ -570,7 +570,7 @@
         },
         {
           "id": "gfot_058",
-          "spokenQuestion": "Would she choose love notes or love songs?",
+          "spokenQuestion": "Love notes or love songs?",
           "optionA": "love notes",
           "optionB": "love songs",
           "topic": "everyday",
@@ -579,7 +579,7 @@
         },
         {
           "id": "gfot_064",
-          "spokenQuestion": "Would she choose good morning text or goodnight call?",
+          "spokenQuestion": "Good morning text or goodnight call?",
           "optionA": "good morning text",
           "optionB": "goodnight call",
           "topic": "everyday",
@@ -593,7 +593,7 @@
       "titleHint": "How well do you know your girlfriend?",
       "levelLabel": "level: medium",
       "topicHint": "weekend her",
-      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; square illustration cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
+      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; real photo choice cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
       "questionIds": [
         "gfot_051",
         "gfot_053",
@@ -605,7 +605,7 @@
       "questions": [
         {
           "id": "gfot_051",
-          "spokenQuestion": "Would she choose jeans or sweatpants?",
+          "spokenQuestion": "Jeans or sweatpants?",
           "optionA": "jeans",
           "optionB": "sweatpants",
           "topic": "everyday",
@@ -614,7 +614,7 @@
         },
         {
           "id": "gfot_053",
-          "spokenQuestion": "Would she choose rain or snow?",
+          "spokenQuestion": "Rain or snow?",
           "optionA": "rain",
           "optionB": "snow",
           "topic": "everyday",
@@ -623,7 +623,7 @@
         },
         {
           "id": "gfot_054",
-          "spokenQuestion": "Would she choose salty or sweet?",
+          "spokenQuestion": "Salty or sweet?",
           "optionA": "salty",
           "optionB": "sweet",
           "topic": "everyday",
@@ -632,7 +632,7 @@
         },
         {
           "id": "gfot_055",
-          "spokenQuestion": "Would she choose Friday night in or Friday night out?",
+          "spokenQuestion": "Friday night in or Friday night out?",
           "optionA": "Friday night in",
           "optionB": "Friday night out",
           "topic": "everyday",
@@ -641,7 +641,7 @@
         },
         {
           "id": "gfot_056",
-          "spokenQuestion": "Would she choose gym or long walks?",
+          "spokenQuestion": "Gym or long walks?",
           "optionA": "gym",
           "optionB": "long walks",
           "topic": "everyday",
@@ -650,7 +650,7 @@
         },
         {
           "id": "gfot_059",
-          "spokenQuestion": "Would she choose morning shower or night shower?",
+          "spokenQuestion": "Morning shower or night shower?",
           "optionA": "morning shower",
           "optionB": "night shower",
           "topic": "everyday",
@@ -664,7 +664,7 @@
       "titleHint": "How well do you know your girlfriend?",
       "levelLabel": "level: medium",
       "topicHint": "mixed prefs",
-      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; square illustration cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
+      "artStyleNotes": "Soft blue BG (198,219,240); cartoon couple cutout; real photo choice cards; Playfair sticker text; title pops all-at-once; keep Girls! / Send this to him! / kisses stake; mid-roll type her name; end How many did he get?",
       "questionIds": [
         "gfot_010",
         "gfot_013",
@@ -676,7 +676,7 @@
       "questions": [
         {
           "id": "gfot_010",
-          "spokenQuestion": "Would she choose sweet breakfast or savory breakfast?",
+          "spokenQuestion": "Sweet breakfast or savory breakfast?",
           "optionA": "sweet breakfast",
           "optionB": "savory breakfast",
           "topic": "food_drink",
@@ -685,7 +685,7 @@
         },
         {
           "id": "gfot_013",
-          "spokenQuestion": "Would she choose ranch or ketchup?",
+          "spokenQuestion": "Ranch or ketchup?",
           "optionA": "ranch",
           "optionB": "ketchup",
           "topic": "food_drink",
@@ -694,7 +694,7 @@
         },
         {
           "id": "gfot_014",
-          "spokenQuestion": "Would she choose popcorn with butter or caramel popcorn?",
+          "spokenQuestion": "Popcorn with butter or caramel popcorn?",
           "optionA": "popcorn with butter",
           "optionB": "caramel popcorn",
           "topic": "food_drink",
@@ -703,7 +703,7 @@
         },
         {
           "id": "gfot_047",
-          "spokenQuestion": "Would she choose matching outfits or coordinated colors?",
+          "spokenQuestion": "Matching outfits or coordinated colors?",
           "optionA": "matching outfits",
           "optionB": "coordinated colors",
           "topic": "everyday",
@@ -712,7 +712,7 @@
         },
         {
           "id": "gfot_061",
-          "spokenQuestion": "Would she choose sneakers or boots?",
+          "spokenQuestion": "Sneakers or boots?",
           "optionA": "sneakers",
           "optionB": "boots",
           "topic": "everyday",
@@ -721,7 +721,7 @@
         },
         {
           "id": "gfot_062",
-          "spokenQuestion": "Would she choose Instagram or TikTok?",
+          "spokenQuestion": "Instagram or TikTok?",
           "optionA": "Instagram",
           "optionB": "TikTok",
           "topic": "everyday",
