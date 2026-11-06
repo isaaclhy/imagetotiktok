@@ -360,10 +360,63 @@ async function seedMarkedSet(markerId: string, items: SeedItem[], directory: str
   await meta.updateOne({ _id: markerId }, { $set: { status: 'done', seededAt: new Date() } });
 }
 
+type PublishedSeedItem = SeedItem & { blobUrl?: string; blobPathname?: string };
+
+async function seedPublishedBatch(items: PublishedSeedItem[]): Promise<void> {
+  const meta = await metaCollection();
+  const now = new Date();
+  const previous = await meta.findOneAndUpdate(
+    { _id: BATCH_MARKER_ID },
+    { $setOnInsert: { status: 'seeding', seededAt: now } },
+    { upsert: true, returnDocument: 'before' }
+  );
+  if (previous?.status === 'done') return;
+
+  const docs = await collection();
+  for (const item of items) {
+    if (!item.blobUrl) continue;
+    const existing = await docs.findOne({ origin: item.origin });
+    if (existing) continue;
+    await docs.insertOne({
+      _id: new ObjectId(),
+      templateId: item.templateId,
+      templateKey: item.templateKey,
+      title: item.title,
+      filename: item.filename,
+      blobUrl: item.blobUrl,
+      blobPathname: item.blobPathname ?? '',
+      day: item.day,
+      lines: item.lines,
+      createdAt: new Date(),
+      origin: item.origin,
+    });
+  }
+  const present = await docs.countDocuments({ origin: { $in: items.map((item) => item.origin) } });
+  if (present >= items.length) {
+    await meta.updateOne({ _id: BATCH_MARKER_ID }, { $set: { status: 'done', seededAt: new Date() } });
+  }
+}
+
 /** Ten this-or-that editions. A separate marker from the original cartoons. */
 export async function ensureBinaryBatch(): Promise<void> {
+  const publishedPath = path.join(batchDir(), 'published.json');
+  if (existsSync(publishedPath)) {
+    const published = JSON.parse(await fs.readFile(publishedPath, 'utf8')) as {
+      items?: PublishedSeedItem[];
+    };
+    if (published.items && published.items.length > 0 && published.items.every((item) => item.blobUrl)) {
+      await seedPublishedBatch(published.items);
+      return;
+    }
+  }
   const manifestPath = path.join(batchDir(), 'manifest.json');
   if (!existsSync(manifestPath)) return;
   const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8')) as SeedItem[];
-  await seedMarkedSet(BATCH_MARKER_ID, manifest, batchDir());
+  const readable: SeedItem[] = [];
+  for (const item of manifest) {
+    if (existsSync(path.join(batchDir(), item.file))) readable.push(item);
+  }
+  if (readable.length === manifest.length) {
+    await seedMarkedSet(BATCH_MARKER_ID, readable, batchDir());
+  }
 }
