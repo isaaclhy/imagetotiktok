@@ -5,6 +5,7 @@ import {
   ensureCartoonOriginals,
   ensurePhotoRevision,
   ensureQuizOrientationBatch,
+  ensureTemplate9YesStake,
   listVideoLibrary,
 } from '@/app/lib/video-library/store';
 
@@ -20,6 +21,7 @@ export async function GET(request: NextRequest) {
     await ensureBinaryBatch();
     await ensurePhotoRevision();
     await ensureQuizOrientationBatch();
+    await ensureTemplate9YesStake();
     const videos = await listVideoLibrary();
     return NextResponse.json({ videos });
   } catch (error) {

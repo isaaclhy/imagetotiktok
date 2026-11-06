@@ -34,6 +34,10 @@ class QuizOrientationTests(unittest.TestCase):
                     self.assertRegex(lowered, r"\b(she|her)\b")
                     self.assertNotRegex(lowered, r"\b(he|his)\b")
                     self.assertTrue(video["title"].startswith("Quiz your boyfriend"))
+        stake = (Path(__file__).resolve().parents[1] / "scripts" / "recreate_reference_v5b.py").read_text()
+        self.assertIn("If he gets 2 or more wrong, he has to say Yes for a whole day.", stake)
+        self.assertIn('"YES"', stake)
+        self.assertNotIn("owes you a massage", stake)
 
 
 if __name__ == "__main__":
