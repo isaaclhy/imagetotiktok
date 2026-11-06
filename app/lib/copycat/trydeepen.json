@@ -2,7 +2,7 @@
   "handle": "trydeepen",
   "platform": "tiktok",
   "minViews": 50000,
-  "postCount": 31,
+  "postCount": 32,
   "creditsUsed": 3,
   "creditsRemaining": 95,
   "posts": [
@@ -929,6 +929,54 @@
             "When something reminds you of me",
             "When you're bored",
             "When I'm ignoring you"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7704580923915767047",
+      "views": 87600,
+      "likes": 2255,
+      "coverText": "Is it okay for your boyfriend to do this?",
+      "slideText": [
+        {
+          "text": "Is it okay to stay friends with someone you once had feelings for?",
+          "options": [
+            "yes",
+            "no",
+            "it depends"
+          ]
+        },
+        {
+          "text": "Is it okay to take a break during an argument?",
+          "options": [
+            "yes",
+            "no",
+            "it depends"
+          ]
+        },
+        {
+          "text": "Is it okay to have a \"work wife\"?",
+          "options": [
+            "yes",
+            "no",
+            "it depends"
+          ]
+        },
+        {
+          "text": "Is it okay to share your private relationship problems with his friends?",
+          "options": [
+            "yes",
+            "no",
+            "it depends"
+          ]
+        },
+        {
+          "text": "Is it okay to keep old gifts from an ex?",
+          "options": [
+            "yes",
+            "no",
+            "it depends"
           ]
         }
       ]
