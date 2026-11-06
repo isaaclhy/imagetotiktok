@@ -116,6 +116,8 @@ import {
 import {
   IMAGE_TEMPLATE19_FONT_STACK,
   IMAGE_TEMPLATE19_GLOW_BACKGROUND,
+  IMAGE_TEMPLATE19_GLOW_RADIUS,
+  IMAGE_TEMPLATE19_GLOW_Y,
   IMAGE_TEMPLATE19_GRAIN_SRC,
   IMAGE_TEMPLATE19_LABEL,
   IMAGE_TEMPLATE19_LABEL_COLOR,
@@ -316,9 +318,11 @@ function CopycatSlidePreview({
           className="pointer-events-none absolute inset-0"
           style={{
             backgroundImage: `url(${IMAGE_TEMPLATE19_GRAIN_SRC})`,
-            backgroundSize: '120px',
-            opacity: 0.4,
+            backgroundSize: '72px',
+            opacity: 0.55,
             mixBlendMode: 'overlay',
+            maskImage: `radial-gradient(circle ${IMAGE_TEMPLATE19_GLOW_RADIUS * 100}cqw at 50% ${IMAGE_TEMPLATE19_GLOW_Y * 100}%, #000 62%, transparent 94%)`,
+            WebkitMaskImage: `radial-gradient(circle ${IMAGE_TEMPLATE19_GLOW_RADIUS * 100}cqw at 50% ${IMAGE_TEMPLATE19_GLOW_Y * 100}%, #000 62%, transparent 94%)`,
           }}
           aria-hidden
         />

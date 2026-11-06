@@ -6811,31 +6811,10 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                     </p>
                   </div>
                   <div className="flex w-full min-w-0 flex-col items-start gap-3">
-                    <div className="w-full max-w-md text-left">
-                      <label
-                        htmlFor="copycat-competitor"
-                        className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400"
-                      >
-                        Competitor
-                      </label>
-                      <select
-                        id="copycat-competitor"
-                        value={selectedCopycatCompetitorId}
-                        disabled={copycatHookPosts}
-                        onChange={(e) =>
-                          setSelectedCopycatCompetitorId(e.target.value as CopycatCompetitorId)
-                        }
-                        className="w-full min-w-0 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-2.5 text-sm font-medium text-zinc-900 dark:text-zinc-100 outline-none focus:border-zinc-400 dark:focus:border-zinc-500 disabled:cursor-not-allowed disabled:opacity-50 md:min-w-[10.5rem] md:w-auto md:py-2"
-                      >
-                        {COPYCAT_COMPETITORS.map((competitor) => (
-                          <option key={competitor.id} value={competitor.id}>
-                            {competitor.label}
-                          </option>
-                        ))}
-                      </select>
+                    <div className="w-full text-left">
                       <label
                         htmlFor="copycat-hook-posts"
-                        className="mt-3 flex cursor-pointer select-none items-center gap-2 text-sm font-medium text-zinc-800 dark:text-zinc-200"
+                        className="flex cursor-pointer select-none items-center gap-2 text-sm font-medium text-zinc-800 dark:text-zinc-200"
                       >
                         <input
                           id="copycat-hook-posts"

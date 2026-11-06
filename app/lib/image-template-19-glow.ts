@@ -6,8 +6,10 @@ import {
   imageTemplate2Q5PromoLayout,
 } from '@/app/lib/image-template-2-cover';
 
-/** Black frame with a soft red spotlight and centered serif text. */
+/** Black frame with a flat, grainy red disk and centered serif text. */
 export const IMAGE_TEMPLATE19_BG = '#000000';
+/** Sampled from the reference disk. The middle stays this red instead of brightening. */
+export const IMAGE_TEMPLATE19_RED = '#A72826';
 export const IMAGE_TEMPLATE19_TEXT = '#FFFFFF';
 export const IMAGE_TEMPLATE19_LABEL = 'Spill It';
 export const IMAGE_TEMPLATE19_LABEL_COLOR = 'rgba(255,255,255,0.5)';
@@ -19,22 +21,21 @@ export const IMAGE_TEMPLATE19_GRAIN_SRC = IMAGE_TEMPLATE14_GRAIN_SRC;
 
 /** Spotlight sits above center so the label has black space beneath it. */
 export const IMAGE_TEMPLATE19_GLOW_Y = 0.4;
-export const IMAGE_TEMPLATE19_GLOW_RADIUS = 0.56;
+export const IMAGE_TEMPLATE19_GLOW_RADIUS = 0.72;
 export const IMAGE_TEMPLATE19_TEXT_Y = 0.4;
 export const IMAGE_TEMPLATE19_TEXT_SIZE = 0.064;
 export const IMAGE_TEMPLATE19_TEXT_WIDTH = 0.72;
 export const IMAGE_TEMPLATE19_LINE_HEIGHT = 1.28;
-export const IMAGE_TEMPLATE19_LABEL_Y = 0.78;
+export const IMAGE_TEMPLATE19_LABEL_Y = 0.82;
 export const IMAGE_TEMPLATE19_LABEL_SIZE = 0.028;
 /** Last slide lifts the question so the template 2 promo can sit underneath. */
 export const IMAGE_TEMPLATE19_CTA_TEXT_Y = 0.32;
 
 const GLOW_STOPS: ReadonlyArray<readonly [number, string]> = [
-  [0, '#E15A64'],
-  [0.14, '#C43848'],
-  [0.32, '#8A2030'],
-  [0.52, '#3A1018'],
-  [0.72, '#000000'],
+  [0, IMAGE_TEMPLATE19_RED],
+  [0.62, IMAGE_TEMPLATE19_RED],
+  [0.78, '#3A1014'],
+  [0.94, '#000000'],
 ];
 
 export const IMAGE_TEMPLATE19_GLOW_BACKGROUND = `radial-gradient(circle ${IMAGE_TEMPLATE19_GLOW_RADIUS * 100}cqw at 50% ${IMAGE_TEMPLATE19_GLOW_Y * 100}%, ${GLOW_STOPS.map(
@@ -82,12 +83,29 @@ function paintGrain(
 ) {
   const pattern = ctx.createPattern(grain, 'repeat');
   if (!pattern) return;
+  const layer = document.createElement('canvas');
+  layer.width = frameWidth;
+  layer.height = frameHeight;
+  const grainCtx = layer.getContext('2d');
+  if (!grainCtx) return;
+  pattern.setTransform(new DOMMatrix().scale(0.45));
+  grainCtx.fillStyle = pattern;
+  grainCtx.fillRect(0, 0, frameWidth, frameHeight);
+  grainCtx.globalCompositeOperation = 'destination-in';
+  const cx = frameWidth / 2;
+  const cy = frameHeight * IMAGE_TEMPLATE19_GLOW_Y;
+  const radius = frameWidth * IMAGE_TEMPLATE19_GLOW_RADIUS;
+  const mask = grainCtx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+  mask.addColorStop(0, 'rgba(0,0,0,1)');
+  mask.addColorStop(0.62, 'rgba(0,0,0,0.9)');
+  mask.addColorStop(0.94, 'rgba(0,0,0,0)');
+  grainCtx.fillStyle = mask;
+  grainCtx.fillRect(0, 0, frameWidth, frameHeight);
+
   ctx.save();
-  ctx.globalAlpha = 0.42;
+  ctx.globalAlpha = 0.55;
   ctx.globalCompositeOperation = 'overlay';
-  pattern.setTransform(new DOMMatrix().scale(0.55));
-  ctx.fillStyle = pattern;
-  ctx.fillRect(0, 0, frameWidth, frameHeight);
+  ctx.drawImage(layer, 0, 0);
   ctx.restore();
 }
 
