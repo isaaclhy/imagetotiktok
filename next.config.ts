@@ -25,8 +25,21 @@ const nextConfig: NextConfig = {
   ],
   // Static copycat JPEGs must not be traced into any function. The
   // character-image route only reads `public/characters`.
+  // The library routes only need the two original MP4s. A dynamic
+  // path.join(process.cwd(), ...) otherwise traces the whole repo,
+  // including the ten quiz files and cartoon assets, past the
+  // serverless size limit.
   outputFileTracingExcludes: {
     '*': ['public/copycat-backgrounds/**/*'],
+    // One pattern for the list, the [id] player, and the test route.
+    // A key written as [id] is a glob character class, so it never matches.
+    '/api/video-library/**': [
+      './cartoon-quiz/**/*',
+      './data/cartoon-batch/**/*',
+      './public/**/*',
+      './docs/**/*',
+      './scripts/**/*',
+    ],
   },
   outputFileTracingIncludes: {
     '/api/video-library/route': ['./data/cartoon-originals/**/*'],

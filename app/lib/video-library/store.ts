@@ -1,7 +1,9 @@
 import { del, put, BlobNotFoundError } from '@vercel/blob';
 import fs from 'fs/promises';
+import { existsSync } from 'fs';
 import { ObjectId } from 'mongodb';
 import path from 'path';
+import publishedBatch from '@/data/cartoon-batch/published.json';
 import type { SpillQuizTemplateId, SpillQuizTemplateKey } from '@/app/lib/spill-quiz/script';
 
 export const VIDEO_LIBRARY_DB = 'bleamies';
@@ -138,6 +140,7 @@ export async function deleteVideoLibraryItem(id: string): Promise<boolean> {
 }
 
 const SEED_MARKER_ID = 'cartoon-originals-v1';
+const BATCH_MARKER_ID = 'cartoon-binary-batch-v1';
 
 const CARTOON_ORIGINALS = [
   {
@@ -276,5 +279,65 @@ export async function ensureCartoonOriginals(): Promise<void> {
 export function bundledCartoonPath(fileName: string): string | null {
   const base = path.basename(fileName);
   if (base !== fileName || !base.endsWith('.mp4')) return null;
-  return path.join(originalsDir(), base);
+  for (const dir of [originalsDir()]) {
+    const full = path.join(dir, base);
+    if (existsSync(full)) return full;
+  }
+  return null;
+}
+
+type SeedItem = {
+  origin: string;
+  templateId: 8 | 9;
+  templateKey: 'know-girlfriend' | 'quiz-girlfriend';
+  title: string;
+  filename: string;
+  file: string;
+  lines: string[];
+  day: string;
+};
+
+type PublishedSeedItem = SeedItem & { blobUrl?: string; blobPathname?: string };
+
+async function seedPublishedBatch(items: PublishedSeedItem[]): Promise<void> {
+  const meta = await metaCollection();
+  const now = new Date();
+  const previous = await meta.findOneAndUpdate(
+    { _id: BATCH_MARKER_ID },
+    { $setOnInsert: { status: 'seeding', seededAt: now } },
+    { upsert: true, returnDocument: 'before' }
+  );
+  if (previous?.status === 'done') return;
+
+  const docs = await collection();
+  for (const item of items) {
+    if (!item.blobUrl) continue;
+    const existing = await docs.findOne({ origin: item.origin });
+    if (existing) continue;
+    await docs.insertOne({
+      _id: new ObjectId(),
+      templateId: item.templateId,
+      templateKey: item.templateKey,
+      title: item.title,
+      filename: item.filename,
+      blobUrl: item.blobUrl,
+      blobPathname: item.blobPathname ?? '',
+      day: item.day,
+      lines: item.lines,
+      createdAt: new Date(),
+      origin: item.origin,
+    });
+  }
+  const present = await docs.countDocuments({ origin: { $in: items.map((item) => item.origin) } });
+  if (present >= items.length) {
+    await meta.updateOne({ _id: BATCH_MARKER_ID }, { $set: { status: 'done', seededAt: new Date() } });
+  }
+}
+
+/** Ten this-or-that editions. A separate marker from the original cartoons. */
+export async function ensureBinaryBatch(): Promise<void> {
+  const items = (publishedBatch.items ?? []) as PublishedSeedItem[];
+  if (items.length > 0 && items.every((item) => item.blobUrl)) {
+    await seedPublishedBatch(items);
+  }
 }

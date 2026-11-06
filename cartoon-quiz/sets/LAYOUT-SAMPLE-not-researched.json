@@ -1,0 +1,14 @@
+{
+  "id": "layout-sample-not-researched",
+  "note": "Renderer layout sample only. Not the researched batch. Do not publish these as viral sets.",
+  "questions": [
+    {"say": "Would she choose tea or coffee?", "left": "Tea", "right": "Coffee", "iconLeft": "tea", "iconRight": "coffee"},
+    {"say": "Would she choose pancakes or waffles?", "left": "Pancakes", "right": "Waffles", "iconLeft": "pancakes", "iconRight": "waffle"},
+    {"say": "Would she choose a cat or a dog?", "left": "Cat", "right": "Dog", "iconLeft": "cat", "iconRight": "dog"},
+    {"say": "Would she rather text or video call?", "left": "Text", "right": "Video", "iconLeft": "text", "iconRight": "video"},
+    {"say": "Would she choose movies or dinner out?", "left": "Movies", "right": "Dinner", "iconLeft": "moviein", "iconRight": "dinner"},
+    {"say": "Would she choose flowers or chocolate?", "left": "Flowers", "right": "Chocolate", "iconLeft": "flowers", "iconRight": "choc"},
+    {"say": "Would she rather sun or snow?", "left": "Sun", "right": "Snow", "iconLeft": "sun", "iconRight": "snow"},
+    {"say": "Would she pick a night in or a night out?", "left": "In", "right": "Out", "iconLeft": "you", "iconRight": "her"}
+  ]
+}

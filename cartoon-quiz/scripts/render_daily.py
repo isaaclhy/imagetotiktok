@@ -73,6 +73,23 @@ HIM_SETS = [
     ],
 ]
 
+if template == "8":
+    import json
+    batch_path = os.path.join(ROOT, "sets", "girlfriend-this-or-that-batch10.json")
+    batch = json.load(open(batch_path))
+    pick = batch["videos"][int(day.replace("-", "")) % len(batch["videos"])]
+    bank_path = os.path.join(ROOT, "work", f"daily-8-{day}.json")
+    os.makedirs(os.path.dirname(bank_path), exist_ok=True)
+    json.dump(pick, open(bank_path, "w"))
+    os.environ["CARTOON_BANK"] = bank_path
+    os.environ["CARTOON_LEVEL"] = pick.get("levelLabel", "level: medium")
+    os.environ["CARTOON_WORK"] = os.path.join(ROOT, "work", f"daily-8-{day}")
+    os.environ["CARTOON_OUT"] = out
+    import render_binary_girlfriend as binary
+    binary.qv.main()
+    print(f"CARTOON_MP4={out}", flush=True)
+    raise SystemExit(0)
+
 if template == "9":
     import recreate_reference_v5b as mod
     sets = HIM_SETS

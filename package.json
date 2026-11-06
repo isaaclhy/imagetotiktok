@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/publish-cartoon-batch.cjs && next build",
     "start": "next start",
     "lint": "eslint",
     "daily:video-template-2": "tsx scripts/run-daily-video-template-2.ts",

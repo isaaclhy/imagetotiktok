@@ -231,7 +231,7 @@ export const VIDEO_TEMPLATES_BY_APP: Record<StudioAppId, VideoTemplateCard[]> = 
     {
       id: 8,
       title: 'How well do you know your girlfriend',
-      subtitle: 'Cartoon quiz. Girls! Send it to him.',
+      subtitle: 'This or that. Girls, send it to him.',
       coverSrc: '/video-templates/template-8-cover.jpg',
     },
     {

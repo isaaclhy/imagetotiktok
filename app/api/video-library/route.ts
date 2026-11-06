@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAppAuthed, unauthorizedAppResponse } from '@/app/lib/app-auth';
-import { ensureCartoonOriginals, listVideoLibrary } from '@/app/lib/video-library/store';
+import { ensureBinaryBatch, ensureCartoonOriginals, listVideoLibrary } from '@/app/lib/video-library/store';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
   if (!isAppAuthed(request)) return unauthorizedAppResponse();
   try {
     await ensureCartoonOriginals();
+    await ensureBinaryBatch();
     const videos = await listVideoLibrary();
     return NextResponse.json({ videos });
   } catch (error) {
