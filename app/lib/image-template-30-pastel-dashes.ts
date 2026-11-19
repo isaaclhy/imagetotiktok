@@ -6,20 +6,22 @@ import { paintImageTemplate2Q5Promo } from '@/app/lib/image-template-2-cover';
  * Pastel dash slideshow (image template 30).
  *
  * Full-bleed flat colour, no card and no vignette. The colour changes per
- * slide. Question slides carry a small centred progress bar of rounded dashes,
- * one per question: dashes up to the current one are a darker accent, and the
- * current dash is wider. The rest stay faint.
+ * slide. Question slides carry a small centred progress bar of rounded dashes.
+ * The cover is the first segment, then one dash per question. The CTA is not
+ * a dash. Completed segments (including the cover) use the accent, the current
+ * question is the same colour and wider, and the rest stay faint. A five-question
+ * set therefore has six dashes, and the first question is short + wide + four faint.
  *
- * Sans (the main look): bold dark navy question, left aligned around a third
+ * Sans (the main look): bold warm-ink question, left aligned around a third
  * of the height, with lettered options "A.  yes". The cover is a centred bold
  * headline with one keyword on a soft pink marker. No progress bar on the cover.
  *
  * Serif: the same colour, dashes, and footer, with a regular serif question
  * and numbered options "1.  …". The plain cover is centred serif with no marker.
  *
- * Glow cover: a bright-blue rounded card with a soft blurred edge on black,
- * and centred bold black sans. Choosing it also switches the question colours
- * to the brighter set.
+ * Glow cover: a bright-blue rounded card on black, with a wide milky halo
+ * rather than a tight rim, centred bold black sans, and the Spill It footer
+ * on the card. Choosing it also switches the question colours to the brighter set.
  *
  * The last slide is template 2's "Download for more questions!" App Store mock.
  * Footer is the shared Spill It string. Type is TikTok Sans, or Liberation Serif
@@ -31,6 +33,8 @@ export const IMAGE_TEMPLATE30_CTA_TAB = IMAGE_TEMPLATE30_SLIDE_COUNT - 1;
 
 export const IMAGE_TEMPLATE30_FOOTER = IMAGE_TEMPLATE2_APP_FOOTER;
 export const IMAGE_TEMPLATE30_INK = '#1A1A24';
+/** Question body, warmed slightly from the cover ink toward a brown-plum. */
+export const IMAGE_TEMPLATE30_QUESTION_INK = '#322830';
 export const IMAGE_TEMPLATE30_FOOTER_COLOR = '#645655';
 export const IMAGE_TEMPLATE30_MARKER = 'rgba(255, 142, 150, 0.72)';
 export const IMAGE_TEMPLATE30_GLOW_CARD = '#3DB7FF';
@@ -101,10 +105,15 @@ const SERIF_QUESTIONS: readonly SlideTone[] = [
   { bg: '#F7E38A', accent: '#C49A2A', faint: '#E6D48A' },
 ];
 
-/** Brighter question colours that travel with the glow-card cover. */
+/**
+ * Brighter question colours that travel with the glow-card cover.
+ * Teal and orange are bright enough that a dark accent inverts the bar:
+ * completed and current dashes stay light, and the remaining dashes are a
+ * darker muted shade of the field.
+ */
 const BRIGHT_QUESTIONS: readonly SlideTone[] = [
-  { bg: '#01C1A8', accent: '#0A5E54', faint: '#7ED9CB' },
-  { bg: '#FFA757', accent: '#C45312', faint: '#E8BC92' },
+  { bg: '#01C1A8', accent: '#FFFFFF', faint: '#2A6E64' },
+  { bg: '#FFA757', accent: '#FFFFFF', faint: '#C17A48' },
   { bg: '#FFA6D6', accent: '#D43A86', faint: '#E898C8' },
   { bg: '#7FD0FF', accent: '#1A6FB0', faint: '#B7E4FA' },
   { bg: '#FFE14A', accent: '#C48A12', faint: '#E8D48A' },
@@ -125,8 +134,8 @@ const OPTION_WEIGHT_SANS = 700;
 const OPTION_WEIGHT_SERIF = 400;
 
 const FOOTER_Y = 0.83;
-const FOOTER_SIZE = 0.03;
-const FOOTER_WEIGHT = 500;
+const FOOTER_SIZE = 0.039;
+const FOOTER_WEIGHT = 700;
 
 const COVER_SIZE = 0.064;
 const COVER_LEADING = 1.14;
@@ -141,9 +150,10 @@ const BAR_WIDTH = 0.034;
 const BAR_CURRENT_SCALE = 1.72;
 const BAR_GAP = 0.013;
 
-const GLOW_INSET_X = 0.078;
-const GLOW_INSET_Y = 0.062;
-const GLOW_RADIUS = 0.055;
+const GLOW_INSET_X = 0.069;
+const GLOW_INSET_Y = 0.052;
+/** Well above the old 0.055 rim, so the blue card reads as a rounded slab. */
+const GLOW_RADIUS = 0.11;
 
 const STOPWORDS = new Set([
   'is', 'it', 'to', 'for', 'your', 'the', 'a', 'an', 'of', 'and', 'do', 'this', 'that',
@@ -396,19 +406,21 @@ function paintProgress(
   accent: string,
   faint: string
 ) {
-  const count = Math.max(1, questionCount);
-  const current = Math.min(count, Math.max(1, tabIndex));
+  const questions = Math.max(1, questionCount);
+  // Index 0 is the cover. The CTA is not a segment.
+  const count = questions + 1;
+  const current = Math.min(questions, Math.max(1, tabIndex));
   const dashH = Math.max(8, height * BAR_HEIGHT);
   const dashW = width * BAR_WIDTH;
   const gap = width * BAR_GAP;
   const widths = Array.from({ length: count }, (_, index) =>
-    index + 1 === current ? dashW * BAR_CURRENT_SCALE : dashW
+    index === current ? dashW * BAR_CURRENT_SCALE : dashW
   );
   const total = widths.reduce((sum, value) => sum + value, 0) + gap * Math.max(0, count - 1);
   let x = (width - total) / 2;
   const y = height * BAR_Y - dashH / 2;
   widths.forEach((dashWidth, index) => {
-    ctx.fillStyle = index < current ? accent : faint;
+    ctx.fillStyle = index <= current ? accent : faint;
     roundRect(ctx, x, y, dashWidth, dashH, dashH / 2);
     ctx.fill();
     x += dashWidth + gap;
@@ -508,13 +520,21 @@ function paintGlowCover(
   const cardW = width - left * 2;
   const cardH = height - top * 2;
   const radius = width * GLOW_RADIUS;
-  ctx.save();
-  ctx.shadowColor = 'rgba(61, 183, 255, 0.95)';
-  ctx.shadowBlur = width * 0.05;
-  ctx.fillStyle = IMAGE_TEMPLATE30_GLOW_CARD;
-  roundRect(ctx, left, top, cardW, cardH, radius);
-  ctx.fill();
-  ctx.restore();
+  // A pale bloom under the card. Shadow blur stays grey in this canvas, so the
+  // halo is a blurred milky fill that the flat card covers.
+  const paintBloom = (blurRatio: number, color: string, growRatio: number) => {
+    const grow = width * growRatio;
+    ctx.save();
+    ctx.filter = `blur(${Math.max(1, width * blurRatio)}px)`;
+    ctx.fillStyle = color;
+    roundRect(ctx, left - grow, top - grow, cardW + grow * 2, cardH + grow * 2, radius + grow);
+    ctx.fill();
+    ctx.restore();
+  };
+  paintBloom(0.024, '#F7FCFF', 0.009);
+  paintBloom(0.052, 'rgba(210, 236, 255, 0.8)', 0.007);
+  paintBloom(0.102, 'rgba(160, 214, 255, 0.45)', 0);
+  ctx.filter = 'none';
   ctx.shadowColor = 'transparent';
   ctx.shadowBlur = 0;
   ctx.fillStyle = IMAGE_TEMPLATE30_GLOW_CARD;
@@ -642,7 +662,7 @@ function paintQuestion(
     if (questionSize === minQuestion && optionSize === minOption) break;
   }
 
-  ctx.fillStyle = IMAGE_TEMPLATE30_INK;
+  ctx.fillStyle = IMAGE_TEMPLATE30_QUESTION_INK;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
   ctx.font = `${questionWeight} ${questionSize}px ${fontFamily}`;
@@ -734,6 +754,7 @@ export function paintTemplate30Slide(
 
   if (isCover && look.cover === 'glow') {
     paintGlowCover(ctx, width, height, options.text, sans);
+    paintFooter(ctx, width, height, sans, footerColorFor(IMAGE_TEMPLATE30_GLOW_CARD));
     return;
   }
 

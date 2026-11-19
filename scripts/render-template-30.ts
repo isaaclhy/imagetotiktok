@@ -57,10 +57,16 @@ async function main() {
       .filter((line) => /^[a-d][.)]\s+\S/i.test(line));
   const clean = (body) => {
     const lines = optionLines(body);
-    return (
-      lines.length >= 3 &&
-      lines.every((line) => line.replace(/^[a-d][.)]\s+/i, '').trim().length >= 4)
-    );
+    if (lines.length < 3) return false;
+    return lines.every((line) => {
+      const text = line.replace(/^[a-d][.)]\s+/i, '').trim();
+      if (text.length < 4) return false;
+      // Some source options lost their first letter ("urious", "alm + …").
+      const word = (text.split(/\s+/)[0] ?? '').replace(/[^A-Za-z]/g, '');
+      if (!word) return true;
+      if (word[0] === word[0].toUpperCase()) return true;
+      return ['yes', 'no', 'it', 'a', 'the', 'my', 'our'].includes(word.toLowerCase());
+    });
   };
   let questions = [];
   for (let attempt = 0; attempt < 12 && questions.length < IMAGE_TEMPLATE30_QUESTION_COUNT; attempt++) {
