@@ -2,7 +2,7 @@
   "handle": "trydeepen",
   "platform": "tiktok",
   "minViews": 50000,
-  "postCount": 32,
+  "postCount": 53,
   "creditsUsed": 3,
   "creditsRemaining": 95,
   "posts": [
@@ -977,6 +977,890 @@
             "yes",
             "no",
             "it depends"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7705121004359666951",
+      "views": 133900,
+      "likes": 5950,
+      "coverText": "If we woke up married tomorrow: 3 picks",
+      "slideText": [
+        {
+          "text": "What is the very first thing we're doing on our first morning as a married couple?",
+          "options": [
+            "Sleeping in until noon",
+            "Cooking a huge breakfast",
+            "Calling our families",
+            "Packing for a honeymoon"
+          ]
+        },
+        {
+          "text": "Which weekly tradition are we starting first in our own house?",
+          "options": [
+            "Sunday morning pancakes",
+            "Friday couch movie nights",
+            "Cooking together nightly",
+            "Weekend road trips"
+          ]
+        },
+        {
+          "text": "What kind of parents would we honestly be if we had kids one day?",
+          "options": [
+            "One strict, one softie",
+            "Fun and chaotic duo",
+            "Overprotective team",
+            "Spoiling them nonstop"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7704937645243190534",
+      "views": 132900,
+      "likes": 4553,
+      "coverText": "If we lived together",
+      "slideText": [
+        {
+          "text": "Who makes coffee first every morning?",
+          "options": [
+            "Me",
+            "You"
+          ]
+        },
+        {
+          "text": "Who will be the designated cook?",
+          "options": [
+            "Me",
+            "You"
+          ]
+        },
+        {
+          "text": "Who will ask for cuddles before bed?",
+          "options": [
+            "Me",
+            "You"
+          ]
+        },
+        {
+          "text": "Who steals the blankets?",
+          "options": [
+            "Me",
+            "You"
+          ]
+        },
+        {
+          "text": "Who's most likely to start cleaning randomly?",
+          "options": [
+            "Me",
+            "You"
+          ]
+        },
+        {
+          "text": "Who will keep saying, \"Let's just order food\"?",
+          "options": [
+            "Me",
+            "You"
+          ]
+        },
+        {
+          "text": "Who leaves random cups around the house?",
+          "options": [
+            "Me",
+            "You"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7705817184806685960",
+      "views": 237800,
+      "likes": 7927,
+      "coverText": "Ask your gf this",
+      "slideText": [
+        {
+          "text": "How did I seem to you at first?",
+          "options": [
+            "Confident",
+            "Calm",
+            "Hard to read",
+            "Quietly interesting"
+          ]
+        },
+        {
+          "text": "What about me surprised you most?",
+          "options": [
+            "My mind",
+            "My comfy side",
+            "My kindness",
+            "How much I notice"
+          ]
+        },
+        {
+          "text": "What part of my personality stands out more over time?",
+          "options": [
+            "My calm side",
+            "My strong side",
+            "My thoughtful side",
+            "My playful side"
+          ]
+        },
+        {
+          "text": "What do you think people get wrong about me at first?",
+          "options": [
+            "That I am distant",
+            "That I am too serious",
+            "That I have no soft side",
+            "That I feel less than I do"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7706194946478460167",
+      "views": 448800,
+      "likes": 20200,
+      "coverText": "Your boyfriend's answers could make you blush 😳",
+      "slideText": [
+        {
+          "text": "What was your first thought seeing me in person?",
+          "options": [
+            "\"She's prettier than I expected.\"",
+            "\"Why am I nervous?\"",
+            "\"Yeah, I'm gonna like her.\"",
+            "\"Act normal. ACT NORMAL.\""
+          ]
+        },
+        {
+          "text": "What was the first green flag you noticed about me?",
+          "options": [
+            "How I talked to people",
+            "How easy I was to talk to",
+            "My sense of humour",
+            "How safe I felt"
+          ]
+        },
+        {
+          "text": "What moment from our first month together do you still replay?",
+          "options": [
+            "Our first real hangout",
+            "One random conversation",
+            "Something dumb we laughed at",
+            "When things started feeling real"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7705727739373866258",
+      "views": 66200,
+      "likes": 1748,
+      "coverText": "2 down bad questions",
+      "slideText": [
+        {
+          "text": "If someone else tried to take me from you, what would you do?",
+          "options": [
+            "Get jealous instantly",
+            "Pretend I don't care",
+            "Trust me completely",
+            "Step in and make it clear"
+          ]
+        },
+        {
+          "text": "Be honest, how attached are you to me?",
+          "options": [
+            "A little",
+            "More than I admit",
+            "I'm already too deep",
+            "I can't lose you"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7706566085121707282",
+      "views": 2600000,
+      "likes": 153100,
+      "coverText": "11 questions for your boyfriend",
+      "slideText": [
+        {
+          "text": "What was your first clue that I liked you?",
+          "options": [
+            "Extra texts",
+            "Long calls",
+            "Touchier hugs",
+            "Nervous energy"
+          ]
+        },
+        {
+          "text": "If you had to brag about me to someone, what would you say first?",
+          "options": [
+            "Loyal",
+            "Gorgeous",
+            "Hilarious",
+            "Driven"
+          ]
+        },
+        {
+          "text": "Which version of me is your favorite to be around?",
+          "options": [
+            "Sleepy me",
+            "Party me",
+            "Homebody me",
+            "Deep-talk me"
+          ]
+        },
+        {
+          "text": "What small thing do I do that makes it obvious I miss you?",
+          "options": [
+            "Text more",
+            "Call more",
+            "Get clingy",
+            "Act soft"
+          ]
+        },
+        {
+          "text": "What kind of compliment from me hits you the hardest?",
+          "options": [
+            "About your looks",
+            "About your effort",
+            "About your mind",
+            "About your heart"
+          ]
+        },
+        {
+          "text": "When do you think I feel closest to you?",
+          "options": [
+            "Late-night talks",
+            "Long hugs",
+            "Quiet car rides",
+            "Lazy time together"
+          ]
+        },
+        {
+          "text": "What do I do first when I start overthinking?",
+          "options": [
+            "Go quiet",
+            "Ask weird questions",
+            "Need reassurance",
+            "Change mood"
+          ]
+        },
+        {
+          "text": "If you had to describe my vibe in one word, what would it be?",
+          "options": [
+            "Sweet",
+            "Chaotic",
+            "Warm",
+            "Addictive"
+          ]
+        },
+        {
+          "text": "What part of my personality do you think stands out most?",
+          "options": [
+            "Loyalty",
+            "Humor",
+            "Confidence",
+            "Softness"
+          ]
+        },
+        {
+          "text": "What kind of moment with me do you think I love most?",
+          "options": [
+            "Deep talks",
+            "Play fighting",
+            "Cute dates",
+            "Doing nothing"
+          ]
+        },
+        {
+          "text": "What is one thing I do that makes you feel most loved?",
+          "options": [
+            "I listen",
+            "I hype you up",
+            "I stay loyal",
+            "I give attention"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7707256345766022420",
+      "views": 94400,
+      "likes": 3387,
+      "coverText": "Your future wife interview (ft. your boyfriend) ⭐",
+      "slideText": [
+        {
+          "text": "What type of mom do you think I'll be?",
+          "options": [
+            "Soft + patient",
+            "Strict + fair",
+            "Fun + chaotic",
+            "Calm + organized"
+          ]
+        },
+        {
+          "text": "What was your favorite day with me?",
+          "options": [
+            "First date",
+            "Random lazy day",
+            "Big adventure",
+            "Special occasion"
+          ]
+        },
+        {
+          "text": "What do you hope our future home looks like?",
+          "options": [
+            "Cozy + warm",
+            "Modern + clean",
+            "Big + lively",
+            "Simple + peaceful"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7706561594309872903",
+      "views": 149500,
+      "likes": 4573,
+      "coverText": "Blushing or cringing",
+      "slideText": [
+        {
+          "text": "They call you \"my love\" in front of all their friends.",
+          "options": [
+            "Blushing",
+            "Cringing"
+          ]
+        },
+        {
+          "text": "They post a long paragraph about you for your anniversary.",
+          "options": [
+            "Blushing",
+            "Cringing"
+          ]
+        },
+        {
+          "text": "They wear a bracelet with your initial every day.",
+          "options": [
+            "Blushing",
+            "Cringing"
+          ]
+        },
+        {
+          "text": "They randomly say, \"How did I get so lucky?\" while staring at you.",
+          "options": [
+            "Blushing",
+            "Cringing"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7707524339389762822",
+      "views": 82900,
+      "likes": 4004,
+      "coverText": "How can I love you better? (For your gf)",
+      "slideText": [
+        {
+          "text": "On hard days, you want me to...",
+          "options": [
+            "Give you space",
+            "Just hold you",
+            "Stay close until you're ready"
+          ]
+        },
+        {
+          "text": "When you're doubting yourself, you need me to...",
+          "options": [
+            "Be your biggest cheerleader",
+            "Encourage you, not pressure you",
+            "Remind you how proud I am of you"
+          ]
+        },
+        {
+          "text": "How do you want me to remind you that you're loved?",
+          "options": [
+            "Through my words",
+            "Through physical affection",
+            "Through the little things I do every day"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7707343548382792980",
+      "views": 95300,
+      "likes": 2842,
+      "coverText": "5 \"would you rather\" questions for couples",
+      "slideText": [
+        {
+          "text": "Relive our first date or our first kiss?"
+        },
+        {
+          "text": "Be locked in a room with my ex or your ex for 24 hours?"
+        },
+        {
+          "text": "Have a rewind button for our relationship or a fast-forward button?"
+        },
+        {
+          "text": "I turn into a child for a day or into an older version of myself?"
+        },
+        {
+          "text": "Travel back in time and watch your parents fall in love, or see how we fell in love from a stranger's perspective?"
+        }
+      ]
+    },
+    {
+      "id": "7708390546838015253",
+      "views": 131600,
+      "likes": 4535,
+      "coverText": "How did dating me change you? Make her pick",
+      "slideText": [
+        {
+          "text": "What changed about you since we started dating?",
+          "options": [
+            "I laugh more",
+            "I'm calmer",
+            "I'm braver",
+            "I eat way more"
+          ]
+        },
+        {
+          "text": "What surprised you most about dating me?",
+          "options": [
+            "I'm softer than I look",
+            "I'm funnier",
+            "I'm clingier",
+            "I can actually cook"
+          ]
+        },
+        {
+          "text": "Which habit did you pick up from me?",
+          "options": [
+            "My slang",
+            "My snacks",
+            "My music",
+            "My terrible jokes"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7707879315735727361",
+      "views": 62000,
+      "likes": 3070,
+      "coverText": "6 uncomfortable but healthy questions I've asked in my relationships",
+      "slideText": [
+        {
+          "text": "What did you learn from your parents' relationship that you'd like to apply or avoid in this one?"
+        },
+        {
+          "text": "Are there any insecurities from previous relationships that you carried into this one? If so, what are they?"
+        },
+        {
+          "text": "Which fight of ours did you struggle with most? What felt particularly hard for you about it?"
+        },
+        {
+          "text": "How do you define cheating?"
+        },
+        {
+          "text": "What's something we used to do at the beginning of our relationship that you miss the most?"
+        },
+        {
+          "text": "What can we laugh at now that once felt so daunting in our relationship?"
+        }
+      ]
+    },
+    {
+      "id": "7708793247828643093",
+      "views": 339500,
+      "likes": 15300,
+      "coverText": "7 bold questions for him",
+      "slideText": [
+        {
+          "text": "If someone flirted with me in front of you, what would you do?",
+          "options": [
+            "Stay calm",
+            "Step in",
+            "Get protective",
+            "Joke it off"
+          ]
+        },
+        {
+          "text": "What about me intimidates you?",
+          "options": [
+            "Confidence",
+            "Emotions",
+            "Silence",
+            "Mystery"
+          ]
+        },
+        {
+          "text": "What about me do you overthink sometimes?",
+          "options": [
+            "Mood swings",
+            "Independence",
+            "Past",
+            "Mixed signals"
+          ]
+        },
+        {
+          "text": "What scares you most about losing me?",
+          "options": [
+            "Silence",
+            "Memories",
+            "Starting over",
+            "Regret"
+          ]
+        },
+        {
+          "text": "If I asked, \"Do you still choose me?\" what would you say?",
+          "options": [
+            "Every day",
+            "Whole heart",
+            "Always",
+            "Without doubt"
+          ]
+        },
+        {
+          "text": "When I pull away, what is your first thought?",
+          "options": [
+            "Fix it",
+            "Need space",
+            "My fault",
+            "Stay patient"
+          ]
+        },
+        {
+          "text": "What is the hardest part of loving me?",
+          "options": [
+            "Reading you",
+            "Protecting you",
+            "Fear you leave",
+            "Missing you"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7708789046470003988",
+      "views": 85500,
+      "likes": 2735,
+      "coverText": "Your boyfriend has to answer these honestly",
+      "slideText": [
+        {
+          "text": "If someone said they liked me, what would you tell them?",
+          "options": [
+            "She's taken",
+            "Good luck competing",
+            "I completely understand"
+          ]
+        },
+        {
+          "text": "What gives away my mood first?",
+          "options": [
+            "My eyes",
+            "My voice",
+            "My silence",
+            "My energy"
+          ]
+        },
+        {
+          "text": "What about me would be hardest to forget?",
+          "options": [
+            "My laugh",
+            "My energy",
+            "How I loved you"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7708706892754767125",
+      "views": 115200,
+      "likes": 3893,
+      "coverText": "Does your boyfriend really know you? (Send this to him)",
+      "slideText": [
+        {
+          "text": "What's usually my first clue that I need comfort?",
+          "options": [
+            "I get quiet",
+            "I overthink",
+            "I cling more",
+            "I joke less"
+          ]
+        },
+        {
+          "text": "Which part of me do you read the easiest?",
+          "options": [
+            "My eyes",
+            "My voice",
+            "My silence",
+            "My energy"
+          ]
+        },
+        {
+          "text": "What's something I stopped needing to explain because you already understand it?",
+          "options": [
+            "My quiet days",
+            "My little hints",
+            "My overthinking"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7708617512040008980",
+      "views": 153300,
+      "likes": 5603,
+      "coverText": "Make her pick. No 'everything' allowed",
+      "slideText": [
+        {
+          "text": "What's the first thing you'd steal from my closet?",
+          "options": [
+            "My hoodie",
+            "My jacket",
+            "My favorite tee",
+            "My socks, obviously"
+          ]
+        },
+        {
+          "text": "Which of my texts gets your biggest smile?",
+          "options": [
+            "'Good morning, pretty'",
+            "'Home safe?'",
+            "A random meme",
+            "'I miss you'"
+          ]
+        },
+        {
+          "text": "What do I do that makes you feel safest?",
+          "options": [
+            "Holding your hand",
+            "Walking on the street side",
+            "Checking on you",
+            "Hugging you tight"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7709077573296311604",
+      "views": 76600,
+      "likes": 3082,
+      "coverText": "3 questions every man should have an answer to",
+      "slideText": [
+        {
+          "text": "What's the first thing you wanted to tell your friends about me?",
+          "options": [
+            "She's pretty",
+            "She's funny",
+            "She's sweet",
+            "She's different"
+          ]
+        },
+        {
+          "text": "What's the cutest thing I do without realizing?",
+          "options": [
+            "Smile",
+            "Pout",
+            "Focus face",
+            "Happy dance"
+          ]
+        },
+        {
+          "text": "Which of my features did you notice first?",
+          "options": [
+            "Eyes",
+            "Smile",
+            "Hair",
+            "Voice"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7708975103576476980",
+      "views": 73500,
+      "likes": 2598,
+      "coverText": "Ask him these. He'd better not mess this up",
+      "slideText": [
+        {
+          "text": "If I disappeared for an hour, what would I probably be doing?",
+          "options": [
+            "Sleeping",
+            "Scrolling",
+            "Eating",
+            "Overthinking"
+          ]
+        },
+        {
+          "text": "When we're out together, what distracts me the most?",
+          "options": [
+            "Food spots",
+            "Cute things",
+            "Music",
+            "Random thoughts"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7707170006190132500",
+      "views": 52000,
+      "likes": 1579,
+      "coverText": "Are you ready to become my wife?",
+      "slideText": [
+        {
+          "text": "If I asked you to marry me tomorrow, what would your first thought be?",
+          "options": [
+            "\"Finally.\"",
+            "\"Is this real?\"",
+            "\"Yes, always.\"",
+            "\"I need a moment.\""
+          ]
+        },
+        {
+          "text": "What part of marriage do you think will be the most meaningful?",
+          "options": [
+            "Having my person",
+            "Our little traditions",
+            "Building a family",
+            "Choosing each other forever"
+          ]
+        },
+        {
+          "text": "If life gets difficult after marriage, what would remind you to stay?",
+          "options": [
+            "Remembering our love",
+            "We're a team",
+            "We made a promise",
+            "We're worth fighting for"
+          ]
+        },
+        {
+          "text": "What's one thing you hope never changes about us after marriage?",
+          "options": [
+            "Our laughter",
+            "Our love",
+            "Our friendship",
+            "Our effort"
+          ]
+        },
+        {
+          "text": "What would make you feel most loved as my wife?",
+          "options": [
+            "Being chosen daily",
+            "Having your support",
+            "Feeling appreciated",
+            "Growing together"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7709697373521415476",
+      "views": 104800,
+      "likes": 4933,
+      "coverText": "Ask him before 2026 ends",
+      "slideText": [
+        {
+          "text": "What is the hardest thing for you to say to me?",
+          "options": [
+            "I am scared",
+            "I need help",
+            "I am sorry",
+            "We need to talk"
+          ]
+        },
+        {
+          "text": "What is your biggest fear about us?",
+          "options": [
+            "Growing apart",
+            "Hurting me",
+            "Losing trust",
+            "Fights we cannot fix"
+          ]
+        },
+        {
+          "text": "What do you think I feel most insecure about?",
+          "options": [
+            "Myself",
+            "The future",
+            "My looks",
+            "Our compatibility"
+          ]
+        },
+        {
+          "text": "What do you think we need more of before 2026 ends?",
+          "options": [
+            "Honesty",
+            "Time",
+            "Reassurance",
+            "Effort"
+          ]
+        },
+        {
+          "text": "What would make you feel closer to me before 2026 ends?",
+          "options": [
+            "Deeper talks",
+            "More affection",
+            "More quality time",
+            "More understanding"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7709569640103431445",
+      "views": 108500,
+      "likes": 5387,
+      "coverText": "Describe your girlfriend in 5 picks",
+      "slideText": [
+        {
+          "text": "What's her relationship energy?",
+          "options": [
+            "Princess",
+            "Independent queen",
+            "Soft girl",
+            "Clingy but cute"
+          ]
+        },
+        {
+          "text": "What's her texting style?",
+          "options": [
+            "Dry texter",
+            "Essay writer",
+            "Voice note queen",
+            "Meme machine"
+          ]
+        },
+        {
+          "text": "What's her biggest green flag?",
+          "options": [
+            "Confident",
+            "Good communicator",
+            "Supportive",
+            "Your biggest cheerleader"
+          ]
+        },
+        {
+          "text": "What's her biggest red flag?",
+          "options": [
+            "Overthinker",
+            "Indecisive",
+            "Keeps you guessing",
+            "Not saying what she actually means"
+          ]
+        },
+        {
+          "text": "What's her most girlfriend-coded trait?",
+          "options": [
+            "Confident",
+            "Good communicator",
+            "Supportive",
+            "Your biggest cheerleader"
           ]
         }
       ]
