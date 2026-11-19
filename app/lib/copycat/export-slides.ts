@@ -113,6 +113,14 @@ import {
   paintTemplate29Slide,
 } from '@/app/lib/image-template-29-dark-cats';
 import {
+  IMAGE_TEMPLATE30_DEFAULT_LOOK,
+  IMAGE_TEMPLATE30_SANS_STACK,
+  IMAGE_TEMPLATE30_SERIF_STACK,
+  loadTemplate30Fonts,
+  paintTemplate30Slide,
+  type Template30Look,
+} from '@/app/lib/image-template-30-pastel-dashes';
+import {
   loadTemplate24Fonts,
   paintTemplate24Slide,
   template24CanvasFontStack,
@@ -202,7 +210,8 @@ export type CopycatExportTemplateId =
   | 26
   | 27
   | 28
-  | 29;
+  | 29
+  | 30;
 
 export type CopycatExportSlide = {
   text: string;
@@ -309,7 +318,8 @@ async function paintSlide(
   template24Look?: Template24Look,
   template27Audience?: Template27Audience,
   template26BunnySeed?: number,
-  template28Seed?: number
+  template28Seed?: number,
+  template30Look: Template30Look = IMAGE_TEMPLATE30_DEFAULT_LOOK
 ): Promise<Blob> {
   const { w, h } = frameSize(templateId);
   const canvas = document.createElement('canvas');
@@ -404,6 +414,24 @@ async function paintSlide(
       promo,
       cats,
       fontFamily: IMAGE_TEMPLATE29_FONT_STACK,
+    });
+    return canvasBlob(canvas);
+  }
+
+  if (templateId === 30) {
+    await loadTemplate30Fonts();
+    const promo = slide.isCta ? await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC) : null;
+    paintTemplate30Slide(ctx, w, h, {
+      text: slide.text,
+      tabIndex,
+      slideCount,
+      isCover: slide.isCover,
+      isCta: slide.isCta,
+      promo,
+      typeface: template30Look.typeface,
+      cover: template30Look.cover,
+      sansFamily: IMAGE_TEMPLATE30_SANS_STACK,
+      serifFamily: IMAGE_TEMPLATE30_SERIF_STACK,
     });
     return canvasBlob(canvas);
   }
@@ -940,6 +968,7 @@ export async function exportCopycatSlidesZip(options: {
   template27Audience?: Template27Audience;
   template26BunnySeed?: number;
   template28Seed?: number;
+  template30Look?: Template30Look;
 }): Promise<Blob> {
   const JSZip = (await import('jszip')).default;
   const zip = new JSZip();
@@ -963,7 +992,8 @@ export async function exportCopycatSlidesZip(options: {
       options.template24Look,
       options.template27Audience,
       options.template26BunnySeed,
-      options.template28Seed
+      options.template28Seed,
+      options.template30Look ?? IMAGE_TEMPLATE30_DEFAULT_LOOK
     );
     const name = i === 0 ? 'cover' : slide.isCta && !slide.text.trim() ? 'cta' : `q${i}`;
     zip.file(`template-${options.templateId}-${name}.png`, blob);

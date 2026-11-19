@@ -1,0 +1,108 @@
+'use client';
+
+import { useEffect, useRef } from 'react';
+import { IMAGE_TEMPLATE2_Q5_PROMO_SRC } from '@/app/lib/image-template-2-cover';
+import {
+  IMAGE_TEMPLATE30_DEFAULT_COVER,
+  IMAGE_TEMPLATE30_DEFAULT_TYPEFACE,
+  IMAGE_TEMPLATE30_SANS_STACK,
+  IMAGE_TEMPLATE30_SERIF_STACK,
+  IMAGE_TEMPLATE30_SLIDE_COUNT,
+  loadTemplate30Fonts,
+  paintTemplate30Slide,
+  template30Background,
+  type Template30Cover,
+  type Template30Typeface,
+} from '@/app/lib/image-template-30-pastel-dashes';
+
+const EXPORT_W = 1080;
+const EXPORT_H = 1440;
+
+let promoImage: Promise<HTMLImageElement | null> | null = null;
+
+function loadPromoImage(): Promise<HTMLImageElement | null> {
+  if (!promoImage) {
+    promoImage = new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = IMAGE_TEMPLATE2_Q5_PROMO_SRC;
+    });
+  }
+  return promoImage;
+}
+
+type PastelDashesPreviewProps = {
+  text: string;
+  tabIndex: number;
+  slideCount?: number;
+  isCover?: boolean;
+  isCta?: boolean;
+  typeface?: Template30Typeface;
+  cover?: Template30Cover;
+};
+
+/**
+ * Draws with the same `paintTemplate30Slide` call as the download, at the
+ * export resolution, then scales it into the 3:4 frame.
+ */
+export function PastelDashesPreview({
+  text,
+  tabIndex,
+  slideCount = IMAGE_TEMPLATE30_SLIDE_COUNT,
+  isCover,
+  isCta,
+  typeface = IMAGE_TEMPLATE30_DEFAULT_TYPEFACE,
+  cover = IMAGE_TEMPLATE30_DEFAULT_COVER,
+}: PastelDashesPreviewProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const coverSlide = isCover ?? (tabIndex === 0 && !isCta);
+  const cta = isCta ?? (tabIndex === slideCount - 1 && slideCount > 1);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    let cancelled = false;
+
+    const draw = async () => {
+      canvas.width = EXPORT_W;
+      canvas.height = EXPORT_H;
+      const ctx = canvas.getContext('2d');
+      if (!ctx || cancelled) return;
+      await loadTemplate30Fonts();
+      if (cancelled) return;
+      const promo = cta ? await loadPromoImage() : null;
+      if (cancelled) return;
+      paintTemplate30Slide(ctx, EXPORT_W, EXPORT_H, {
+        text,
+        tabIndex,
+        slideCount,
+        isCover: coverSlide,
+        isCta: cta,
+        promo,
+        typeface,
+        cover,
+        sansFamily: IMAGE_TEMPLATE30_SANS_STACK,
+        serifFamily: IMAGE_TEMPLATE30_SERIF_STACK,
+      });
+    };
+
+    void draw();
+    return () => {
+      cancelled = true;
+    };
+  }, [text, tabIndex, slideCount, coverSlide, cta, typeface, cover]);
+
+  return (
+    <div
+      className="absolute inset-0"
+      style={{ backgroundColor: template30Background(tabIndex, cta, { typeface, cover }) }}
+    >
+      <canvas
+        ref={canvasRef}
+        className="block h-full w-full"
+        aria-label="Pastel dash question slide"
+      />
+    </div>
+  );
+}
