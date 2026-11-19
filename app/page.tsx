@@ -203,6 +203,7 @@ import { BoldSolidPreview } from '@/app/components/BoldSolidPreview';
 import { FlatDarkPreview } from '@/app/components/FlatDarkPreview';
 import { FlatSerifPreview } from '@/app/components/FlatSerifPreview';
 import { DarkCatsPreview } from '@/app/components/DarkCatsPreview';
+import { PastelDashesPreview } from '@/app/components/PastelDashesPreview';
 import { NotesQuestionsPreview } from '@/app/components/NotesQuestionsPreview';
 import { PastelSlideshowPreview } from '@/app/components/PastelSlideshowPreview';
 import { RedGlowPreview } from '@/app/components/RedGlowPreview';
@@ -286,6 +287,26 @@ import {
   paintTemplate29Slide,
   template29Background,
 } from '@/app/lib/image-template-29-dark-cats';
+import {
+  IMAGE_TEMPLATE30_COVER_OPTIONS,
+  IMAGE_TEMPLATE30_CTA_TAB,
+  IMAGE_TEMPLATE30_DEFAULT_COVER,
+  IMAGE_TEMPLATE30_DEFAULT_TYPEFACE,
+  IMAGE_TEMPLATE30_QUESTION_COUNT,
+  IMAGE_TEMPLATE30_SANS_STACK,
+  IMAGE_TEMPLATE30_SERIF_STACK,
+  IMAGE_TEMPLATE30_SLIDE_COUNT,
+  IMAGE_TEMPLATE30_TYPEFACE_OPTIONS,
+  isImageTemplate30Id,
+  isTemplate30Cover,
+  isTemplate30Typeface,
+  loadTemplate30Fonts,
+  paintTemplate30Slide,
+  template30Background,
+  template30LookLabel,
+  type Template30Cover,
+  type Template30Typeface,
+} from '@/app/lib/image-template-30-pastel-dashes';
 import {
   IMAGE_TEMPLATE23_COVER_BG,
   IMAGE_TEMPLATE23_COVER_SUBTITLE,
@@ -555,7 +576,7 @@ function pickRandomCopycatCompetitor(exclude?: CopycatCompetitorId): CopycatComp
 }
 
 /** Spill It image templates available inside Copycat. */
-const COPYCAT_TEMPLATE_IDS = [1, 2, 6, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29] as const;
+const COPYCAT_TEMPLATE_IDS = [1, 2, 6, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30] as const;
 type CopycatTemplateId = (typeof COPYCAT_TEMPLATE_IDS)[number];
 
 function isKawaiiStyleTemplateId(templateId: number | null | undefined): boolean {
@@ -2372,6 +2393,12 @@ export default function Home() {
     [imageTemplate18PastelBody]
   );
   const [imageTemplate19Color, setImageTemplate19Color] = useState<Template19ColorId>('red');
+  const [imageTemplate30Typeface, setImageTemplate30Typeface] = useState<Template30Typeface>(
+    IMAGE_TEMPLATE30_DEFAULT_TYPEFACE
+  );
+  const [imageTemplate30Cover, setImageTemplate30Cover] = useState<Template30Cover>(
+    IMAGE_TEMPLATE30_DEFAULT_COVER
+  );
   const [imageTemplate2QuestionType, setImageTemplate2QuestionType] =
     useState<AutomateQuestionType>('random');
   const [imageTemplate6QuestionType, setImageTemplate6QuestionType] =
@@ -2501,6 +2528,8 @@ export default function Home() {
     selectedAppId === 'spill-it' && isImageTemplate28Id(selectedImageTemplateId);
   const isDarkCatsImageTemplate =
     selectedAppId === 'spill-it' && isImageTemplate29Id(selectedImageTemplateId);
+  const isPastelDashesImageTemplate =
+    selectedAppId === 'spill-it' && isImageTemplate30Id(selectedImageTemplateId);
   const isPinterestCoverImageTemplate =
     selectedAppId === 'spill-it' && isPinterestCoverImageTemplateId(selectedImageTemplateId);
   const isCouplesCuteMomentsImageTemplate =
@@ -2524,6 +2553,8 @@ export default function Home() {
     ? IMAGE_TEMPLATE28_QUESTION_COUNT
     : isDarkCatsImageTemplate
       ? IMAGE_TEMPLATE29_QUESTION_COUNT
+    : isPastelDashesImageTemplate
+      ? IMAGE_TEMPLATE30_QUESTION_COUNT
     : isNotesQuestionsImageTemplate
     ? IMAGE_TEMPLATE16_QUESTION_COUNT
     : isBoldSolidImageTemplate
@@ -2655,7 +2686,8 @@ export default function Home() {
         isFlatSerifImageTemplate ||
         isPenguinImageTemplate ||
         isDottedGridImageTemplate ||
-        isDarkCatsImageTemplate) &&
+        isDarkCatsImageTemplate ||
+        isPastelDashesImageTemplate) &&
       selectedImageBrowserTab >= imageTemplateTabCount
     ) {
       setSelectedImageBrowserTab(0);
@@ -2676,6 +2708,7 @@ export default function Home() {
     isPenguinImageTemplate,
     isDottedGridImageTemplate,
     isDarkCatsImageTemplate,
+    isPastelDashesImageTemplate,
     imageTemplateTabCount,
     selectedImageBrowserTab,
   ]);
@@ -5021,6 +5054,26 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       return;
     }
 
+    if (selectedAppId === 'spill-it' && isImageTemplate30Id(tid)) {
+      const title = pickTitleForType('funny', imageTabTexts[0]);
+      const questions = pickTemplate21QuestionBodies(
+        IMAGE_TEMPLATE30_QUESTION_COUNT,
+        imageTabTexts.slice(1)
+      );
+      setImageTabFunnyQuestions(questions);
+      setImageTabFrameBg(
+        template30Background(0, false, {
+          typeface: imageTemplate30Typeface,
+          cover: imageTemplate30Cover,
+        })
+      );
+      setImageTabPastelBgs([]);
+      setImageTabTypeLabel('Funny Questions');
+      setImageTabSources(Array.from({ length: IMAGE_TEMPLATE30_SLIDE_COUNT }, () => ''));
+      setImageTabTexts([title, ...questions, '']);
+      return;
+    }
+
     if (selectedAppId === 'spill-it' && isImageTemplate24Id(tid)) {
       const look = rollTemplate24Look(imageTemplate24QuestionCount, imageTemplate24Highlight);
       const title = template24CoverTitle(imageTemplate24QuestionCount, look.highlightWord);
@@ -5873,6 +5926,48 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           }, 'image/png');
         });
         entries.push({ path: `template-29-${names[i] ?? `q${i}`}.png`, blob });
+      }
+      return { entries, isKawaiiTemplate: false };
+    }
+    if (exportTemplateId === 30) {
+      const names = ['cover', 'q1', 'q2', 'q3', 'q4', 'q5', 'cta'] as const;
+      const frameWidth = 1080;
+      const frameHeight = 1440;
+      const loadImage = (src: string, label: string) =>
+        new Promise<HTMLImageElement>((resolve, reject) => {
+          const el = new Image();
+          el.onload = () => resolve(el);
+          el.onerror = () => reject(new Error(`Failed to load ${label}`));
+          el.src = src;
+        });
+      await loadTemplate30Fonts();
+      const promo = await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC, 'the App Store image');
+      const entries = [];
+      for (let i = 0; i < IMAGE_TEMPLATE30_SLIDE_COUNT; i++) {
+        const canvas = document.createElement('canvas');
+        canvas.width = frameWidth;
+        canvas.height = frameHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Failed to prepare the slide');
+        paintTemplate30Slide(ctx, frameWidth, frameHeight, {
+          text: (imageTabTexts[i] ?? '').trim(),
+          tabIndex: i,
+          slideCount: IMAGE_TEMPLATE30_SLIDE_COUNT,
+          isCover: i === 0,
+          isCta: i === IMAGE_TEMPLATE30_CTA_TAB,
+          promo: i === IMAGE_TEMPLATE30_CTA_TAB ? promo : null,
+          typeface: imageTemplate30Typeface,
+          cover: imageTemplate30Cover,
+          sansFamily: IMAGE_TEMPLATE30_SANS_STACK,
+          serifFamily: IMAGE_TEMPLATE30_SERIF_STACK,
+        });
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((next) => {
+            if (next) resolve(next);
+            else reject(new Error('Failed to export the slide'));
+          }, 'image/png');
+        });
+        entries.push({ path: `template-30-${names[i] ?? `q${i}`}.png`, blob });
       }
       return { entries, isKawaiiTemplate: false };
     }
@@ -7974,6 +8069,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         isPenguinImageTemplate ||
                         isDottedGridImageTemplate ||
                         isDarkCatsImageTemplate ||
+                        isPastelDashesImageTemplate ||
                         isPastelCarouselImageTemplate ||
                         isPinterestCoverImageTemplate ||
                         isPinterestCoverOnlyImageTemplate ? (
@@ -8258,6 +8354,15 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   selectedImageBrowserTab,
                                   selectedImageBrowserTab === imageTemplateCtaTabIndex
                                 )
+                              : isPastelDashesImageTemplate
+                              ? template30Background(
+                                  selectedImageBrowserTab,
+                                  selectedImageBrowserTab === imageTemplateCtaTabIndex,
+                                  {
+                                    typeface: imageTemplate30Typeface,
+                                    cover: imageTemplate30Cover,
+                                  }
+                                )
                               : activeImageFrameBg,
                           }}
                         >
@@ -8293,6 +8398,16 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               slideCount={imageTemplateTabCount}
                               isCover={selectedImageBrowserTab === 0}
                               isCta={selectedImageBrowserTab === imageTemplateCtaTabIndex}
+                            />
+                          ) : isPastelDashesImageTemplate ? (
+                            <PastelDashesPreview
+                              text={imageFrameTextForActiveTab}
+                              tabIndex={selectedImageBrowserTab}
+                              slideCount={imageTemplateTabCount}
+                              isCover={selectedImageBrowserTab === 0}
+                              isCta={selectedImageBrowserTab === imageTemplateCtaTabIndex}
+                              typeface={imageTemplate30Typeface}
+                              cover={imageTemplate30Cover}
                             />
                           ) : isPenguinImageTemplate ? (
                             <PenguinCardsPreview
@@ -9494,6 +9609,60 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                       <option value="brave">Brave</option>
                                     </select>
                                   ) : null}
+                                  {isPastelDashesImageTemplate ? (
+                                    <div
+                                      className="flex w-full flex-wrap items-center gap-2"
+                                      data-template30-typeface={imageTemplate30Typeface}
+                                      data-template30-cover={imageTemplate30Cover}
+                                      data-template30-look={template30LookLabel({
+                                        typeface: imageTemplate30Typeface,
+                                        cover: imageTemplate30Cover,
+                                      })}
+                                    >
+                                      <label className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                                        Type
+                                        <select
+                                          value={imageTemplate30Typeface}
+                                          onChange={(e) => {
+                                            const next = e.target.value;
+                                            if (isTemplate30Typeface(next)) setImageTemplate30Typeface(next);
+                                          }}
+                                          className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2 py-1.5 sm:py-1 text-sm sm:text-xs text-zinc-800 dark:text-zinc-200"
+                                          aria-label="Question typeface"
+                                        >
+                                          {IMAGE_TEMPLATE30_TYPEFACE_OPTIONS.map((option) => (
+                                            <option key={option.id} value={option.id}>
+                                              {option.label}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </label>
+                                      <label className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                                        Cover
+                                        <select
+                                          value={imageTemplate30Cover}
+                                          onChange={(e) => {
+                                            const next = e.target.value;
+                                            if (isTemplate30Cover(next)) setImageTemplate30Cover(next);
+                                          }}
+                                          className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2 py-1.5 sm:py-1 text-sm sm:text-xs text-zinc-800 dark:text-zinc-200"
+                                          aria-label="Cover style"
+                                        >
+                                          {IMAGE_TEMPLATE30_COVER_OPTIONS.map((option) => (
+                                            <option key={option.id} value={option.id}>
+                                              {option.label}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </label>
+                                      <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                                        {template30LookLabel({
+                                          typeface: imageTemplate30Typeface,
+                                          cover: imageTemplate30Cover,
+                                        })}
+                                      </span>
+                                    </div>
+                                  ) : null}
                                   {isColorCardImageTemplate ? (
                                     <div
                                       className="flex w-full flex-wrap items-center gap-2"
@@ -9650,6 +9819,26 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                         return;
                                       }
                                       if (isDarkCatsImageTemplate) {
+                                        if (selectedImageBrowserTab === 0) {
+                                          const next = [...imageTabTexts];
+                                          next[0] = pickTitleForType(
+                                            'funny',
+                                            imageFrameTextForActiveTab
+                                          );
+                                          setImageTabTexts(next);
+                                          return;
+                                        }
+                                        if (selectedImageBrowserTab === imageTemplateCtaTabIndex) return;
+                                        const [nextQuestion] = pickTemplate21QuestionBodies(1, [
+                                          imageFrameTextForActiveTab,
+                                        ]);
+                                        if (!nextQuestion) return;
+                                        const next = [...imageTabTexts];
+                                        next[selectedImageBrowserTab] = nextQuestion;
+                                        setImageTabTexts(next);
+                                        return;
+                                      }
+                                      if (isPastelDashesImageTemplate) {
                                         if (selectedImageBrowserTab === 0) {
                                           const next = [...imageTabTexts];
                                           next[0] = pickTitleForType(
@@ -9869,7 +10058,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               {isOceanSlideshowImageTemplate ||
                               isFlatDarkImageTemplate ||
                               isFlatSerifImageTemplate ||
-                              isDarkCatsImageTemplate ? (
+                              isDarkCatsImageTemplate ||
+                              isPastelDashesImageTemplate ? (
                                 <textarea
                                   value={imageFrameTextForActiveTab}
                                   rows={8}

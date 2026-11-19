@@ -193,6 +193,18 @@ import {
   template28LookFromSeed,
   template28LookLabel,
 } from '@/app/lib/image-template-28-dotted';
+import { PastelDashesPreview } from '@/app/components/PastelDashesPreview';
+import {
+  IMAGE_TEMPLATE30_COVER_OPTIONS,
+  IMAGE_TEMPLATE30_DEFAULT_COVER,
+  IMAGE_TEMPLATE30_DEFAULT_TYPEFACE,
+  IMAGE_TEMPLATE30_TYPEFACE_OPTIONS,
+  isTemplate30Cover,
+  isTemplate30Typeface,
+  template30LookLabel,
+  type Template30Cover,
+  type Template30Typeface,
+} from '@/app/lib/image-template-30-pastel-dashes';
 
 const TIKTOK_SANS_STACK = '"TikTok Sans", system-ui, -apple-system, sans-serif';
 const COPYCAT_APP_NAME = 'Spill It';
@@ -201,7 +213,7 @@ const COPYCAT_COVER_HEARTS = '♥ ♥ ♥';
 const COPYCAT_TEXT_ONLY_COVER_TOP = 0.38;
 const COPYCAT_TEXT_ONLY_COVER_SIZE_T2 = 0.074;
 
-export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29;
+export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30;
 
 function CopycatAppMarkFooter({
   isCover,
@@ -447,6 +459,8 @@ function CopycatSlidePreview({
   template27Audience,
   template26BunnySeed = IMAGE_TEMPLATE26_DEFAULT_BUNNY_SEED,
   template28Seed = IMAGE_TEMPLATE28_DEFAULT_SEED,
+  template30Typeface = IMAGE_TEMPLATE30_DEFAULT_TYPEFACE,
+  template30Cover = IMAGE_TEMPLATE30_DEFAULT_COVER,
 }: {
   templateId: CopycatTemplateId;
   tabIndex: number;
@@ -462,6 +476,8 @@ function CopycatSlidePreview({
   template27Audience?: Template27Audience;
   template26BunnySeed?: number;
   template28Seed?: number;
+  template30Typeface?: Template30Typeface;
+  template30Cover?: Template30Cover;
   template15FrameBg?: string;
   illustrationSrc?: string;
   isCtaSlide?: boolean;
@@ -599,6 +615,22 @@ function CopycatSlidePreview({
           slideCount={slideCount}
           isCover={isCover}
           isCta={isCtaSlide}
+        />
+      </div>
+    );
+  }
+
+  if (templateId === 30) {
+    return (
+      <div className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4 bg-[#FFDAC0]">
+        <PastelDashesPreview
+          text={text}
+          tabIndex={tabIndex}
+          slideCount={slideCount}
+          isCover={isCover}
+          isCta={isCtaSlide}
+          typeface={template30Typeface}
+          cover={template30Cover}
         />
       </div>
     );
@@ -1308,6 +1340,12 @@ export function CopycatPanel({
   const [template28Seed, setTemplate28Seed] = useState(IMAGE_TEMPLATE28_DEFAULT_SEED);
   const [template27AudiencePick, setTemplate27AudiencePick] =
     useState<Template27AudiencePick>('auto');
+  const [template30Typeface, setTemplate30Typeface] = useState<Template30Typeface>(
+    IMAGE_TEMPLATE30_DEFAULT_TYPEFACE
+  );
+  const [template30Cover, setTemplate30Cover] = useState<Template30Cover>(
+    IMAGE_TEMPLATE30_DEFAULT_COVER
+  );
   const template27RollRef = useRef<{ postId: string; n: number } | null>(null);
   const [template15FrameBg, setTemplate15FrameBg] = useState(() =>
     pickTemplate15FrameColor()
@@ -1462,7 +1500,8 @@ export function CopycatPanel({
 
   // Templates 25 and 29 keep every question, then add their own CTA slide.
   // Templates 26, 27, and 28 follow template 2: the promo sits on the last question.
-  const ctaIsOwnSlide = (templateId === 25 || templateId === 29) && displayBodies.length > 0;
+  const ctaIsOwnSlide =
+    (templateId === 25 || templateId === 29 || templateId === 30) && displayBodies.length > 0;
   const tabCount = displayBodies.length + (ctaIsOwnSlide ? 1 : 0);
   const ctaTabIndex =
     templateId === 28
@@ -1700,6 +1739,7 @@ export function CopycatPanel({
         template27Audience,
         template26BunnySeed,
         template28Seed,
+        template30Look: { typeface: template30Typeface, cover: template30Cover },
       });
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
@@ -1736,6 +1776,8 @@ export function CopycatPanel({
     template27Audience,
     template26BunnySeed,
     template28Seed,
+    template30Typeface,
+    template30Cover,
   ]);
 
   if (!selectedPost) {
@@ -2014,6 +2056,57 @@ export function CopycatPanel({
           </span>
         </div>
       ) : null}
+      {templateId === 30 ? (
+        <div
+          className="flex flex-wrap items-center gap-2"
+          data-template30-typeface={template30Typeface}
+          data-template30-cover={template30Cover}
+          data-template30-look={template30LookLabel({
+            typeface: template30Typeface,
+            cover: template30Cover,
+          })}
+        >
+          <label className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+            Type
+            <select
+              value={template30Typeface}
+              onChange={(e) => {
+                const next = e.target.value;
+                if (isTemplate30Typeface(next)) setTemplate30Typeface(next);
+              }}
+              className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-800 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-200"
+              aria-label="Question typeface"
+            >
+              {IMAGE_TEMPLATE30_TYPEFACE_OPTIONS.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+            Cover
+            <select
+              value={template30Cover}
+              onChange={(e) => {
+                const next = e.target.value;
+                if (isTemplate30Cover(next)) setTemplate30Cover(next);
+              }}
+              className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-800 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-200"
+              aria-label="Cover style"
+            >
+              {IMAGE_TEMPLATE30_COVER_OPTIONS.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
+            {template30LookLabel({ typeface: template30Typeface, cover: template30Cover })}
+          </span>
+        </div>
+      ) : null}
       {templateId === 27 ? (
         <div className="flex flex-wrap items-center gap-2">
           <label className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-300">
@@ -2051,6 +2144,8 @@ export function CopycatPanel({
         template27Audience={template27Audience}
         template26BunnySeed={template26BunnySeed}
         template28Seed={template28Seed}
+        template30Typeface={template30Typeface}
+        template30Cover={template30Cover}
         backgroundSrc={
           templateId === 17 ? template17BackgroundSrcAt(questionSlides, selectedTab) : undefined
         }
