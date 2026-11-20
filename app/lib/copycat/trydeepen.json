@@ -2,7 +2,7 @@
   "handle": "trydeepen",
   "platform": "tiktok",
   "minViews": 50000,
-  "postCount": 53,
+  "postCount": 55,
   "creditsUsed": 3,
   "creditsRemaining": 95,
   "posts": [
@@ -1861,6 +1861,94 @@
             "Good communicator",
             "Supportive",
             "Your biggest cheerleader"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7709519207284657428",
+      "views": 59500,
+      "likes": 2334,
+      "coverText": "Be honest... I promise I won't get mad",
+      "slideText": [
+        {
+          "text": "When we first started talking, how long did you think we would last?",
+          "options": [
+            "Knew you were endgame fast",
+            "Figured a few fun months",
+            "Was just seeing how it went",
+            "Honestly had no idea"
+          ]
+        },
+        {
+          "text": "Which little habit of mine tests your patience the most?",
+          "options": [
+            "Taking forever to get ready",
+            "Never picking where to eat",
+            "Overthinking small texts",
+            "Stealing the bed covers"
+          ]
+        },
+        {
+          "text": "Why do you usually stay quiet when something is bothering you?",
+          "options": [
+            "Don't want to start a fight",
+            "Need time to process first",
+            "Waiting to see if you notice",
+            "Hoping it passes on its own"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7709899743324933428",
+      "views": 50600,
+      "likes": 3022,
+      "coverText": "5 questions you HAVE to ask your boyfriend",
+      "slideText": [
+        {
+          "text": "From your POV, what are the three main moods I can be in?",
+          "options": [
+            "Happy and energetic",
+            "Moody and dramatic",
+            "Sleepy and lazy",
+            "Clingy and affectionate"
+          ]
+        },
+        {
+          "text": "What's the cheesiest move I've ever used on you?",
+          "options": [
+            "Using cheesy pickup lines",
+            "Giving you random compliments",
+            "Trying to make you blush",
+            "Saying cute romantic things"
+          ]
+        },
+        {
+          "text": "What do I do without realizing that always makes you laugh inside?",
+          "options": [
+            "Making silly facial expressions",
+            "Acting dramatic over little things",
+            "Laughing at my own jokes",
+            "Being unintentionally goofy"
+          ]
+        },
+        {
+          "text": "What similarity of mine did you instantly notice in my parents?",
+          "options": [
+            "The way I smile",
+            "My sense of humor",
+            "My stubbornness",
+            "The way I talk"
+          ]
+        },
+        {
+          "text": "What's one thing about me that makes you fall in love with me repeatedly, every time?",
+          "options": [
+            "The way I care for you",
+            "My smile",
+            "My little acts of affection",
+            "The way I make you feel loved"
           ]
         }
       ]
