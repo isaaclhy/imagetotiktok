@@ -1,4 +1,5 @@
-import type { NightySceneId } from '@/app/lib/nighty-video-templates/catalog';
+import { isReferenceLayout, type NightySceneId } from '@/app/lib/nighty-video-templates/catalog';
+import { paintReferenceFrame } from '@/app/lib/nighty-video-templates/reference-paint';
 import type { NightyFrame } from '@/app/lib/nighty-video-templates/timeline';
 
 export const NIGHTY_COMPOSITION_FONT = 'TikTok Sans, sans-serif';
@@ -194,6 +195,10 @@ export function paintNightyFrame(
   h: number,
   frame: NightyFrame
 ): void {
+  if (isReferenceLayout(frame.layout)) {
+    paintReferenceFrame(ctx, w, h, frame);
+    return;
+  }
   drawBackdrop(ctx, w, h, frame);
   const maxWidth = w * 0.78;
 
