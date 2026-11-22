@@ -24,7 +24,8 @@ export const IMAGE_TEMPLATE31_CTA_TAB = IMAGE_TEMPLATE31_QUESTION_COUNT;
 export const IMAGE_TEMPLATE31_FRAME_BG = '#000000';
 export const IMAGE_TEMPLATE31_TEXT = '#111111';
 export const IMAGE_TEMPLATE31_MARK = 'spill it';
-export const IMAGE_TEMPLATE31_GRAIN_SRC = '/image-templates/template-14-grain.png';
+/** Dense mid-grey noise — flamingo cards read as heavy film grain, not soft dust. */
+export const IMAGE_TEMPLATE31_GRAIN_SRC = '/image-templates/template-31-grain.png';
 
 /** Sampled from flamingoappreels rose + lavender posts. */
 export const IMAGE_TEMPLATE31_COLORS = [
@@ -43,20 +44,25 @@ export const IMAGE_TEMPLATE31_SERIF_STACK =
 export const IMAGE_TEMPLATE31_SANS_STACK =
   '"TikTok Sans", Helvetica, Arial, "Helvetica Neue", sans-serif';
 
-/** Card inset from the black frame. */
-export const IMAGE_TEMPLATE31_CARD_INSET_X = 0.072;
-export const IMAGE_TEMPLATE31_CARD_INSET_Y = 0.055;
+/** Card inset from the black frame — tight so cover type can sit large. */
+export const IMAGE_TEMPLATE31_CARD_INSET_X = 0.055;
+export const IMAGE_TEMPLATE31_CARD_INSET_Y = 0.048;
 /** Corner radius as a share of frame width — large squircle like the IG posts. */
 export const IMAGE_TEMPLATE31_CARD_RADIUS_RATIO = 0.155;
 export const IMAGE_TEMPLATE31_EDGE_SCALE = 1.012;
 export const IMAGE_TEMPLATE31_EDGE_BLUR_RATIO = 0.018;
-export const IMAGE_TEMPLATE31_GRAIN_ALPHA = 0.82;
+/** Overlay pass strength — high enough that grain stays visible on cover colour. */
+export const IMAGE_TEMPLATE31_GRAIN_ALPHA = 0.55;
+/** Second multiply pass for the darker speckles flamingo cards show. */
+export const IMAGE_TEMPLATE31_GRAIN_MULTIPLY_ALPHA = 0.42;
+export const IMAGE_TEMPLATE31_GRAIN_SCALE = 0.85;
 
-const COVER_SIZE = 0.052;
-const COVER_MIN_SIZE = 0.036;
-const COVER_LEADING = 1.22;
-const COVER_WIDTH = 0.72;
-const COVER_CENTER_Y = 0.46;
+/** Cover titles are large — flamingo wraps a short hook across ~2 wide lines. */
+const COVER_SIZE = 0.07;
+const COVER_MIN_SIZE = 0.05;
+const COVER_LEADING = 1.16;
+const COVER_WIDTH = 0.9;
+const COVER_CENTER_Y = 0.44;
 
 const QUESTION_SIZE = 0.048;
 const QUESTION_MIN_SIZE = 0.034;
@@ -263,15 +269,20 @@ function paintCardFill(
   ctx.fillRect(card.x, card.y, card.width, card.height);
 
   if (grain) {
-    ctx.globalAlpha = IMAGE_TEMPLATE31_GRAIN_ALPHA;
-    ctx.globalCompositeOperation = 'multiply';
     const pattern = ctx.createPattern(grain, 'repeat');
     if (pattern) {
       if ('setTransform' in pattern && typeof DOMMatrix !== 'undefined') {
-        const matrix = new DOMMatrix().scale(0.45);
+        const matrix = new DOMMatrix().scale(IMAGE_TEMPLATE31_GRAIN_SCALE);
         pattern.setTransform(matrix);
       }
+      // Overlay lifts contrast so the film grain reads on lavender and rose.
+      ctx.globalAlpha = IMAGE_TEMPLATE31_GRAIN_ALPHA;
+      ctx.globalCompositeOperation = 'overlay';
       ctx.fillStyle = pattern;
+      ctx.fillRect(card.x, card.y, card.width, card.height);
+      // Multiply darkens the speckles so the field looks paper-rough, not soft.
+      ctx.globalAlpha = IMAGE_TEMPLATE31_GRAIN_MULTIPLY_ALPHA;
+      ctx.globalCompositeOperation = 'multiply';
       ctx.fillRect(card.x, card.y, card.width, card.height);
     }
   }
