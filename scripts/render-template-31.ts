@@ -16,11 +16,12 @@ const W = 1080;
 const H = 1440;
 
 GlobalFonts.registerFromPath(
-  'public/fonts/libre-baskerville/LibreBaskerville-400.ttf',
-  'Libre Baskerville'
+  'public/fonts/eb-garamond/EBGaramond-Variable.ttf',
+  'EB Garamond'
 );
 GlobalFonts.registerFromPath('public/fonts/tiktok-sans/TikTokSans-400.ttf', 'TikTok Sans');
 GlobalFonts.registerFromPath('public/fonts/tiktok-sans/TikTokSans-700.ttf', 'TikTok Sans');
+GlobalFonts.registerFromPath('/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf', 'Noto Color Emoji');
 
 if (typeof globalThis.DOMMatrix === 'undefined') {
   globalThis.DOMMatrix = class DOMMatrix {

@@ -29,9 +29,9 @@ export const IMAGE_TEMPLATE31_GRAIN_SRC = '/image-templates/template-31-grain.pn
 
 /** Sampled from flamingoappreels rose + lavender posts. */
 export const IMAGE_TEMPLATE31_COLORS = [
-  '#C04963',
+  '#C15068',
   '#B17FCA',
-  '#BF4862',
+  '#D14B68',
   '#A67BC4',
   '#C45A72',
   '#9B6BB5',
@@ -39,10 +39,18 @@ export const IMAGE_TEMPLATE31_COLORS = [
 
 export const IMAGE_TEMPLATE31_DEFAULT_COLOR: string = IMAGE_TEMPLATE31_COLORS[0]!;
 
+/**
+ * Flamingo body type is an old-style serif (elegant y/g, medium weight) —
+ * EB Garamond is the closest OFL match to the flamingoappreels covers.
+ */
 export const IMAGE_TEMPLATE31_SERIF_STACK =
-  '"Libre Baskerville", Georgia, "Times New Roman", Times, serif';
+  '"EB Garamond", "Libre Baskerville", Georgia, "Times New Roman", serif';
+export const IMAGE_TEMPLATE31_SERIF_FAMILY = 'EB Garamond';
 export const IMAGE_TEMPLATE31_SANS_STACK =
   '"TikTok Sans", Helvetica, Arial, "Helvetica Neue", sans-serif';
+export const IMAGE_TEMPLATE31_SERIF_VARIATIONS = 'normal';
+export const IMAGE_TEMPLATE31_COVER_WEIGHT = 600;
+export const IMAGE_TEMPLATE31_QUESTION_WEIGHT = 500;
 
 /** Card inset from the black frame — tight so cover type can sit large. */
 export const IMAGE_TEMPLATE31_CARD_INSET_X = 0.055;
@@ -58,26 +66,29 @@ export const IMAGE_TEMPLATE31_GRAIN_MULTIPLY_ALPHA = 0.42;
 export const IMAGE_TEMPLATE31_GRAIN_SCALE = 0.85;
 
 /** Cover titles are large — flamingo wraps a short hook across ~2 wide lines. */
-const COVER_SIZE = 0.07;
-const COVER_MIN_SIZE = 0.05;
-const COVER_LEADING = 1.16;
+const COVER_SIZE = 0.082;
+const COVER_MIN_SIZE = 0.056;
+const COVER_LEADING = 1.06;
+const COVER_TRACKING = '-1.4px';
 const COVER_WIDTH = 0.9;
 const COVER_CENTER_Y = 0.44;
 
-const QUESTION_SIZE = 0.048;
-const QUESTION_MIN_SIZE = 0.034;
-const QUESTION_LEADING = 1.28;
+const QUESTION_SIZE = 0.05;
+const QUESTION_MIN_SIZE = 0.036;
+const QUESTION_LEADING = 1.22;
+const QUESTION_TRACKING = '-0.6px';
 const QUESTION_WIDTH = 0.78;
 /** Open questions sit in the upper half, matching the no-options reference. */
 const QUESTION_TOP = 0.22;
 const QUESTION_CENTER_Y = 0.42;
 
-const OPTION_SIZE = 0.042;
-const OPTION_LEADING = 1.5;
-const OPTION_GAP_EM = 0.7;
+const OPTION_SIZE = 0.044;
+const OPTION_LEADING = 1.42;
+const OPTION_GAP_EM = 0.65;
 
-const MARK_SIZE = 0.026;
+const MARK_SIZE = 0.028;
 const MARK_Y = 0.9;
+const MARK_TRACKING = '-0.8px';
 const CTA_TEXT_CENTER = 0.34;
 const CTA_MAX_HEIGHT = 0.42;
 
@@ -117,8 +128,10 @@ export function template31CardRect(frameWidth: number, frameHeight: number): {
 
 export async function loadTemplate31Fonts(): Promise<void> {
   const loads = [
-    document.fonts.load(`400 72px "Libre Baskerville"`),
-    document.fonts.load(`400 48px "TikTok Sans"`),
+    document.fonts.load(`${IMAGE_TEMPLATE31_COVER_WEIGHT} 84px "EB Garamond"`),
+    document.fonts.load(`${IMAGE_TEMPLATE31_QUESTION_WEIGHT} 56px "EB Garamond"`),
+    document.fonts.load(`400 72px "EB Garamond"`),
+    document.fonts.load(`600 72px "EB Garamond"`),
     document.fonts.load(`700 40px "TikTok Sans"`),
   ];
   await Promise.all(loads.map((pending) => pending.catch(() => undefined)));
@@ -127,6 +140,13 @@ export async function loadTemplate31Fonts(): Promise<void> {
 
 function setLetterSpacing(ctx: CanvasRenderingContext2D, value: string) {
   if ('letterSpacing' in ctx) ctx.letterSpacing = value;
+}
+
+function setSerifFace(ctx: CanvasRenderingContext2D, weight: number, size: number, family: string) {
+  ctx.font = `${weight} ${size}px ${family}`;
+  if ('fontVariationSettings' in ctx) {
+    ctx.fontVariationSettings = IMAGE_TEMPLATE31_SERIF_VARIATIONS;
+  }
 }
 
 function traceRoundRect(
@@ -442,8 +462,10 @@ function paintMark(
   sansFamily: string
 ) {
   const size = Math.round(frameWidth * MARK_SIZE);
-  ctx.font = `400 ${size}px ${sansFamily}`;
-  setLetterSpacing(ctx, '0.4px');
+  // Flamingo brand mark is a bold geometric sans with tight tracking.
+  ctx.font = `700 ${size}px ${sansFamily}`;
+  if ('fontVariationSettings' in ctx) ctx.fontVariationSettings = 'normal';
+  setLetterSpacing(ctx, MARK_TRACKING);
   ctx.fillStyle = IMAGE_TEMPLATE31_TEXT;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -486,6 +508,8 @@ export function paintTemplate31Slide(
   const hasOptions = optionText.trim().length > 0;
   const maxWidth = card.width * (isCover ? COVER_WIDTH : QUESTION_WIDTH);
 
+  const weight = isCover ? IMAGE_TEMPLATE31_COVER_WEIGHT : IMAGE_TEMPLATE31_QUESTION_WEIGHT;
+  const tracking = isCover ? COVER_TRACKING : QUESTION_TRACKING;
   let fontSize = Math.round(frameWidth * (isCover ? COVER_SIZE : QUESTION_SIZE));
   const minSize = Math.round(frameWidth * (isCover ? COVER_MIN_SIZE : QUESTION_MIN_SIZE));
   const optionSize = Math.round(frameWidth * OPTION_SIZE);
@@ -496,11 +520,11 @@ export function paintTemplate31Slide(
       ? card.height * 0.55
       : card.height * 0.7;
 
-  ctx.font = `400 ${fontSize}px ${serif}`;
-  setLetterSpacing(ctx, '0px');
+  setSerifFace(ctx, weight, fontSize, serif);
+  setLetterSpacing(ctx, tracking);
   let questionLines = wrapPreservingBreaks(ctx, question, maxWidth);
   let questionLineH = fontSize * leading;
-  ctx.font = `400 ${optionSize}px ${serif}`;
+  setSerifFace(ctx, weight, optionSize, serif);
   const optionLines = hasOptions ? wrapPreservingBreaks(ctx, optionText, maxWidth) : [];
   const optionLineH = optionSize * OPTION_LEADING;
   const optionGap = optionLines.length ? fontSize * OPTION_GAP_EM : 0;
@@ -509,7 +533,8 @@ export function paintTemplate31Slide(
 
   while (fontSize > minSize && (blockH > maxBlockH || (isCover && questionLines.length > 5))) {
     fontSize -= 1;
-    ctx.font = `400 ${fontSize}px ${serif}`;
+    setSerifFace(ctx, weight, fontSize, serif);
+    setLetterSpacing(ctx, tracking);
     questionLines = wrapPreservingBreaks(ctx, question, maxWidth);
     questionLineH = fontSize * leading;
     blockH =
@@ -534,19 +559,22 @@ export function paintTemplate31Slide(
   }
 
   let y = startY;
-  ctx.font = `400 ${fontSize}px ${serif}`;
+  setSerifFace(ctx, weight, fontSize, serif);
+  setLetterSpacing(ctx, tracking);
   for (const line of questionLines) {
     ctx.fillText(line, textX, y);
     y += questionLineH;
   }
   if (optionLines.length) {
     y += optionGap - questionLineH / 2 + optionLineH / 2;
-    ctx.font = `400 ${optionSize}px ${serif}`;
+    setSerifFace(ctx, weight, optionSize, serif);
+    setLetterSpacing(ctx, tracking);
     for (const line of optionLines) {
       ctx.fillText(line, textX, y);
       y += optionLineH;
     }
   }
+  setLetterSpacing(ctx, '0px');
 
   if (isCta && options.promo) {
     const labelSize = Math.round(frameHeight * IMAGE_TEMPLATE2_Q5_PROMO_LABEL_SIZE_RATIO);
@@ -559,6 +587,7 @@ export function paintTemplate31Slide(
     );
     ctx.drawImage(options.promo, layout.x, layout.y, layout.width, layout.height);
     ctx.font = `700 ${labelSize}px ${sans}`;
+    if ('fontVariationSettings' in ctx) ctx.fontVariationSettings = 'normal';
     ctx.fillStyle = IMAGE_TEMPLATE31_TEXT;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
