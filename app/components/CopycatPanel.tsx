@@ -144,7 +144,12 @@ import { BoldSolidPreview } from '@/app/components/BoldSolidPreview';
 import { FlatDarkPreview } from '@/app/components/FlatDarkPreview';
 import { FlatSerifPreview } from '@/app/components/FlatSerifPreview';
 import { DarkCatsPreview } from '@/app/components/DarkCatsPreview';
+import { FlamingoCardsPreview } from '@/app/components/FlamingoCardsPreview';
 import { PenguinCardsPreview } from '@/app/components/PenguinCardsPreview';
+import {
+  IMAGE_TEMPLATE31_DEFAULT_COLOR,
+  pickTemplate31Color,
+} from '@/app/lib/image-template-31-flamingo';
 import { AwwEwwPreview } from '@/app/components/AwwEwwPreview';
 import {
   IMAGE_TEMPLATE26_DEFAULT_BUNNY_SEED,
@@ -213,7 +218,29 @@ const COPYCAT_COVER_HEARTS = '♥ ♥ ♥';
 const COPYCAT_TEXT_ONLY_COVER_TOP = 0.38;
 const COPYCAT_TEXT_ONLY_COVER_SIZE_T2 = 0.074;
 
-export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30;
+export type CopycatTemplateId =
+  | 1
+  | 2
+  | 6
+  | 13
+  | 14
+  | 15
+  | 16
+  | 17
+  | 18
+  | 19
+  | 20
+  | 21
+  | 22
+  | 23
+  | 24
+  | 25
+  | 26
+  | 27
+  | 28
+  | 29
+  | 30
+  | 31;
 
 function CopycatAppMarkFooter({
   isCover,
@@ -461,6 +488,7 @@ function CopycatSlidePreview({
   template28Seed = IMAGE_TEMPLATE28_DEFAULT_SEED,
   template30Typeface = IMAGE_TEMPLATE30_DEFAULT_TYPEFACE,
   template30Cover = IMAGE_TEMPLATE30_DEFAULT_COVER,
+  template31Color = IMAGE_TEMPLATE31_DEFAULT_COLOR,
 }: {
   templateId: CopycatTemplateId;
   tabIndex: number;
@@ -478,6 +506,7 @@ function CopycatSlidePreview({
   template28Seed?: number;
   template30Typeface?: Template30Typeface;
   template30Cover?: Template30Cover;
+  template31Color?: string;
   template15FrameBg?: string;
   illustrationSrc?: string;
   isCtaSlide?: boolean;
@@ -631,6 +660,21 @@ function CopycatSlidePreview({
           isCta={isCtaSlide}
           typeface={template30Typeface}
           cover={template30Cover}
+        />
+      </div>
+    );
+  }
+
+  if (templateId === 31) {
+    return (
+      <div className="@container relative w-full max-w-[20.5rem] mx-auto overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 aspect-3/4 bg-black">
+        <FlamingoCardsPreview
+          text={text}
+          tabIndex={tabIndex}
+          slideCount={slideCount}
+          isCover={isCover}
+          isCta={isCtaSlide}
+          color={template31Color}
         />
       </div>
     );
@@ -1346,6 +1390,7 @@ export function CopycatPanel({
   const [template30Cover, setTemplate30Cover] = useState<Template30Cover>(
     IMAGE_TEMPLATE30_DEFAULT_COVER
   );
+  const [template31Color, setTemplate31Color] = useState(IMAGE_TEMPLATE31_DEFAULT_COLOR);
   const template27RollRef = useRef<{ postId: string; n: number } | null>(null);
   const [template15FrameBg, setTemplate15FrameBg] = useState(() =>
     pickTemplate15FrameColor()
@@ -1424,6 +1469,7 @@ export function CopycatPanel({
     setTemplate19Color(pickTemplate19ShuffleColor());
     setTemplate26BunnySeed(rollTemplate26BunnySeed());
     setTemplate28Seed(rollTemplate28Seed());
+    setTemplate31Color((current) => pickTemplate31Color(current));
   }
 
   postBagRef.current = selectedBag;
@@ -1534,6 +1580,7 @@ export function CopycatPanel({
     setTemplate19Color(pickTemplate19ShuffleColor());
     setTemplate26BunnySeed(rollTemplate26BunnySeed());
     setTemplate28Seed(rollTemplate28Seed());
+    setTemplate31Color((current) => pickTemplate31Color(current));
   }, [postIds, postEpoch]);
 
   // First draw only. Later source/template changes are applied during render above
@@ -1560,6 +1607,7 @@ export function CopycatPanel({
     setTemplate19Color(pickTemplate19ShuffleColor());
     setTemplate26BunnySeed(rollTemplate26BunnySeed());
     setTemplate28Seed(rollTemplate28Seed());
+    setTemplate31Color((current) => pickTemplate31Color(current));
   }, [postEpoch, postIds, selection, rollTemplate14StyleForSelection, rollTemplate18LookForSelection]);
 
   // Re-apply the scroll offset from the last "New random post" tap before paint,
@@ -1740,6 +1788,7 @@ export function CopycatPanel({
         template26BunnySeed,
         template28Seed,
         template30Look: { typeface: template30Typeface, cover: template30Cover },
+        template31Color,
       });
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
@@ -1778,6 +1827,7 @@ export function CopycatPanel({
     template28Seed,
     template30Typeface,
     template30Cover,
+    template31Color,
   ]);
 
   if (!selectedPost) {
@@ -2146,6 +2196,7 @@ export function CopycatPanel({
         template28Seed={template28Seed}
         template30Typeface={template30Typeface}
         template30Cover={template30Cover}
+        template31Color={template31Color}
         backgroundSrc={
           templateId === 17 ? template17BackgroundSrcAt(questionSlides, selectedTab) : undefined
         }
