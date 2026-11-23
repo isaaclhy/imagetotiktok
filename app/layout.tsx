@@ -140,6 +140,15 @@ const leagueGothic = localFont({
   adjustFontFallback: "Arial",
 });
 
+const ebGaramond = localFont({
+  src: "../public/fonts/eb-garamond/EBGaramond-Variable.ttf",
+  weight: "400 800",
+  style: "normal",
+  display: "swap",
+  variable: "--font-eb-garamond",
+  adjustFontFallback: "Times New Roman",
+});
+
 const interExtraBold = localFont({
   src: "./fonts/inter/inter-latin-800.woff2",
   weight: "800",
@@ -162,7 +171,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${interExtraBold.variable} ${roboto.variable} ${plusJakarta.variable} ${openSans.variable} ${nunito.variable} ${libreBaskerville.variable} ${playfairDisplay.variable} ${ubuntu.variable} ${ubuntuBold.variable} ${lilitaOne.variable} ${leagueGothic.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${interExtraBold.variable} ${roboto.variable} ${plusJakarta.variable} ${openSans.variable} ${nunito.variable} ${libreBaskerville.variable} ${playfairDisplay.variable} ${ebGaramond.variable} ${ubuntu.variable} ${ubuntuBold.variable} ${lilitaOne.variable} ${leagueGothic.variable} antialiased`}
       >
         {children}
       </body>

@@ -203,6 +203,7 @@ import { BoldSolidPreview } from '@/app/components/BoldSolidPreview';
 import { FlatDarkPreview } from '@/app/components/FlatDarkPreview';
 import { FlatSerifPreview } from '@/app/components/FlatSerifPreview';
 import { DarkCatsPreview } from '@/app/components/DarkCatsPreview';
+import { FlamingoCardsPreview } from '@/app/components/FlamingoCardsPreview';
 import { PastelDashesPreview } from '@/app/components/PastelDashesPreview';
 import { NotesQuestionsPreview } from '@/app/components/NotesQuestionsPreview';
 import { PastelSlideshowPreview } from '@/app/components/PastelSlideshowPreview';
@@ -307,6 +308,19 @@ import {
   type Template30Cover,
   type Template30Typeface,
 } from '@/app/lib/image-template-30-pastel-dashes';
+import {
+  IMAGE_TEMPLATE31_CTA_TAB,
+  IMAGE_TEMPLATE31_DEFAULT_COLOR,
+  IMAGE_TEMPLATE31_GRAIN_SRC,
+  IMAGE_TEMPLATE31_QUESTION_COUNT,
+  IMAGE_TEMPLATE31_SANS_STACK,
+  IMAGE_TEMPLATE31_SERIF_STACK,
+  IMAGE_TEMPLATE31_SLIDE_COUNT,
+  isImageTemplate31Id,
+  loadTemplate31Fonts,
+  paintTemplate31Slide,
+  pickTemplate31Color,
+} from '@/app/lib/image-template-31-flamingo';
 import {
   IMAGE_TEMPLATE23_COVER_BG,
   IMAGE_TEMPLATE23_COVER_SUBTITLE,
@@ -576,7 +590,7 @@ function pickRandomCopycatCompetitor(exclude?: CopycatCompetitorId): CopycatComp
 }
 
 /** Spill It image templates available inside Copycat. */
-const COPYCAT_TEMPLATE_IDS = [1, 2, 6, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30] as const;
+const COPYCAT_TEMPLATE_IDS = [1, 2, 6, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31] as const;
 type CopycatTemplateId = (typeof COPYCAT_TEMPLATE_IDS)[number];
 
 function isKawaiiStyleTemplateId(templateId: number | null | undefined): boolean {
@@ -2399,6 +2413,7 @@ export default function Home() {
   const [imageTemplate30Cover, setImageTemplate30Cover] = useState<Template30Cover>(
     IMAGE_TEMPLATE30_DEFAULT_COVER
   );
+  const [imageTemplate31Color, setImageTemplate31Color] = useState(IMAGE_TEMPLATE31_DEFAULT_COLOR);
   const [imageTemplate2QuestionType, setImageTemplate2QuestionType] =
     useState<AutomateQuestionType>('random');
   const [imageTemplate6QuestionType, setImageTemplate6QuestionType] =
@@ -2530,6 +2545,8 @@ export default function Home() {
     selectedAppId === 'spill-it' && isImageTemplate29Id(selectedImageTemplateId);
   const isPastelDashesImageTemplate =
     selectedAppId === 'spill-it' && isImageTemplate30Id(selectedImageTemplateId);
+  const isFlamingoCardsImageTemplate =
+    selectedAppId === 'spill-it' && isImageTemplate31Id(selectedImageTemplateId);
   const isPinterestCoverImageTemplate =
     selectedAppId === 'spill-it' && isPinterestCoverImageTemplateId(selectedImageTemplateId);
   const isCouplesCuteMomentsImageTemplate =
@@ -2555,6 +2572,8 @@ export default function Home() {
       ? IMAGE_TEMPLATE29_QUESTION_COUNT
     : isPastelDashesImageTemplate
       ? IMAGE_TEMPLATE30_QUESTION_COUNT
+    : isFlamingoCardsImageTemplate
+      ? IMAGE_TEMPLATE31_QUESTION_COUNT
     : isNotesQuestionsImageTemplate
     ? IMAGE_TEMPLATE16_QUESTION_COUNT
     : isBoldSolidImageTemplate
@@ -2584,7 +2603,8 @@ export default function Home() {
     !isRedRoundedImageTemplate &&
     !isFlatDarkImageTemplate &&
     !isPenguinImageTemplate &&
-    !isDottedGridImageTemplate;
+    !isDottedGridImageTemplate &&
+    !isFlamingoCardsImageTemplate;
   const imageTemplateCtaTabIndex = hasImageTemplateCtaTab
     ? imageTemplateQuestionCount + 1
     : -1;
@@ -2687,7 +2707,8 @@ export default function Home() {
         isPenguinImageTemplate ||
         isDottedGridImageTemplate ||
         isDarkCatsImageTemplate ||
-        isPastelDashesImageTemplate) &&
+        isPastelDashesImageTemplate ||
+        isFlamingoCardsImageTemplate) &&
       selectedImageBrowserTab >= imageTemplateTabCount
     ) {
       setSelectedImageBrowserTab(0);
@@ -2709,6 +2730,7 @@ export default function Home() {
     isDottedGridImageTemplate,
     isDarkCatsImageTemplate,
     isPastelDashesImageTemplate,
+    isFlamingoCardsImageTemplate,
     imageTemplateTabCount,
     selectedImageBrowserTab,
   ]);
@@ -5074,6 +5096,23 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       return;
     }
 
+    if (selectedAppId === 'spill-it' && isImageTemplate31Id(tid)) {
+      const title = pickTitleForType('funny', imageTabTexts[0]);
+      const questions = pickTemplate21QuestionBodies(
+        IMAGE_TEMPLATE31_QUESTION_COUNT,
+        imageTabTexts.slice(1)
+      );
+      const color = pickTemplate31Color(imageTemplate31Color);
+      setImageTemplate31Color(color);
+      setImageTabFunnyQuestions(questions);
+      setImageTabFrameBg('#000000');
+      setImageTabPastelBgs([]);
+      setImageTabTypeLabel('Funny Questions');
+      setImageTabSources(Array.from({ length: IMAGE_TEMPLATE31_SLIDE_COUNT }, () => ''));
+      setImageTabTexts([title, ...questions]);
+      return;
+    }
+
     if (selectedAppId === 'spill-it' && isImageTemplate24Id(tid)) {
       const look = rollTemplate24Look(imageTemplate24QuestionCount, imageTemplate24Highlight);
       const title = template24CoverTitle(imageTemplate24QuestionCount, look.highlightWord);
@@ -5968,6 +6007,52 @@ const imageFrameTitleLine1 = 'Questions to ask your';
           }, 'image/png');
         });
         entries.push({ path: `template-30-${names[i] ?? `q${i}`}.png`, blob });
+      }
+      return { entries, isKawaiiTemplate: false };
+    }
+    if (exportTemplateId === 31) {
+      const names = ['cover', 'q1', 'q2', 'q3', 'q4', 'q5'] as const;
+      const frameWidth = 1080;
+      const frameHeight = 1440;
+      const loadImage = (src: string, label: string) =>
+        new Promise<HTMLImageElement>((resolve, reject) => {
+          const el = new Image();
+          el.onload = () => resolve(el);
+          el.onerror = () => reject(new Error(`Failed to load ${label}`));
+          el.src = src;
+        });
+      await loadTemplate31Fonts();
+      const [promo, grain] = await Promise.all([
+        loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC, 'the App Store image'),
+        loadImage(IMAGE_TEMPLATE31_GRAIN_SRC, 'the grain texture'),
+      ]);
+      const entries = [];
+      for (let i = 0; i < IMAGE_TEMPLATE31_SLIDE_COUNT; i++) {
+        const canvas = document.createElement('canvas');
+        canvas.width = frameWidth;
+        canvas.height = frameHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Failed to prepare the slide');
+        const isCta = i === IMAGE_TEMPLATE31_CTA_TAB;
+        paintTemplate31Slide(ctx, frameWidth, frameHeight, {
+          text: (imageTabTexts[i] ?? '').trim(),
+          tabIndex: i,
+          slideCount: IMAGE_TEMPLATE31_SLIDE_COUNT,
+          isCover: i === 0,
+          isCta,
+          color: imageTemplate31Color,
+          grain,
+          promo: isCta ? promo : null,
+          serifFamily: IMAGE_TEMPLATE31_SERIF_STACK,
+          sansFamily: IMAGE_TEMPLATE31_SANS_STACK,
+        });
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((next) => {
+            if (next) resolve(next);
+            else reject(new Error('Failed to export the slide'));
+          }, 'image/png');
+        });
+        entries.push({ path: `template-31-${names[i] ?? `q${i}`}.png`, blob });
       }
       return { entries, isKawaiiTemplate: false };
     }
@@ -8070,6 +8155,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                         isDottedGridImageTemplate ||
                         isDarkCatsImageTemplate ||
                         isPastelDashesImageTemplate ||
+                        isFlamingoCardsImageTemplate ||
                         isPastelCarouselImageTemplate ||
                         isPinterestCoverImageTemplate ||
                         isPinterestCoverOnlyImageTemplate ? (
@@ -8363,6 +8449,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                     cover: imageTemplate30Cover,
                                   }
                                 )
+                              : isFlamingoCardsImageTemplate
+                              ? '#000000'
                               : activeImageFrameBg,
                           }}
                         >
@@ -8408,6 +8496,18 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               isCta={selectedImageBrowserTab === imageTemplateCtaTabIndex}
                               typeface={imageTemplate30Typeface}
                               cover={imageTemplate30Cover}
+                            />
+                          ) : isFlamingoCardsImageTemplate ? (
+                            <FlamingoCardsPreview
+                              text={imageFrameTextForActiveTab}
+                              tabIndex={selectedImageBrowserTab}
+                              slideCount={imageTemplateTabCount}
+                              isCover={selectedImageBrowserTab === 0}
+                              isCta={
+                                selectedImageBrowserTab === IMAGE_TEMPLATE31_CTA_TAB &&
+                                selectedImageBrowserTab > 0
+                              }
+                              color={imageTemplate31Color}
                             />
                           ) : isPenguinImageTemplate ? (
                             <PenguinCardsPreview
@@ -9858,6 +9958,25 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                         setImageTabTexts(next);
                                         return;
                                       }
+                                      if (isFlamingoCardsImageTemplate) {
+                                        if (selectedImageBrowserTab === 0) {
+                                          const next = [...imageTabTexts];
+                                          next[0] = pickTitleForType(
+                                            'funny',
+                                            imageFrameTextForActiveTab
+                                          );
+                                          setImageTabTexts(next);
+                                          return;
+                                        }
+                                        const [nextQuestion] = pickTemplate21QuestionBodies(1, [
+                                          imageFrameTextForActiveTab,
+                                        ]);
+                                        if (!nextQuestion) return;
+                                        const next = [...imageTabTexts];
+                                        next[selectedImageBrowserTab] = nextQuestion;
+                                        setImageTabTexts(next);
+                                        return;
+                                      }
                                       if (isFlatSerifImageTemplate) {
                                         if (selectedImageBrowserTab === 0) {
                                           const next = [...imageTabTexts];
@@ -10059,7 +10178,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               isFlatDarkImageTemplate ||
                               isFlatSerifImageTemplate ||
                               isDarkCatsImageTemplate ||
-                              isPastelDashesImageTemplate ? (
+                              isPastelDashesImageTemplate ||
+                              isFlamingoCardsImageTemplate ? (
                                 <textarea
                                   value={imageFrameTextForActiveTab}
                                   rows={8}
