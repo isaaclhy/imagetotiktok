@@ -2,7 +2,7 @@
   "handle": "trydeepen",
   "platform": "tiktok",
   "minViews": 50000,
-  "postCount": 55,
+  "postCount": 58,
   "creditsUsed": 3,
   "creditsRemaining": 95,
   "posts": [
@@ -1949,6 +1949,142 @@
             "My smile",
             "My little acts of affection",
             "The way I make you feel loved"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7710294781758311688",
+      "views": 68200,
+      "likes": 3431,
+      "coverText": "Ask him these ridiculously cute questions",
+      "slideText": [
+        {
+          "text": "If you were dressing me for a date, what am I wearing?",
+          "options": [
+            "Sundress",
+            "Jeans and tee",
+            "Dressy with heels",
+            "Oversized hoodie"
+          ]
+        },
+        {
+          "text": "If I had a warning label, what would it say?",
+          "options": [
+            "Handle with care",
+            "Highly addictive",
+            "Overthinks everything",
+            "Falls way too hard"
+          ]
+        },
+        {
+          "text": "If a stranger started flirting with me, what are you doing?",
+          "options": [
+            "Just watching",
+            "Sliding in casually",
+            "Arm around you, claim made",
+            "Not worried"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7710269735144869138",
+      "views": 80500,
+      "likes": 3720,
+      "coverText": "Ragebait your boyfriend with these dumb questions",
+      "slideText": [
+        {
+          "text": "Would you still love me if I was exactly like you?",
+          "options": [
+            "Yes, we'd be unstoppable.",
+            "No, one of us has to be normal.",
+            "I'd need a break from myself.",
+            "I'd leave us both."
+          ]
+        },
+        {
+          "text": "If we were both hungry, who should have to decide what we eat?",
+          "options": [
+            "You, because I'm always right.",
+            "Me, because you take forever.",
+            "Whoever complains first.",
+            "We starve together."
+          ]
+        },
+        {
+          "text": "Who's more annoying: me, or the person you were before you met me?",
+          "options": [
+            "Definitely you.",
+            "My ex, obviously.",
+            "You're both equally annoying.",
+            "Can I skip this question?"
+          ]
+        },
+        {
+          "text": "If I say \"do whatever you want\", what do you think I actually meant?",
+          "options": [
+            "Do whatever you want.",
+            "You're in serious trouble.",
+            "You better read my mind.",
+            "Sleep with one eye open."
+          ]
+        },
+        {
+          "text": "If we broke up for one day, who's texting first?",
+          "options": [
+            "Me, I can't last a day.",
+            "You, you're obsessed.",
+            "Neither, we're too stubborn.",
+            "I'd text just to argue."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7709431072731204884",
+      "views": 52300,
+      "likes": 2177,
+      "coverText": "How jealous would your boyfriend get?",
+      "slideText": [
+        {
+          "text": "How jealous would you get if another guy offered to buy me dinner? (1-10)",
+          "options": [
+            "1-3",
+            "4-7",
+            "8-10"
+          ]
+        },
+        {
+          "text": "How jealous would you get if I started having an inside joke with another guy? (1-10)",
+          "options": [
+            "1-3",
+            "4-7",
+            "8-10"
+          ]
+        },
+        {
+          "text": "How jealous would you get if an old crush suddenly messaged me? (1-10)",
+          "options": [
+            "1-3",
+            "4-7",
+            "8-10"
+          ]
+        },
+        {
+          "text": "How jealous would you get if someone called me their celebrity crush? (1-10)",
+          "options": [
+            "1-3",
+            "4-7",
+            "8-10"
+          ]
+        },
+        {
+          "text": "How jealous would you get if I told you another guy remembered something about me that you forgot? (1-10)",
+          "options": [
+            "1-3",
+            "4-7",
+            "8-10"
           ]
         }
       ]
