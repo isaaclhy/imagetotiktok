@@ -31,6 +31,7 @@ import { getFlamingoCardsTiktokPosts } from '@/app/lib/copycat/flamingo-cards-ti
 import { getQuestionsForTonightPosts } from '@/app/lib/copycat/questionsfortonight';
 import { getCoupleSyxPosts } from '@/app/lib/copycat/couple-syx';
 import { getMisunderstoodCou4Posts } from '@/app/lib/copycat/misunderstood-cou4';
+import { getSandraWritesThisPosts } from '@/app/lib/copycat/sandrawritesthis';
 
 function shuffle<T>(items: T[]): T[] {
   const next = [...items];
@@ -74,6 +75,7 @@ function posts(): CopycatPost[] {
     ...getLvrsbaePosts(),
     ...getSpillCardsAppPosts(),
     ...getHookPosts(),
+    ...getSandraWritesThisPosts(),
   ];
 }
 

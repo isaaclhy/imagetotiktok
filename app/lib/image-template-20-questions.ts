@@ -17,6 +17,7 @@ import { getFlamingoCardsTiktokPosts } from '@/app/lib/copycat/flamingo-cards-ti
 import { getQuestionsForTonightPosts } from '@/app/lib/copycat/questionsfortonight';
 import { getCoupleSyxPosts } from '@/app/lib/copycat/couple-syx';
 import { getMisunderstoodCou4Posts } from '@/app/lib/copycat/misunderstood-cou4';
+import { getSandraWritesThisPosts } from '@/app/lib/copycat/sandrawritesthis';
 import { getCoupleCardsPosts } from '@/app/lib/copycat/couple-cards';
 import { getHhTalkPosts } from '@/app/lib/copycat/hhtalk';
 import { getGoldenThoughtsDailyPosts } from '@/app/lib/copycat/goldenthoughtsdaily';
@@ -59,6 +60,7 @@ function posts(): CopycatPost[] {
     ...getLvrsbaePosts(),
     ...getSpillCardsAppPosts(),
     ...getHookPosts(),
+    ...getSandraWritesThisPosts(),
   ];
 }
 
