@@ -577,7 +577,7 @@ function pickRandomCopycatCompetitor(exclude?: CopycatCompetitorId): CopycatComp
 }
 
 /** Spill It image templates available inside Copycat. */
-const COPYCAT_TEMPLATE_IDS = [1, 2, 6, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30] as const;
+const COPYCAT_TEMPLATE_IDS = [1, 2, 6, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31] as const;
 type CopycatTemplateId = (typeof COPYCAT_TEMPLATE_IDS)[number];
 
 function isKawaiiStyleTemplateId(templateId: number | null | undefined): boolean {
@@ -2493,7 +2493,7 @@ export default function Home() {
   const prevFirstCardTextRef = useRef(firstCardTextValue);
 
   const imageTemplateCards = getImageTemplatesForApp(selectedAppId).filter(
-    (card) => card.id !== 15 && card.id !== 26 && card.id !== 27
+    (card) => card.id !== 15 && card.id !== 26 && card.id !== 27 && card.id !== 31
   );
   const videoTemplateCards = getVideoTemplatesForApp(selectedAppId);
   const characterCards = getCharactersForApp(selectedAppId);

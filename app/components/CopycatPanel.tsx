@@ -195,6 +195,8 @@ import {
   template28LookLabel,
 } from '@/app/lib/image-template-28-dotted';
 import { PastelDashesPreview } from '@/app/components/PastelDashesPreview';
+import { GrainCardPreview } from '@/app/components/GrainCardPreview';
+import { pickTemplate31Color } from '@/app/lib/image-template-31-cards';
 import {
   IMAGE_TEMPLATE30_COVER_OPTIONS,
   IMAGE_TEMPLATE30_DEFAULT_COVER,
@@ -214,7 +216,7 @@ const COPYCAT_COVER_HEARTS = '♥ ♥ ♥';
 const COPYCAT_TEXT_ONLY_COVER_TOP = 0.38;
 const COPYCAT_TEXT_ONLY_COVER_SIZE_T2 = 0.074;
 
-export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30;
+export type CopycatTemplateId = 1 | 2 | 6 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31;
 
 function CopycatAppMarkFooter({
   isCover,
@@ -462,6 +464,7 @@ function CopycatSlidePreview({
   template28Seed = IMAGE_TEMPLATE28_DEFAULT_SEED,
   template30Typeface = IMAGE_TEMPLATE30_DEFAULT_TYPEFACE,
   template30Cover = IMAGE_TEMPLATE30_DEFAULT_COVER,
+  template31Color,
 }: {
   templateId: CopycatTemplateId;
   tabIndex: number;
@@ -479,6 +482,7 @@ function CopycatSlidePreview({
   template28Seed?: number;
   template30Typeface?: Template30Typeface;
   template30Cover?: Template30Cover;
+  template31Color?: string;
   template15FrameBg?: string;
   illustrationSrc?: string;
   isCtaSlide?: boolean;
@@ -509,16 +513,22 @@ function CopycatSlidePreview({
     templateId !== 24 &&
     templateId !== 25 &&
     templateId !== 28 &&
-    templateId !== 29;
+    templateId !== 29 &&
+    templateId !== 31;
   const alignLeft = Boolean(leftAlign && !isCover) || templateId === 2;
   const pastelBg =
     IMAGE_TEMPLATE2_PASTEL_COLORS[tabIndex % IMAGE_TEMPLATE2_PASTEL_COLORS.length]!;
   const card14Bg = template14Color ?? IMAGE_TEMPLATE14_COLORS[0]!;
   const card14Fill = template14CardCssBackground(card14Bg, template14Style);
   const card14Text = template14TextForStyle(card14Bg, template14Style);
+  const card31Bg = template31Color ?? '#E4577C';
   const bodyAlignClass = alignLeft
     ? 'left-[11%] w-[78%] -translate-y-1/2 text-left'
     : 'left-1/2 w-[78%] -translate-x-1/2 -translate-y-1/2 text-center';
+
+  if (templateId === 31) {
+    return <GrainCardPreview text={text} isCover={isCover} backgroundColor={card31Bg} />;
+  }
 
   if (templateId === 21) {
     return (
@@ -1321,6 +1331,7 @@ export function CopycatPanel({
 
   const [selectedTab, setSelectedTab] = useState(0);
   const [template14Color, setTemplate14Color] = useState(() => pickTemplate14Color());
+  const [template31Color, setTemplate31Color] = useState(() => pickTemplate31Color());
   const [template14Style, setTemplate14Style] = useState<Template14StyleId>(
     IMAGE_TEMPLATE14_DEFAULT_STYLE
   );
@@ -1420,6 +1431,7 @@ export function CopycatPanel({
     }
     setSelectedTab(0);
     setTemplate14Color((current) => pickTemplate14Color(current));
+    setTemplate31Color((current) => pickTemplate31Color(current));
     setTemplate15FrameBg((current) => pickTemplate15FrameColor(current));
     rollTemplate14StyleForSelection();
     rollTemplate18LookForSelection();
@@ -1532,6 +1544,7 @@ export function CopycatPanel({
     setSelection({ epoch: postEpoch, postId: drawn.next, bag: drawn.bag });
     setSelectedTab(0);
     setTemplate14Color((current) => pickTemplate14Color(current));
+    setTemplate31Color((current) => pickTemplate31Color(current));
     setTemplate15FrameBg((current) => pickTemplate15FrameColor(current));
     setTemplate18PastelBody(shuffleTemplate18PastelBody());
     setTemplate19Color(pickTemplate19ShuffleColor());
@@ -1556,6 +1569,7 @@ export function CopycatPanel({
     setSelection({ epoch: postEpoch, postId: drawn.next, bag: drawn.bag });
     setSelectedTab(0);
     setTemplate14Color((current) => pickTemplate14Color(current));
+    setTemplate31Color((current) => pickTemplate31Color(current));
     setTemplate15FrameBg((current) => pickTemplate15FrameColor(current));
     rollTemplate14StyleForSelection();
     rollTemplate18LookForSelection();
@@ -1743,6 +1757,7 @@ export function CopycatPanel({
         template26BunnySeed,
         template28Seed,
         template30Look: { typeface: template30Typeface, cover: template30Cover },
+        template31Color,
       });
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
@@ -1781,6 +1796,7 @@ export function CopycatPanel({
     template28Seed,
     template30Typeface,
     template30Cover,
+    template31Color,
   ]);
 
   if (!selectedPost) {
@@ -2149,6 +2165,7 @@ export function CopycatPanel({
         template28Seed={template28Seed}
         template30Typeface={template30Typeface}
         template30Cover={template30Cover}
+        template31Color={template31Color}
         backgroundSrc={
           templateId === 17 ? template17BackgroundSrcAt(questionSlides, selectedTab) : undefined
         }

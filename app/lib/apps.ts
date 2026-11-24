@@ -200,6 +200,11 @@ export const IMAGE_TEMPLATES_BY_APP: Record<StudioAppId, ImageTemplateCard[]> = 
       subtitle: '',
       coverSrc: '/image-templates/template-30-cover.png',
     },
+    {
+      id: 31,
+      title: 'Grain cards',
+      subtitle: '',
+    },
   ],
   fab: [
     { id: 1, title: 'Heart shaped paper', subtitle: '' },
