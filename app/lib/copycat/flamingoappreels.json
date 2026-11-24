@@ -1,7 +1,7 @@
 {
   "handle": "flamingoappreels",
   "platform": "instagram",
-  "postCount": 596,
+  "postCount": 620,
   "posts": [
     {
       "id": "DLVrNSXzi0p",
@@ -1241,6 +1241,34 @@
       ]
     },
     {
+      "id": "Df8GJsdE-tN",
+      "likes": 3812,
+      "coverText": "If your girlfriend sent this post to you, answer.",
+      "slideText": [
+        {
+          "text": "Which outfit would you rather see her in?",
+          "options": [
+            "A cute dress and her favorite perfume",
+            "Your oversized shirt and her natural hair"
+          ]
+        },
+        {
+          "text": "Which moment would make your heart skip?",
+          "options": [
+            "She kisses you out of nowhere",
+            "She looks at you and says something sweet"
+          ]
+        },
+        {
+          "text": "How would you rather spend the evening?",
+          "options": [
+            "Holding her close under the blankets",
+            "Talking until neither of you notices the time"
+          ]
+        }
+      ]
+    },
+    {
       "id": "DejJBeCG5PY",
       "likes": 3713,
       "coverText": "Flirty questions to make him blush",
@@ -1256,6 +1284,28 @@
         },
         {
           "text": "What little thing do I do that you'd notice immediately if I suddenly stopped?"
+        }
+      ]
+    },
+    {
+      "id": "DgAOR-FFFPV",
+      "likes": 3709,
+      "coverText": "Tell me what happens when we're finally alone..",
+      "slideText": [
+        {
+          "text": "What's the first thing you'd do if we had an entire evening to ourselves?"
+        },
+        {
+          "text": "What's something you've wanted to try with me but haven't brought up yet?"
+        },
+        {
+          "text": "What kind of affection do you wish I initiated more often?"
+        },
+        {
+          "text": "What's a little thing I could do that would instantly put you in the mood?"
+        },
+        {
+          "text": "If we didn't have to be anywhere tomorrow, how would tonight end?"
         }
       ]
     },
@@ -1719,6 +1769,53 @@
       ]
     },
     {
+      "id": "Df5JDW_mxDz",
+      "likes": 2718,
+      "coverText": "No more playing innocent (Send this to him)",
+      "slideText": [
+        {
+          "text": "What's your favorite kind of kiss?",
+          "options": [
+            "Slow and soft",
+            "Deep and passionate",
+            "Spontaneous"
+          ]
+        },
+        {
+          "text": "Where do you like being kissed most?",
+          "options": [
+            "Neck",
+            "Forehead",
+            "Jawline"
+          ]
+        },
+        {
+          "text": "What makes a kiss unforgettable?",
+          "options": [
+            "Eye contact",
+            "Perfect timing",
+            "The tension"
+          ]
+        },
+        {
+          "text": "What's more exciting?",
+          "options": [
+            "Making the first move",
+            "Being surprised",
+            "Being teased first"
+          ]
+        },
+        {
+          "text": "What's one thing you'd like us to try more often?",
+          "options": [
+            "Slow dancing",
+            "Spontaneous kisses",
+            "Playful teasing"
+          ]
+        }
+      ]
+    },
+    {
       "id": "DeB92xUmyjr",
       "likes": 2712,
       "coverText": "Who's guilty?",
@@ -1871,6 +1968,53 @@
           "options": [
             "Forgive and rebuild",
             "Leave and move on"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Df_qdjsm96X",
+      "likes": 2574,
+      "coverText": "How jealous is your bf?",
+      "slideText": [
+        {
+          "text": "What would bother you more?",
+          "options": [
+            "Someone flirting with me",
+            "Me hiding a conversation",
+            "Someone clearly having a crush on me"
+          ]
+        },
+        {
+          "text": "How would you react if someone openly complimented me in front of you?",
+          "options": [
+            "Play it cool",
+            "Get closer to me",
+            "Make a cheeky comment"
+          ]
+        },
+        {
+          "text": "What kind of attention from someone else would make you uncomfortable?",
+          "options": [
+            "Constant messaging",
+            "Flirty jokes",
+            "Unnecessary physical closeness"
+          ]
+        },
+        {
+          "text": "Would you rather I tell you someone is flirting with me or let you notice it yourself?",
+          "options": [
+            "Tell me immediately",
+            "Let me figure it out",
+            "Either is fine"
+          ]
+        },
+        {
+          "text": "What's the most harmless thing that could still make you a little jealous?",
+          "options": [
+            "An inside joke",
+            "A longtime friend",
+            "Someone getting my attention"
           ]
         }
       ]
@@ -2122,6 +2266,28 @@
         },
         {
           "text": "Do you ever worry that you might lose me? What makes you feel that way?"
+        }
+      ]
+    },
+    {
+      "id": "Df_2rd0Gy9B",
+      "likes": 2068,
+      "coverText": "Dangerous questions that might lead to something else..",
+      "slideText": [
+        {
+          "text": "What's something you've thought about doing with me but haven't admitted yet?"
+        },
+        {
+          "text": "Where do your eyes go first when you look at me?"
+        },
+        {
+          "text": "What's a look I give you that turns you on the fastest?"
+        },
+        {
+          "text": "What's something I could whisper that would make you forget what you were doing?"
+        },
+        {
+          "text": "If I told you I had a surprise planned for us tonight, what would you secretly hope it was?"
         }
       ]
     },
@@ -2396,6 +2562,40 @@
       ]
     },
     {
+      "id": "Df2hhI2GjvZ",
+      "likes": 1911,
+      "coverText": "You’re really brave if you ask him these",
+      "slideText": [
+        {
+          "text": "Do you ever miss being single?",
+          "options": [
+            "Yes, often",
+            "Sometimes",
+            "Rarely",
+            "Never"
+          ]
+        },
+        {
+          "text": "What part of me do you still not fully understand?",
+          "options": [
+            "My feelings",
+            "My past",
+            "My moods",
+            "My dreams"
+          ]
+        },
+        {
+          "text": "Is there anything about me that still scares you a little?",
+          "options": [
+            "How deeply I love",
+            "How independent I am",
+            "How emotional I get",
+            "How honest I am"
+          ]
+        }
+      ]
+    },
+    {
       "id": "DejcdYZG715",
       "likes": 1897,
       "coverText": "Am I hard to love?",
@@ -2631,6 +2831,37 @@
       ]
     },
     {
+      "id": "DgBgmCZDo_c",
+      "likes": 1633,
+      "coverText": "Pick your next kiss",
+      "slideText": [
+        {
+          "text": "Where are you kissing me first?",
+          "options": [
+            "Forehead",
+            "Cheek",
+            "Lips"
+          ]
+        },
+        {
+          "text": "How are you pulling me closer?",
+          "options": [
+            "By the waist",
+            "By the hand",
+            "By the shoulders"
+          ]
+        },
+        {
+          "text": "How are you ending the moment?",
+          "options": [
+            "One more kiss",
+            "A tight hug",
+            "A whispered compliment"
+          ]
+        }
+      ]
+    },
+    {
       "id": "Dd2OSo0EnUU",
       "likes": 1615,
       "coverText": "Is he down bad for you? (ask your bf)",
@@ -2741,6 +2972,38 @@
             "Every day",
             "Without question",
             "Always, no matter what"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Df2P2Gfm1qH",
+      "likes": 1563,
+      "coverText": "Don't act innocent. I know you have a favorite.",
+      "slideText": [
+        {
+          "text": "Where do you love being kissed the most?",
+          "options": [
+            "Forehead",
+            "Neck",
+            "Lips",
+            "Somewhere else.."
+          ]
+        },
+        {
+          "text": "When do you find me hardest to resist?",
+          "options": [
+            "When I'm dressed up",
+            "When I'm being affectionate",
+            "When we're alone"
+          ]
+        },
+        {
+          "text": "What's your favorite kind of tension between us?",
+          "options": [
+            "Lingering eye contact",
+            "Playful teasing",
+            "Almost-kisses"
           ]
         }
       ]
@@ -3234,6 +3497,53 @@
       ]
     },
     {
+      "id": "Df6H1xBGHNm",
+      "likes": 1277,
+      "coverText": "Bedroom confessions he can’t dodge",
+      "slideText": [
+        {
+          "text": "What's something I do that secretly turns you on?",
+          "options": [
+            "My voice",
+            "My eye contact",
+            "My attitude"
+          ]
+        },
+        {
+          "text": "Where would you steal a kiss if nobody were watching?",
+          "options": [
+            "In the elevator",
+            "In the car",
+            "At the doorstep"
+          ]
+        },
+        {
+          "text": "What's the boldest thought you've had about me recently?",
+          "options": [
+            "A secret fantasy",
+            "A risky memory",
+            "Something I'd never guess"
+          ]
+        },
+        {
+          "text": "What's your biggest weakness when I'm flirting with you?",
+          "options": [
+            "My teasing",
+            "My touch",
+            "My whispers"
+          ]
+        },
+        {
+          "text": "What's one thing you'd love me to do more often?",
+          "options": [
+            "Take the lead",
+            "Get more affectionate",
+            "Surprise you"
+          ]
+        }
+      ]
+    },
+    {
       "id": "DefU_R0Erwx",
       "likes": 1267,
       "coverText": "Questions I didn't know I needed to ask him..",
@@ -3513,6 +3823,37 @@
       ]
     },
     {
+      "id": "Df-Lo32FPjS",
+      "likes": 1199,
+      "coverText": "GTA 6 vs. your girlfriend. Who wins?",
+      "slideText": [
+        {
+          "text": "I'm on a video call with you, but your friends invite you to GTA 6. What do you do?",
+          "options": [
+            "Stay on the call",
+            "Ask me to play with you",
+            "Tell them you'll join later"
+          ]
+        },
+        {
+          "text": "I ask you to take a cute picture with me while you're gaming. What's your response?",
+          "options": [
+            "Save the game and pose",
+            "Take the picture while playing",
+            "Pull me into your lap for the picture"
+          ]
+        },
+        {
+          "text": "I say I want a date night, but you've been waiting all day to play GTA 6. What happens?",
+          "options": [
+            "Date night, no questions asked",
+            "We play GTA 6 together",
+            "We schedule a date after your session"
+          ]
+        }
+      ]
+    },
+    {
       "id": "DejMofuG5SS",
       "likes": 1194,
       "coverText": "Feeling flirty? Send this to him.",
@@ -3712,6 +4053,37 @@
         },
         {
           "text": "What's something you only feel comfortable being completely honest with me about?"
+        }
+      ]
+    },
+    {
+      "id": "Df-RG0BGOqn",
+      "likes": 1117,
+      "coverText": "Will your man pause GTA 6 for you?",
+      "slideText": [
+        {
+          "text": "You're in the middle of an important mission and I ask you to come cuddle. What do you do?",
+          "options": [
+            "Pause immediately",
+            "Finish the mission first",
+            "Tell me to come cuddle beside you"
+          ]
+        },
+        {
+          "text": "I'm upset and want your attention, but you're playing GTA 6. What's your move?",
+          "options": [
+            "Pause the game and listen",
+            "Give me a quick hug, then finish playing",
+            "Ask me to sit with you while you play"
+          ]
+        },
+        {
+          "text": "I tell you I miss you and want to spend time together. What happens next?",
+          "options": [
+            "The game is getting turned off",
+            "You promise me some time after this session",
+            "You invite me to play with you"
+          ]
         }
       ]
     },
@@ -4288,6 +4660,58 @@
       ]
     },
     {
+      "id": "Df2-bBVGhC_",
+      "likes": 976,
+      "coverText": "Describe me in 4 different picks (send this to him)",
+      "slideText": [
+        {
+          "text": "What's my relationship energy?",
+          "options": [
+            "Princess",
+            "Independent queen",
+            "Soft girl",
+            "Clingy but cute"
+          ]
+        },
+        {
+          "text": "What's my texting style?",
+          "options": [
+            "Dry texter",
+            "Essay writer",
+            "Voice note queen",
+            "Meme machine"
+          ]
+        },
+        {
+          "text": "What's my biggest green flag?",
+          "options": [
+            "Confident",
+            "Good communicator",
+            "Supportive",
+            "Your biggest cheerleader"
+          ]
+        },
+        {
+          "text": "What's my biggest red flag?",
+          "options": [
+            "Overthinker",
+            "Indecisive",
+            "Keeps you guessing",
+            "Not saying what I mean"
+          ]
+        },
+        {
+          "text": "What's my most girlfriend-coded trait?",
+          "options": [
+            "Affectionate",
+            "Caring",
+            "Thoughtful",
+            "Patient"
+          ]
+        }
+      ]
+    },
+    {
       "id": "Def8sUJEaV6",
       "likes": 975,
       "coverText": "Fight or Break Up?",
@@ -4697,6 +5121,37 @@
             "Eye contact",
             "Teasing",
             "Whispering"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Df9dQp_FFsR",
+      "likes": 908,
+      "coverText": "Be honest... how badly do you want me?",
+      "slideText": [
+        {
+          "text": "What's more tempting when we're alone?",
+          "options": [
+            "Pulling me closer",
+            "Whispering in my ear",
+            "Kissing me until I forget what I was saying"
+          ]
+        },
+        {
+          "text": "What's your biggest weakness when it comes to me?",
+          "options": [
+            "My eyes",
+            "My voice",
+            "The way I touch you"
+          ]
+        },
+        {
+          "text": "If I told you I wanted you right now, what would you do?",
+          "options": [
+            "Make the first move",
+            "Tease me first",
+            "Show me instead of telling me"
           ]
         }
       ]
@@ -5488,6 +5943,100 @@
       ]
     },
     {
+      "id": "DgAqhdIlKxT",
+      "likes": 746,
+      "coverText": "Spicy after-dark questions for your man",
+      "slideText": [
+        {
+          "text": "Which kind of flirting gets you every time?",
+          "options": [
+            "Bold compliments",
+            "Playful teasing",
+            "Quiet eye contact"
+          ]
+        },
+        {
+          "text": "What would you rather receive from me unexpectedly?",
+          "options": [
+            "A risky text",
+            "A suggestive photo",
+            "A surprise visit"
+          ]
+        },
+        {
+          "text": "Which would test your self-control the most?",
+          "options": [
+            "Me sitting very close",
+            "Me whispering something bold",
+            "Me giving you that look"
+          ]
+        },
+        {
+          "text": "What's your favorite kind of tension?",
+          "options": [
+            "Slow and subtle",
+            "Playful and chaotic",
+            "Direct and confident"
+          ]
+        },
+        {
+          "text": "If I told you I had a surprise planned for tonight, what would you hope for?",
+          "options": [
+            "A romantic date",
+            "A private evening",
+            "Something unexpected"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DgA1dNdmMtE",
+      "likes": 734,
+      "coverText": "Dumb couple debates",
+      "slideText": [
+        {
+          "text": "Is a hot dog technically a sandwich?",
+          "options": [
+            "Yes",
+            "No",
+            "Don't start"
+          ]
+        },
+        {
+          "text": "Would you rather fight one horse-sized duck or a hundred duck-sized horses?",
+          "options": [
+            "One giant duck",
+            "A hundred tiny horses",
+            "I'm not fighting anything"
+          ]
+        },
+        {
+          "text": "Is it acceptable to eat fries with a spoon?",
+          "options": [
+            "Absolutely",
+            "Never",
+            "Depends on the fries"
+          ]
+        },
+        {
+          "text": "Which is the bigger relationship crime?",
+          "options": [
+            "Stealing food",
+            "Watching ahead",
+            "Leaving messages on read"
+          ]
+        },
+        {
+          "text": "If aliens asked you to explain human romance, what would you show them?",
+          "options": [
+            "A love song",
+            "A couple arguing",
+            "A shared food order"
+          ]
+        }
+      ]
+    },
+    {
       "id": "Dd0chYxFK3o",
       "likes": 723,
       "coverText": "Rate how jealous he'd be: 1-10",
@@ -5545,6 +6094,28 @@
             "Good boyfriend",
             "Spoiled rotten"
           ]
+        }
+      ]
+    },
+    {
+      "id": "Df9u-zCoNJi",
+      "likes": 711,
+      "coverText": "Let's see if GTA 6 can survive your girlfriend's requests...",
+      "slideText": [
+        {
+          "text": "What would you do if I asked you to pause GTA 6 just to tell me about your day?"
+        },
+        {
+          "text": "If I fell asleep beside you while you were playing, would you keep gaming or come cuddle?"
+        },
+        {
+          "text": "Would you sacrifice a gaming session for a spontaneous night out with me?"
+        },
+        {
+          "text": "If I said I wanted to be your passenger princess in GTA 6, where would you take me?"
+        },
+        {
+          "text": "What's one girlfriend request you'd never say no to, even during your most intense gaming session?"
         }
       ]
     },
@@ -5659,6 +6230,34 @@
       ]
     },
     {
+      "id": "Df6jh2zmxh0",
+      "likes": 671,
+      "coverText": "Boyfriends, no choosing both. Be honest.",
+      "slideText": [
+        {
+          "text": "Which sight makes you fall for me all over again?",
+          "options": [
+            "Me getting ready for a night out",
+            "Me looking adorable first thing in the morning"
+          ]
+        },
+        {
+          "text": "Which kind of affection hits harder?",
+          "options": [
+            "A surprise kiss when you least expect it",
+            "A compliment that catches you off guard"
+          ]
+        },
+        {
+          "text": "Pick your ideal night with me:",
+          "options": [
+            "A long, uninterrupted cuddle",
+            "A deep conversation until 3 AM"
+          ]
+        }
+      ]
+    },
+    {
       "id": "DeKN1DKmvU3",
       "likes": 668,
       "coverText": "Questions that feel like a hug",
@@ -5752,6 +6351,70 @@
       ]
     },
     {
+      "id": "Df4EMIKG1lT",
+      "likes": 657,
+      "coverText": "Can We Survive a Two-Person Road Trip?",
+      "slideText": [
+        {
+          "text": "Who gets control of the playlist?"
+        },
+        {
+          "text": "Who would miss a turn because of talking?"
+        },
+        {
+          "text": "What would be our emergency road-trip snack?"
+        },
+        {
+          "text": "Who would insist on taking pictures at every stop?"
+        },
+        {
+          "text": "If we got lost, who would ask for directions first?"
+        }
+      ]
+    },
+    {
+      "id": "Df24BJck6Co",
+      "likes": 654,
+      "coverText": "Blushing or cringing?",
+      "slideText": [
+        {
+          "text": "I post a long paragraph about you for our anniversary.",
+          "options": [
+            "Blushing",
+            "Cringing"
+          ]
+        },
+        {
+          "text": "I call you “my love” in front of my friends.",
+          "options": [
+            "Blushing",
+            "Cringing"
+          ]
+        },
+        {
+          "text": "I wear a bracelet with your initial every day.",
+          "options": [
+            "Blushing",
+            "Cringing"
+          ]
+        },
+        {
+          "text": "I randomly say “how did I get so lucky?” while staring at you.",
+          "options": [
+            "Blushing",
+            "Cringing"
+          ]
+        },
+        {
+          "text": "I make a TikTok edit of our relationship with a love song.",
+          "options": [
+            "Blushing",
+            "Cringing"
+          ]
+        }
+      ]
+    },
+    {
       "id": "Dd4OEvHmnpm",
       "likes": 646,
       "coverText": "Just some cute questions for her",
@@ -5767,6 +6430,53 @@
         },
         {
           "text": "When was the last time I made your heart melt?"
+        }
+      ]
+    },
+    {
+      "id": "DgBCorNkyuP",
+      "likes": 645,
+      "coverText": "Nosy questions your bf can't dodge",
+      "slideText": [
+        {
+          "text": "What's something you secretly want me to do more often?",
+          "options": [
+            "Initiate affection",
+            "Give compliments",
+            "Plan surprises"
+          ]
+        },
+        {
+          "text": "Which of my habits do you find unexpectedly attractive?",
+          "options": [
+            "My confidence",
+            "My expressions",
+            "My little routines"
+          ]
+        },
+        {
+          "text": "What's one thing you've wanted to tell me but keep putting off?",
+          "options": [
+            "A random confession",
+            "A serious thought",
+            "A silly secret"
+          ]
+        },
+        {
+          "text": "What would make you instantly jealous?",
+          "options": [
+            "Someone flirting with me",
+            "Me mentioning an ex",
+            "Someone knowing me too well"
+          ]
+        },
+        {
+          "text": "What's one thing you'd never admit in front of your friends?",
+          "options": [
+            "How clingy you are",
+            "How much you miss me",
+            "How often you think about me"
+          ]
         }
       ]
     },
@@ -5819,6 +6529,59 @@
             "Pretend I didn't notice",
             "Move closer too"
           ]
+        }
+      ]
+    },
+    {
+      "id": "Df3QViuGgYj",
+      "likes": 623,
+      "coverText": "Things we should probably try at least once",
+      "slideText": [
+        {
+          "text": "What's something you've secretly wanted us to experiment with?",
+          "options": [
+            "Taking turns being in control",
+            "Trying something completely new",
+            "Making an ordinary night interesting"
+          ]
+        },
+        {
+          "text": "Would you rather plan an adventurous night together or let things happen spontaneously?",
+          "options": [
+            "Plan every detail",
+            "See where the night goes",
+            "A little planning, a little spontaneity"
+          ]
+        },
+        {
+          "text": "Would you be comfortable telling me about a fantasy you've never shared?",
+          "options": [
+            "Absolutely",
+            "I'd need some convincing",
+            "I'd rather show you than explain"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Df7M43DlNpm",
+      "likes": 600,
+      "coverText": "5 flirty questions for your boyfriend",
+      "slideText": [
+        {
+          "text": "What was going through your head during our first kiss?"
+        },
+        {
+          "text": "Aside from my love, what's the best thing I've ever given you?"
+        },
+        {
+          "text": "When did you realize I was becoming someone you'd never want to lose?"
+        },
+        {
+          "text": "What's something you wish I understood without you having to explain it?"
+        },
+        {
+          "text": "If we ever told our kids how we met, what part of the story would you never leave out?"
         }
       ]
     },
@@ -6314,6 +7077,84 @@
             "Embarrass them more",
             "Pretend to behave",
             "Take it personally"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Df-oXW5k9YC",
+      "likes": 543,
+      "coverText": "Who's the clingier one?",
+      "slideText": [
+        {
+          "text": "Who would win a staring contest?",
+          "options": [
+            "Me",
+            "You",
+            "We'd both start laughing"
+          ]
+        },
+        {
+          "text": "Who would be better at making the other blush?",
+          "options": [
+            "Me",
+            "You",
+            "It's a tie"
+          ]
+        },
+        {
+          "text": "Who would crack first during a no-flirting challenge?",
+          "options": [
+            "Me",
+            "You",
+            "Neither of us"
+          ]
+        },
+        {
+          "text": "Who would send the more outrageous flirty text?",
+          "options": [
+            "Me",
+            "You",
+            "Both of us"
+          ]
+        },
+        {
+          "text": "Who would be more likely to turn a harmless conversation into flirting?",
+          "options": [
+            "Me",
+            "You",
+            "Both of us"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Df7ujkgGNcM",
+      "likes": 540,
+      "coverText": "Your boyfriend has to be brutally honest..",
+      "slideText": [
+        {
+          "text": "If someone asked why you're with me, what would you say?",
+          "options": [
+            "Because she's the one I want",
+            "Because nobody compares to her",
+            "Have you seen her? I'm lucky"
+          ]
+        },
+        {
+          "text": "What tells you I'm upset before I say anything?",
+          "options": [
+            "My facial expression",
+            "The way I talk",
+            "How distant I become"
+          ]
+        },
+        {
+          "text": "What would you miss most if we couldn't see each other?",
+          "options": [
+            "My laugh",
+            "My presence",
+            "The way I make you feel loved"
           ]
         }
       ]
