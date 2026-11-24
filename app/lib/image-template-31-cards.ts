@@ -1,4 +1,8 @@
 import { splitCopycatQuestionAndOptions } from '@/app/lib/copycat/flamingo-cards';
+import {
+  imageTemplate2Q5PromoTextCeiling,
+  paintImageTemplate2Q5Promo,
+} from '@/app/lib/image-template-2-cover';
 
 /** Grainy rounded cards — one solid color, serif question, italic options. */
 export const IMAGE_TEMPLATE31_FRAME_BG = '#000000';
@@ -19,23 +23,23 @@ export const IMAGE_TEMPLATE31_COLORS = [
 export const IMAGE_TEMPLATE31_CARD_INSET_X = 0.072;
 export const IMAGE_TEMPLATE31_CARD_INSET_Y = 0.058;
 export const IMAGE_TEMPLATE31_CARD_RADIUS_RATIO = 0.155;
-export const IMAGE_TEMPLATE31_EDGE_BLUR_RATIO = 0.02;
-export const IMAGE_TEMPLATE31_EDGE_SCALE = 1.035;
+/** Feather on the card's own edge. No second shape behind it. */
+export const IMAGE_TEMPLATE31_EDGE_BLUR_RATIO = 0.014;
 
 export const IMAGE_TEMPLATE31_FONT_STACK =
-  'var(--font-playfair-display), "Playfair Display", Georgia, serif';
+  'var(--font-libre-baskerville), "Libre Baskerville", Georgia, serif';
 export const IMAGE_TEMPLATE31_MARK_FONT_STACK =
   'var(--font-inter), Inter, system-ui, sans-serif';
 
 export const IMAGE_TEMPLATE31_COVER_SIZE_RATIO = 0.082;
-export const IMAGE_TEMPLATE31_QUESTION_SIZE_RATIO = 0.056;
+export const IMAGE_TEMPLATE31_QUESTION_SIZE_RATIO = 0.064;
 export const IMAGE_TEMPLATE31_QUESTION_MIN_SIZE_RATIO = 0.034;
-export const IMAGE_TEMPLATE31_OPTION_SIZE_RATIO = 0.046;
-export const IMAGE_TEMPLATE31_LINE_HEIGHT = 1.22;
-export const IMAGE_TEMPLATE31_OPTION_LINE_HEIGHT = 1.38;
+export const IMAGE_TEMPLATE31_OPTION_SIZE_RATIO = 0.048;
+export const IMAGE_TEMPLATE31_LINE_HEIGHT = 1.34;
+export const IMAGE_TEMPLATE31_OPTION_LINE_HEIGHT = 1.42;
 export const IMAGE_TEMPLATE31_OPTION_GAP = 0.85;
-/** Top of the question on option slides — eye level, above the card's midpoint. */
-export const IMAGE_TEMPLATE31_OPTION_TOP_RATIO = 0.3;
+/** Top of the question on option slides, high enough that the choices fit underneath. */
+export const IMAGE_TEMPLATE31_OPTION_TOP_RATIO = 0.16;
 export const IMAGE_TEMPLATE31_CENTER_RATIO = 0.48;
 export const IMAGE_TEMPLATE31_TEXT_MAX_WIDTH_RATIO = 0.78;
 export const IMAGE_TEMPLATE31_OPTION_INSET_RATIO = 0.14;
@@ -157,6 +161,9 @@ export function paintTemplate31Slide(
     grain: CanvasImageSource | null;
     fontFamily: string;
     markFontFamily: string;
+    isCta?: boolean;
+    promo?: CanvasImageSource | null;
+    labelFontFamily?: string;
   }
 ) {
   const card = template31CardRect(frameWidth, frameHeight);
@@ -165,34 +172,35 @@ export function paintTemplate31Slide(
   ctx.fillStyle = IMAGE_TEMPLATE31_FRAME_BG;
   ctx.fillRect(0, 0, frameWidth, frameHeight);
 
-  ctx.save();
-  ctx.filter = `blur(${Math.round(frameWidth * IMAGE_TEMPLATE31_EDGE_BLUR_RATIO)}px)`;
-  ctx.fillStyle = options.backgroundColor;
-  const grow = (IMAGE_TEMPLATE31_EDGE_SCALE - 1) / 2;
-  traceRoundRect(
-    ctx,
-    card.x - card.width * grow,
-    card.y - card.height * grow,
-    card.width * IMAGE_TEMPLATE31_EDGE_SCALE,
-    card.height * IMAGE_TEMPLATE31_EDGE_SCALE,
-    card.radius
-  );
-  ctx.fill();
-  ctx.restore();
-
-  ctx.save();
-  traceRoundRect(ctx, card.x, card.y, card.width, card.height, card.radius);
-  ctx.clip();
-  ctx.fillStyle = options.backgroundColor;
-  ctx.fillRect(card.x, card.y, card.width, card.height);
-  if (options.grain) paintGrain(ctx, card, options.grain);
-  ctx.restore();
+  const layer = document.createElement('canvas');
+  layer.width = frameWidth;
+  layer.height = frameHeight;
+  const cardCtx = layer.getContext('2d');
+  if (!cardCtx) return;
+  cardCtx.save();
+  traceRoundRect(cardCtx, card.x, card.y, card.width, card.height, card.radius);
+  cardCtx.clip();
+  cardCtx.fillStyle = options.backgroundColor;
+  cardCtx.fillRect(card.x, card.y, card.width, card.height);
+  if (options.grain) paintGrain(cardCtx, card, options.grain);
+  cardCtx.restore();
+  // Feather the card into the black frame. The mask stays on this layer,
+  // so the background outside the card stays solid black.
+  cardCtx.save();
+  cardCtx.globalCompositeOperation = 'destination-in';
+  cardCtx.filter = `blur(${Math.max(8, Math.round(frameWidth * IMAGE_TEMPLATE31_EDGE_BLUR_RATIO))}px)`;
+  cardCtx.fillStyle = '#ffffff';
+  traceRoundRect(cardCtx, card.x, card.y, card.width, card.height, card.radius);
+  cardCtx.fill();
+  cardCtx.restore();
+  ctx.drawImage(layer, 0, 0);
 
   const { question, options: optionText } = options.isCover
     ? { question: options.text, options: '' }
     : splitCopycatQuestionAndOptions(options.text);
   const styledOptions = styleOptionLines(optionText);
   const hasOptions = Boolean(styledOptions) && !options.isCover;
+  const isCta = Boolean(options.isCta) && !options.isCover;
   const maxWidth = card.width * IMAGE_TEMPLATE31_TEXT_MAX_WIDTH_RATIO;
   let fontSize = Math.round(
     frameWidth *
@@ -200,59 +208,85 @@ export function paintTemplate31Slide(
         ? IMAGE_TEMPLATE31_COVER_SIZE_RATIO
         : IMAGE_TEMPLATE31_QUESTION_SIZE_RATIO)
   );
-  const optionSize = Math.round(frameWidth * IMAGE_TEMPLATE31_OPTION_SIZE_RATIO);
+  const optionScale = IMAGE_TEMPLATE31_OPTION_SIZE_RATIO / IMAGE_TEMPLATE31_QUESTION_SIZE_RATIO;
+  let optionSize = Math.round(fontSize * optionScale);
   const minSize = Math.round(frameWidth * IMAGE_TEMPLATE31_QUESTION_MIN_SIZE_RATIO);
-  const maxBlockH = card.height * (hasOptions ? 0.58 : 0.7);
+  const promoCeiling = card.y + imageTemplate2Q5PromoTextCeiling(card.width, card.height);
+  const textTop = card.y + card.height * (hasOptions ? IMAGE_TEMPLATE31_OPTION_TOP_RATIO : 0.14);
+  const maxBlockH = isCta
+    ? Math.max(minSize * 2, promoCeiling - textTop)
+    : card.height * (hasOptions ? 0.58 : 0.7);
 
   ctx.font = `400 ${fontSize}px ${options.fontFamily}`;
   let questionLines = wrapPreservingBreaks(ctx, question, maxWidth);
   let questionLineH = fontSize * IMAGE_TEMPLATE31_LINE_HEIGHT;
-  ctx.font = `italic 400 ${optionSize}px ${options.fontFamily}`;
-  const optionLines = hasOptions ? wrapPreservingBreaks(ctx, styledOptions, maxWidth) : [];
-  const optionLineH = optionSize * IMAGE_TEMPLATE31_OPTION_LINE_HEIGHT;
+  ctx.font = `400 ${optionSize}px ${options.fontFamily}`;
+  let optionLines = hasOptions ? wrapPreservingBreaks(ctx, styledOptions, maxWidth) : [];
+  let optionLineH = optionSize * IMAGE_TEMPLATE31_OPTION_LINE_HEIGHT;
   const optionGap = optionLines.length ? fontSize * IMAGE_TEMPLATE31_OPTION_GAP : 0;
   let blockH =
     questionLines.length * questionLineH + optionGap + optionLines.length * optionLineH;
   while (fontSize > minSize && blockH > maxBlockH) {
     fontSize -= 1;
+    optionSize = Math.round(fontSize * optionScale);
     ctx.font = `400 ${fontSize}px ${options.fontFamily}`;
     questionLines = wrapPreservingBreaks(ctx, question, maxWidth);
     questionLineH = fontSize * IMAGE_TEMPLATE31_LINE_HEIGHT;
+    ctx.font = `400 ${optionSize}px ${options.fontFamily}`;
+    optionLines = hasOptions ? wrapPreservingBreaks(ctx, styledOptions, maxWidth) : [];
+    optionLineH = optionSize * IMAGE_TEMPLATE31_OPTION_LINE_HEIGHT;
     blockH =
       questionLines.length * questionLineH + optionGap + optionLines.length * optionLineH;
   }
 
   ctx.fillStyle = textColor;
   ctx.textBaseline = 'middle';
+  let textBottom = card.y;
 
   if (hasOptions) {
-    ctx.textAlign = 'center';
+    const textX = card.x + card.width * IMAGE_TEMPLATE31_OPTION_INSET_RATIO;
+    ctx.textAlign = 'left';
     ctx.font = `400 ${fontSize}px ${options.fontFamily}`;
     let y = card.y + card.height * IMAGE_TEMPLATE31_OPTION_TOP_RATIO + questionLineH / 2;
     for (const line of questionLines) {
-      ctx.fillText(line, card.x + card.width / 2, y);
+      ctx.fillText(line, textX, y);
       y += questionLineH;
     }
     y += optionGap - questionLineH / 2 + optionLineH / 2;
-    ctx.textAlign = 'left';
-    ctx.font = `italic 400 ${optionSize}px ${options.fontFamily}`;
-    const optionX = card.x + card.width * IMAGE_TEMPLATE31_OPTION_INSET_RATIO;
+    ctx.font = `400 ${optionSize}px ${options.fontFamily}`;
     for (const line of optionLines) {
-      ctx.fillText(line, optionX, y);
+      ctx.fillText(line, textX, y);
       y += optionLineH;
     }
+    textBottom = y - optionLineH / 2;
   } else {
     ctx.textAlign = 'center';
     ctx.font = `400 ${fontSize}px ${options.fontFamily}`;
-    let y =
-      card.y +
-      card.height * IMAGE_TEMPLATE31_CENTER_RATIO -
-      blockH / 2 +
-      questionLineH / 2;
+    const centerY = isCta
+      ? (textTop + promoCeiling) / 2
+      : card.y + card.height * IMAGE_TEMPLATE31_CENTER_RATIO;
+    let y = centerY - blockH / 2 + questionLineH / 2;
     for (const line of questionLines) {
       ctx.fillText(line, card.x + card.width / 2, y);
       y += questionLineH;
     }
+    textBottom = y - questionLineH / 2;
+  }
+
+  if (isCta) {
+    ctx.save();
+    traceRoundRect(ctx, card.x, card.y, card.width, card.height, card.radius);
+    ctx.clip();
+    ctx.translate(card.x, card.y);
+    paintImageTemplate2Q5Promo(ctx, card.width, card.height, {
+      promo: options.promo ?? null,
+      fontFamily: options.labelFontFamily ?? '"TikTok Sans", system-ui, sans-serif',
+      textColor,
+      textBottom: Math.max(0, textBottom - card.y),
+      fontWeight: 700,
+    });
+    ctx.restore();
+    return;
   }
 
   const markSize = Math.round(frameWidth * IMAGE_TEMPLATE31_MARK_SIZE_RATIO);

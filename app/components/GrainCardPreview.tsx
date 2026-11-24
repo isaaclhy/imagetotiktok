@@ -8,22 +8,26 @@ import {
   IMAGE_TEMPLATE31_MARK_FONT_STACK,
   paintTemplate31Slide,
 } from '@/app/lib/image-template-31-cards';
+import { IMAGE_TEMPLATE2_Q5_PROMO_SRC } from '@/app/lib/image-template-2-cover';
 
 const EXPORT_W = 1080;
 const EXPORT_H = 1440;
 
 let grainPromise: Promise<HTMLImageElement> | null = null;
+let promoPromise: Promise<HTMLImageElement> | null = null;
 
-function loadGrain(): Promise<HTMLImageElement> {
-  if (!grainPromise) {
-    grainPromise = new Promise((resolve, reject) => {
+function loadImage(src: string, cache: Promise<HTMLImageElement> | null, setCache: (next: Promise<HTMLImageElement>) => void): Promise<HTMLImageElement> {
+  if (!cache) {
+    const next = new Promise<HTMLImageElement>((resolve, reject) => {
       const image = new Image();
       image.onload = () => resolve(image);
-      image.onerror = () => reject(new Error('grain'));
-      image.src = IMAGE_TEMPLATE31_GRAIN_SRC;
+      image.onerror = () => reject(new Error(src));
+      image.src = src;
     });
+    setCache(next);
+    return next;
   }
-  return grainPromise;
+  return cache;
 }
 
 function concreteFontFamily(stack: string): string {
@@ -40,10 +44,12 @@ function concreteFontFamily(stack: string): string {
 export function GrainCardPreview({
   text,
   isCover,
+  isCta = false,
   backgroundColor,
 }: {
   text: string;
   isCover: boolean;
+  isCta?: boolean;
   backgroundColor: string;
 }) {
   const [url, setUrl] = useState<string | null>(null);
@@ -57,13 +63,22 @@ export function GrainCardPreview({
     if (!ctx) return;
 
     void (async () => {
-      const grain = await loadGrain().catch(() => null);
+      const grain = await loadImage(IMAGE_TEMPLATE31_GRAIN_SRC, grainPromise, (next) => {
+        grainPromise = next;
+      }).catch(() => null);
+      const promo = isCta
+        ? await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC, promoPromise, (next) => {
+            promoPromise = next;
+          }).catch(() => null)
+        : null;
       const fontFamily = concreteFontFamily(IMAGE_TEMPLATE31_FONT_STACK);
       const markFontFamily = concreteFontFamily(IMAGE_TEMPLATE31_MARK_FONT_STACK);
+      const labelFontFamily = '"TikTok Sans", system-ui, sans-serif';
       try {
         await document.fonts.load(`400 72px ${fontFamily}`);
-        await document.fonts.load(`italic 400 48px ${fontFamily}`);
+        await document.fonts.load(`400 48px ${fontFamily}`);
         await document.fonts.load(`500 32px ${markFontFamily}`);
+        await document.fonts.load('700 36px "TikTok Sans"');
       } catch {
         /* fonts may already be ready */
       }
@@ -72,9 +87,12 @@ export function GrainCardPreview({
         backgroundColor,
         text,
         isCover,
+        isCta,
         grain,
+        promo,
         fontFamily,
         markFontFamily,
+        labelFontFamily,
       });
       const next = canvas.toDataURL('image/png');
       if (!cancelled) setUrl(next);
@@ -83,7 +101,7 @@ export function GrainCardPreview({
     return () => {
       cancelled = true;
     };
-  }, [text, isCover, backgroundColor]);
+  }, [text, isCover, isCta, backgroundColor]);
 
   return (
     <div

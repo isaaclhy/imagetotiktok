@@ -432,19 +432,28 @@ async function paintSlide(
     const mark = concreteFontFamily(IMAGE_TEMPLATE31_MARK_FONT_STACK);
     try {
       await document.fonts.load(`400 72px ${serif}`);
-      await document.fonts.load(`italic 400 48px ${serif}`);
+      await document.fonts.load(`400 48px ${serif}`);
       await document.fonts.load(`500 32px ${mark}`);
     } catch {
       /* fonts may already be ready */
     }
     const grain = await loadImage(IMAGE_TEMPLATE31_GRAIN_SRC);
+    const promo = slide.isCta ? await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC) : null;
+    try {
+      await document.fonts.load('700 36px "TikTok Sans"');
+    } catch {
+      /* fonts may already be ready */
+    }
     paintTemplate31Slide(ctx, w, h, {
       backgroundColor: template31Color ?? IMAGE_TEMPLATE31_COLORS[0]!,
       text: slide.text,
       isCover: slide.isCover,
+      isCta: slide.isCta,
       grain,
+      promo,
       fontFamily: serif,
       markFontFamily: mark,
+      labelFontFamily: '"TikTok Sans", system-ui, sans-serif',
     });
     return canvasBlob(canvas);
   }
@@ -985,7 +994,12 @@ async function paintSlide(
   return canvasBlob(canvas);
 }
 
-export async function exportCopycatSlidesZip(options: {
+export type CopycatRenderedSlide = {
+  name: string;
+  blob: Blob;
+};
+
+export async function renderCopycatSlides(options: {
   templateId: CopycatExportTemplateId;
   slides: CopycatExportSlide[];
   template14Color?: string;
@@ -1001,10 +1015,9 @@ export async function exportCopycatSlidesZip(options: {
   template28Seed?: number;
   template30Look?: Template30Look;
   template31Color?: string;
-}): Promise<Blob> {
-  const JSZip = (await import('jszip')).default;
-  const zip = new JSZip();
+}): Promise<CopycatRenderedSlide[]> {
   const color = options.template14Color ?? IMAGE_TEMPLATE14_COLORS[0]!;
+  const rendered: CopycatRenderedSlide[] = [];
   for (let i = 0; i < options.slides.length; i++) {
     const slide = options.slides[i]!;
     const blob = await paintSlide(
@@ -1028,9 +1041,57 @@ export async function exportCopycatSlidesZip(options: {
       options.template30Look ?? IMAGE_TEMPLATE30_DEFAULT_LOOK,
       options.template31Color
     );
-    const name = i === 0 ? 'cover' : slide.isCta && !slide.text.trim() ? 'cta' : `q${i}`;
-    zip.file(`template-${options.templateId}-${name}.png`, blob);
+    const name = i === 0 ? 'cover.png' : slide.isCta && !slide.text.trim() ? 'cta.png' : `q${i}.png`;
+    rendered.push({ name, blob });
   }
+  return rendered;
+}
 
+export function copycatSlidesAsPhotoFiles(slides: CopycatRenderedSlide[]): File[] {
+  return slides.map(
+    (slide) => new File([slide.blob], slide.name, { type: 'image/png', lastModified: Date.now() })
+  );
+}
+
+/** True when the browser can hand these images to the system share sheet (Save to Photos). */
+export function canSharePhotoFiles(files: File[]): boolean {
+  if (files.length === 0 || typeof navigator === 'undefined' || !navigator.canShare) return false;
+  try {
+    return navigator.canShare({ files });
+  } catch {
+    return false;
+  }
+}
+
+export async function zipRenderedCopycatSlides(
+  templateId: CopycatExportTemplateId,
+  slides: CopycatRenderedSlide[]
+): Promise<Blob> {
+  const JSZip = (await import('jszip')).default;
+  const zip = new JSZip();
+  for (const slide of slides) {
+    zip.file(`template-${templateId}-${slide.name}`, slide.blob);
+  }
   return zip.generateAsync({ type: 'blob', compression: 'STORE' });
+}
+
+export async function exportCopycatSlidesZip(options: {
+  templateId: CopycatExportTemplateId;
+  slides: CopycatExportSlide[];
+  template14Color?: string;
+  template14Style?: Template14StyleId;
+  template15FrameBg?: string;
+  template18Style?: Template18StyleId;
+  template18Scanlines?: boolean;
+  template18PastelSlides?: readonly Template18PastelTone[];
+  template19Color?: Template19ColorId;
+  template24Look?: Template24Look;
+  template27Audience?: Template27Audience;
+  template26BunnySeed?: number;
+  template28Seed?: number;
+  template30Look?: Template30Look;
+  template31Color?: string;
+}): Promise<Blob> {
+  const rendered = await renderCopycatSlides(options);
+  return zipRenderedCopycatSlides(options.templateId, rendered);
 }

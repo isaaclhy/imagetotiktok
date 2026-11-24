@@ -30,7 +30,12 @@ import { getGoldenThoughtsDailyPosts } from '@/app/lib/copycat/goldenthoughtsdai
 import { getLvrsbaePosts } from '@/app/lib/copycat/lvrsbae';
 import { getSpillCardsAppPosts } from '@/app/lib/copycat/spillcardsapp';
 import { getHookPosts } from '@/app/lib/copycat/hook-posts';
-import { exportCopycatSlidesZip } from '@/app/lib/copycat/export-slides';
+import {
+  canSharePhotoFiles,
+  copycatSlidesAsPhotoFiles,
+  renderCopycatSlides,
+  zipRenderedCopycatSlides,
+} from '@/app/lib/copycat/export-slides';
 import { IMAGE_TEMPLATE2_PASTEL_COLORS, IMAGE_TEMPLATE2_TOP_LABEL } from '@/app/lib/constants';
 import {
   IMAGE_TEMPLATE2_Q5_PROMO_LABEL,
@@ -264,10 +269,11 @@ function CopycatAppMarkFooter({
 
 type CopycatPanelProps = {
   competitorId: string;
+  competitorOptions?: readonly { id: string; label: string }[];
+  onCompetitorChange?: (competitorId: string) => void;
   templateId: CopycatTemplateId;
   /** When true, draw only from the curated hook posts, ignoring competitor feeds. */
   useHookPosts?: boolean;
-  onNewRandomPost?: () => void;
 };
 
 /** Unbiased int in [0, maxExclusive) via crypto (not Math.random). */
@@ -527,7 +533,7 @@ function CopycatSlidePreview({
     : 'left-1/2 w-[78%] -translate-x-1/2 -translate-y-1/2 text-center';
 
   if (templateId === 31) {
-    return <GrainCardPreview text={text} isCover={isCover} backgroundColor={card31Bg} />;
+    return <GrainCardPreview text={text} isCover={isCover} isCta={isCtaSlide} backgroundColor={card31Bg} />;
   }
 
   if (templateId === 21) {
@@ -1275,9 +1281,10 @@ function CopycatSlidePreview({
 
 export function CopycatPanel({
   competitorId,
+  competitorOptions = [],
+  onCompetitorChange,
   templateId,
   useHookPosts = false,
-  onNewRandomPost,
 }: CopycatPanelProps) {
   const posts: CopycatPost[] = useMemo(() => {
     if (useHookPosts) return getHookPosts();
@@ -1672,8 +1679,12 @@ export function CopycatPanel({
     setIllustrations(pickNUniqueRandom(dogUrls, artCount));
   }, [templateId, selectedPostId, slideBodies.length, dogUrls]);
 
+  const captionPostIdRef = useRef(selectedPostId);
+  captionPostIdRef.current = selectedPostId;
+
   const handleGenerateCaption = useCallback(async () => {
     if (displayBodies.length === 0) return;
+    const postId = selectedPostId;
     setCaptionError(null);
     setIsGeneratingCaption(true);
     try {
@@ -1686,27 +1697,53 @@ export function CopycatPanel({
         }),
       });
       const data = (await res.json()) as { caption?: string; error?: string };
+      if (postId !== captionPostIdRef.current) return;
       if (!res.ok || !data.caption?.trim()) {
         throw new Error(data.error || 'Failed to generate caption');
       }
       setCaption(data.caption.trim());
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') return;
+      if (postId !== captionPostIdRef.current) return;
       setCaptionError(e instanceof Error ? e.message : 'Failed to generate caption');
     } finally {
-      setIsGeneratingCaption(false);
+      if (postId === captionPostIdRef.current) setIsGeneratingCaption(false);
     }
-  }, [displayBodies]);
+  }, [displayBodies, selectedPostId]);
 
   useEffect(() => {
     setCaption('');
     setCaptionError(null);
-    if (!selectedPostId || displayBodies.length === 0) return;
-    void handleGenerateCaption();
-  }, [selectedPostId, handleGenerateCaption, displayBodies.length]);
+  }, [selectedPostId]);
+
+  const photoFilesRef = useRef<File[] | null>(null);
+  const [photoSaveReady, setPhotoSaveReady] = useState(false);
+
+  useEffect(() => {
+    photoFilesRef.current = null;
+    setPhotoSaveReady(false);
+  }, [selectedPostId, templateId]);
 
   const handleDownload = useCallback(async () => {
-    if (!selectedPost || displayBodies.length === 0 || isDownloading) return;
+    if (isDownloading) return;
+    const pending = photoFilesRef.current;
+    if (pending && canSharePhotoFiles(pending)) {
+      try {
+        await navigator.share({ files: pending });
+        photoFilesRef.current = null;
+        setPhotoSaveReady(false);
+      } catch (e) {
+        if (e instanceof DOMException && e.name === 'AbortError') return;
+        if (e instanceof DOMException && (e.name === 'NotAllowedError' || e.name === 'SecurityError')) {
+          setPhotoSaveReady(true);
+          return;
+        }
+        console.error('Copycat download failed:', e);
+        alert(e instanceof Error ? e.message : 'Download failed');
+      }
+      return;
+    }
+    if (!selectedPost || displayBodies.length === 0) return;
     setIsDownloading(true);
     try {
       const slides = displayBodies.map((text, index) => {
@@ -1742,7 +1779,7 @@ export function CopycatPanel({
           illustrationSrc: undefined,
         });
       }
-      const zipBlob = await exportCopycatSlidesZip({
+      const rendered = await renderCopycatSlides({
         templateId,
         slides,
         template14Color,
@@ -1759,6 +1796,24 @@ export function CopycatPanel({
         template30Look: { typeface: template30Typeface, cover: template30Cover },
         template31Color,
       });
+      const files = copycatSlidesAsPhotoFiles(rendered);
+      if (canSharePhotoFiles(files)) {
+        try {
+          await navigator.share({ files });
+          photoFilesRef.current = null;
+          setPhotoSaveReady(false);
+        } catch (e) {
+          if (e instanceof DOMException && e.name === 'AbortError') return;
+          if (e instanceof DOMException && (e.name === 'NotAllowedError' || e.name === 'SecurityError')) {
+            photoFilesRef.current = files;
+            setPhotoSaveReady(true);
+            return;
+          }
+          throw e;
+        }
+        return;
+      }
+      const zipBlob = await zipRenderedCopycatSlides(templateId, rendered);
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
       a.href = url;
@@ -1811,18 +1866,32 @@ export function CopycatPanel({
 
   return (
     <div className="mx-auto flex w-full max-w-sm flex-col gap-3">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
           {useHookPosts ? 'Hook post' : 'Random post'} · {tabCount} slides
         </p>
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+          {competitorOptions.length > 0 ? (
+            <select
+              aria-label="Competitor"
+              value={competitorId}
+              disabled={useHookPosts}
+              onChange={(event) => onCompetitorChange?.(event.target.value)}
+              className="max-w-[11rem] rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-xs font-medium text-zinc-800 outline-none focus:border-zinc-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:focus:border-zinc-500"
+            >
+              {competitorOptions.map((competitor) => (
+                <option key={competitor.id} value={competitor.id}>
+                  {competitor.label}
+                </option>
+              ))}
+            </select>
+          ) : null}
           <button
             type="button"
             onClick={(event) => {
               const hold = captureScrollHold(event.currentTarget);
               pendingScrollRef.current = hold;
-              if (useHookPosts || !onNewRandomPost) reshufflePost();
-              else onNewRandomPost();
+              reshufflePost();
               // Layout effect restores before paint. These frames cover WebKit
               // clamping scrollTop when the next post is shorter, then leaving
               // it there after the following post is taller again.
@@ -1874,8 +1943,10 @@ export function CopycatPanel({
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   />
                 </svg>
-                Downloading…
+                Saving…
               </>
+            ) : photoSaveReady ? (
+              'Save to Photos'
             ) : (
               'Download'
             )}

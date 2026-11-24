@@ -28,9 +28,18 @@ const nunito = localFont({
 });
 
 const libreBaskerville = localFont({
-  src: "./fonts/libre-baskerville/libre-baskerville-latin.woff2",
-  weight: "400 700",
-  style: "normal",
+  src: [
+    {
+      path: "./fonts/libre-baskerville/libre-baskerville-latin.woff2",
+      weight: "400 700",
+      style: "normal",
+    },
+    {
+      path: "./fonts/libre-baskerville/libre-baskerville-latin-400-italic.woff2",
+      weight: "400",
+      style: "italic",
+    },
+  ],
   display: "swap",
   variable: "--font-libre-baskerville",
   adjustFontFallback: "Times New Roman",
