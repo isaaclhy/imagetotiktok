@@ -23,6 +23,7 @@ import { getFlamingoCardsTiktokPosts } from '@/app/lib/copycat/flamingo-cards-ti
 import { getQuestionsForTonightPosts } from '@/app/lib/copycat/questionsfortonight';
 import { getCoupleSyxPosts } from '@/app/lib/copycat/couple-syx';
 import { getMisunderstoodCou4Posts } from '@/app/lib/copycat/misunderstood-cou4';
+import { getSandraWritesThisPosts } from '@/app/lib/copycat/sandrawritesthis';
 import { getCoupleCardsPosts } from '@/app/lib/copycat/couple-cards';
 import { getHhTalkPosts } from '@/app/lib/copycat/hhtalk';
 import { getGoldenThoughtsDailyPosts } from '@/app/lib/copycat/goldenthoughtsdaily';
@@ -1309,7 +1310,9 @@ export function CopycatPanel({
                                         ? getCoupleSyxPosts()
                                         : competitorId === 'misunderstood-cou4'
                                           ? getMisunderstoodCou4Posts()
-                                          : [];
+                                          : competitorId === 'sandra-writes-this'
+                                            ? getSandraWritesThisPosts()
+                                            : [];
     if (competitorId === 'flamingo-cards') return filterCopycatPostsByMinViews(raw);
     return raw;
   }, [competitorId, useHookPosts]);

@@ -30,6 +30,7 @@ import { getFlamingoCardsTiktokPosts } from '@/app/lib/copycat/flamingo-cards-ti
 import { getQuestionsForTonightPosts } from '@/app/lib/copycat/questionsfortonight';
 import { getCoupleSyxPosts } from '@/app/lib/copycat/couple-syx';
 import { getMisunderstoodCou4Posts } from '@/app/lib/copycat/misunderstood-cou4';
+import { getSandraWritesThisPosts } from '@/app/lib/copycat/sandrawritesthis';
 
 type ChoiceBody = {
   body: string;
@@ -87,6 +88,7 @@ function choicePool(): ChoiceBody[] {
   collect(getLvrsbaePosts(), into);
   collect(getSpillCardsAppPosts(), into);
   collect(getHookPosts(), into);
+  collect(getSandraWritesThisPosts(), into);
   cached = [...into.values()];
   return cached;
 }

@@ -25,6 +25,7 @@ import { getFlamingoCardsTiktokPosts } from '@/app/lib/copycat/flamingo-cards-ti
 import { getQuestionsForTonightPosts } from '@/app/lib/copycat/questionsfortonight';
 import { getCoupleSyxPosts } from '@/app/lib/copycat/couple-syx';
 import { getMisunderstoodCou4Posts } from '@/app/lib/copycat/misunderstood-cou4';
+import { getSandraWritesThisPosts } from '@/app/lib/copycat/sandrawritesthis';
 
 export const VIDEO_TEMPLATE4_PEXELS_QUERY = 'ocean sunset';
 export const VIDEO_TEMPLATE4_LABELS = [
@@ -52,6 +53,7 @@ export const VIDEO_TEMPLATE4_COMPETITORS = [
   { id: 'questions-for-tonight', label: 'Questions for tonight' },
   { id: 'couple-syx', label: 'Couple syx' },
   { id: 'misunderstood-cou4', label: 'Misunderstood cou4' },
+  { id: 'sandra-writes-this', label: 'Sandra writes this' },
 ] as const;
 
 export type VideoTemplate4CompetitorId = (typeof VIDEO_TEMPLATE4_COMPETITORS)[number]['id'];
@@ -118,6 +120,8 @@ function postsForCompetitor(id: VideoTemplate4CompetitorId): CopycatPost[] {
       return getCoupleSyxPosts();
     case 'misunderstood-cou4':
       return getMisunderstoodCou4Posts();
+    case 'sandra-writes-this':
+      return getSandraWritesThisPosts();
   }
 }
 
