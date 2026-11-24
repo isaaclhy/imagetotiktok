@@ -12,7 +12,7 @@ import {
  * Penguin-cards slideshow (image template 24).
  * Measured from @penguincardss posts at 1080×1440 (same frame as the other
  * image templates). One flat pale colour per post, a row of progress squares,
- * a heavy centred cover with one highlighted word, and one slightly rotated
+ * a heavy centred cover, and one slightly rotated
  * colour card per question. The last question keeps its card and closes with
  * template 2's App Store promo. There is no extra CTA-only slide.
  */
@@ -29,19 +29,6 @@ export const IMAGE_TEMPLATE24_CARD_COLORS = [
   '#7FBFFF',
   '#FFD23F',
 ] as const;
-export const IMAGE_TEMPLATE24_HIGHLIGHT_COLORS = ['#FFD93D', '#FF9F52'] as const;
-export const IMAGE_TEMPLATE24_HIGHLIGHT_WORDS = [
-  'unhinged',
-  'dumb',
-  'ragebait',
-  'chaotic',
-  'brutal',
-  'spicy',
-  'petty',
-] as const;
-
-export type Template24HighlightWord = (typeof IMAGE_TEMPLATE24_HIGHLIGHT_WORDS)[number];
-export type Template24HighlightChoice = 'random' | Template24HighlightWord;
 
 export type Template24Look = {
   background: string;
@@ -49,9 +36,6 @@ export type Template24Look = {
   cardColors: string[];
   /** Degrees, one per question slide, about -2 to +2. */
   rotations: number[];
-  highlightColor: string;
-  /** Resolved cover word. Empty means the cover has no highlighter. */
-  highlightWord: string;
 };
 
 export const IMAGE_TEMPLATE24_TEXT = '#111111';
@@ -67,13 +51,6 @@ const WHENS = ['tonight', 'before bed', 'tonight before bed', 'right now'] as co
 
 export function isImageTemplate24Id(templateId: number | null | undefined): boolean {
   return templateId === 24;
-}
-
-export function isTemplate24HighlightChoice(value: string): value is Template24HighlightChoice {
-  return (
-    value === 'random' ||
-    (IMAGE_TEMPLATE24_HIGHLIGHT_WORDS as readonly string[]).includes(value)
-  );
 }
 
 export function template24SlideCount(questionCount: number): number {
@@ -112,92 +89,6 @@ function randInt(maxExclusive: number): number {
   return Math.floor(Math.random() * maxExclusive);
 }
 
-function shuffle<T>(items: readonly T[]): T[] {
-  const next = [...items];
-  for (let i = next.length - 1; i > 0; i--) {
-    const j = randInt(i + 1);
-    const swap = next[i]!;
-    next[i] = next[j]!;
-    next[j] = swap;
-  }
-  return next;
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-export function template24ContainsWord(text: string, word: string): boolean {
-  if (!word.trim()) return false;
-  return new RegExp(`\\b${escapeRegExp(word)}\\b`, 'i').test(text);
-}
-
-export function resolveTemplate24Highlight(
-  choice: Template24HighlightChoice,
-  avoid?: string
-): string {
-  if (choice !== 'random') return choice;
-  const pool = IMAGE_TEMPLATE24_HIGHLIGHT_WORDS.filter((word) => word !== avoid);
-  const words = pool.length > 0 ? pool : IMAGE_TEMPLATE24_HIGHLIGHT_WORDS;
-  return words[randInt(words.length)]!;
-}
-
-/**
- * Highlight word for a cover. Random prefers a keyword that is already in the
- * text, and otherwise picks one so the painter can place it. A chosen word is
- * returned even when the source title does not contain it yet.
- */
-export function template24HighlightForCover(
-  text: string,
-  choice: Template24HighlightChoice,
-  avoid?: string
-): string {
-  if (choice !== 'random') return choice;
-  const hits = shuffle(IMAGE_TEMPLATE24_HIGHLIGHT_WORDS).filter(
-    (word) => word !== avoid && template24ContainsWord(text, word)
-  );
-  if (hits[0]) return hits[0];
-  const present = IMAGE_TEMPLATE24_HIGHLIGHT_WORDS.filter((word) =>
-    template24ContainsWord(text, word)
-  );
-  if (present.length > 0) return present[0]!;
-  return resolveTemplate24Highlight('random', avoid);
-}
-
-/**
- * Cover line that contains `word`, so the highlighter has something to paint.
- * Competitor titles often have no keyword ("5 questions for deep convos").
- * A known keyword is swapped in place. Otherwise the word is inserted in front
- * of "questions", or after a leading count. Titles that already contain the
- * word are returned unchanged.
- */
-export function template24EnsureHighlight(title: string, word: string): string {
-  const keyword = word.trim();
-  if (!keyword || template24ContainsWord(title, keyword)) return title;
-  const trimmed = title.replace(/\s+/g, ' ').trim();
-  if (!trimmed) return title;
-  for (const known of IMAGE_TEMPLATE24_HIGHLIGHT_WORDS) {
-    if (known.toLowerCase() === keyword.toLowerCase()) continue;
-    if (!template24ContainsWord(trimmed, known)) continue;
-    return trimmed.replace(new RegExp(`\\b${escapeRegExp(known)}\\b`, 'i'), keyword);
-  }
-  const questions = trimmed.match(/\bquestions\b/i);
-  if (questions && questions.index != null) {
-    const before = trimmed.slice(0, questions.index);
-    // The inserted keyword is lowercase, so "Questions" joins it as "questions".
-    const after = trimmed.slice(questions.index).replace(/^Questions\b/, 'questions');
-    const lead = before.match(/^(.*?)(\S+)\s+$/);
-    if (!lead) return `${before}${keyword} ${after}`;
-    const prefix = lead[1] ?? '';
-    const token = lead[2] ?? '';
-    if (/^\d+$/.test(token)) return `${prefix}${token} ${keyword} ${after}`;
-    return `${prefix}${keyword} ${after}`;
-  }
-  const numbered = trimmed.match(/^(\d+)\s+/);
-  if (numbered) return `${numbered[1]} ${keyword} ${trimmed.slice(numbered[0].length)}`;
-  return `${keyword} ${trimmed}`;
-}
-
 function pickDifferent<T extends string>(options: readonly T[], avoid?: string): T {
   const pool = options.filter((option) => option !== avoid);
   const list = pool.length > 0 ? pool : options;
@@ -230,30 +121,22 @@ function rollRotations(count: number): number[] {
   return rotations;
 }
 
-export function rollTemplate24Look(
-  questionCount: number,
-  highlight: Template24HighlightChoice = 'random',
-  avoidWord?: string
-): Template24Look {
+export function rollTemplate24Look(questionCount: number): Template24Look {
   const count = Math.max(0, questionCount);
   return {
     background: pickDifferent(IMAGE_TEMPLATE24_BACKGROUNDS),
     cardColors: rollCardColors(count),
     rotations: rollRotations(count),
-    highlightColor: pickDifferent(IMAGE_TEMPLATE24_HIGHLIGHT_COLORS),
-    highlightWord: resolveTemplate24Highlight(highlight, avoidWord),
   };
 }
 
-/** New background, card order, rotations, and highlighter colour. Keeps the word. */
+/** New background, card colours, and rotations. */
 export function rerollTemplate24Look(look: Template24Look): Template24Look {
   const count = Math.max(look.cardColors.length, look.rotations.length);
   return {
     background: pickDifferent(IMAGE_TEMPLATE24_BACKGROUNDS, look.background),
     cardColors: rollCardColors(count),
     rotations: rollRotations(count),
-    highlightColor: pickDifferent(IMAGE_TEMPLATE24_HIGHLIGHT_COLORS, look.highlightColor),
-    highlightWord: look.highlightWord,
   };
 }
 
@@ -271,29 +154,20 @@ export const IMAGE_TEMPLATE24_DEFAULT_LOOK: Template24Look = {
   background: IMAGE_TEMPLATE24_BACKGROUNDS[0],
   cardColors: ['#FF7BAC', '#7AE0C3', '#B79CFF', '#FF9F52', '#7FBFFF'],
   rotations: [-1.4, 1.6, -0.8, 1.2, -1.8],
-  highlightColor: IMAGE_TEMPLATE24_HIGHLIGHT_COLORS[0],
-  highlightWord: 'unhinged',
 };
 
-export function template24CoverTitle(count: number, word: string): string {
-  const keyword = word.trim() || 'unhinged';
+export function template24CoverTitle(count: number): string {
   const mega = Math.random() < 0.35 ? 'mega ' : '';
   const partner = PARTNERS[randInt(PARTNERS.length)]!;
   const when = Math.random() < 0.72 ? ` ${WHENS[randInt(WHENS.length)]}` : '';
-  return `${count} ${mega}${keyword} questions to ask ${partner}${when}`;
+  return `${count} ${mega}questions to ask ${partner}${when}`;
 }
 
-export function template24Retitle(title: string, count: number, word: string): string {
-  const keyword = word.trim();
+export function template24Retitle(title: string, count: number): string {
   const trimmed = title.trim();
-  if (!trimmed || !keyword) return template24CoverTitle(count, keyword || 'unhinged');
-  let next = /^\d+\b/.test(trimmed) ? trimmed.replace(/^\d+\b/, String(count)) : trimmed;
-  if (template24ContainsWord(next, keyword)) return next;
-  for (const known of IMAGE_TEMPLATE24_HIGHLIGHT_WORDS) {
-    if (!template24ContainsWord(next, known)) continue;
-    return next.replace(new RegExp(`\\b${escapeRegExp(known)}\\b`, 'i'), keyword);
-  }
-  return template24CoverTitle(count, keyword);
+  if (!trimmed) return template24CoverTitle(count);
+  if (/^\d+\b/.test(trimmed)) return trimmed.replace(/^\d+\b/, String(count));
+  return trimmed;
 }
 
 function setLetterSpacing(ctx: CanvasRenderingContext2D, value: string) {
@@ -419,26 +293,13 @@ function paintFooter(ctx: CanvasRenderingContext2D, width: number, height: numbe
   ctx.fillText(IMAGE_TEMPLATE24_FOOTER, width / 2, height * 0.931);
 }
 
-function splitHighlight(
-  line: string,
-  word: string
-): { before: string; match: string; after: string } | null {
-  if (!word.trim()) return null;
-  const match = line.match(new RegExp(`^(.*?)(\\b${escapeRegExp(word)}\\b)(.*)$`, 'i'));
-  if (!match) return null;
-  return { before: match[1] ?? '', match: match[2] ?? word, after: match[3] ?? '' };
-}
-
 function paintCover(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
   title: string,
-  fontFamily: string,
-  highlightWord: string,
-  highlightColor: string
+  fontFamily: string
 ) {
-  const coverTitle = template24EnsureHighlight(title, highlightWord);
   const maxWidth = width * 0.86;
   const pillHeight = width * 0.062;
   const pillCenter = height * 0.805;
@@ -453,7 +314,7 @@ function paintCover(
   const layoutAt = (size: number) => {
     ctx.font = `800 ${size}px ${fontFamily}`;
     setLetterSpacing(ctx, `${-size * 0.025}px`);
-    const lines = coverTitle.trim() ? wrapBlock(ctx, coverTitle, maxWidth) : [''];
+    const lines = title.trim() ? wrapBlock(ctx, title, maxWidth) : [''];
     const block = lines.length * size * linePitch;
     return { lines, block };
   };
@@ -474,24 +335,6 @@ function paintCover(
   for (const line of layout.lines) {
     const lineWidth = ctx.measureText(line).width;
     const start = (width - lineWidth) / 2;
-    const parts = splitHighlight(line, highlightWord);
-    if (parts) {
-      const beforeWidth = ctx.measureText(parts.before).width;
-      const matchWidth = ctx.measureText(parts.match).width;
-      const padX = fontSize * 0.12;
-      const trailingSpace = parts.before.match(/ +$/)?.[0] ?? '';
-      const gap = trailingSpace ? ctx.measureText(trailingSpace).width : padX;
-      const leftPad = trailingSpace ? Math.min(padX * 0.45, gap * 0.22) : padX;
-      const rectH = fontSize * 0.9;
-      const rectW = leftPad + matchWidth + padX;
-      const rectX = start + beforeWidth - leftPad;
-      const rectY = y - rectH / 2 + fontSize * 0.03;
-      ctx.fillStyle = highlightColor;
-      roundRect(ctx, rectX, rectY, rectW, rectH, fontSize * 0.18);
-      ctx.fill();
-      ctx.font = `800 ${fontSize}px ${fontFamily}`;
-      setLetterSpacing(ctx, `${-fontSize * 0.025}px`);
-    }
     ctx.fillStyle = IMAGE_TEMPLATE24_TEXT;
     ctx.fillText(line, start, y);
     y += fontSize * linePitch;
@@ -720,15 +563,7 @@ export function paintTemplate24Slide(
   paintProgress(ctx, width, height, options.tabIndex, slideCount);
 
   if (isCover) {
-    paintCover(
-      ctx,
-      width,
-      height,
-      options.text,
-      fontFamily,
-      look.highlightWord,
-      look.highlightColor
-    );
+    paintCover(ctx, width, height, options.text, fontFamily);
     paintFooter(ctx, width, height);
     return;
   }

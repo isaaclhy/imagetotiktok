@@ -24,11 +24,9 @@ const LOOK = {
   background: '#E9F1EC',
   cardColors: ['#FF7BAC', '#7AE0C3', '#B79CFF', '#FF9F52', '#7FBFFF'],
   rotations: [-1.6, 1.4, -0.9, 1.8, -1.2],
-  highlightColor: '#FFD93D',
-  highlightWord: 'unhinged',
 };
 
-const COVER = '5 unhinged questions to ask your boyfriend tonight';
+const COVER = '5 questions to ask your boyfriend tonight';
 
 async function renderSlide(options) {
   const canvas = createCanvas(W, H);

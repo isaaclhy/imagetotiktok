@@ -341,22 +341,18 @@ import { pickTemplate24QuestionBodies } from '@/app/lib/image-template-24-questi
 import {
   IMAGE_TEMPLATE24_DEFAULT_LOOK,
   IMAGE_TEMPLATE24_DEFAULT_QUESTION_COUNT,
-  IMAGE_TEMPLATE24_HIGHLIGHT_WORDS,
   IMAGE_TEMPLATE24_MAX_QUESTIONS,
   IMAGE_TEMPLATE24_MIN_QUESTIONS,
   fitTemplate24Look,
   isImageTemplate24Id,
-  isTemplate24HighlightChoice,
   loadTemplate24Fonts,
   paintTemplate24Slide,
   rerollTemplate24Look,
-  resolveTemplate24Highlight,
   rollTemplate24Look,
   template24CanvasFontStack,
   template24CoverTitle,
   template24Retitle,
   template24SlideCount,
-  type Template24HighlightChoice,
   type Template24Look,
 } from '@/app/lib/image-template-24-penguin';
 import {
@@ -2440,8 +2436,6 @@ export default function Home() {
   const [imageTemplate24QuestionCount, setImageTemplate24QuestionCount] = useState(
     IMAGE_TEMPLATE24_DEFAULT_QUESTION_COUNT
   );
-  const [imageTemplate24Highlight, setImageTemplate24Highlight] =
-    useState<Template24HighlightChoice>('random');
   const [imageTemplate24Look, setImageTemplate24Look] = useState<Template24Look>(
     IMAGE_TEMPLATE24_DEFAULT_LOOK
   );
@@ -5185,8 +5179,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
     }
 
     if (selectedAppId === 'spill-it' && isImageTemplate24Id(tid)) {
-      const look = rollTemplate24Look(imageTemplate24QuestionCount, imageTemplate24Highlight);
-      const title = template24CoverTitle(imageTemplate24QuestionCount, look.highlightWord);
+      const look = rollTemplate24Look(imageTemplate24QuestionCount);
+      const title = template24CoverTitle(imageTemplate24QuestionCount);
       const questions = pickTemplate24QuestionBodies(
         imageTemplate24QuestionCount,
         imageTabTexts.slice(1)
@@ -9520,9 +9514,6 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                       ) {
                                         return;
                                       }
-                                      const word =
-                                        imageTemplate24Look.highlightWord ||
-                                        resolveTemplate24Highlight(imageTemplate24Highlight);
                                       const existing = imageTabTexts
                                         .slice(1)
                                         .filter((item) => item.trim());
@@ -9542,7 +9533,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                       );
                                       setImageTabFunnyQuestions(questions);
                                       setImageTabTexts([
-                                        template24Retitle(imageTabTexts[0] ?? '', nextCount, word),
+                                        template24Retitle(imageTabTexts[0] ?? '', nextCount),
                                         ...questions,
                                       ]);
                                       setImageTabSources(
@@ -9566,42 +9557,6 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                     ).map((count) => (
                                       <option key={count} value={count}>
                                         {count}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </label>
-                                <label className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-300">
-                                  Highlight
-                                  <select
-                                    value={imageTemplate24Highlight}
-                                    onChange={(e) => {
-                                      const next = e.target.value;
-                                      if (!isTemplate24HighlightChoice(next)) return;
-                                      const word = resolveTemplate24Highlight(
-                                        next,
-                                        imageTemplate24Look.highlightWord
-                                      );
-                                      setImageTemplate24Highlight(next);
-                                      setImageTemplate24Look((current) => ({
-                                        ...current,
-                                        highlightWord: word,
-                                      }));
-                                      setImageTabTexts((current) => {
-                                        const title = template24Retitle(
-                                          current[0] ?? '',
-                                          imageTemplate24QuestionCount,
-                                          word
-                                        );
-                                        return [title, ...current.slice(1)];
-                                      });
-                                    }}
-                                    className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2 py-1.5 sm:py-1 text-sm sm:text-xs text-zinc-800 dark:text-zinc-200"
-                                    aria-label="Highlight word"
-                                  >
-                                    <option value="random">Random</option>
-                                    {IMAGE_TEMPLATE24_HIGHLIGHT_WORDS.map((word) => (
-                                      <option key={word} value={word}>
-                                        {word}
                                       </option>
                                     ))}
                                   </select>
@@ -9883,22 +9838,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                       }
                                       if (isPenguinImageTemplate) {
                                         if (selectedImageBrowserTab === 0) {
-                                          const word =
-                                            imageTemplate24Highlight === 'random'
-                                              ? resolveTemplate24Highlight(
-                                                  'random',
-                                                  imageTemplate24Look.highlightWord
-                                                )
-                                              : imageTemplate24Look.highlightWord;
-                                          setImageTemplate24Look((current) => ({
-                                            ...current,
-                                            highlightWord: word,
-                                          }));
                                           const next = [...imageTabTexts];
-                                          next[0] = template24CoverTitle(
-                                            imageTemplate24QuestionCount,
-                                            word
-                                          );
+                                          next[0] = template24CoverTitle(imageTemplate24QuestionCount);
                                           setImageTabTexts(next);
                                           return;
                                         }

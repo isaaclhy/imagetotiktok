@@ -175,12 +175,8 @@ import {
 } from '@/app/lib/copycat/template17-background';
 import {
   IMAGE_TEMPLATE24_DEFAULT_LOOK,
-  IMAGE_TEMPLATE24_HIGHLIGHT_WORDS,
-  isTemplate24HighlightChoice,
   rerollTemplate24Look,
   rollTemplate24Look,
-  template24HighlightForCover,
-  type Template24HighlightChoice,
   type Template24Look,
 } from '@/app/lib/image-template-24-penguin';
 import {
@@ -1350,8 +1346,6 @@ export function CopycatPanel({
     () => template18PastelBodyTones()
   );
   const [template19Color, setTemplate19Color] = useState<Template19ColorId>('red');
-  const [template24Highlight, setTemplate24Highlight] =
-    useState<Template24HighlightChoice>('random');
   const [template24Look, setTemplate24Look] = useState<Template24Look>(
     IMAGE_TEMPLATE24_DEFAULT_LOOK
   );
@@ -1504,20 +1498,10 @@ export function CopycatPanel({
   );
 
   // CTA is the last question slide itself — never a separate empty tab.
-  const template24HighlightRef = useRef(template24Highlight);
-  template24HighlightRef.current = template24Highlight;
-
   useEffect(() => {
     if (templateId !== 24 || !selectedPostId) return;
     const questionCount = Math.max(0, slideBodies.length - 1);
-    const cover = slideBodies[0] ?? '';
-    const choice = template24HighlightRef.current;
-    const rolled = rollTemplate24Look(questionCount);
-    setTemplate24Look({
-      ...rolled,
-      highlightWord:
-        choice === 'random' ? template24HighlightForCover(cover, 'random') : choice,
-    });
+    setTemplate24Look(rollTemplate24Look(questionCount));
   }, [templateId, selectedPostId, slideBodies]);
 
   // Templates 25 and 29 keep every question, then add their own CTA slide.
@@ -2061,34 +2045,6 @@ export function CopycatPanel({
       ) : null}
       {templateId === 24 ? (
         <div className="flex flex-wrap items-center gap-2">
-          <label className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-300">
-            Highlight
-            <select
-              value={template24Highlight}
-              onChange={(e) => {
-                const next = e.target.value;
-                if (!isTemplate24HighlightChoice(next)) return;
-                setTemplate24Highlight(next);
-                setTemplate24Look((look) => ({
-                  ...look,
-                  highlightWord: template24HighlightForCover(
-                    slideBodies[0] ?? '',
-                    next,
-                    look.highlightWord
-                  ),
-                }));
-              }}
-              className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-800 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-200"
-              aria-label="Highlight word"
-            >
-              <option value="random">Random</option>
-              {IMAGE_TEMPLATE24_HIGHLIGHT_WORDS.map((word) => (
-                <option key={word} value={word}>
-                  {word}
-                </option>
-              ))}
-            </select>
-          </label>
           <button
             type="button"
             onClick={() => {

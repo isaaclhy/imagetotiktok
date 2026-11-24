@@ -58,8 +58,6 @@ export function PenguinCardsPreview({
   const cta = isCta ?? (tabIndex === count - 1 && count > 1);
   const lookKey = [
     look.background,
-    look.highlightColor,
-    look.highlightWord,
     look.cardColors.join(','),
     look.rotations.join(','),
   ].join('|');
