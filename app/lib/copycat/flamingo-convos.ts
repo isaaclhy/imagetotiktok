@@ -8,6 +8,7 @@ import {
 import rawConvoFeed from './flamingo-convos.json';
 import rawReelsFeed from './flamingoappreels.json';
 import rawCardsIgFeed from './flamingocards.json';
+import rawQuestionsFeed from './flamingoquestions.json';
 
 type RawSlide = {
   text: string;
@@ -31,6 +32,7 @@ type RawFeed = {
 const convoFeed = rawConvoFeed as RawFeed;
 const reelsFeed = rawReelsFeed as RawFeed;
 const cardsIgFeed = rawCardsIgFeed as RawFeed;
+const questionsFeed = rawQuestionsFeed as RawFeed;
 
 function mapSlide(slide: RawSlide): CopycatSlideText {
   const text = cleanCopycatDisplayText(slide.text);
@@ -60,6 +62,7 @@ function mapFeed(feed: RawFeed): CopycatPost[] {
 const convoPosts = mapFeed(convoFeed);
 const reelsPosts = mapFeed(reelsFeed);
 const cardsIgPosts = mapFeed(cardsIgFeed);
+const questionsPosts = mapFeed(questionsFeed);
 
 /** Flamingo convos Instagram posts used by the Copycat tab. */
 export const FLAMINGO_CONVOS_FEED: CopycatCompetitorFeed = {
@@ -86,6 +89,14 @@ export const FLAMINGO_CARDS_IG_FEED: CopycatCompetitorFeed = {
   platform: 'instagram',
 };
 
+export const FLAMINGO_QUESTIONS_FEED: CopycatCompetitorFeed = {
+  handle: questionsFeed.handle,
+  minViews: 0,
+  postCount: questionsPosts.length,
+  posts: questionsPosts,
+  platform: 'instagram',
+};
+
 function mergeUniquePosts(...groups: CopycatPost[][]): CopycatPost[] {
   const seen = new Set<string>();
   const merged: CopycatPost[] = [];
@@ -99,12 +110,12 @@ function mergeUniquePosts(...groups: CopycatPost[][]): CopycatPost[] {
   return merged;
 }
 
-/** TikTok @flamingokiss1 + Instagram @flamingoconvos + @flamingoappreels + @flamingo.cards_. */
+/** TikTok @flamingokiss1 + Instagram @flamingoconvos + @flamingoappreels + @flamingo.cards_ + @flamingoquestions. */
 export function getFlamingoCardsPosts(tiktokPosts: CopycatPost[]): CopycatPost[] {
   const tiktok = tiktokPosts.map((post) => ({
     ...post,
     handle: post.handle ?? 'flamingokiss1',
     platform: post.platform ?? ('tiktok' as const),
   }));
-  return normalizeCopycatPosts(mergeUniquePosts(tiktok, convoPosts, reelsPosts, cardsIgPosts));
+  return normalizeCopycatPosts(mergeUniquePosts(tiktok, convoPosts, reelsPosts, cardsIgPosts, questionsPosts));
 }
