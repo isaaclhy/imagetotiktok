@@ -9,6 +9,7 @@ import rawConvoFeed from './flamingo-convos.json';
 import rawReelsFeed from './flamingoappreels.json';
 import rawCardsIgFeed from './flamingocards.json';
 import rawQuestionsFeed from './flamingoquestions.json';
+import rawQuizFeed from './21questionsquiz.json';
 
 type RawSlide = {
   text: string;
@@ -33,6 +34,7 @@ const convoFeed = rawConvoFeed as RawFeed;
 const reelsFeed = rawReelsFeed as RawFeed;
 const cardsIgFeed = rawCardsIgFeed as RawFeed;
 const questionsFeed = rawQuestionsFeed as RawFeed;
+const quizFeed = rawQuizFeed as RawFeed;
 
 function mapSlide(slide: RawSlide): CopycatSlideText {
   const text = cleanCopycatDisplayText(slide.text);
@@ -63,6 +65,7 @@ const convoPosts = mapFeed(convoFeed);
 const reelsPosts = mapFeed(reelsFeed);
 const cardsIgPosts = mapFeed(cardsIgFeed);
 const questionsPosts = mapFeed(questionsFeed);
+const quizPosts = mapFeed(quizFeed);
 
 /** Flamingo convos Instagram posts used by the Copycat tab. */
 export const FLAMINGO_CONVOS_FEED: CopycatCompetitorFeed = {
@@ -97,6 +100,14 @@ export const FLAMINGO_QUESTIONS_FEED: CopycatCompetitorFeed = {
   platform: 'instagram',
 };
 
+export const QUESTIONS_21_QUIZ_FEED: CopycatCompetitorFeed = {
+  handle: quizFeed.handle,
+  minViews: 0,
+  postCount: quizPosts.length,
+  posts: quizPosts,
+  platform: 'instagram',
+};
+
 function mergeUniquePosts(...groups: CopycatPost[][]): CopycatPost[] {
   const seen = new Set<string>();
   const merged: CopycatPost[] = [];
@@ -110,12 +121,12 @@ function mergeUniquePosts(...groups: CopycatPost[][]): CopycatPost[] {
   return merged;
 }
 
-/** TikTok @flamingokiss1 + Instagram @flamingoconvos + @flamingoappreels + @flamingo.cards_ + @flamingoquestions. */
+/** TikTok @flamingokiss1 + Instagram @flamingoconvos + @flamingoappreels + @flamingo.cards_ + @flamingoquestions + @21questions.quiz. */
 export function getFlamingoCardsPosts(tiktokPosts: CopycatPost[]): CopycatPost[] {
   const tiktok = tiktokPosts.map((post) => ({
     ...post,
     handle: post.handle ?? 'flamingokiss1',
     platform: post.platform ?? ('tiktok' as const),
   }));
-  return normalizeCopycatPosts(mergeUniquePosts(tiktok, convoPosts, reelsPosts, cardsIgPosts, questionsPosts));
+  return normalizeCopycatPosts(mergeUniquePosts(tiktok, convoPosts, reelsPosts, cardsIgPosts, questionsPosts, quizPosts));
 }
