@@ -495,6 +495,17 @@ import {
   type VideoTemplate7TextSource,
 } from '@/app/lib/video-template-7-love-letter';
 import {
+  exportCardOnVideo,
+  loadVideoTemplate10Logo,
+  paintVideoTemplate10Overlay,
+  pickCopycatCardQuestion,
+  pickVideoTemplate10Song,
+  VIDEO_TEMPLATE10_BACKGROUND_FILTER,
+  VIDEO_TEMPLATE10_DURATION_SEC,
+  VIDEO_TEMPLATE10_PEXELS_QUERIES,
+  VIDEO_TEMPLATE10_SONGS,
+} from '@/app/lib/video-template-10-card';
+import {
   pexelsVideoProxySrc,
   PEXELS_PREFER_HEIGHT,
 } from '@/app/lib/pexels-video-client';
@@ -2297,6 +2308,11 @@ export default function Home() {
   const videoTemplate7LengthRef = useRef(videoTemplate7Length);
   videoTemplate7LengthRef.current = videoTemplate7Length;
   const loveLetterOverlayRef = useRef<HTMLCanvasElement | null>(null);
+  const cardVideoRef = useRef<HTMLVideoElement | null>(null);
+  const cardAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [cardSongSrc, setCardSongSrc] = useState<(typeof VIDEO_TEMPLATE10_SONGS)[number]['src']>(
+    VIDEO_TEMPLATE10_SONGS[0].src
+  );
   const nightyParticleVideoRef = useRef<HTMLVideoElement | null>(null);
   const nightyParticleAudioRef = useRef<HTMLAudioElement | null>(null);
   const nightyRainVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -2598,6 +2614,7 @@ export default function Home() {
     selectedAppId === 'spill-it' && selectedVideoTemplateId === 6;
   const isLoveLetterVideoTemplate =
     selectedAppId === 'spill-it' && selectedVideoTemplateId === 7;
+  const isCardVideoTemplate = selectedAppId === 'spill-it' && selectedVideoTemplateId === 10;
   const isSpillQuizVideoTemplate =
     selectedAppId === 'spill-it' && isSpillQuizTemplateId(selectedVideoTemplateId);
   const isFreshBakedDonutVideoTemplate =
@@ -2617,6 +2634,7 @@ export default function Home() {
     isOceanSunsetVideoTemplate ||
     isCinematicCoverVideoTemplate ||
     isLoveLetterVideoTemplate ||
+    isCardVideoTemplate ||
     isNightyParticleVideoTemplate ||
     isNightyRainVideoTemplate;
 
@@ -3089,6 +3107,8 @@ export default function Home() {
                     ? [...VIDEO_TEMPLATE6_PEXELS_QUERIES]
                     : isLoveLetterVideoTemplate
                       ? [...VIDEO_TEMPLATE7_PEXELS_QUERIES]
+                      : isCardVideoTemplate
+                        ? [...VIDEO_TEMPLATE10_PEXELS_QUERIES]
                       : VIDEO_TEMPLATE2_PEXELS_QUERIES;
             return queryPool[Math.floor(Math.random() * queryPool.length)]!;
           })();
@@ -3246,6 +3266,14 @@ export default function Home() {
       setVideoOverlayCaption(picked.text);
       void handleRegenerateVideoTemplate2Video();
       void handleGenerateVideoTemplate2Description({ cover: picked.text, questions: [] });
+    } else if (isCardVideoTemplate) {
+      const song = pickVideoTemplate10Song();
+      setCardSongSrc(song.src);
+      void pickCopycatCardQuestion().then((question) => {
+        setVideoOverlayCaption(question);
+        void handleGenerateVideoTemplate2Description({ cover: question, questions: [] });
+      });
+      void handleRegenerateVideoTemplate2Video();
     } else if (isFreshBakedDonutVideoTemplate) {
       setFreshBakedDonutSelectedId(null);
     } else if (isFabAffirmationVideoTemplate) {
@@ -3265,6 +3293,7 @@ export default function Home() {
     isOceanSunsetVideoTemplate,
     isCinematicCoverVideoTemplate,
     isLoveLetterVideoTemplate,
+    isCardVideoTemplate,
     isFreshBakedDonutVideoTemplate,
     isFabAffirmationVideoTemplate,
     selectedVideoTemplateId,
@@ -3294,6 +3323,86 @@ export default function Home() {
       cancelled = true;
     };
   }, [isLoveLetterVideoTemplate, videoOverlayCaption, videoTemplate7TextSource]);
+
+  useEffect(() => {
+    if (!isCardVideoTemplate) return;
+    const canvas = loveLetterOverlayRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    let cancelled = false;
+    void (async () => {
+      const [logo, fontFamily] = await Promise.all([
+        loadVideoTemplate10Logo(),
+        (async () => {
+          const probe = document.createElement('span');
+          probe.style.fontFamily = 'var(--font-libre-baskerville), "Libre Baskerville", Georgia, serif';
+          probe.style.position = 'absolute';
+          probe.style.left = '-9999px';
+          document.body.appendChild(probe);
+          const family = getComputedStyle(probe).fontFamily;
+          probe.remove();
+          try {
+            await document.fonts.load(`400 64px ${family}`);
+            await document.fonts.load('700 48px "TikTok Sans"');
+          } catch {
+            /* fonts may already be ready */
+          }
+          return family;
+        })(),
+      ]);
+      if (cancelled) return;
+      paintVideoTemplate10Overlay(ctx, canvas.width, canvas.height, {
+        text: videoOverlayCaption,
+        logo,
+        fontFamily,
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isCardVideoTemplate, videoOverlayCaption]);
+
+  useEffect(() => {
+    if (!isCardVideoTemplate) {
+      cardAudioRef.current?.pause();
+      return;
+    }
+    const video = cardVideoRef.current;
+    const audio = cardAudioRef.current;
+    if (!video || !audio) return;
+    const syncTime = () => {
+      if (Math.abs(audio.currentTime - video.currentTime) > 0.3) {
+        try {
+          audio.currentTime = video.currentTime;
+        } catch {
+          /* ignore seek errors while loading */
+        }
+      }
+    };
+    const onPlay = () => {
+      syncTime();
+      void audio.play().catch(() => {});
+    };
+    const onPause = () => audio.pause();
+    const onSeeked = () => {
+      try {
+        audio.currentTime = video.currentTime;
+      } catch {
+        /* ignore */
+      }
+    };
+    video.addEventListener('play', onPlay);
+    video.addEventListener('pause', onPause);
+    video.addEventListener('seeked', onSeeked);
+    if (!video.paused) onPlay();
+    return () => {
+      video.removeEventListener('play', onPlay);
+      video.removeEventListener('pause', onPause);
+      video.removeEventListener('seeked', onSeeked);
+      audio.pause();
+    };
+  }, [isCardVideoTemplate, videoTemplate2PexelsVideoSrc, cardSongSrc]);
 
   // Sync triangle-wave bed audio with Particle preview playback.
   useEffect(() => {
@@ -7441,6 +7550,16 @@ const imageFrameTitleLine1 = 'Questions to ask your';
       return { blob, extension: 'mp4', baseName: `dark-love-letter-${today}` };
     }
 
+    if (isCardVideoTemplate) {
+      const videoSrc = requireVideoSrc();
+      const blob = await exportCardOnVideo({
+        videoSrc,
+        question: videoOverlayCaption.trim(),
+        audioSrc: cardSongSrc,
+      });
+      return { blob, extension: 'mp4', baseName: `question-card-${today}` };
+    }
+
     if (isSpillItNotesVideoTemplate) {
       const videoSrc = requireVideoSrc();
       const title = videoOverlayCaption.trim() || pickRandomDailyFunnyTitle();
@@ -10714,7 +10833,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   ? nightyParticleVideoRef
                                   : isNightyRainVideoTemplate
                                     ? nightyRainVideoRef
-                                    : undefined
+                                    : isCardVideoTemplate
+                                      ? cardVideoRef
+                                      : undefined
                               }
                               key={template2PlaybackVideoSrc ?? undefined}
                               src={template2PlaybackVideoSrc || undefined}
@@ -10723,7 +10844,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               muted={
                                 isSpillItNotesVideoTemplate ||
                                 isNightyParticleVideoTemplate ||
-                                isNightyRainVideoTemplate
+                                isNightyRainVideoTemplate ||
+                                isCardVideoTemplate
                               }
                               onTimeUpdate={
                                 usesPexelsVideoBackground
@@ -10740,6 +10862,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                                   videoOverlayCaption,
                                                   videoTemplate7TextSource
                                                 )
+                                              : isCardVideoTemplate
+                                                ? VIDEO_TEMPLATE10_DURATION_SEC
                                           : VIDEO_TEMPLATE2_MAX_DURATION_SEC;
                                       if (el.currentTime >= maxSec) {
                                         el.currentTime = 0;
@@ -10755,6 +10879,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                         ) {
                                           nightyRainAudioRef.current.currentTime = 0;
                                         }
+                                        if (isCardVideoTemplate && cardAudioRef.current) {
+                                          cardAudioRef.current.currentTime = 0;
+                                        }
                                       }
                                     }
                                   : undefined
@@ -10763,7 +10890,9 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                               style={
                                 isCouplesNatureVideoTemplate
                                   ? { filter: COUPLES_NATURE_VIDEO_FILTER }
-                                  : undefined
+                                  : isCardVideoTemplate
+                                    ? { filter: VIDEO_TEMPLATE10_BACKGROUND_FILTER }
+                                    : undefined
                               }
                               poster={template2PlaybackPosterSrc || undefined}
                             />
@@ -10780,6 +10909,14 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   ref={nightyRainAudioRef}
                                   key={nightyRainBedAudioSrc}
                                   src={nightyRainBedAudioSrc}
+                                  preload="auto"
+                                  playsInline
+                                />
+                              ) : isCardVideoTemplate ? (
+                                <audio
+                                  ref={cardAudioRef}
+                                  key={cardSongSrc}
+                                  src={cardSongSrc}
                                   preload="auto"
                                   playsInline
                                 />
@@ -10914,7 +11051,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                   <span className="text-xs font-bold sm:text-sm">Spill It</span>
                                 </div>
                               </div>
-                            ) : isLoveLetterVideoTemplate ? (
+                            ) : isLoveLetterVideoTemplate || isCardVideoTemplate ? (
                               <canvas
                                 ref={loveLetterOverlayRef}
                                 width={1080}
@@ -11267,7 +11404,7 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                 <label className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
                                   {isCouplesNatureVideoTemplate || isSpillItNotesVideoTemplate
                                     ? 'Title text'
-                                    : isOceanSunsetVideoTemplate
+                                    : isOceanSunsetVideoTemplate || isCardVideoTemplate
                                       ? 'Question'
                                       : isCinematicCoverVideoTemplate
                                         ? 'Cover text'
@@ -11316,6 +11453,20 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                         regenerateFabNotesTitle();
                                         return;
                                       }
+                                      if (isCardVideoTemplate) {
+                                        const song = pickVideoTemplate10Song(
+                                          VIDEO_TEMPLATE10_SONGS.find((entry) => entry.src === cardSongSrc)?.id
+                                        );
+                                        setCardSongSrc(song.src);
+                                        void pickCopycatCardQuestion(videoOverlayCaption).then((question) => {
+                                          setVideoOverlayCaption(question);
+                                          void handleGenerateVideoTemplate2Description({
+                                            cover: question,
+                                            questions: [],
+                                          });
+                                        });
+                                        return;
+                                      }
                                       const pool = [...FUNNY_QUESTIONS];
                                       const current = videoOverlayCaption;
                                       let next = pool[Math.floor(Math.random() * pool.length)] ?? current;
@@ -11331,6 +11482,8 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                                     isOceanSunsetVideoTemplate ||
                                     isCinematicCoverVideoTemplate
                                       ? 'Retry'
+                                      : isCardVideoTemplate
+                                        ? 'New Copycat question'
                                       : 'Random question'}
                                   </button>
                                 </div>

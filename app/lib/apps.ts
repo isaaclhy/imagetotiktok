@@ -258,6 +258,12 @@ export const VIDEO_TEMPLATES_BY_APP: Record<StudioAppId, VideoTemplateCard[]> = 
       subtitle: 'Boys! Send it to her. Questions about him.',
       coverSrc: '/video-templates/template-9-cover.jpg',
     },
+    {
+      id: 10,
+      title: 'Question card',
+      subtitle: 'A Copycat question on a background video',
+      coverSrc: '/video-templates/template-10-cover.jpg',
+    },
   ],
   fab: [
     { id: 1, title: 'Affirmation montage', subtitle: '' },
