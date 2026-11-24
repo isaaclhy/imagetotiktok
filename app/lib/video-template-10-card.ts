@@ -38,7 +38,6 @@ export const VIDEO_TEMPLATE10_SONGS = [
 export type VideoTemplate10SongId = (typeof VIDEO_TEMPLATE10_SONGS)[number]['id'];
 
 const CARD_YELLOW = '#FED66E';
-const CARD_BORDER = '#111111';
 const LOGO_SRC = '/spill-logo.png';
 
 const CARD_FONT =
@@ -160,33 +159,27 @@ function paintCard(
   const x = (width - cardW) / 2;
   const y = height * 0.22;
   const radius = width * 0.055;
-  const border = Math.max(10, width * 0.012);
 
   ctx.save();
   ctx.shadowColor = 'rgba(0,0,0,0.28)';
   ctx.shadowBlur = width * 0.03;
   ctx.shadowOffsetY = width * 0.012;
   traceRoundRect(ctx, x, y, cardW, cardH, radius);
-  ctx.fillStyle = CARD_BORDER;
-  ctx.fill();
-  ctx.restore();
-
-  ctx.save();
-  traceRoundRect(ctx, x + border, y + border, cardW - border * 2, cardH - border * 2, radius * 0.86);
-  ctx.clip();
   ctx.fillStyle = CARD_YELLOW;
-  ctx.fillRect(x, y, cardW, cardH);
+  ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.clip();
 
   const barH = cardH * 0.105;
-  const barY = y + cardH - border - barH;
+  const barY = y + cardH - barH;
   ctx.fillStyle = '#0E0E0E';
-  ctx.fillRect(x + border, barY, cardW - border * 2, barH + border);
+  ctx.fillRect(x, barY, cardW, barH + radius);
 
   const maxWidth = cardW * 0.78;
   let fontSize = Math.round(width * 0.048);
   const minSize = Math.round(width * 0.03);
   const textBottom = barY - cardH * 0.04;
-  const textTop = y + border + cardH * 0.06;
+  const textTop = y + cardH * 0.06;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#1A1A1A';
