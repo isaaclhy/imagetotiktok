@@ -2,7 +2,7 @@
   "handle": "trydeepen",
   "platform": "tiktok",
   "minViews": 50000,
-  "postCount": 59,
+  "postCount": 60,
   "creditsUsed": 3,
   "creditsRemaining": 95,
   "posts": [
@@ -2133,6 +2133,70 @@
             "A hug",
             "A kiss",
             "Your full attention"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7711810590989094150",
+      "views": 151200,
+      "likes": 5828,
+      "coverText": "Will your boyfriend let this slide? 👀",
+      "slideText": [
+        {
+          "text": "I post a picture with a guy friend who has his arm around my waist.",
+          "options": [
+            "Fight",
+            "Let it slide",
+            "Break up"
+          ]
+        },
+        {
+          "text": "My ex texts me happy birthday and I reply with a thank-you.",
+          "options": [
+            "Fight",
+            "Let it slide",
+            "Break up"
+          ]
+        },
+        {
+          "text": "A guy at a party asks for my Instagram, and I give it to him.",
+          "options": [
+            "Fight",
+            "Let it slide",
+            "Break up"
+          ]
+        },
+        {
+          "text": "I regularly like the same guy's selfies.",
+          "options": [
+            "Fight",
+            "Let it slide",
+            "Break up"
+          ]
+        },
+        {
+          "text": "I tell a male friend about an argument we had before talking to you about it.",
+          "options": [
+            "Fight",
+            "Let it slide",
+            "Break up"
+          ]
+        },
+        {
+          "text": "A guy friend calls me pretty, and I just laugh it off.",
+          "options": [
+            "Fight",
+            "Let it slide",
+            "Break up"
+          ]
+        },
+        {
+          "text": "I keep texting a guy who has admitted he likes me because I enjoy our friendship.",
+          "options": [
+            "Fight",
+            "Let it slide",
+            "Break up"
           ]
         }
       ]
