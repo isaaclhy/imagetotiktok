@@ -3201,6 +3201,7 @@ export default function Home() {
       void handleRegenerateVideoTemplate2Video();
       void handleGenerateVideoTemplate2Description(source);
     } else if (isSpillItNotesVideoTemplate) {
+      warmCouplesNatureExport();
       const source = regenerateFabNotesContent();
       void handleRegenerateVideoTemplate2Video();
       void handleGenerateVideoTemplate2Description(source);
@@ -5576,9 +5577,14 @@ const imageFrameTitleLine1 = 'Questions to ask your';
   }, [isCouplesNatureVideoTemplate, template2PlaybackPosterSrc]);
 
   useEffect(() => {
-    if (!isCouplesNatureVideoTemplate) return;
+    if (!isCouplesNatureVideoTemplate && !isSpillItNotesVideoTemplate) return;
     warmCouplesNatureVideoBlob(template2ExportVideoSrc ?? template2PlaybackVideoSrc);
-  }, [isCouplesNatureVideoTemplate, template2ExportVideoSrc, template2PlaybackVideoSrc]);
+  }, [
+    isCouplesNatureVideoTemplate,
+    isSpillItNotesVideoTemplate,
+    template2ExportVideoSrc,
+    template2PlaybackVideoSrc,
+  ]);
 
   const couplesNatureExportExtras = {
     highlightWord: null,
@@ -7561,13 +7567,14 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         videoTemplate2Questions.filter((q) => q.trim()).length > 0
           ? videoTemplate2Questions.filter((q) => q.trim()).slice(0, 5)
           : pickRandomFunnyQuestions(5);
-      const recorded = await exportFabNotesVideo(
+      // Already MP4 via jpeg-sequence + ffmpeg (same path as question-card).
+      const blob = await exportFabNotesVideo(
         videoSrc,
         title,
         questions,
         FAB_NOTES_MAX_DURATION_SEC
       );
-      return { ...(await toMp4(recorded, { allowWebmFallback: true })), baseName: `iphone-notes-${today}` };
+      return { blob, extension: 'mp4', baseName: `iphone-notes-${today}` };
     }
 
     if (isNightyParticleVideoTemplate) {

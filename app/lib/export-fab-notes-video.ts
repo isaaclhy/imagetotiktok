@@ -1,40 +1,16 @@
 import {
-  FAB_NOTES_EXPORT_MAX_HEIGHT,
-  FAB_NOTES_EXPORT_MAX_WIDTH,
-  FAB_NOTES_EXPORT_VIDEO_BITRATE,
-  FAB_NOTES_FOOTER,
-  FAB_NOTES_MAX_DURATION_SEC,
-} from '@/app/lib/fab-video';
-
-/** Fit inside max box; keep even dims for H.264/VP encoders. */
-function exportCanvasSize(srcW: number, srcH: number): { w: number; h: number } {
-  const scale = Math.min(
-    1,
-    FAB_NOTES_EXPORT_MAX_WIDTH / srcW,
-    FAB_NOTES_EXPORT_MAX_HEIGHT / srcH
-  );
-  let w = Math.round(srcW * scale);
-  let h = Math.round(srcH * scale);
-  if (w % 2) w -= 1;
-  if (h % 2) h -= 1;
-  return { w: Math.max(2, w), h: Math.max(2, h) };
-}
-
-function pickMediaRecorderMime(): string | null {
-  if (typeof MediaRecorder === 'undefined') return null;
-  // Prefer MP4 when available so we can skip ffmpeg.wasm (broken under Turbopack).
-  const candidates = [
-    'video/mp4;codecs="avc1.42E01E,mp4a.40.2"',
-    'video/mp4',
-    'video/webm;codecs=vp9,opus',
-    'video/webm;codecs=vp8,opus',
-    'video/webm',
-  ];
-  for (const mime of candidates) {
-    if (MediaRecorder.isTypeSupported(mime)) return mime;
-  }
-  return null;
-}
+  COUPLES_NATURE_EXPORT_FPS,
+  COUPLES_NATURE_EXPORT_HEIGHT,
+  COUPLES_NATURE_EXPORT_WIDTH,
+  captureCouplesNaturePlaybackFrames,
+  computeCoverCrop,
+  drawCouplesNatureBackground,
+  loadVideoElementFromBlob,
+} from '@/app/lib/couples-nature/background';
+import type { CouplesNatureExportProgress } from '@/app/lib/couples-nature/types';
+import { getCouplesNatureVideoBlob } from '@/app/lib/couples-nature/video-cache';
+import { FAB_NOTES_FOOTER, FAB_NOTES_MAX_DURATION_SEC } from '@/app/lib/fab-video';
+import { encodeJpegSequenceToMp4 } from '@/app/lib/webm-to-mp4';
 
 function roundRect(
   ctx: CanvasRenderingContext2D,
@@ -335,245 +311,60 @@ export function drawFabNotesCardOnCanvas(
 
 /**
  * Re-encodes a Pexels (or other) video with a static Notes card stamped on every frame.
- * Prefetches the source to a blob so recording isn't fighting a streaming proxy, caches
- * the Notes overlay once, and draws on video frame callbacks when available.
+ * Same pipeline as question-card: capture CFR JPEG frames, then ffmpeg encode — no MediaRecorder.
  */
 export async function exportFabNotesVideo(
   videoSrc: string,
   title: string,
   questions: string[],
-  maxDurationSec = FAB_NOTES_MAX_DURATION_SEC
+  maxDurationSec = FAB_NOTES_MAX_DURATION_SEC,
+  onProgress?: CouplesNatureExportProgress
 ): Promise<Blob> {
-  if (typeof MediaRecorder === 'undefined') {
-    throw new Error('MediaRecorder is not supported in this browser');
-  }
-  const mime = pickMediaRecorderMime();
-  if (!mime) throw new Error('No supported video recording format in this browser');
-
-  // Prefetch fully before recording — export URLs often go through /api/pexels/video-proxy,
-  // and streaming mid-encode is the main stutter source.
-  const response = await fetch(videoSrc);
-  if (!response.ok) {
-    throw new Error(`Failed to download video (${response.status})`);
-  }
-  const sourceBlob = await response.blob();
-  const objectUrl = URL.createObjectURL(sourceBlob);
-
-  const video = document.createElement('video');
-  video.crossOrigin = 'anonymous';
-  video.playsInline = true;
-  video.setAttribute('playsinline', '');
-  video.preload = 'auto';
-  video.muted = true;
-  video.src = objectUrl;
+  const sourceBlob = await getCouplesNatureVideoBlob(videoSrc);
+  const { video, objectUrl } = await loadVideoElementFromBlob(sourceBlob);
+  const width = COUPLES_NATURE_EXPORT_WIDTH;
+  const height = COUPLES_NATURE_EXPORT_HEIGHT;
+  const fps = COUPLES_NATURE_EXPORT_FPS;
 
   try {
-    await new Promise<void>((resolve, reject) => {
-      let settled = false;
-      const done = () => {
-        if (settled) return;
-        settled = true;
-        resolve();
-      };
-      video.addEventListener('error', () => reject(new Error('Failed to load video')), {
-        once: true,
-      });
-      if (video.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
-        done();
-        return;
-      }
-      video.addEventListener('canplaythrough', done, { once: true });
-      // Fallback if canplaythrough never fires on some browsers with blob URLs.
-      video.addEventListener(
-        'loadeddata',
-        () => {
-          window.setTimeout(done, 250);
-        },
-        { once: true }
-      );
-    });
-
-    const srcW = video.videoWidth;
-    const srcH = video.videoHeight;
-    if (srcW <= 0 || srcH <= 0) throw new Error('Invalid video dimensions');
-
-    const { w, h } = exportCanvasSize(srcW, srcH);
+    const durationSec = Math.min(maxDurationSec, video.duration || maxDurationSec);
     const canvas = document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Canvas not available');
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-
-    // Notes card is static — paint once and blit each frame.
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d', { alpha: false });
     const overlay = document.createElement('canvas');
-    overlay.width = w;
-    overlay.height = h;
+    overlay.width = width;
+    overlay.height = height;
     const overlayCtx = overlay.getContext('2d');
-    if (!overlayCtx) throw new Error('Overlay canvas not available');
-    drawFabNotesCardOnCanvas(overlayCtx, w, h, title, questions);
+    if (!ctx || !overlayCtx) throw new Error('Canvas not available');
 
-    const chunks: BlobPart[] = [];
-    const EXPORT_FPS = 30;
-    const FRAME_MS = 1000 / EXPORT_FPS;
+    drawFabNotesCardOnCanvas(overlayCtx, width, height, title, questions);
+    const crop = computeCoverCrop(video.videoWidth, video.videoHeight, width, height);
 
-    await new Promise<void>((resolve, reject) => {
-      let rafId = 0;
-      let recorder: MediaRecorder | null = null;
-      let finished = false;
-      let captureTrack: MediaStreamTrack | null = null;
+    const paintFrame = () => {
+      drawCouplesNatureBackground(ctx, video, crop, width, height, 'none');
+      ctx.drawImage(overlay, 0, 0);
+    };
 
-      const stopDrawing = () => {
-        if (rafId) cancelAnimationFrame(rafId);
-        rafId = 0;
-      };
+    onProgress?.('frames', 0, Math.ceil(durationSec * fps));
+    const frames = await captureCouplesNaturePlaybackFrames(
+      video,
+      paintFrame,
+      canvas,
+      fps,
+      durationSec,
+      (captured, total) => onProgress?.('frames', captured, total)
+    );
+    if (frames.length === 0) throw new Error('No frames captured for Notes export');
 
-      const paintFrame = () => {
-        // Keep the previous video frame if decode briefly stalls — never wipe to black.
-        if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && video.videoWidth > 0) {
-          ctx.drawImage(video, 0, 0, w, h);
-        }
-        ctx.drawImage(overlay, 0, 0);
-        // Push an explicit frame into the capture stream when supported (Chrome).
-        const track = captureTrack as MediaStreamTrack & { requestFrame?: () => void };
-        track?.requestFrame?.();
-      };
-
-      const waitForDecodedFrame = () =>
-        new Promise<void>((res) => {
-          if (typeof video.requestVideoFrameCallback === 'function') {
-            video.requestVideoFrameCallback(() => res());
-            return;
-          }
-          rafId = requestAnimationFrame(() => {
-            rafId = requestAnimationFrame(() => {
-              rafId = 0;
-              res();
-            });
-          });
-        });
-
-      const finishRecording = () => {
-        if (finished) return;
-        finished = true;
-        stopDrawing();
-        video.pause();
-        window.setTimeout(() => {
-          try {
-            if (recorder && recorder.state === 'recording') recorder.stop();
-          } catch {
-            reject(new Error('Failed to finish recording'));
-          }
-        }, 400);
-      };
-
-      const reachedMaxDuration = () => video.currentTime >= maxDurationSec - 0.05;
-
-      video.addEventListener('ended', finishRecording, { once: true });
-
-      const run = async () => {
-        try {
-          video.pause();
-          video.muted = true;
-          await new Promise<void>((res, rej) => {
-            const onSeeked = () => {
-              cleanup();
-              res();
-            };
-            const onError = () => {
-              cleanup();
-              rej(new Error('Failed to seek video'));
-            };
-            const cleanup = () => {
-              video.removeEventListener('seeked', onSeeked);
-              video.removeEventListener('error', onError);
-            };
-            video.addEventListener('seeked', onSeeked, { once: true });
-            video.addEventListener('error', onError, { once: true });
-            // Some browsers skip seeked when already at 0.
-            if (video.currentTime === 0) {
-              cleanup();
-              res();
-              return;
-            }
-            video.currentTime = 0;
-          });
-
-          // Play first — drawing a paused/seeked video often yields a black canvas frame.
-          await video.play();
-          await waitForDecodedFrame();
-          paintFrame();
-
-          // Prefer manual requestFrame pacing when available; else fixed 30fps capture.
-          const probeStream = canvas.captureStream(0);
-          const probeTrack = probeStream.getVideoTracks()[0] as
-            | (MediaStreamTrack & { requestFrame?: () => void })
-            | undefined;
-          const supportsRequestFrame = typeof probeTrack?.requestFrame === 'function';
-          probeStream.getTracks().forEach((t) => t.stop());
-
-          const outStream = canvas.captureStream(supportsRequestFrame ? 0 : EXPORT_FPS);
-          captureTrack = outStream.getVideoTracks()[0] ?? null;
-
-          recorder = new MediaRecorder(outStream, {
-            mimeType: mime,
-            videoBitsPerSecond: FAB_NOTES_EXPORT_VIDEO_BITRATE,
-          });
-          recorder.ondataavailable = (e) => {
-            if (e.data.size) chunks.push(e.data);
-          };
-          recorder.onerror = () => {
-            stopDrawing();
-            video.pause();
-            reject(new Error('Recording failed'));
-          };
-          recorder.onstop = () => {
-            stopDrawing();
-            video.pause();
-            resolve();
-          };
-
-          // Steady wall-clock 30fps paints — avoids VFC/source-fps judder vs captureStream.
-          let nextFrameAt = performance.now();
-          const tick = (now: number) => {
-            if (finished) return;
-            if (video.ended || reachedMaxDuration()) {
-              paintFrame();
-              finishRecording();
-              return;
-            }
-            if (now >= nextFrameAt) {
-              paintFrame();
-              nextFrameAt += FRAME_MS;
-              // If we fell behind (tab throttle / GC), skip ahead instead of bursting frames.
-              if (now > nextFrameAt + FRAME_MS * 2) {
-                nextFrameAt = now + FRAME_MS;
-              }
-            }
-            rafId = requestAnimationFrame(tick);
-          };
-
-          paintFrame();
-          recorder.start(100);
-          paintFrame();
-          nextFrameAt = performance.now() + FRAME_MS;
-          rafId = requestAnimationFrame(tick);
-        } catch (e) {
-          stopDrawing();
-          video.pause();
-          reject(e instanceof Error ? e : new Error(String(e)));
-        }
-      };
-
-      void run();
-    });
-
-    if (chunks.length === 0) throw new Error('No video data was recorded');
-    return new Blob(chunks, { type: mime.includes('mp4') ? 'video/mp4' : 'video/webm' });
+    onProgress?.('encode', 0, 1);
+    const mp4 = await encodeJpegSequenceToMp4(frames, fps, null);
+    onProgress?.('encode', 1, 1);
+    return mp4;
   } finally {
-    URL.revokeObjectURL(objectUrl);
+    video.pause();
     video.removeAttribute('src');
     video.load();
+    URL.revokeObjectURL(objectUrl);
   }
 }
