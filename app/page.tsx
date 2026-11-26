@@ -570,6 +570,7 @@ const COPYCAT_COMPETITORS = [
   { id: 'misunderstood-cou4', label: 'Misunderstood cou4' },
   { id: 'sandra-writes-this', label: 'Sandra writes this' },
   { id: 'wedeep2', label: 'wedeep2' },
+  { id: 'i-have-solutions-for-love', label: 'I have solutions for love' },
 ] as const;
 
 type CopycatCompetitorId = (typeof COPYCAT_COMPETITORS)[number]['id'];

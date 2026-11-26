@@ -27,6 +27,7 @@ import { getCoupleSyxPosts } from '@/app/lib/copycat/couple-syx';
 import { getMisunderstoodCou4Posts } from '@/app/lib/copycat/misunderstood-cou4';
 import { getSandraWritesThisPosts } from '@/app/lib/copycat/sandrawritesthis';
 import { getWeDeep2Posts } from '@/app/lib/copycat/wedeep2';
+import { getIHaveSolutionsForLovePosts } from '@/app/lib/copycat/ihavesolutionsforlove';
 
 export const VIDEO_TEMPLATE4_PEXELS_QUERY = 'ocean sunset';
 export const VIDEO_TEMPLATE4_LABELS = [
@@ -56,6 +57,7 @@ export const VIDEO_TEMPLATE4_COMPETITORS = [
   { id: 'misunderstood-cou4', label: 'Misunderstood cou4' },
   { id: 'sandra-writes-this', label: 'Sandra writes this' },
   { id: 'wedeep2', label: 'wedeep2' },
+  { id: 'i-have-solutions-for-love', label: 'I have solutions for love' },
 ] as const;
 
 export type VideoTemplate4CompetitorId = (typeof VIDEO_TEMPLATE4_COMPETITORS)[number]['id'];
@@ -126,6 +128,8 @@ function postsForCompetitor(id: VideoTemplate4CompetitorId): CopycatPost[] {
       return getSandraWritesThisPosts();
     case 'wedeep2':
       return getWeDeep2Posts();
+    case 'i-have-solutions-for-love':
+      return getIHaveSolutionsForLovePosts();
   }
 }
 
