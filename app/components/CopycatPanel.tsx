@@ -25,6 +25,7 @@ import { getCoupleSyxPosts } from '@/app/lib/copycat/couple-syx';
 import { getMisunderstoodCou4Posts } from '@/app/lib/copycat/misunderstood-cou4';
 import { getSandraWritesThisPosts } from '@/app/lib/copycat/sandrawritesthis';
 import { getWeDeep2Posts } from '@/app/lib/copycat/wedeep2';
+import { getIHaveSolutionsForLovePosts } from '@/app/lib/copycat/ihavesolutionsforlove';
 import { getCoupleCardsPosts } from '@/app/lib/copycat/couple-cards';
 import { getHhTalkPosts } from '@/app/lib/copycat/hhtalk';
 import { getGoldenThoughtsDailyPosts } from '@/app/lib/copycat/goldenthoughtsdaily';
@@ -1328,7 +1329,9 @@ export function CopycatPanel({
                                             ? getSandraWritesThisPosts()
                                             : competitorId === 'wedeep2'
                                               ? getWeDeep2Posts()
-                                              : [];
+                                              : competitorId === 'i-have-solutions-for-love'
+                                                ? getIHaveSolutionsForLovePosts()
+                                                : [];
     if (competitorId === 'flamingo-cards') return filterCopycatPostsByMinViews(raw);
     return raw;
   }, [competitorId, useHookPosts]);

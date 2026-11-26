@@ -19,6 +19,7 @@ import { getCoupleSyxPosts } from '@/app/lib/copycat/couple-syx';
 import { getMisunderstoodCou4Posts } from '@/app/lib/copycat/misunderstood-cou4';
 import { getSandraWritesThisPosts } from '@/app/lib/copycat/sandrawritesthis';
 import { getWeDeep2Posts } from '@/app/lib/copycat/wedeep2';
+import { getIHaveSolutionsForLovePosts } from '@/app/lib/copycat/ihavesolutionsforlove';
 import { getCoupleCardsPosts } from '@/app/lib/copycat/couple-cards';
 import { getHhTalkPosts } from '@/app/lib/copycat/hhtalk';
 import { getGoldenThoughtsDailyPosts } from '@/app/lib/copycat/goldenthoughtsdaily';
@@ -63,6 +64,7 @@ function posts(): CopycatPost[] {
     ...getHookPosts(),
     ...getSandraWritesThisPosts(),
     ...getWeDeep2Posts(),
+    ...getIHaveSolutionsForLovePosts(),
   ];
 }
 

@@ -32,6 +32,7 @@ import { getCoupleSyxPosts } from '@/app/lib/copycat/couple-syx';
 import { getMisunderstoodCou4Posts } from '@/app/lib/copycat/misunderstood-cou4';
 import { getSandraWritesThisPosts } from '@/app/lib/copycat/sandrawritesthis';
 import { getWeDeep2Posts } from '@/app/lib/copycat/wedeep2';
+import { getIHaveSolutionsForLovePosts } from '@/app/lib/copycat/ihavesolutionsforlove';
 
 type ChoiceBody = {
   body: string;
@@ -91,6 +92,7 @@ function choicePool(): ChoiceBody[] {
   collect(getHookPosts(), into);
   collect(getSandraWritesThisPosts(), into);
   collect(getWeDeep2Posts(), into);
+  collect(getIHaveSolutionsForLovePosts(), into);
   cached = [...into.values()];
   return cached;
 }

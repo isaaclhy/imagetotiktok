@@ -31,6 +31,7 @@ import { getCoupleSyxPosts } from '@/app/lib/copycat/couple-syx';
 import { getMisunderstoodCou4Posts } from '@/app/lib/copycat/misunderstood-cou4';
 import { getSandraWritesThisPosts } from '@/app/lib/copycat/sandrawritesthis';
 import { getWeDeep2Posts } from '@/app/lib/copycat/wedeep2';
+import { getIHaveSolutionsForLovePosts } from '@/app/lib/copycat/ihavesolutionsforlove';
 
 /**
  * Funny / chaotic question stems for image template 24.
@@ -100,6 +101,7 @@ function copycatBuckets(): { chaotic: string[]; rest: string[] } {
   collectStems(getHookPosts(), into);
   collectStems(getSandraWritesThisPosts(), into);
   collectStems(getWeDeep2Posts(), into);
+  collectStems(getIHaveSolutionsForLovePosts(), into);
   const chaotic: string[] = [];
   const rest: string[] = [];
   for (const stem of into.values()) {
