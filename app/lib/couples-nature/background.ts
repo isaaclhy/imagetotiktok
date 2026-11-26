@@ -138,8 +138,62 @@ function fillFrameGaps(slots: Array<Uint8Array | undefined>, totalFrames: number
 }
 
 /**
+ * Chrome only presents frames (and fires requestVideoFrameCallback) for a video
+ * that is in the document. A detached export element otherwise yields one still.
+ */
+function mountVideoForFrameCapture(video: HTMLVideoElement): () => void {
+  const previousParent = video.parentElement;
+  const previousNext = video.nextSibling;
+  video.playsInline = true;
+  video.muted = true;
+  video.setAttribute('playsinline', '');
+  video.style.position = 'fixed';
+  video.style.left = '0';
+  video.style.top = '0';
+  video.style.width = '8px';
+  video.style.height = '8px';
+  video.style.opacity = '0.02';
+  video.style.pointerEvents = 'none';
+  video.style.zIndex = '-1';
+  if (!video.isConnected) document.body.appendChild(video);
+  return () => {
+    video.style.position = '';
+    video.style.left = '';
+    video.style.top = '';
+    video.style.width = '';
+    video.style.height = '';
+    video.style.opacity = '';
+    video.style.pointerEvents = '';
+    video.style.zIndex = '';
+    if (previousParent) {
+      previousParent.insertBefore(video, previousNext);
+    } else if (video.parentElement === document.body) {
+      video.remove();
+    }
+  };
+}
+
+async function captureFramesBySeeking(
+  video: HTMLVideoElement,
+  paintFrame: () => void,
+  canvas: HTMLCanvasElement,
+  fps: number,
+  totalFrames: number,
+  onProgress?: (captured: number, total: number) => void
+): Promise<Uint8Array[]> {
+  const frames: Uint8Array[] = [];
+  for (let i = 0; i < totalFrames; i++) {
+    await seekVideo(video, Math.min(i / fps, Math.max(0, (video.duration || totalFrames / fps) - 0.04)));
+    paintFrame();
+    frames.push(canvasToJpegBytes(canvas));
+    onProgress?.(i + 1, totalFrames);
+  }
+  return frames;
+}
+
+/**
  * Capture CFR JPEG frames during one realtime play-through (~9s).
- * Avoids per-frame seeking, which was taking 30–90s on long clips.
+ * Falls back to seeking when the browser does not present intermediate frames.
  */
 export async function captureCouplesNaturePlaybackFrames(
   video: HTMLVideoElement,
@@ -152,6 +206,7 @@ export async function captureCouplesNaturePlaybackFrames(
   const totalFrames = Math.max(1, Math.ceil(durationSec * fps));
   const slots: Array<Uint8Array | undefined> = new Array(totalFrames);
   let capturedCount = 0;
+  const unmount = mountVideoForFrameCapture(video);
 
   await seekVideo(video, 0);
   video.playbackRate = 1;
@@ -172,59 +227,66 @@ export async function captureCouplesNaturePlaybackFrames(
     onProgress?.(capturedCount, totalFrames);
   };
 
-  if (typeof video.requestVideoFrameCallback === 'function') {
-    return new Promise<Uint8Array[]>((resolve, reject) => {
+  try {
+    let played: Uint8Array[] = [];
+    try {
+      played = await new Promise<Uint8Array[]>((resolve, reject) => {
       const timeoutId = window.setTimeout(
         () => resolve(finish(timeoutId)),
-        Math.ceil((durationSec + 1.5) * 1000)
+        Math.ceil((durationSec + 2) * 1000)
       );
 
+      const useFrameCallback = typeof video.requestVideoFrameCallback === 'function';
       const onFrame = (_now: DOMHighResTimeStamp, metadata: VideoFrameCallbackMetadata) => {
-        if (metadata.mediaTime >= durationSec - 0.001) {
+        storeFrame(metadata.mediaTime);
+        if (metadata.mediaTime >= durationSec - 0.001 || capturedCount >= totalFrames) {
           resolve(finish(timeoutId));
           return;
         }
-        storeFrame(metadata.mediaTime);
         video.requestVideoFrameCallback(onFrame);
+      };
+
+      const startRaf = () => {
+        let nextFrameAt = performance.now();
+        const frameMs = 1000 / fps;
+        const tick = (now: number) => {
+          if (video.currentTime >= durationSec - 0.001 || capturedCount >= totalFrames) {
+            resolve(finish(timeoutId));
+            return;
+          }
+          if (now >= nextFrameAt) {
+            storeFrame(video.currentTime);
+            nextFrameAt += frameMs;
+            if (now > nextFrameAt + frameMs * 2) nextFrameAt = now;
+          }
+          requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
       };
 
       video
         .play()
-        .then(() => video.requestVideoFrameCallback(onFrame))
+        .then(() => {
+          if (useFrameCallback) video.requestVideoFrameCallback(onFrame);
+          else startRaf();
+        })
         .catch((err) => {
           window.clearTimeout(timeoutId);
           reject(err);
         });
-    });
-  }
-
-  return new Promise<Uint8Array[]>((resolve, reject) => {
-    const timeoutId = window.setTimeout(
-      () => resolve(finish(timeoutId)),
-      Math.ceil((durationSec + 2) * 1000)
-    );
-    let nextFrameAt = performance.now();
-    const frameMs = 1000 / fps;
-
-    const tick = (now: number) => {
-      if (video.currentTime >= durationSec - 0.001 || capturedCount >= totalFrames) {
-        resolve(finish(timeoutId));
-        return;
-      }
-      if (now >= nextFrameAt) {
-        storeFrame(video.currentTime);
-        nextFrameAt += frameMs;
-        if (now > nextFrameAt + frameMs * 2) nextFrameAt = now;
-      }
-      requestAnimationFrame(tick);
-    };
-
-    video
-      .play()
-      .then(() => requestAnimationFrame(tick))
-      .catch((err) => {
-        window.clearTimeout(timeoutId);
-        reject(err);
       });
-  });
+    } catch {
+      played = [];
+      capturedCount = 0;
+    }
+
+    const distinctEnough =
+      capturedCount >= Math.min(totalFrames, Math.max(8, Math.floor(totalFrames / 4)));
+    if (played.length > 0 && distinctEnough) return played;
+    slots.fill(undefined);
+    capturedCount = 0;
+    return captureFramesBySeeking(video, paintFrame, canvas, fps, totalFrames, onProgress);
+  } finally {
+    unmount();
+  }
 }
