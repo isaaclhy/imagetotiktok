@@ -2,7 +2,7 @@
   "handle": "trydeepen",
   "platform": "tiktok",
   "minViews": 50000,
-  "postCount": 60,
+  "postCount": 62,
   "creditsUsed": 3,
   "creditsRemaining": 95,
   "posts": [
@@ -2198,6 +2198,61 @@
             "Let it slide",
             "Break up"
           ]
+        }
+      ]
+    },
+    {
+      "id": "7711657842259873032",
+      "views": 61300,
+      "likes": 2996,
+      "coverText": "Is your boyfriend sweet or dangerous?",
+      "slideText": [
+        {
+          "text": "When you say \"behave,\" he...",
+          "options": [
+            "Actually listens 😇",
+            "Smirks 😏",
+            "Gets even worse 😈"
+          ]
+        },
+        {
+          "text": "What's his biggest relationship superpower?",
+          "options": [
+            "Gentleman mode 🤍",
+            "Flirty charm 😏",
+            "Professional tease 😛"
+          ]
+        },
+        {
+          "text": "If he gets caught stealing a kiss...",
+          "options": [
+            "Apologizes 😳",
+            "Laughs 😁",
+            "Goes back for another 😏"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7710928106458041601",
+      "views": 52500,
+      "likes": 2579,
+      "coverText": "Your boyfriend might cry with these questions",
+      "slideText": [
+        {
+          "text": "What's something you thought I'd judge you for but didn't?"
+        },
+        {
+          "text": "What's a side of you only I really get to see?"
+        },
+        {
+          "text": "What's something you've wanted to tell me but haven't?"
+        },
+        {
+          "text": "What's something about us you questioned early on?"
+        },
+        {
+          "text": "What would you miss most about me if I were gone?"
         }
       ]
     }
