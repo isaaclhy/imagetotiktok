@@ -7641,12 +7641,17 @@ const imageFrameTitleLine1 = 'Questions to ask your';
         videoTemplate2Questions.filter((q) => q.trim()).length > 0
           ? videoTemplate2Questions.filter((q) => q.trim()).slice(0, 5)
           : pickRandomFunnyQuestions(5);
-      // Already MP4 via jpeg-sequence + ffmpeg (same path as question-card).
+      // PNG overlay via ffmpeg — faster than frame-grab; text stays sharp.
       const blob = await exportFabNotesVideo(
         videoSrc,
         title,
         questions,
-        FAB_NOTES_MAX_DURATION_SEC
+        FAB_NOTES_MAX_DURATION_SEC,
+        (phase) => {
+          setVideoExportDetail(
+            phase === 'frames' ? 'Preparing Notes card…' : 'Encoding MP4…'
+          );
+        }
       );
       return { blob, extension: 'mp4', baseName: `iphone-notes-${today}` };
     }

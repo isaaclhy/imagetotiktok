@@ -202,6 +202,75 @@ async function safeDelete(ffmpeg: FFmpeg, name: string): Promise<void> {
   }
 }
 
+/**
+ * Fast path for static overlays (iPhone Notes card): scale/crop/trim the source
+ * clip in ffmpeg and stamp one PNG on top. Avoids per-frame canvas JPEG capture,
+ * which is slow and makes fine text shimmer.
+ */
+export async function overlayPngOnVideoToMp4(options: {
+  video: Blob;
+  overlayPng: Uint8Array;
+  width: number;
+  height: number;
+  durationSec: number;
+  fps?: number;
+}): Promise<Blob> {
+  const fps = options.fps ?? 30;
+  const duration = Math.max(0.5, options.durationSec);
+  const ffmpeg = await getFfmpeg();
+  const sessionId = `${Date.now()}`;
+  const videoName = `notes-src-${sessionId}.mp4`;
+  const overlayName = `notes-ov-${sessionId}.png`;
+  const outputName = `notes-out-${sessionId}.mp4`;
+
+  await ffmpeg.writeFile(videoName, await fetchFile(options.video));
+  await ffmpeg.writeFile(overlayName, options.overlayPng);
+
+  const filter =
+    `[0:v]scale=${options.width}:${options.height}:force_original_aspect_ratio=increase,` +
+    `crop=${options.width}:${options.height},` +
+    `trim=duration=${duration},setpts=PTS-STARTPTS,fps=${fps}[bg];` +
+    `[1:v]format=rgba,scale=${options.width}:${options.height}[ov];` +
+    `[bg][ov]overlay=0:0:format=auto`;
+
+  try {
+    await ffmpeg.exec([
+      '-i',
+      videoName,
+      '-i',
+      overlayName,
+      '-filter_complex',
+      filter,
+      '-an',
+      '-c:v',
+      'libx264',
+      '-preset',
+      'ultrafast',
+      '-crf',
+      '18',
+      '-pix_fmt',
+      'yuv420p',
+      '-profile:v',
+      'high',
+      '-r',
+      String(fps),
+      '-fps_mode',
+      'cfr',
+      '-movflags',
+      '+faststart',
+      '-t',
+      String(duration),
+      outputName,
+    ]);
+    const data = await ffmpeg.readFile(outputName);
+    return blobFromFfmpegData(data as Uint8Array | string, 'video/mp4');
+  } finally {
+    await safeDelete(ffmpeg, videoName);
+    await safeDelete(ffmpeg, overlayName);
+    await safeDelete(ffmpeg, outputName);
+  }
+}
+
 function blobFromFfmpegData(data: Uint8Array | string, type: string): Blob {
   const bytes = data instanceof Uint8Array ? data : new TextEncoder().encode(String(data));
   return new Blob([bytes as BlobPart], { type });

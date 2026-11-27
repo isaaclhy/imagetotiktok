@@ -2,15 +2,11 @@ import {
   COUPLES_NATURE_EXPORT_FPS,
   COUPLES_NATURE_EXPORT_HEIGHT,
   COUPLES_NATURE_EXPORT_WIDTH,
-  captureCouplesNaturePlaybackFrames,
-  computeCoverCrop,
-  drawCouplesNatureBackground,
-  loadVideoElementFromBlob,
 } from '@/app/lib/couples-nature/background';
 import type { CouplesNatureExportProgress } from '@/app/lib/couples-nature/types';
 import { getCouplesNatureVideoBlob } from '@/app/lib/couples-nature/video-cache';
 import { FAB_NOTES_FOOTER, FAB_NOTES_MAX_DURATION_SEC } from '@/app/lib/fab-video';
-import { encodeJpegSequenceToMp4 } from '@/app/lib/webm-to-mp4';
+import { overlayPngOnVideoToMp4 } from '@/app/lib/webm-to-mp4';
 
 function roundRect(
   ctx: CanvasRenderingContext2D,
@@ -309,9 +305,28 @@ export function drawFabNotesCardOnCanvas(
   ctx.restore();
 }
 
+function canvasToPngBytes(canvas: HTMLCanvasElement): Promise<Uint8Array> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error('Failed to encode Notes overlay PNG'));
+          return;
+        }
+        void blob.arrayBuffer().then(
+          (buffer) => resolve(new Uint8Array(buffer)),
+          reject
+        );
+      },
+      'image/png'
+    );
+  });
+}
+
 /**
- * Re-encodes a Pexels (or other) video with a static Notes card stamped on every frame.
- * Same pipeline as question-card: capture CFR JPEG frames, then ffmpeg encode — no MediaRecorder.
+ * Stamp a static Notes card on a Pexels clip via ffmpeg overlay.
+ * Faster than frame-grab + JPEG (no realtime capture), and text stays sharp
+ * because the card is one PNG — not re-compressed differently every frame.
  */
 export async function exportFabNotesVideo(
   videoSrc: string,
@@ -320,51 +335,32 @@ export async function exportFabNotesVideo(
   maxDurationSec = FAB_NOTES_MAX_DURATION_SEC,
   onProgress?: CouplesNatureExportProgress
 ): Promise<Blob> {
-  const sourceBlob = await getCouplesNatureVideoBlob(videoSrc);
-  const { video, objectUrl } = await loadVideoElementFromBlob(sourceBlob);
   const width = COUPLES_NATURE_EXPORT_WIDTH;
   const height = COUPLES_NATURE_EXPORT_HEIGHT;
   const fps = COUPLES_NATURE_EXPORT_FPS;
 
-  try {
-    const durationSec = Math.min(maxDurationSec, video.duration || maxDurationSec);
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d', { alpha: false });
-    const overlay = document.createElement('canvas');
-    overlay.width = width;
-    overlay.height = height;
-    const overlayCtx = overlay.getContext('2d');
-    if (!ctx || !overlayCtx) throw new Error('Canvas not available');
+  onProgress?.('frames', 0, 1);
+  const sourceBlob = await getCouplesNatureVideoBlob(videoSrc);
 
-    drawFabNotesCardOnCanvas(overlayCtx, width, height, title, questions);
-    const crop = computeCoverCrop(video.videoWidth, video.videoHeight, width, height);
+  const overlay = document.createElement('canvas');
+  overlay.width = width;
+  overlay.height = height;
+  const overlayCtx = overlay.getContext('2d');
+  if (!overlayCtx) throw new Error('Overlay canvas not available');
+  overlayCtx.clearRect(0, 0, width, height);
+  drawFabNotesCardOnCanvas(overlayCtx, width, height, title, questions);
+  const overlayPng = await canvasToPngBytes(overlay);
+  onProgress?.('frames', 1, 1);
 
-    const paintFrame = () => {
-      drawCouplesNatureBackground(ctx, video, crop, width, height, 'none');
-      ctx.drawImage(overlay, 0, 0);
-    };
-
-    onProgress?.('frames', 0, Math.ceil(durationSec * fps));
-    const frames = await captureCouplesNaturePlaybackFrames(
-      video,
-      paintFrame,
-      canvas,
-      fps,
-      durationSec,
-      (captured, total) => onProgress?.('frames', captured, total)
-    );
-    if (frames.length === 0) throw new Error('No frames captured for Notes export');
-
-    onProgress?.('encode', 0, 1);
-    const mp4 = await encodeJpegSequenceToMp4(frames, fps, null);
-    onProgress?.('encode', 1, 1);
-    return mp4;
-  } finally {
-    video.pause();
-    video.removeAttribute('src');
-    video.load();
-    URL.revokeObjectURL(objectUrl);
-  }
+  onProgress?.('encode', 0, 1);
+  const mp4 = await overlayPngOnVideoToMp4({
+    video: sourceBlob,
+    overlayPng,
+    width,
+    height,
+    durationSec: maxDurationSec,
+    fps,
+  });
+  onProgress?.('encode', 1, 1);
+  return mp4;
 }
