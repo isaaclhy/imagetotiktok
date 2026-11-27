@@ -4,15 +4,19 @@ import {
 } from '@/app/lib/nighty-video-templates/sounds';
 
 /**
- * Original Nighty video compositions for the Nighty Video tab.
+ * Nighty video compositions for the Nighty Video tab.
  *
- * These are not recreations of competitor ads. Research supplied text hooks
- * and links only — no video files — so nothing here is a frame copy.
- * Competitor names stay in `references` for the operator. On-video copy is
- * original and limited to verified Nighty facts plus the rain and ocean
- * files already stored in this app.
+ * The first eight are not recreations of competitor ads. Research supplied
+ * text hooks and links only — no video files — so those eight are not frame
+ * copies. Competitor names stay in `references` for the operator. On-video
+ * copy is original and limited to verified Nighty facts plus the rain and
+ * ocean files already stored in this app.
+ * Ids 11–13 are generated pictures from three user-supplied files. The
+ * supplied caption’s thinking claim is not used.
  *
- * Count: 8 originals. Not a 25-ad quota.
+ * Count: 8 originals, plus 3 supplied-reference recreations (ids 11–13).
+ * Not a 25-ad quota. The reference templates follow user-supplied files.
+ * Their on-screen lines are preference cues, not the supplied wording.
  * BetterSleep rows in the research manifest are secondary-index entries.
  * Rain Rain's five copy flights share three source URLs, not five confirmed videos.
  * Dark Noise and Rainy Mood are organic references. Sleepa had no paid refs.
@@ -26,9 +30,26 @@ export type NightyCompositionLayout =
   | 'card'
   | 'sequence'
   | 'ambience'
-  | 'tour';
+  | 'tour'
+  | 'particle-terrain'
+  | 'kaleidoscope'
+  | 'vortex';
 
-export type NightyEvidence = 'secondary-index' | 'organic' | 'organic-or-uncertain';
+export type NightyEvidence =
+  | 'secondary-index'
+  | 'organic'
+  | 'organic-or-uncertain'
+  | 'supplied-reference';
+
+const REFERENCE_LAYOUTS = new Set<NightyCompositionLayout>([
+  'particle-terrain',
+  'kaleidoscope',
+  'vortex',
+]);
+
+export function isReferenceLayout(layout: NightyCompositionLayout): boolean {
+  return REFERENCE_LAYOUTS.has(layout);
+}
 
 export type NightyTemplateReference = {
   id: string;
@@ -74,11 +95,13 @@ export type NightyCompositionTemplate = {
   subtitle: string;
   layout: NightyCompositionLayout;
   durationSec: number;
+  /** Frames per second for export. Omitted compositions stay at 24. */
+  exportFps?: number;
   defaults: NightyCompositionState;
   provenance: {
-    classification: 'original';
-    /** No source MP4 was downloaded, so this cannot be a frame match. */
-    watchedVideo: false;
+    classification: 'original' | 'supplied-reference';
+    /** True only when a user-supplied file was watched. Originals were not. */
+    watchedVideo: boolean;
     summary: string;
     references: NightyTemplateReference[];
   };
@@ -413,6 +436,117 @@ export const NIGHTY_COMPOSITIONS: readonly NightyCompositionTemplate[] = [
           sourceUrl: 'https://admanage.ai/ad/94395',
           when: 'Index date Feb 28, 2026; title says Jan 2025',
           note: 'Secondary index. Not a separate confirmed video. Same refusal as 94432.',
+        },
+      ],
+    },
+  },
+  {
+    id: 11,
+    slug: 'reference-1',
+    title: 'Reference 1',
+    subtitle: 'Particle terrain, 9.045s',
+    layout: 'particle-terrain',
+    durationSec: 9.045,
+    exportFps: 30,
+    defaults: state({
+      headline:
+        'Me listening to this sound\nevery night since I found\nit is my cue to finally\nput this whole day down',
+      subline: '',
+      scene: NIGHT,
+      labelA: '',
+      labelB: '',
+      soundA: 'brown-noise',
+      soundB: 'brown-noise',
+      fadeOutSec: 0,
+      endCta: '',
+      beats: [],
+    }),
+    provenance: {
+      classification: 'supplied-reference',
+      watchedVideo: true,
+      summary:
+        'Supplied reference 1. One particle-terrain shot, static four-line caption, no end card. Default sound is the Nighty Brown track.',
+      references: [
+        {
+          id: 'supplied-reference-1',
+          evidence: 'supplied-reference',
+          sourceUrl: '',
+          when: 'User-supplied file, 9.045 seconds',
+          note: 'Charcoal particle terrain with cyan and deep-red crests. The supplied caption’s thinking claim is not used. Text, sound, and the optional end line stay editable.',
+        },
+      ],
+    },
+  },
+  {
+    id: 12,
+    slug: 'reference-2',
+    title: 'Reference 2',
+    subtitle: 'Blue kaleidoscope, 12.003s',
+    layout: 'kaleidoscope',
+    durationSec: 12.003,
+    exportFps: 30,
+    defaults: state({
+      headline:
+        'Me listening to this sound nightly\never since I found it is my own cue\nto put this whole day down',
+      subline: '',
+      scene: NIGHT,
+      labelA: '',
+      labelB: '',
+      soundA: 'white-noise',
+      soundB: 'white-noise',
+      fadeOutSec: 0,
+      endCta: '',
+      beats: [],
+    }),
+    provenance: {
+      classification: 'supplied-reference',
+      watchedVideo: true,
+      summary:
+        'Supplied reference 2. One blue kaleidoscope, static three-line caption, darker in the last two seconds, no end card. Default sound is Nighty White Noise.',
+      references: [
+        {
+          id: 'supplied-reference-2',
+          evidence: 'supplied-reference',
+          sourceUrl: '',
+          when: 'User-supplied file, 12.003 seconds',
+          note: 'The supplied clip’s wet texture is not in the Nighty source set, so the bed is a real Nighty track you can change. The thinking claim is not used.',
+        },
+      ],
+    },
+  },
+  {
+    id: 13,
+    slug: 'reference-3',
+    title: 'Reference 3',
+    subtitle: 'Cyan vortex, 10.048s',
+    layout: 'vortex',
+    durationSec: 10.048,
+    exportFps: 30,
+    defaults: state({
+      headline:
+        'Me listening to this sound\nevery night since I found\nit is my cue to finally\nput this whole day down',
+      subline: '',
+      scene: NIGHT,
+      labelA: '',
+      labelB: '',
+      soundA: 'gentle-waves',
+      soundB: 'gentle-waves',
+      fadeOutSec: 0,
+      endCta: '',
+      beats: [],
+    }),
+    provenance: {
+      classification: 'supplied-reference',
+      watchedVideo: true,
+      summary:
+        'Supplied reference 3. One cyan vortex shot, static plain four-line caption, no end card. No bed was identified in the supplied file, so the default is Nighty Gentle Waves.',
+      references: [
+        {
+          id: 'supplied-reference-3',
+          evidence: 'supplied-reference',
+          sourceUrl: '',
+          when: 'User-supplied file, 10.048 seconds',
+          note: 'Glowing dots orbit three stationary nodes. Caption has no heavy outline. The thinking claim is not used.',
         },
       ],
     },
