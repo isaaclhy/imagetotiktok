@@ -2,7 +2,7 @@
   "handle": "trydeepen",
   "platform": "tiktok",
   "minViews": 50000,
-  "postCount": 62,
+  "postCount": 64,
   "creditsUsed": 3,
   "creditsRemaining": 95,
   "posts": [
@@ -2253,6 +2253,58 @@
         },
         {
           "text": "What would you miss most about me if I were gone?"
+        }
+      ]
+    },
+    {
+      "id": "7712493672251526407",
+      "views": 83300,
+      "likes": 2190,
+      "coverText": "Who'd crack first, me or you?",
+      "slideText": [
+        {
+          "text": "A whole day with no phones. Who cracks first?",
+          "options": [
+            "Me, by lunch",
+            "You, by breakfast",
+            "We'd both sneak a peek",
+            "Neither, we'd thrive"
+          ]
+        },
+        {
+          "text": "Lost in a foreign city with no data. Who gets us home?",
+          "options": [
+            "Me, obviously",
+            "You and your 'sense of direction'",
+            "A very kind stranger",
+            "Nobody, we just live there now"
+          ]
+        },
+        {
+          "text": "One week with no coffee. Who becomes a villain?",
+          "options": [
+            "Me",
+            "You",
+            "Both of us, keep the pets away",
+            "Neither (we're lying)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7712136305425026312",
+      "views": 61400,
+      "likes": 2887,
+      "coverText": "Your girlfriend can't dodge these 3 questions",
+      "slideText": [
+        {
+          "text": "If a hotter guy started giving you attention while we were going through a rough patch, what would make you still stay loyal to me?"
+        },
+        {
+          "text": "What's a small thing I did recently that secretly made you sit there and think, \"I'm actually so lucky to have him\"?"
+        },
+        {
+          "text": "If you could go back and relive one stage of our relationship for one whole week, which part are you choosing?"
         }
       ]
     }
