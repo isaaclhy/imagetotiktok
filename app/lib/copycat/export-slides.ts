@@ -128,6 +128,11 @@ import {
   paintTemplate31Slide,
 } from '@/app/lib/image-template-31-cards';
 import {
+  IMAGE_TEMPLATE32_FONT_STACK,
+  loadTemplate32Fonts,
+  paintTemplate32Slide,
+} from '@/app/lib/image-template-32-wavy-blob';
+import {
   loadTemplate24Fonts,
   paintTemplate24Slide,
   template24CanvasFontStack,
@@ -219,7 +224,8 @@ export type CopycatExportTemplateId =
   | 28
   | 29
   | 30
-  | 31;
+  | 31
+  | 32;
 
 export type CopycatExportSlide = {
   text: string;
@@ -453,6 +459,22 @@ async function paintSlide(
       promo,
       fontFamily: serif,
       markFontFamily: mark,
+      labelFontFamily: '"TikTok Sans", system-ui, sans-serif',
+    });
+    return canvasBlob(canvas);
+  }
+
+  if (templateId === 32) {
+    await loadTemplate32Fonts();
+    const promo = slide.isCta ? await loadImage(IMAGE_TEMPLATE2_Q5_PROMO_SRC) : null;
+    paintTemplate32Slide(ctx, w, h, {
+      text: slide.text,
+      tabIndex,
+      slideCount,
+      isCover: slide.isCover,
+      isCta: slide.isCta,
+      promo,
+      fontFamily: IMAGE_TEMPLATE32_FONT_STACK,
       labelFontFamily: '"TikTok Sans", system-ui, sans-serif',
     });
     return canvasBlob(canvas);

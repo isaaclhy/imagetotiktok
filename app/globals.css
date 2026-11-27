@@ -119,6 +119,30 @@ body {
 }
 
 @font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url("/fonts/fraunces/Fraunces-Black.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/fraunces/Fraunces-Medium.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Fraunces";
+  font-style: italic;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/fraunces/Fraunces-SemiBoldItalic.ttf") format("truetype");
+}
+
+@font-face {
   font-family: "Patrick Hand";
   font-style: normal;
   font-weight: 400;
