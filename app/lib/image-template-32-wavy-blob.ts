@@ -26,24 +26,25 @@ export const IMAGE_TEMPLATE32_FONT_STACK =
   '"Fraunces", "Libre Baskerville", Georgia, "Times New Roman", serif';
 
 /** Stripe axis, degrees. Negative rises toward the upper right. */
-const STRIPE_ANGLE = -16;
-const STRIPE_THICKNESS = 0.15;
-const STRIPE_AMPLITUDE = 0.36;
-const STRIPE_WAVELENGTH = 0.96;
-const STRIPE_PHASE = 1.15;
+const STRIPE_ANGLE = -37;
+const STRIPE_THICKNESS = 0.078;
+const STRIPE_AMPLITUDE = 0.68;
+const STRIPE_WAVELENGTH = 0.45;
+const STRIPE_PHASE = 0.55;
 
 const BLOB_CX = 0.5;
-const BLOB_CY = 0.498;
-const BLOB_RX = 0.425;
-const BLOB_RY = 0.305;
-const BLOB_SHADOW_X = 0.016;
-const BLOB_SHADOW_Y = 0.013;
+const BLOB_CY = 0.492;
+const BLOB_RX = 0.418;
+const BLOB_RY = 0.308;
+const BLOB_N = 4.3;
+const BLOB_SHADOW_X = 0.015;
+const BLOB_SHADOW_Y = 0.011;
 
-const COVER_SIZE = 0.09;
-const COVER_LEADING = 0.96;
-const COVER_WIDTH = 0.76;
-const MARK_SIZE = 0.036;
-const MARK_GAP = 0.38;
+const COVER_SIZE = 0.103;
+const COVER_LEADING = 0.92;
+const COVER_WIDTH = 0.82;
+const MARK_SIZE = 0.034;
+const MARK_GAP = 0.46;
 
 const QUESTION_SIZE = 0.052;
 const QUESTION_LEADING = 1.12;
@@ -101,8 +102,8 @@ function paintStripes(ctx: CanvasRenderingContext2D, width: number, height: numb
   const amplitude = thickness * STRIPE_AMPLITUDE;
   const wavelength = width * STRIPE_WAVELENGTH;
   const freq = (Math.PI * 2) / wavelength;
-  const olive = [110, 124, 59];
-  const mint = [226, 234, 206];
+  const olive = [107, 127, 58];
+  const mint = [227, 237, 211];
   const rand = mulberry32(32);
   for (let y = 0; y < height; y++) {
     const yNy = y * ny;
@@ -124,19 +125,24 @@ function paintStripes(ctx: CanvasRenderingContext2D, width: number, height: numb
   ctx.putImageData(image, 0, 0);
 }
 
-function blobPoint(t: number, cx: number, cy: number, rx: number, ry: number) {
-  const c = Math.cos(t);
-  const s = Math.sin(t);
-  const n = 2.7;
-  const sx = Math.sign(c) * Math.pow(Math.abs(c), 2 / n);
-  const sy = Math.sign(s) * Math.pow(Math.abs(s), 2 / n);
-  const wobble =
+function blobPoint(theta: number, cx: number, cy: number, rx: number, ry: number) {
+  const c = Math.cos(theta);
+  const s = Math.sin(theta);
+  const base = Math.pow(
+    Math.pow(Math.abs(c) / rx, BLOB_N) + Math.pow(Math.abs(s) / ry, BLOB_N),
+    -1 / BLOB_N
+  );
+  // Soft scallops along each edge. Higher harmonics stay small so the
+  // top and bottom stay flat instead of turning into a lumpy outline.
+  const edge = 0.62 + 0.38 * c * c;
+  const scallop =
     1 +
-    0.048 * Math.sin(3 * t + 0.45) +
-    0.034 * Math.sin(5 * t - 0.7) +
-    0.026 * Math.sin(6 * t + 1.35) +
-    0.018 * Math.sin(8 * t + 0.2);
-  return { x: cx + rx * sx * wobble, y: cy + ry * sy * wobble };
+    edge *
+      (0.026 * Math.sin(10 * theta + 0.25) +
+        0.018 * Math.sin(14 * theta - 0.7) +
+        0.011 * Math.sin(18 * theta + 0.45));
+  const rad = base * scallop;
+  return { x: cx + rad * c, y: cy + rad * s };
 }
 
 function traceBlob(
