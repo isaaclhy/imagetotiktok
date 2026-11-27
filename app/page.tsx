@@ -416,8 +416,10 @@ import {
 } from '@/app/lib/apps';
 import { NightyCompositionStudio } from '@/app/components/NightyCompositionStudio';
 import { SpillQuizVideoStudio } from '@/app/components/SpillQuizVideoStudio';
+import { TiltedCardVideoStudio } from '@/app/components/TiltedCardVideoStudio';
 import { isNightyCompositionTemplateId } from '@/app/lib/nighty-video-templates/catalog';
 import { isSpillQuizTemplateId } from '@/app/lib/spill-quiz/script';
+import { isTiltedCardVideoTemplateId } from '@/app/lib/video-template-11-tilted-card';
 import { getCharacterById, getCharactersForApp } from '@/app/lib/characters';
 import {
   FAB_HEART_MESSAGES,
@@ -2628,6 +2630,8 @@ export default function Home() {
   const isCardVideoTemplate = selectedAppId === 'spill-it' && selectedVideoTemplateId === 10;
   const isSpillQuizVideoTemplate =
     selectedAppId === 'spill-it' && isSpillQuizTemplateId(selectedVideoTemplateId);
+  const isTiltedCardVideoTemplate =
+    selectedAppId === 'spill-it' && isTiltedCardVideoTemplateId(selectedVideoTemplateId);
   const isFreshBakedDonutVideoTemplate =
     selectedAppId === 'spill-it' && selectedVideoTemplateId === 5;
   const selectedFreshBakedDonut = freshBakedDonutSelectedPost(
@@ -10369,6 +10373,11 @@ const imageFrameTitleLine1 = 'Questions to ask your';
                       ))}
                     </div>
                   </>
+                ) : isTiltedCardVideoTemplate ? (
+                  <TiltedCardVideoStudio
+                    key={`${selectedAppId}-${selectedVideoTemplateId}`}
+                    onBack={() => setSelectedVideoTemplateId(null)}
+                  />
                 ) : isNightyCompositionVideoTemplate && selectedVideoTemplateId !== null ? (
                   <NightyCompositionStudio
                     key={`${selectedAppId}-${selectedVideoTemplateId}`}

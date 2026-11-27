@@ -270,6 +270,13 @@ export const VIDEO_TEMPLATES_BY_APP: Record<StudioAppId, VideoTemplateCard[]> = 
       subtitle: 'A Copycat question on a background video',
       coverSrc: '/video-templates/template-10-cover.jpg',
     },
+    {
+      id: 11,
+      title: 'Tilted card',
+      subtitle: 'A pastel question card on a looping clip',
+      coverSrc: '/video-templates/template-11-cover.jpg',
+      videoSrc: '/vecteezy_two-people-sitting-under-a-palm-tree-at-sunset_40457382.mp4',
+    },
   ],
   fab: [
     { id: 1, title: 'Affirmation montage', subtitle: '' },

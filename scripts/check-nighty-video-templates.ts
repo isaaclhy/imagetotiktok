@@ -114,6 +114,8 @@ assert.deepEqual(
     'Dark Love Letter',
     'How well do you know your girlfriend',
     'Quiz your girlfriend',
+    'Question card',
+    'Tilted card',
   ]
 );
 assert.equal(nighty.some((card) => card.title === 'Particle'), true);
@@ -242,7 +244,7 @@ async function checkExportFallback(): Promise<void> {
 checkExportFallback()
   .then(() => {
     console.log(
-      `ok: ${NIGHTY_COMPOSITIONS.length} original Nighty compositions, Spill It unchanged, audio files present, WebM falls back without system ffmpeg`
+      `ok: ${NIGHTY_COMPOSITIONS.length} original Nighty compositions, Spill It catalog checked, audio files present, WebM falls back without system ffmpeg`
     );
   })
   .catch((error: unknown) => {
